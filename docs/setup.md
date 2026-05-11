@@ -107,16 +107,54 @@ Gli atlas pixel-art in `assets/digimon/*_atlas.png` + `*_atlas.json` sono
 **rigenerati** dal sprite pipeline e non vengono committati (vedi `.gitignore`).
 Servono solo alla UI windowed; build/test headless girano senza.
 
-Per rigenerarli:
+### 4a. Requisiti
 
 ```bash
-cd tools/sprite_pipeline
-# vedi GETTING_STARTED.md per requisiti (Blender + python deps)
-./scripts/pipeline.sh
+# Blender 5.x (5.1 testato) — headless o GUI, basta che sia in PATH
+sudo apt install blender          # OR: snap install blender
+
+# Python 3.10+ con Pillow (pixelify + estrazione palette)
+pip install Pillow
+
+# Opzionale (conversioni varie tra raw_renders e atlas)
+sudo apt install imagemagick
 ```
 
-Output finale in `assets/digimon/` (copiato dagli script). Il pipeline lavora
-sui `raw_models/` `.fbx`/`.glb` tracciati nel repo.
+Verifica: `blender --version` deve riportare ≥5.0; `python3 -c "import PIL"` non
+deve errorare.
+
+### 4b. Input tracciati nel repo
+
+- `tools/sprite_pipeline/raw_models/<digimon>/*.{fbx,glb}` — mesh sorgenti
+- `tools/sprite_pipeline/configs/<digimon>.json` — config render (camera, action,
+  hide_meshes, palette path)
+- `tools/sprite_pipeline/palettes/<digimon>.gpl` — palette per quantizzazione
+  pixel
+- `tools/sprite_pipeline/standards/<digimon>.md` — regole di scoring (usate da
+  auto-iteration, non dal render base)
+- `tools/sprite_pipeline/plugins/BlenderToPixels.blend` +
+  `plugins/lospec-blender-toolkit/Lospec_Blender_Toolkit.blend` — assets Blender
+  richiamati dagli script
+
+### 4c. Rigenerazione
+
+Dal repo root, un Digimon alla volta:
+
+```bash
+python3 tools/sprite_pipeline/scripts/pipeline_run.py \
+  --char agumon --parallel 4 --skip-deps-check
+```
+
+Sostituisci `agumon` con `gabumon` / `dorumon` / `patamon` / `renamon` /
+`tentomon`. Tempi: ~10-15 min per Digimon su 4 core (22 varianti × camere).
+
+Output: `tools/sprite_pipeline/output/<digimon>/latest/` (renders intermedi +
+manifest), poi gli script di stitching producono `<digimon>_atlas.png` +
+`<digimon>_atlas.json` in `assets/digimon/`.
+
+Per dettagli avanzati (multi-source same Digimon, variant palette, auto-
+iteration, troubleshooting render) vedi
+`tools/sprite_pipeline/GETTING_STARTED.md`.
 
 ---
 
