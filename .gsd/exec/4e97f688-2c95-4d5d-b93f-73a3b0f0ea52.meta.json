@@ -1,0 +1,18 @@
+{
+  "id": "4e97f688-2c95-4d5d-b93f-73a3b0f0ea52",
+  "runtime": "bash",
+  "purpose": "S04 scan all direct SkillDef field reads",
+  "script_chars": 303,
+  "started_at": "2026-05-08T16:36:23.710Z",
+  "finished_at": "2026-05-08T16:36:23.734Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 24,
+  "stdout_bytes": 6077,
+  "stderr_bytes": 55,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/4e97f688-2c95-4d5d-b93f-73a3b0f0ea52.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/4e97f688-2c95-4d5d-b93f-73a3b0f0ea52.stderr"
+}

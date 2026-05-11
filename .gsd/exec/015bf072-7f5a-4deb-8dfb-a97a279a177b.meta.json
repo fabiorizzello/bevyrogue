@@ -1,0 +1,18 @@
+{
+  "id": "015bf072-7f5a-4deb-8dfb-a97a279a177b",
+  "runtime": "bash",
+  "purpose": "M015 S06 T05 full runtime suite",
+  "script_chars": 25,
+  "started_at": "2026-05-08T22:25:28.978Z",
+  "finished_at": "2026-05-08T22:25:30.158Z",
+  "exit_code": 101,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 1180,
+  "stdout_bytes": 42579,
+  "stderr_bytes": 52536,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/015bf072-7f5a-4deb-8dfb-a97a279a177b.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/015bf072-7f5a-4deb-8dfb-a97a279a177b.stderr"
+}

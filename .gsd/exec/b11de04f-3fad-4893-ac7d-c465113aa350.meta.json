@@ -1,0 +1,18 @@
+{
+  "id": "b11de04f-3fad-4893-ac7d-c465113aa350",
+  "runtime": "bash",
+  "purpose": "S03 existing kernel and snapshot regression surfaces after fixture update",
+  "script_chars": 112,
+  "started_at": "2026-05-08T16:01:53.016Z",
+  "finished_at": "2026-05-08T16:01:53.552Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 536,
+  "stdout_bytes": 1717,
+  "stderr_bytes": 32758,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/b11de04f-3fad-4893-ac7d-c465113aa350.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/b11de04f-3fad-4893-ac7d-c465113aa350.stderr"
+}

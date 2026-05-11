@@ -1,0 +1,38 @@
+# Bevy local config.
+#
+# Linker veloce: usa `mold` per accorciare i tempi di link in dev (raccomandato
+# dalla guida Bevy "Compile with Performance Optimizations"). Richiede che
+# `mold` sia installato e raggiungibile da PATH (su Debian/Ubuntu: `apt install
+# mold`). Se in un ambiente CI/agente `mold` manca, il link fallirà: in quel
+# caso commentare la sezione `[target.x86_64-unknown-linux-gnu]` qui sotto.
+
+# Forza modalità headless per agenti (claude, gsd auto-mode). Impedisce che winit
+# provi ad aprire una finestra se qualcuno dimentica `default-features = false`
+# su un crate upstream o abilita `windowed` per sbaglio.
+[env]
+BEVY_HEADLESS = "1"
+
+[target.x86_64-unknown-linux-gnu]
+linker = "/usr/bin/gcc"
+rustflags = [
+  "-C", "link-arg=-fuse-ld=mold",
+  # (Nightly) Condividi le istanziazioni generiche tra crate per ridurre il lavoro
+  # di codegen in dev. Richiede nightly (pinnato via rust-toolchain.toml).
+  "-Zshare-generics=y",
+]
+
+# Abilita l'opzione instabile `codegen-backend` nei profili (vedi Cargo.toml).
+# Richiede nightly (pinnato via rust-toolchain.toml) + component
+# `rustc-codegen-cranelift-preview`.
+[unstable]
+codegen-backend = true
+
+# Alias — agenti (claude/gsd) usano SEMPRE il profilo headless.
+# `cargo dev`  = headless + dynamic linking (iterazione veloce, no finestra)
+# `cargo winx` = con finestra — SOLO per uso umano in verifica visiva, mai da agente
+[alias]
+dev = "run --features dev"
+build-dev = "build --features dev"
+check-dev = "check --features dev"
+test-dev = "test --features dev"
+winx = "run --features 'dev windowed'"

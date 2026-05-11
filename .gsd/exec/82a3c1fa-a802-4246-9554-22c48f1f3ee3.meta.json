@@ -1,0 +1,18 @@
+{
+  "id": "82a3c1fa-a802-4246-9554-22c48f1f3ee3",
+  "runtime": "bash",
+  "purpose": "fresh T01 no-run baseline for blocker classification",
+  "script_chars": 19,
+  "started_at": "2026-05-08T21:54:46.566Z",
+  "finished_at": "2026-05-08T21:55:17.062Z",
+  "exit_code": 101,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 30496,
+  "stdout_bytes": 0,
+  "stderr_bytes": 15211,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/82a3c1fa-a802-4246-9554-22c48f1f3ee3.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/82a3c1fa-a802-4246-9554-22c48f1f3ee3.stderr"
+}

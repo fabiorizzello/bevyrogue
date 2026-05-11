@@ -1,0 +1,18 @@
+{
+  "id": "cbb61150-5c0b-4650-be55-51c5cef3dc48",
+  "runtime": "bash",
+  "purpose": "fresh T01 targeted cargo test --no-run compile evidence",
+  "script_chars": 212,
+  "started_at": "2026-05-08T15:35:59.617Z",
+  "finished_at": "2026-05-08T15:36:26.734Z",
+  "exit_code": 101,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 27117,
+  "stdout_bytes": 7594,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/cbb61150-5c0b-4650-be55-51c5cef3dc48.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/cbb61150-5c0b-4650-be55-51c5cef3dc48.stderr"
+}

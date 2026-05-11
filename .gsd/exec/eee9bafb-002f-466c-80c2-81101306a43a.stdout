@@ -1,0 +1,37 @@
+src/headless.rs:114:    .add_plugins(AssetPlugin {
+src/main.rs:13:use combat::av::{ActionValue, ActionValueUpdated};
+src/main.rs:61:        .add_message::<ActionValueUpdated>()
+src/windowed.rs:83:    app.add_plugins(DefaultPlugins.set(AssetPlugin {
+tests/resource_caps.rs:3:    av::ActionValueUpdated,
+tests/resource_caps.rs:104:        .add_message::<ActionValueUpdated>()
+src/data/mod.rs:6:use bevy_common_assets::ron::RonAssetPlugin;
+src/data/mod.rs:35:        app.add_plugins(RonAssetPlugin::<UnitRoster>::new(&["ron"]))
+src/data/mod.rs:36:            .add_plugins(RonAssetPlugin::<SkillBook>::new(&["ron"]))
+src/data/mod.rs:37:            .add_plugins(RonAssetPlugin::<PartyConfig>::new(&["ron"]))
+src/bin/combat_cli.rs:815:    .add_plugins(AssetPlugin::default())
+tests/toughness_categories.rs:3:    av::ActionValueUpdated,
+tests/toughness_categories.rs:75:        .add_message::<ActionValueUpdated>()
+tests/commander_flow.rs:42:        .add_message::<bevyrogue::combat::av::ActionValueUpdated>()
+tests/commander_flow.rs:87:        .add_message::<bevyrogue::combat::av::ActionValueUpdated>()
+src/combat/av.rs:55:pub struct ActionValueUpdated {
+tests/turn_system_av.rs:2:use bevyrogue::combat::av::{AV_PER_SPEED, ActionValue, ActionValueUpdated, MAX_AV};
+tests/turn_system_av.rs:23:    app.add_message::<ActionValueUpdated>();
+src/combat/turn_system/mod.rs:1:use crate::combat::av::{AV_PER_SPEED, ActionValue, ActionValueUpdated, MAX_AV};
+src/combat/turn_system/mod.rs:384:    mut av_event_writer: MessageWriter<ActionValueUpdated>,
+src/combat/turn_system/mod.rs:599:        av_event_writer.write(ActionValueUpdated {
+tests/status_effect_turn_tick.rs:33:        .add_message::<bevyrogue::combat::av::ActionValueUpdated>()
+tests/tempo_resistance.rs:106:use bevyrogue::combat::av::ActionValueUpdated;
+tests/tempo_resistance.rs:126:    app.add_message::<ActionValueUpdated>();
+tests/tempo_resistance.rs:360:    app.add_message::<ActionValueUpdated>();
+tests/status_effect_integration.rs:45:        .add_message::<bevyrogue::combat::av::ActionValueUpdated>()
+tests/status_effect_integration.rs:64:        .add_message::<bevyrogue::combat::av::ActionValueUpdated>()
+tests/scenario_minion_ttk.rs:3:    av::ActionValueUpdated,
+tests/scenario_minion_ttk.rs:47:        .add_message::<ActionValueUpdated>()
+tests/scenario_boss_ttk.rs:3:    av::ActionValueUpdated,
+tests/scenario_boss_ttk.rs:47:        .add_message::<ActionValueUpdated>()
+tests/scenario_miniboss_ttk.rs:3:    av::ActionValueUpdated,
+tests/scenario_miniboss_ttk.rs:47:        .add_message::<ActionValueUpdated>()
+tests/boundary_contract.rs:33:        .add_message::<bevyrogue::combat::av::ActionValueUpdated>()
+tests/boundary_contract.rs:149:        .add_message::<bevyrogue::combat::av::ActionValueUpdated>()
+tests/combat_coherence.rs:243:        .add_message::<bevyrogue::combat::av::ActionValueUpdated>()
+tests/enemy_ai.rs:31:        .add_message::<bevyrogue::combat::av::ActionValueUpdated>()

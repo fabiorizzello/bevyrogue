@@ -1,0 +1,18 @@
+{
+  "id": "501b3d8e-825c-4b3f-b79b-e2f38993c257",
+  "runtime": "bash",
+  "purpose": "T03 compile after generic SkillDef tail repair",
+  "script_chars": 86,
+  "started_at": "2026-05-08T22:10:45.847Z",
+  "finished_at": "2026-05-08T22:10:47.191Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 1344,
+  "stdout_bytes": 8612,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/501b3d8e-825c-4b3f-b79b-e2f38993c257.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/501b3d8e-825c-4b3f-b79b-e2f38993c257.stderr"
+}

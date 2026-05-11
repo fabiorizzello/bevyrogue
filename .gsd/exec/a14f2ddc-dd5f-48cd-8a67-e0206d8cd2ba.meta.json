@@ -1,0 +1,18 @@
+{
+  "id": "a14f2ddc-dd5f-48cd-8a67-e0206d8cd2ba",
+  "runtime": "bash",
+  "purpose": "T04 verify failure ledger records green no-run evidence",
+  "script_chars": 438,
+  "started_at": "2026-05-08T22:22:14.450Z",
+  "finished_at": "2026-05-08T22:22:14.470Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 20,
+  "stdout_bytes": 0,
+  "stderr_bytes": 933,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/a14f2ddc-dd5f-48cd-8a67-e0206d8cd2ba.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/a14f2ddc-dd5f-48cd-8a67-e0206d8cd2ba.stderr"
+}

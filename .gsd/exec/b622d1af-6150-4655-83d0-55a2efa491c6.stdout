@@ -1,0 +1,19 @@
+9:    predator_loop::{PredatorLoopSnapshot, PredatorLoopState},
+11:    holy_support::HolySupportSnapshot,
+40:    pub holy_support: Option<HolySupportSnapshot>,
+157:pub fn capture_validation_snapshot(
+269:        .get_resource::<crate::combat::twin_core::TwinCoreState>()
+270:        .ok_or(ValidationSnapshotError::MissingResource("TwinCoreState"))?;
+271:    let holy_support = world
+272:        .get_resource::<crate::combat::holy_support::HolySupportState>()
+275:        .get_resource::<PredatorLoopState>()
+278:        .get_resource::<crate::combat::precision_mind_game::PrecisionMindGameState>()
+299:        holy_support,
+307:        "phase={} winner={} sp={}/{} twin_core={} holy_support={} predator_loop={} precision={} turn_preview={} action_log_tail={} floating_live={} units={}",
+313:        format_holy_support_snapshot(snapshot.holy_support.as_ref()),
+366:fn format_holy_support_snapshot(snapshot: Option<&HolySupportSnapshot>) -> String {
+376:                .map(format_holy_support_transition)
+479:fn format_holy_support_transition(transition: super::kernel::HolySupportTransition) -> String {
+500:                        format_holy_support_step(attempted)
+504:                    format!("{signal}({})", format_holy_support_step(attempted))
+513:fn format_holy_support_step(step: super::kernel::HolySupportStep) -> String {

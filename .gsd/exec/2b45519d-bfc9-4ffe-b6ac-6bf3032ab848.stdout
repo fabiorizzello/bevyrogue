@@ -1,0 +1,16 @@
+Self-audit S08
+.gsd/milestones/M012/slices/S08/S08-PLAN.md
+  exists True len 12125
+.gsd/milestones/M012/slices/S08/tasks/T01-PLAN.md
+  exists True len 2635
+  has skills frontmatter True
+  inputs True expected output True
+.gsd/milestones/M012/slices/S08/tasks/T02-PLAN.md
+  exists True len 3306
+  has skills frontmatter True
+  inputs True expected output True
+.gsd/milestones/M012/slices/S08/tasks/T03-PLAN.md
+  exists True len 2799
+  has skills frontmatter True
+  inputs True expected output True
+task count 3

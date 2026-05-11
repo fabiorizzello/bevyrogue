@@ -1,0 +1,89 @@
+## Rust
+
+[38;5;250m███████╗██╗  ██╗██╗██╗     ██╗     ███████╗[0m
+[38;5;248m██╔════╝██║ ██╔╝██║██║     ██║     ██╔════╝[0m
+[38;5;245m███████╗█████╔╝ ██║██║     ██║     ███████╗[0m
+[38;5;243m╚════██║██╔═██╗ ██║██║     ██║     ╚════██║[0m
+[38;5;240m███████║██║  ██╗██║███████╗███████╗███████║[0m
+[38;5;238m╚══════╝╚═╝  ╚═╝╚═╝╚══════╝╚══════╝╚══════╝[0m
+
+[38;5;102mInstall with[0m npx skills add <owner/repo@skill>
+
+[38;5;145mwshobson/agents@rust-async-patterns[0m [36m11.7K installs[0m
+[38;5;102m└ https://skills.sh/wshobson/agents/rust-async-patterns[0m
+
+[38;5;145mapollographql/skills@rust-best-practices[0m [36m9.6K installs[0m
+[38;5;102m└ https://skills.sh/apollographql/skills/rust-best-practices[0m
+
+[38;5;145mgithub/awesome-copilot@rust-mcp-server-generator[0m [36m8.6K installs[0m
+[38;5;102m└ https://skills.sh/github/awesome-copilot/rust-mcp-server-generator[0m
+
+[38;5;145mzhanghandong/rust-skills@m15-anti-pattern[0m [36m5.3K installs[0m
+[38;5;102m└ https://skills.sh/zhanghandong/rust-skills/m15-anti-pattern[0m
+
+[38;5;145mjeffallan/claude-skills@rust-engineer[0m [36m2.9K installs[0m
+[38;5;102m└ https://skills.sh/jeffallan/claude-skills/rust-engineer[0m
+
+[38;5;145maffaan-m/everything-claude-code@rust-testing[0m [36m2.8K installs[0m
+[38;5;102m└ https://skills.sh/affaan-m/everything-claude-code/rust-testing[0m
+
+npm notice
+npm notice New minor version of npm available! 11.9.0 -> 11.14.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.14.1
+npm notice To update run: npm install -g npm@11.14.1
+npm notice
+## Bevy
+
+[38;5;250m███████╗██╗  ██╗██╗██╗     ██╗     ███████╗[0m
+[38;5;248m██╔════╝██║ ██╔╝██║██║     ██║     ██╔════╝[0m
+[38;5;245m███████╗█████╔╝ ██║██║     ██║     ███████╗[0m
+[38;5;243m╚════██║██╔═██╗ ██║██║     ██║     ╚════██║[0m
+[38;5;240m███████║██║  ██╗██║███████╗███████╗███████║[0m
+[38;5;238m╚══════╝╚═╝  ╚═╝╚═╝╚══════╝╚══════╝╚══════╝[0m
+
+[38;5;102mInstall with[0m npx skills add <owner/repo@skill>
+
+[38;5;145mbfollington/terma@bevy[0m [36m124 installs[0m
+[38;5;102m└ https://skills.sh/bfollington/terma/bevy[0m
+
+[38;5;145msickn33/antigravity-awesome-skills@bevy-ecs-expert[0m [36m111 installs[0m
+[38;5;102m└ https://skills.sh/sickn33/antigravity-awesome-skills/bevy-ecs-expert[0m
+
+[38;5;145mlaurigates/claude-plugins@bevy-ecs-patterns[0m [36m26 installs[0m
+[38;5;102m└ https://skills.sh/laurigates/claude-plugins/bevy-ecs-patterns[0m
+
+[38;5;145mlaurigates/claude-plugins@bevy-game-engine[0m [36m19 installs[0m
+[38;5;102m└ https://skills.sh/laurigates/claude-plugins/bevy-game-engine[0m
+
+[38;5;145mjarrodmedrano/jarrod-claude-skills@bevy[0m [36m10 installs[0m
+[38;5;102m└ https://skills.sh/jarrodmedrano/jarrod-claude-skills/bevy[0m
+
+## RON
+
+[38;5;250m███████╗██╗  ██╗██╗██╗     ██╗     ███████╗[0m
+[38;5;248m██╔════╝██║ ██╔╝██║██║     ██║     ██╔════╝[0m
+[38;5;245m███████╗█████╔╝ ██║██║     ██║     ███████╗[0m
+[38;5;243m╚════██║██╔═██╗ ██║██║     ██║     ╚════██║[0m
+[38;5;240m███████║██║  ██╗██║███████╗███████╗███████║[0m
+[38;5;238m╚══════╝╚═╝  ╚═╝╚═╝╚══════╝╚══════╝╚══════╝[0m
+
+[38;5;102mInstall with[0m npx skills add <owner/repo@skill>
+
+[38;5;145manthropics/skills@frontend-design[0m [36m382.9K installs[0m
+[38;5;102m└ https://skills.sh/anthropics/skills/frontend-design[0m
+
+[38;5;145mpbakaus/impeccable@frontend-design[0m [36m53.4K installs[0m
+[38;5;102m└ https://skills.sh/pbakaus/impeccable/frontend-design[0m
+
+[38;5;145mleonxlnx/taste-skill@design-taste-frontend[0m [36m46.7K installs[0m
+[38;5;102m└ https://skills.sh/leonxlnx/taste-skill/design-taste-frontend[0m
+
+[38;5;145mcharon-fan/agent-playbook@self-improving-agent[0m [36m27.2K installs[0m
+[38;5;102m└ https://skills.sh/charon-fan/agent-playbook/self-improving-agent[0m
+
+[38;5;145mintellectronica/agent-skills@notion-api[0m [36m23.7K installs[0m
+[38;5;102m└ https://skills.sh/intellectronica/agent-skills/notion-api[0m
+
+[38;5;145maaron-he-zhu/seo-geo-claude-skills@backlink-analyzer[0m [36m18.5K installs[0m
+[38;5;102m└ https://skills.sh/aaron-he-zhu/seo-geo-claude-skills/backlink-analyzer[0m
+

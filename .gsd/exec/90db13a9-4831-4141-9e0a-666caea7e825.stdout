@@ -1,0 +1,54 @@
+## SkillDef missing-fields scan
+tests/action_affordance_consumers.rs:92: missing ['custom_signals', 'animation_sequence', 'qte']
+tests/action_affordance_consumers.rs:113: missing ['custom_signals', 'animation_sequence', 'qte']
+tests/action_affordance_consumers.rs:131: missing ['custom_signals', 'animation_sequence', 'qte']
+tests/action_affordance_query.rs:89: missing ['custom_signals', 'animation_sequence', 'qte']
+tests/action_affordance_query.rs:110: missing ['custom_signals', 'animation_sequence', 'qte']
+tests/action_affordance_query.rs:131: missing ['custom_signals', 'animation_sequence', 'qte']
+tests/action_affordance_query.rs:152: missing ['custom_signals', 'animation_sequence', 'qte']
+tests/action_affordance_query.rs:172: missing ['custom_signals', 'animation_sequence', 'qte']
+tests/action_affordance_query.rs:190: missing ['custom_signals', 'animation_sequence', 'qte']
+tests/action_affordance_query.rs:211: missing ['custom_signals', 'animation_sequence', 'qte']
+tests/engine_legality_integration.rs:50: missing ['custom_signals', 'animation_sequence', 'qte']
+tests/engine_legality_integration.rs:71: missing ['custom_signals', 'animation_sequence', 'qte']
+tests/patamon_blueprint_seam.rs:28: missing ['custom_signals', 'animation_sequence', 'qte']
+tests/presentation_metadata_boundary.rs:38: missing ['custom_signals', 'animation_sequence', 'qte']
+tests/presentation_metadata_boundary.rs:71: missing ['custom_signals', 'animation_sequence', 'qte']
+tests/presentation_metadata_boundary.rs:84: missing ['custom_signals', 'animation_sequence', 'qte']
+tests/twin_core_integration.rs:39: missing ['custom_signals', 'animation_sequence', 'qte']
+total=17
+
+## UnitDef missing-fields scan
+tests/bootstrap_spawn_composition.rs:31: missing ['twin_core', 'holy_support']
+tests/bootstrap_spawn_composition.rs:62: missing ['twin_core', 'holy_support']
+tests/bootstrap_spawn_composition.rs:93: missing ['twin_core', 'holy_support']
+tests/bootstrap_spawn_composition.rs:124: missing ['twin_core', 'holy_support']
+tests/bootstrap_spawn_composition.rs:155: missing ['twin_core', 'holy_support']
+tests/bootstrap_spawn_composition.rs:186: missing ['twin_core', 'holy_support']
+tests/combat_coherence.rs:164: missing ['twin_core', 'holy_support']
+tests/follow_up_chains.rs:41: missing ['twin_core', 'holy_support']
+tests/follow_up_chains.rs:159: missing ['twin_core', 'holy_support']
+tests/follow_up_chains.rs:355: missing ['twin_core', 'holy_support']
+tests/follow_up_triggers.rs:34: missing ['twin_core', 'holy_support']
+tests/form_identity.rs:36: missing ['twin_core', 'holy_support']
+tests/pipeline_dispatch.rs:33: missing ['twin_core', 'holy_support']
+tests/resource_caps.rs:152: missing ['twin_core', 'holy_support']
+tests/roster_smoke.rs:74: missing ['twin_core', 'holy_support']
+tests/roster_smoke.rs:106: missing ['twin_core', 'holy_support']
+tests/tempo_resistance.rs:236: missing ['twin_core', 'holy_support']
+tests/tempo_resistance.rs:273: missing ['twin_core', 'holy_support']
+tests/twin_core_integration.rs:31: missing ['twin_core', 'holy_support']
+total=19
+
+## duplicate field hints
+tests/follow_up_chains.rs:159: duplicate enemy_traits
+tests/follow_up_chains.rs:159: duplicate charged_attack
+tests/follow_up_chains.rs:355: duplicate enemy_traits
+tests/follow_up_chains.rs:355: duplicate charged_attack
+tests/roster_smoke.rs:74: duplicate enemy_traits
+tests/roster_smoke.rs:74: duplicate charged_attack
+tests/roster_smoke.rs:106: duplicate enemy_traits
+tests/roster_smoke.rs:106: duplicate charged_attack
+## include_str docs
+tests/skill_legality_contract_docs.rs:1: docs/skill_legality_contract.md exists=True
+tests/ui_readiness_gap_matrix_docs.rs:1: docs/combat_ui_readiness_gap_matrix.md exists=False

@@ -1,0 +1,96 @@
+=== BevyRogue Combat CLI Harness ===
+Non-interactive mode — using default party: [UnitId(1), UnitId(2), UnitId(5), UnitId(7)]
+Non-interactive mode — using default encounter: Boss Encounter (Devimon)
+Encounter preset: Boss Encounter (Devimon)
+Bootstrap successful. Party: [UnitId(1), UnitId(2), UnitId(5), UnitId(7)]
+
+  Action affordances:
+    - Basic Attack [enabled] SP 3/0 enabled | ULT 0/100 disabled(UltimateNotReady)
+    - Skill: rally [enabled] SP 3/0 enabled | ULT 0/100 disabled(UltimateNotReady)
+    - Skill: first_aid [disabled(NoValidTargets)] SP 3/0 enabled | ULT 0/100 disabled(UltimateNotReady)
+    - Skill: taunt [enabled] SP 3/0 enabled | ULT 0/100 disabled(UltimateNotReady)
+    - Ultimate [disabled(UltimateNotReady)] SP 3/0 enabled | ULT 0/100 disabled(UltimateNotReady)
+
+  Enemy declarations:
+    [ID:UnitId(101)]
+      trait TempoAnchor [implemented]
+      trait TypeTrap [deferred]
+      trait ReactiveArmor [deferred]
+      charged enemy_ult_fire T-2 [deferred]
+
+============================================================
+ COMBAT DASHBOARD | SP: 3/5
+------------------------------------------------------------
+ TURN ORDER: Taichi
+------------------------------------------------------------
+[ALLY] Taichi       | HP:    1/1    | ULT: 0/100 | TGH: 1/1
+[ALLY] Agumon       | HP:  100/100  | ULT: 0/100 | TGH: 50/50
+[ALLY] Gabumon      | HP:   95/95   | ULT: 0/100 | TGH: 48/48
+[ALLY] Dorumon      | HP:   90/90   | ULT: 0/100 | TGH: 47/47
+[ALLY] Renamon      | HP:   90/90   | ULT: 0/100 | TGH: 45/45
+[ENEM] Devimon      | HP:  300/300  | ULT: 0/100 | TGH: 35/35
+============================================================
+
+{"kind":{"PartySelected":{"ally_ids":[1,2,5,7],"tamer_id":0}},"source":0,"target":0,"follow_up_depth":0}
+{"kind":{"TurnOrderSeeded":{"unit_ids":[]}},"source":0,"target":0,"follow_up_depth":0}
+  [EVENT] PartySelected { ally_ids: [UnitId(1), UnitId(2), UnitId(5), UnitId(7)], tamer_id: UnitId(0) } (source: UnitId(0), target: UnitId(0), depth: 0)
+  [EVENT] TurnOrderSeeded { unit_ids: [] } (source: UnitId(0), target: UnitId(0), depth: 0)
+
+============================================================
+ COMBAT DASHBOARD | SP: 4/5
+------------------------------------------------------------
+ TURN ORDER: 
+------------------------------------------------------------
+[ALLY] Taichi       | HP:    1/1    | ULT: 20/100 | TGH: 1/1
+[ALLY] Agumon       | HP:  100/100  | ULT: 0/100 | TGH: 50/50
+[ALLY] Gabumon      | HP:   95/95   | ULT: 0/100 | TGH: 48/48
+[ALLY] Dorumon      | HP:   90/90   | ULT: 0/100 | TGH: 47/47
+[ALLY] Renamon      | HP:   90/90   | ULT: 0/100 | TGH: 45/45
+[ENEM] Devimon      | HP:  287/300  | ULT: 0/100 | TGH: 35/35
+============================================================
+
+{"kind":{"OnActionDeclared":{"intent_kind":"Basic"}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnCombatBeat":{"beat":"Declared"}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnKernelTransition":{"transition":{"Beat":"Declared"}}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":"OnActionPreApp","source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnCombatBeat":{"beat":"PreApp"}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnKernelTransition":{"transition":{"Beat":"PreApp"}}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnCombatBeat":{"beat":"Impact"}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnKernelTransition":{"transition":{"Beat":"Impact"}}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnDamageDealt":{"amount":13,"kind":"Weak","tag_mod_pct":125,"triangle_mod_pct":100,"damage_tag":"Light"}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnHitTaken":{"amount":13}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnCombatBeat":{"beat":"Damage"}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnKernelTransition":{"transition":{"Beat":"Damage"}}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnKernelTransition":{"transition":{"TwinCore":{"signal":"TwinBurst","amount":1}}}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnSkillCast":{"skill_id":"rally"}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"UltGain":{"unit_id":0,"amount":10}},"source":0,"target":0,"follow_up_depth":0}
+{"kind":"OnActionApplied","source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnCombatBeat":{"beat":"Applied"}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnKernelTransition":{"transition":{"Beat":"Applied"}}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":"OnActionResolved","source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnCombatBeat":{"beat":"Resolved"}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnKernelTransition":{"transition":{"Beat":"Resolved"}}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"UltGain":{"unit_id":0,"amount":10}},"source":0,"target":0,"follow_up_depth":0}
+  [EVENT] OnActionDeclared { intent_kind: Basic } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnCombatBeat { beat: Declared } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnKernelTransition { transition: Beat(Declared) } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnActionPreApp (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnCombatBeat { beat: PreApp } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnKernelTransition { transition: Beat(PreApp) } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnCombatBeat { beat: Impact } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnKernelTransition { transition: Beat(Impact) } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnDamageDealt { amount: 13, kind: Weak, tag_mod_pct: 125, triangle_mod_pct: 100, damage_tag: Light } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnHitTaken { amount: 13 } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnCombatBeat { beat: Damage } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnKernelTransition { transition: Beat(Damage) } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnKernelTransition { transition: TwinCore(TwinCoreTransition { signal: TwinBurst, amount: 1 }) } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnSkillCast { skill_id: SkillId("rally") } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] UltGain { unit_id: UnitId(0), amount: 10 } (source: UnitId(0), target: UnitId(0), depth: 0)
+  [EVENT] OnActionApplied (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnCombatBeat { beat: Applied } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnKernelTransition { transition: Beat(Applied) } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnActionResolved (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnCombatBeat { beat: Resolved } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnKernelTransition { transition: Beat(Resolved) } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] UltGain { unit_id: UnitId(0), amount: 10 } (source: UnitId(0), target: UnitId(0), depth: 0)
+[CLI_PROOF] validation_snapshot: phase=WaitingAction winner=none sp=4/5 twin_core=cr=0 spark_targets=[] fire=0 ice=0 burst_guard=false shatter_guard=false last=none holy_support=grace=0/3 martyr_marked=false martyr_consumed=false last=none predator_loop=exploit_cap=3 prey_lock_duration=2 berserk_threshold=50 targets=[] last=none blocked=none precision=phase=Dormant,window_index=0,window=none,commitment=none,reveal=none,outcome=none,last=none turn_preview=[1,7,2,5,101,0] action_log_tail=[hit(attacker=0,target=101,amount=13,kind=Weak)] floating_live=1 units=[id=0,team=Ally,hp=1/1,tough=N/A,ult=20/100/100,ko=false,stun=0;id=1,team=Ally,hp=100/100,tough=N/A,ult=0/100/150,ko=false,stun=0;id=2,team=Ally,hp=95/95,tough=N/A,ult=0/100/150,ko=false,stun=0;id=5,team=Ally,hp=90/90,tough=N/A,ult=0/100/150,ko=false,stun=0;id=7,team=Ally,hp=90/90,tough=N/A,ult=0/100/150,ko=false,stun=0;id=101,team=Enemy,hp=287/300,tough=35/35,weaknesses=[Fire,Light],broken=false,ult=0/100/150,ko=false,stun=0]

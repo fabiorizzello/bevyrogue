@@ -1,0 +1,311 @@
+== files ==
+src/combat/action_query.rs
+src/combat/battery_loop.rs
+src/combat/damage_tests.rs
+src/combat/follow_up_tests.rs
+src/combat/kernel.rs
+src/combat/observability.rs
+src/combat/precision_mind_game.rs
+src/combat/resolution.rs
+src/combat/resolution_tests.rs
+src/combat/turn_system/mod.rs
+src/combat/turn_system/pipeline.rs
+src/combat/turn_system/tests.rs
+src/combat/twin_core.rs
+src/data/party_ron.rs
+src/data/skills_ron.rs
+src/data/units_ron.rs
+tests/README.md
+tests/action_affordance_consumers.rs
+tests/action_affordance_query.rs
+tests/battery_loop_kernel.rs
+tests/bootstrap_spawn_composition.rs
+tests/boundary_contract.rs
+tests/combat_coherence.rs
+tests/commander_flow.rs
+tests/damage_breakdown_log.rs
+tests/encounter_e2e.rs
+tests/enemy_ai.rs
+tests/enemy_counterplay_affordance.rs
+tests/engine_legality_integration.rs
+tests/event_stream.rs
+tests/follow_up_chains.rs
+tests/follow_up_triggers.rs
+tests/form_identity.rs
+tests/holy_support_affordance.rs
+tests/holy_support_mechanics.rs
+tests/holy_support_resolution.rs
+tests/holy_support_roster_contract.rs
+tests/party_config_validation.rs
+tests/party_selection_validation.rs
+tests/patamon_revive.rs
+tests/pipeline_dispatch.rs
+tests/predator_loop_kernel.rs
+tests/resource_caps.rs
+tests/revive_semantics.rs
+tests/roster_catalog.rs
+tests/roster_smoke.rs
+tests/scenario_boss_ttk.rs
+tests/scenario_miniboss_ttk.rs
+tests/scenario_minion_ttk.rs
+tests/skill_legality_contract_docs.rs
+tests/sp_economy.rs
+tests/status_accuracy.rs
+tests/status_effect_apply.rs
+tests/status_effect_integration.rs
+tests/status_effect_turn_tick.rs
+tests/target_shape_truthfulness.rs
+tests/tempo_resistance.rs
+tests/toughness_categories.rs
+tests/toughness_enemy_only.rs
+tests/triangle_matchup.rs
+tests/turn_system_av.rs
+tests/twin_core_integration.rs
+tests/twin_core_mechanics.rs
+tests/twin_core_resolution.rs
+tests/twin_core_roster_contract.rs
+tests/ui_readiness_gap_matrix_docs.rs
+tests/ultimate_meter.rs
+tests/validation_snapshot.rs
+
+== blueprint/custom/transition refs ==
+src/headless.rs:24:    ActionIntent, advance_turn_system, apply_turn_advance_system, check_victory_system, resolve_action_system,
+src/headless.rs:46:    EmitIntent(ActionIntent),
+src/headless.rs:81:        actions.push_back(EmitIntent(ActionIntent::Basic {
+src/headless.rs:86:    actions.push_back(EmitIntent(ActionIntent::Ultimate {
+src/headless.rs:91:        actions.push_back(EmitIntent(ActionIntent::Basic {
+src/headless.rs:196:    mut action_intent: MessageWriter<ActionIntent>,
+src/headless.rs:366:                ScriptStep::EmitIntent(ActionIntent::Basic {
+src/headless.rs:378:            Some(ScriptStep::EmitIntent(ActionIntent::Basic {
+scripts/verify_combat_authority_audit.py:28:    "custom signals": ["custom signal", "custom-signal"],
+scripts/verify_combat_authority_audit.py:29:    "per-digimon blueprint ownership": ["per-digimon blueprint ownership", "blueprint ownership", "per-digimon blueprint"],
+docs/combat_authority_map.md:17:Important drift boundary: `SkillDef.animation_sequence` and `SkillDef.qte` in `src/data/skills_ron.rs` are parsed metadata fields. They are present in the schema, but the current action pipeline in `src/combat/turn_system/mod.rs` and `src/combat/turn_system/pipeline.rs` does not treat them as gameplay authority. They are presentation-adjacent data, not resolution rules.
+docs/combat_authority_map.md:21:The live action pipeline is centered on `ActionIntent` in `src/combat/turn_system/mod.rs`. That message is validated against the shared legality query surface via `src/combat/action_query.rs`, then routed through the declaration/apply sequence in `src/combat/turn_system/pipeline.rs`.
+docs/combat_authority_map.md:26:2. `src/combat/turn_system/mod.rs` reads `ActionIntent`, performs legality checks, and starts the pipeline.
+docs/combat_authority_map.md:37:`src/combat/kernel.rs` defines `CombatKernelTransition`, `CombatKernelState`, `TacticalCyclePhase`, and the shared kernel hook registry. This is the typed seam for shared combat transitions.
+docs/combat_authority_map.md:41:The current kernel layer is authoritative for typed shared transitions such as tactical-cycle changes, strain, flow, fatigue, tag transitions, and the additional mechanic domains registered from the same seam. It is not a presentation layer and not a per-character blueprint layer.
+docs/combat_authority_map.md:47:Current finding: these modules own their own mechanic state machines and kernel hooks, but they remain shared combat modules rather than per-Digimon blueprint modules. The codebase does not currently show a dedicated per-species behavior module tree that would own move sets, beats, and state transitions independently for each Digimon line.
+docs/combat_authority_map.md:49:That absence matters. The current behavior surface is centralized through shared systems and shared data declarations in `src/combat/action_query.rs`, `src/combat/turn_system/mod.rs`, `src/combat/turn_system/pipeline.rs`, and `src/data/units_ron.rs`, not through blueprint-owned combat logic.
+docs/combat_authority_map.md:51:## Per-Digimon / blueprint ownership gap
+docs/combat_authority_map.md:55:Current finding: the per-Digimon blueprint seam is absent. Shared combat systems still own the runtime logic, and the roster metadata only indicates where future blueprint-specific ownership could be seeded. This is the seam downstream slices should normalize, not a seam that already exists.
+docs/combat_authority_map.md:59:## Lifecycle beats and presentation signals: observable, not authoritative
+docs/combat_authority_map.md:61:`src/combat/events.rs` defines `OnCombatBeat` and `CombatBeatId`, and `src/combat/kernel.rs` defines the typed `CombatBeatId` vocabulary. That is the current beat vocabulary.
+docs/combat_authority_map.md:63:Current finding: the live action pipeline in `src/combat/turn_system/mod.rs` and `src/combat/turn_system/pipeline.rs` does not currently emit `OnCombatBeat` as part of action resolution. Beat names exist as typed vocabulary and can be consumed by downstream systems, but they are not the authority that decides action legality or effect resolution.
+docs/combat_authority_map.md:65:The same pattern applies to `animation_sequence` and `qte` in `src/data/skills_ron.rs`: parsed presentation metadata is available, but it is not the runtime source of truth for gameplay outcomes.
+docs/combat_authority_map.md:77:`src/bin/combat_cli.rs` consumes the shared combat surfaces directly. It builds snapshots through `build_snapshot_from_ecs_with_sp`, asks the legality/query layer via `query_action_affordance`, writes `ActionIntent`, and reads `CombatEvent` messages for logging and dashboard output.
+docs/combat_authority_map.md:86:| R094 | No per-Digimon blueprint ownership layer exists yet; behavior is still centralized in shared systems and shared metadata. | `src/data/units_ron.rs`, `src/combat/action_query.rs`, `src/combat/turn_system/mod.rs`, `src/combat/turn_system/pipeline.rs` | Covered as an absence finding |
+docs/combat_authority_map.md:87:| R095 | RON is currently a declarative data/custom-signal layer; it is not gameplay authority. `animation_sequence` and `qte` are parsed metadata only. | `src/data/skills_ron.rs`, `src/data/units_ron.rs`, `assets/data/skills.ron`, `assets/data/units.ron` | Covered |
+docs/combat_authority_map.md:88:| R096 | The combat kernel authority is generic and shared through `CombatKernelTransition` / `CombatKernelState`, not per-Digimon. | `src/combat/kernel.rs` | Covered |
+docs/combat_authority_map.md:89:| R097 | Presentation beats and QTE metadata are observable metadata, not authoritative gameplay triggers. `OnCombatBeat` exists as a typed event vocabulary, but the current action pipeline does not emit it. | `src/combat/events.rs`, `src/combat/kernel.rs`, `src/combat/turn_system/mod.rs`, `src/combat/turn_system/pipeline.rs` | Covered as an absence/observation finding |
+docs/combat_authority_map.md:95:- The absence of per-Digimon blueprint modules in the tracked source tree is a real finding, not a documentation omission.
+docs/combat_authority_map.md:96:- If future slices normalize a new blueprint seam, they should do so by seeding a new ownership model, not by pretending the current shared systems already provide one.
+docs/combat_authority_map.md:102:The important correction is that presentation metadata and observation snapshots are not runtime authority, and no per-Digimon blueprint ownership layer exists yet. Those are the seams S03/S04/S05 should normalize.
+tests/resource_caps.rs:15:    turn_system::{advance_turn_system, ActionIntent, resolve_action_system},
+tests/resource_caps.rs:89:        .add_message::<ActionIntent>()
+tests/resource_caps.rs:107:fn cast(app: &mut App, intent: ActionIntent) {
+tests/resource_caps.rs:253:        .add_message::<ActionIntent>()
+tests/resource_caps.rs:328:    cast(&mut app, ActionIntent::Basic { attacker: UnitId(1), target: UnitId(2) });
+tests/resource_caps.rs:329:    cast(&mut app, ActionIntent::Basic { attacker: UnitId(1), target: UnitId(2) });
+tests/resource_caps.rs:339:    cast(&mut app, ActionIntent::Skill {
+tests/resource_caps.rs:355:    cast(&mut app, ActionIntent::Skill {
+tests/resource_caps.rs:449:    cast(&mut app, ActionIntent::Skill {
+tests/resource_caps.rs:463:    cast(&mut app, ActionIntent::Skill {
+tests/resource_caps.rs:530:    cast(&mut app, ActionIntent::Skill {
+tests/resource_caps.rs:601:    app.world_mut().write_message(ActionIntent::Skill {
+tests/resource_caps.rs:613:    app.world_mut().write_message(ActionIntent::Skill {
+tests/resource_caps.rs:624:    app.world_mut().write_message(ActionIntent::Skill {
+tests/resource_caps.rs:639:    app.world_mut().write_message(ActionIntent::Skill {
+src/ui/combat_panel.rs:25:    turn_system::ActionIntent,
+src/ui/combat_panel.rs:219:    mut action_intent: MessageWriter<ActionIntent>,
+src/ui/combat_panel.rs:787:                        PendingKind::Basic => ActionIntent::Basic {
+src/ui/combat_panel.rs:791:                        PendingKind::Skill(skill_id) => ActionIntent::Skill {
+src/ui/combat_panel.rs:796:                        PendingKind::Ultimate => ActionIntent::Ultimate {
+docs/setup.md:119:**`failed to run custom build command for alsa-sys`** — manca
+src/combat/follow_up_tests.rs:81:        .add_message::<ActionIntent>()
+src/combat/follow_up_tests.rs:179:    app.world_mut().write_message(ActionIntent::Skill {
+src/combat/follow_up_tests.rs:257:    app.world_mut().write_message(ActionIntent::Skill {
+src/combat/turn_system/pipeline.rs:31:use super::{ActionIntent, ResolveActorsQuery, emit_combat_event, set_phase};
+src/combat/turn_system/pipeline.rs:35:    intent: &ActionIntent,
+src/combat/turn_system/pipeline.rs:46:        ActionIntent::Basic { attacker, target }
+src/combat/turn_system/pipeline.rs:47:        | ActionIntent::Skill { attacker, target, .. }
+src/combat/turn_system/pipeline.rs:48:        | ActionIntent::Ultimate { attacker, target } => (*attacker, *target),
+docs/combat_mixed_pattern_drift_ledger.md:13:- Preserve the canonical decisions already established in memory: typed hook/kernel seams stay canonical, presentation beats are non-authoritative, and shared combat systems should remain branch-light.
+docs/combat_mixed_pattern_drift_ledger.md:22:| D4 | High | `src/combat/follow_up.rs`, `src/data/units_ron.rs` | rewrite-scale/follow-up candidate | S03 | Seed a per-Digimon blueprint seam in Rust, but keep the shared combat systems branch-light and do not complete a full migration inside S02. |
+docs/combat_mixed_pattern_drift_ledger.md:23:| D5 | Medium | `src/data/skills_ron.rs`, `tests/holy_support_roster_contract.rs` | obsolete/stale test drift | S03 | Treat RON custom-signal expectations as stale-test coupling unless S03 explicitly chooses a new contract; do not reintroduce removed `Effect` variants just to satisfy old assumptions. |
+docs/combat_mixed_pattern_drift_ledger.md:26:| D8 | Medium | `src/data/skills_ron.rs`, `src/combat/resolution.rs` | safe placeholder | S04 | Add an explicit contract proof that `animation_sequence` and `qte` remain presentation metadata and do not alter combat resolution. |
+docs/combat_mixed_pattern_drift_ledger.md:37:The rewrite-scale work is the per-Digimon blueprint migration. The codebase does **not** already have a full blueprint ownership layer, so D4 is not something to “finish” inside S02. S03 should seed the seam in a small typed slice, then let later work expand it without forcing the whole combat model to move at once.
+docs/combat_mixed_pattern_drift_ledger.md:48:**Code seam to inspect:** the boundary between shared combat systems and presentation-adjacent metadata.
+docs/combat_mixed_pattern_drift_ledger.md:50:**Handoff note:** R094 is about avoiding false authority claims. S04 should prove that presentation metadata stays non-authoritative and that any future blueprint seam does not leak into shared resolution code.
+docs/combat_mixed_pattern_drift_ledger.md:72:**Code seam to inspect:** beat vocabulary, presentation metadata, and the action-resolution pipeline.
+docs/combat_mixed_pattern_drift_ledger.md:74:**Handoff note:** R097 separates typed beat vocabulary from gameplay authority. If a later slice emits beats, that emission must still flow through the kernel/shared event seam rather than moving authority into presentation fields.
+docs/combat_mixed_pattern_drift_ledger.md:93:Use this ledger as the owner map for normalization work. Fix the local wiring first, keep the shared combat systems branch-light, and treat blueprint migration as a seeded follow-up rather than an invisible rewrite hidden inside S02.
+tests/toughness_categories.rs:14:    turn_system::{ActionIntent, advance_turn_system, resolve_action_system},
+tests/toughness_categories.rs:61:        .add_message::<ActionIntent>()
+tests/toughness_categories.rs:142:        .write_message(ActionIntent::Basic { attacker, target });
+tests/toughness_categories.rs:298:    // no spurious ActionIntent is injected.
+src/combat/mod.rs:12:/// AI nemica: routing decisioni → `ActionIntent`.
+tests/commander_flow.rs:8:    turn_system::{ActionIntent, advance_turn_system},
+tests/commander_flow.rs:28:struct CapturedIntents(Vec<ActionIntent>);
+tests/commander_flow.rs:31:    mut reader: MessageReader<ActionIntent>,
+tests/commander_flow.rs:46:        .add_message::<ActionIntent>()
+tests/commander_flow.rs:67:    assert!(!captured.0.is_empty(), "enemy should have emitted an ActionIntent");
+tests/commander_flow.rs:70:        if let ActionIntent::Basic { attacker, target } = intent {
+tests/commander_flow.rs:85:        .add_message::<ActionIntent>()
+src/combat/turn_system/tests.rs:74:        .add_message::<ActionIntent>()
+src/combat/turn_system/tests.rs:115:        .add_message::<ActionIntent>()
+src/combat/turn_system/tests.rs:161:        .add_message::<ActionIntent>()
+src/combat/turn_system/tests.rs:206:        .add_message::<ActionIntent>()
+src/combat/turn_system/tests.rs:236:        .resource_mut::<Messages<ActionIntent>>()
+src/combat/turn_system/tests.rs:238:    let intents: Vec<ActionIntent> = cursor
+src/combat/turn_system/tests.rs:239:        .read(app.world().resource::<Messages<ActionIntent>>())
+src/combat/turn_system/tests.rs:257:        .add_message::<ActionIntent>()
+src/combat/turn_system/tests.rs:287:        .resource_mut::<Messages<ActionIntent>>()
+src/combat/turn_system/tests.rs:289:    let intents: Vec<ActionIntent> = cursor
+src/combat/turn_system/tests.rs:290:        .read(app.world().resource::<Messages<ActionIntent>>())
+src/combat/turn_system/tests.rs:308:        .add_message::<ActionIntent>()
+src/combat/turn_system/tests.rs:348:        .add_message::<ActionIntent>()
+src/combat/turn_system/tests.rs:381:    app.world_mut().write_message(ActionIntent::Basic {
+src/combat/turn_system/tests.rs:405:        .add_message::<ActionIntent>()
+src/combat/turn_system/tests.rs:457:    app.world_mut().write_message(ActionIntent::Skill {
+src/combat/turn_system/tests.rs:485:        .add_message::<ActionIntent>()
+src/combat/turn_system/tests.rs:518:    app.world_mut().write_message(ActionIntent::Basic {
+tests/engine_legality_integration.rs:10:use bevyrogue::combat::turn_system::{resolve_action_system, ActionIntent};
+tests/engine_legality_integration.rs:41:    intent: ActionIntent,
+tests/engine_legality_integration.rs:172:        .add_message::<ActionIntent>()
+tests/engine_legality_integration.rs:306:        intent: ActionIntent::Skill { attacker: UnitId(1), skill_id: SkillId("revive_skill".into()), target: UnitId(2) },
+tests/engine_legality_integration.rs:322:        intent: ActionIntent::Skill { attacker: UnitId(1), skill_id: SkillId("offensive_skill".into()), target: UnitId(2) },
+tests/engine_legality_integration.rs:338:        intent: ActionIntent::Skill { attacker: UnitId(1), skill_id: SkillId("offensive_skill".into()), target: UnitId(2) },
+tests/engine_legality_integration.rs:354:        intent: ActionIntent::Skill { attacker: UnitId(1), skill_id: SkillId("offensive_skill".into()), target: UnitId(2) },
+tests/engine_legality_integration.rs:370:        intent: ActionIntent::Skill { attacker: UnitId(1), skill_id: SkillId("offensive_skill".into()), target: UnitId(2) },
+tests/engine_legality_integration.rs:386:        intent: ActionIntent::Skill { attacker: UnitId(1), skill_id: SkillId("offensive_skill".into()), target: UnitId(2) },
+tests/engine_legality_integration.rs:402:        intent: ActionIntent::Skill { attacker: UnitId(1), skill_id: SkillId("offensive_skill".into()), target: UnitId(3) },
+src/combat/turn_system/mod.rs:11:    events::{ActionIntentKind, CombatEvent, CombatEventKind},
+src/combat/turn_system/mod.rs:36:pub enum ActionIntent {
+src/combat/turn_system/mod.rs:84:fn intent_label(intent: &ActionIntent) -> &'static str {
+src/combat/turn_system/mod.rs:86:        ActionIntent::Basic { .. } => "Basic",
+src/combat/turn_system/mod.rs:87:        ActionIntent::Skill { .. } => "Skill",
+src/combat/turn_system/mod.rs:88:        ActionIntent::Ultimate { .. } => "Ultimate",
+src/combat/turn_system/mod.rs:118:    mut intents: MessageReader<ActionIntent>,
+src/combat/turn_system/mod.rs:133:            ActionIntent::Basic { attacker, target } => (*attacker, *target, ActionQueryKind::Basic),
+src/combat/turn_system/mod.rs:134:            ActionIntent::Skill { attacker, skill_id, target } => {
+src/combat/turn_system/mod.rs:137:            ActionIntent::Ultimate { attacker, target } => {
+src/combat/turn_system/mod.rs:194:            ActionIntent::Basic { .. } => ActionIntentKind::Basic,
+src/combat/turn_system/mod.rs:195:            ActionIntent::Skill { .. } => ActionIntentKind::Skill,
+src/combat/turn_system/mod.rs:196:            ActionIntent::Ultimate { .. } => ActionIntentKind::Ultimate,
+src/combat/turn_system/mod.rs:250:    mut intents_out: MessageWriter<ActionIntent>,
+src/combat/turn_system/mod.rs:354:        // Enemy AI: emit ActionIntent for enemy units whose action wasn't cancelled
+docs/combat_design.md:488:| **Precision Strike** | Colpisci un cursore/marker in movimento. | Ignora DEF, garantisce Crit o Break immediato. |
+docs/combat_design.md:500:  * **QTE (Precision Strike)**: Colpisci il punto debole per ignorare la Toughness.
+docs/combat_design.md:518:### 4. Renamon Line (Speed & Precision)
+docs/combat_design.md:521:  * **QTE (Precision Strike)**: Colpisci i marker per ignorare la DEF nemica.
+docs/combat_design.md:524:  * **QTE (Precision Strike)**: Dirige le fiamme sui punti vitali.
+docs/combat_design.md:532:  * **QTE (Precision Strike)**: Massimizza il danno da impatto cronometrando il rilascio.
+docs/combat_design.md:540:  * **QTE (Precision Strike)**: Mira ai nodi energetici del nemico per un refund di Energy.
+docs/combat_design.md:550:* **Requisito**: Può essere penetrato solo con il **Precision Strike** di Renamon/Kyubimon o DORUgamon che espone il 'Core' vulnerabile per 1 turno.
+src/combat/twin_core.rs:6:    CombatBeatId, CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition,
+src/combat/twin_core.rs:8:    TwinCoreSignal, TwinCoreTransition,
+src/combat/twin_core.rs:20:pub enum TwinCoreDesignTag {
+src/combat/twin_core.rs:29:pub fn twin_core_design_tag_name(tag: TwinCoreDesignTag) -> &'static str {
+src/combat/twin_core.rs:31:        TwinCoreDesignTag::Heated => TAG_HEATED,
+src/combat/twin_core.rs:32:        TwinCoreDesignTag::Chilled => TAG_CHILLED,
+src/combat/twin_core.rs:33:        TwinCoreDesignTag::ThermalSpark => TAG_THERMAL_SPARK,
+src/combat/twin_core.rs:34:        TwinCoreDesignTag::Primed => TAG_PRIMED,
+src/combat/twin_core.rs:35:        TwinCoreDesignTag::MeltdownCrack => TAG_MELTDOWN_CRACK,
+src/combat/twin_core.rs:36:        TwinCoreDesignTag::DeepCrack => TAG_DEEP_CRACK,
+src/combat/twin_core.rs:40:pub fn twin_core_design_tag(tag: TwinCoreDesignTag) -> CombatTagId {
+src/combat/twin_core.rs:44:pub fn classify_twin_core_tag(tag: &CombatTagId) -> Option<TwinCoreDesignTag> {
+src/combat/twin_core.rs:46:        TAG_HEATED => Some(TwinCoreDesignTag::Heated),
+src/combat/twin_core.rs:47:        TAG_CHILLED => Some(TwinCoreDesignTag::Chilled),
+src/combat/twin_core.rs:48:        TAG_THERMAL_SPARK => Some(TwinCoreDesignTag::ThermalSpark),
+src/combat/twin_core.rs:49:        TAG_PRIMED => Some(TwinCoreDesignTag::Primed),
+src/combat/twin_core.rs:50:        TAG_MELTDOWN_CRACK => Some(TwinCoreDesignTag::MeltdownCrack),
+src/combat/twin_core.rs:51:        TAG_DEEP_CRACK => Some(TwinCoreDesignTag::DeepCrack),
+src/combat/twin_core.rs:57:    tag: TwinCoreDesignTag,
+src/combat/twin_core.rs:59:) -> CombatKernelTransition {
+src/combat/twin_core.rs:63:    CombatKernelTransition::Tag(CombatTagTransition {
+src/combat/twin_core.rs:71:pub struct TwinCoreState {
+src/combat/twin_core.rs:78:    pub last_signal: Option<TwinCoreTransition>,
+src/combat/twin_core.rs:81:impl Default for TwinCoreState {
+src/combat/twin_core.rs:95:pub struct TwinCoreHook;
+src/combat/twin_core.rs:97:impl CombatKernelHook for TwinCoreHook {
+src/combat/twin_core.rs:98:    fn domain(&self) -> CombatKernelHookDomain {
+src/combat/twin_core.rs:99:        CombatKernelHookDomain::Shared
+src/combat/twin_core.rs:104:        transition: &CombatKernelTransition,
+src/combat/twin_core.rs:105:        out: &mut Vec<CombatKernelTransition>,
+src/combat/twin_core.rs:108:            CombatKernelTransition::Tag(tag_transition)
+src/combat/twin_core.rs:113:                        TwinCoreDesignTag::Heated
+src/combat/twin_core.rs:114:                        | TwinCoreDesignTag::Chilled
+src/combat/twin_core.rs:115:                        | TwinCoreDesignTag::Primed => out.push(CombatKernelTransition::TwinCore(
+src/combat/twin_core.rs:116:                            TwinCoreTransition::build_cross_resonance(1),
+src/combat/twin_core.rs:118:                        TwinCoreDesignTag::ThermalSpark => out.push(
+src/combat/twin_core.rs:119:                            CombatKernelTransition::TwinCore(TwinCoreTransition::thermal_spark(1)),
+src/combat/twin_core.rs:121:                        TwinCoreDesignTag::MeltdownCrack => {
+src/combat/twin_core.rs:122:                            out.push(CombatKernelTransition::TwinCore(
+src/combat/twin_core.rs:123:                                TwinCoreTransition::fire_spend_marker(1),
+src/combat/twin_core.rs:126:                        TwinCoreDesignTag::DeepCrack => out.push(CombatKernelTransition::TwinCore(
+src/combat/twin_core.rs:127:                            TwinCoreTransition::ice_spend_marker(1),
+src/combat/twin_core.rs:132:            CombatKernelTransition::Tag(tag_transition)
+src/combat/twin_core.rs:138:                    Some(TwinCoreDesignTag::ThermalSpark)
+src/combat/twin_core.rs:140:                    out.push(CombatKernelTransition::TwinCore(
+src/combat/twin_core.rs:141:                        TwinCoreTransition::shatter(1),
+src/combat/twin_core.rs:145:            CombatKernelTransition::Beat(CombatBeatId::Damage) => {
+src/combat/twin_core.rs:146:                out.push(CombatKernelTransition::TwinCore(
+src/combat/twin_core.rs:147:                    TwinCoreTransition::twin_burst(1),
+src/combat/twin_core.rs:150:            CombatKernelTransition::TacticalCycle(TacticalCycleTransition {
+src/combat/twin_core.rs:154:                out.push(CombatKernelTransition::TwinCore(
+src/combat/twin_core.rs:155:                    TwinCoreTransition::cycle_reset(),
+src/combat/twin_core.rs:165:    mut state: ResMut<TwinCoreState>,
+src/combat/twin_core.rs:172:        let CombatKernelTransition::TwinCore(twin_trans) = transition else {
+src/combat/twin_core.rs:181:    state: &mut TwinCoreState,
+src/combat/twin_core.rs:182:    transition: TwinCoreTransition,
+src/combat/twin_core.rs:186:        TwinCoreSignal::BuildCrossResonance => {
+src/combat/twin_core.rs:193:        TwinCoreSignal::SpendCrossResonance => {
+src/combat/twin_core.rs:197:        TwinCoreSignal::ThermalSpark => {
+src/combat/twin_core.rs:203:        TwinCoreSignal::TwinBurst => {
+src/combat/twin_core.rs:215:        TwinCoreSignal::Shatter => {
+src/combat/twin_core.rs:226:        TwinCoreSignal::FireSpendMarker => {
+src/combat/twin_core.rs:230:        TwinCoreSignal::IceSpendMarker => {
+src/combat/twin_core.rs:234:        TwinCoreSignal::CycleReset => {
+src/combat/twin_core.rs:244:        "TwinCoreState signal={:?} resonance={} spark_targets={:?} fire_spend={} ice_spend={} burst_guard={} shatter_guard={}",
+src/combat/state.rs:15:    /// A unit has been selected to act; waiting for an ActionIntent.
+src/combat/holy_support.rs:10:    CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition, CombatTagChangeKind,
+src/combat/holy_support.rs:48:) -> CombatKernelTransition {
+src/combat/holy_support.rs:52:    CombatKernelTransition::Tag(CombatTagTransition {
+src/combat/holy_support.rs:107:impl CombatKernelHook for HolySupportHook {
+src/combat/holy_support.rs:108:    fn domain(&self) -> CombatKernelHookDomain {
+src/combat/holy_support.rs:109:        CombatKernelHookDomain::Shared
+src/combat/holy_support.rs:114:        transition: &CombatKernelTransition,
+src/combat/holy_support.rs:115:        out: &mut Vec<CombatKernelTransition>,
+src/combat/holy_support.rs:118:            CombatKernelTransition::Tag(tag_transition)
+src/combat/holy_support.rs:124:                            out.push(CombatKernelTransition::HolySupport(
+src/combat/holy_support.rs:129:                            out.push(CombatKernelTransition::HolySupport(
+src/combat/holy_support.rs:136:            CombatKernelTransition::Tag(tag_transition)
+src/combat/holy_support.rs:143:                            out.push(CombatKernelTransition::HolySupport(
+src/combat/holy_support.rs:148:                            out.push(CombatKernelTransition::HolySupport(
+src/combat/holy_support.rs:155:            CombatKernelTransition::TacticalCycle(TacticalCycleTransition {
+src/combat/holy_support.rs:159:                out.push(CombatKernelTransition::HolySupport(
+src/combat/holy_support.rs:177:        let CombatKernelTransition::HolySupport(holy_transition) = transition else {
+src/bin/combat_cli.rs:15:use bevyrogue::combat::turn_system::ActionIntent;
+src/bin/combat_cli.rs:423:    mut intent_writer: MessageWriter<ActionIntent>,
+src/bin/combat_cli.rs:528:                    intent_writer.write(ActionIntent::Basic {
+src/bin/combat_cli.rs:630:        ActionQueryKind::Basic => ActionIntent::Basic {
+src/bin/combat_cli.rs:634:        ActionQueryKind::Skill(skill_id) => ActionIntent::Skill {
+src/bin/combat_cli.rs:639:        ActionQueryKind::Ultimate => ActionIntent::Ultimate {
+src/bin/combat_cli.rs:752:        .add_message::<ActionIntent>()
+src/combat/follow_up.rs:5:    events::{ActionIntentKind, CombatEvent, CombatEventKind},
+src/combat/follow_up.rs:10:    turn_system::{ActionIntent, emit_combat_event, step_app, step_declaration},
+src/combat/follow_up.rs:472:        let action = ActionIntent::Skill {
+src/combat/follow_up.rs:493:        emit_combat_event(&mut event_writer, CombatEventKind::OnActionDeclared { intent_kind: ActionIntentKind::Skill }, inflight.action.source, inflight.action.target, inflight.follow_up_depth);
+src/combat/predator_loop.rs:8:    CombatKernelHook, CombatKernelHookDomain, CombatKernelState, CombatKernelTransition,
+src/combat/predator_loop.rs:236:        let CombatKernelTransition::PredatorLoop(predator_transition) = transition else {
+src/combat/predator_loop.rs:263:impl CombatKernelHook for PredatorLoopHook {
+src/combat/predator_loop.rs:264:    fn domain(&self) -> CombatKernelHookDomain {
+src/combat/predator_loop.rs:265:        CombatKernelHookDomain::Shared
+src/combat/predator_loop.rs:270:        transition: &CombatKernelTransition,
+src/combat/predator_loop.rs:271:        out: &mut Vec<CombatKernelTransition>,
+src/combat/predator_loop.rs:275:            CombatKernelTransition::TacticalCycle(TacticalCycleTransition {
+src/combat/predator_loop.rs:280:            out.push(CombatKernelTransition::PredatorLoop(
+tests/form_identity.rs:17:    turn_system::{ActionIntent, resolve_action_system},
+tests/form_identity.rs:52:        .add_message::<ActionIntent>()
+tests/form_identity.rs:191:    app.world_mut().write_message(ActionIntent::Skill {
+tests/form_identity.rs:233:    app.world_mut().write_message(ActionIntent::Skill {

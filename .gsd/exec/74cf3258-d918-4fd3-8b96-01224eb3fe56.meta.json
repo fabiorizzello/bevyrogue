@@ -1,0 +1,18 @@
+{
+  "id": "74cf3258-d918-4fd3-8b96-01224eb3fe56",
+  "runtime": "bash",
+  "purpose": "T04 final verifier pass after S05 owner wording sync",
+  "script_chars": 523,
+  "started_at": "2026-05-08T22:24:24.581Z",
+  "finished_at": "2026-05-08T22:24:24.600Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 19,
+  "stdout_bytes": 0,
+  "stderr_bytes": 231,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/74cf3258-d918-4fd3-8b96-01224eb3fe56.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/74cf3258-d918-4fd3-8b96-01224eb3fe56.stderr"
+}

@@ -1,0 +1,92 @@
+
+running 5 tests
+test circuit_spend_cannot_underflow_and_records_a_blocked_reason ... ok
+test static_charge_caps_and_reports_a_stable_blocked_reason_on_the_fourth_hit ... ok
+test static_charge_starts_clean_and_grants_energy_on_the_third_hit ... ok
+test tactical_cycle_reset_is_visible_after_message_flush ... ok
+test runtime_registration_applies_battery_transition_once ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test s09_event_stream_observes_all_variants ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 4 tests
+test holy_support_snapshot_surfaces_grace_capacity_and_martyr_state ... ok
+test holy_support_missing_resource_is_absent_from_validation_snapshot ... ok
+test holy_support_invalid_spend_is_visible_as_rejected_snapshot_state ... ok
+test holy_support_transition_system_updates_snapshot_without_affordance_api ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+test plain_patamon_skill_has_no_holy_support_blueprint_dispatch ... ok
+test patamon_ult_builds_grace_through_the_blueprint_kernel_path ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 4 tests
+test holy_support_metadata_remains_optional_for_backward_compatibility ... ok
+test patamon_angemon_keep_hope_line_roster_relationship ... ok
+test patamon_roster_references_the_seeded_blueprint_skill ... ok
+test patamon_seeded_skill_declares_custom_signal_not_removed_direct_effects ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 7 tests
+test custom_signal_missing_field_defaults_to_empty ... ok
+test custom_signal_resolved_action_carries_metadata_without_interpreting_it ... ok
+test custom_signal_rejects_unknown_patamon_variant ... ok
+test custom_signal_parses_from_tracked_patamon_skill ... ok
+test no_signal_action_produces_no_patamon_blueprint_transitions ... ok
+test patamon_signal_maps_to_expected_holy_support_transition ... ok
+test patamon_ultimate_dispatches_blueprint_transition_into_holy_support_state_and_snapshot ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 7 tests
+test predator_loop_blocks_berserk_when_strain_is_at_threshold ... ok
+test predator_loop_builds_exploit_applies_prey_lock_and_consumes_payoff ... ok
+test predator_loop_rejects_cap_overflow_and_records_blocked_reason ... ok
+test predator_loop_event_and_snapshot_surfaces_are_serializable_and_readable ... ok
+test predator_loop_rejects_invalid_target_and_malformed_builds ... ok
+test predator_loop_requires_exploit_before_prey_lock ... ok
+test predator_loop_ticking_expires_prey_lock_and_blocks_consumption_after_expiry ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test canonical_fire_ice_twin_core_loop_is_visible_through_validation_snapshots ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test twin_core_kernel_hooks_apply_current_state_fields ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 5 tests
+test snapshot_defaults_empty_optional_surfaces ... ok
+test snapshot_contract_covers_promised_fields_and_shape ... ok
+test runtime_registration_populates_snapshot_kernel_resources ... ok
+test snapshot_hides_ally_missing_toughness_and_zero_max_enemy_bars ... ok
+test runtime_registration_applies_all_kernel_transition_domains ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+Combat authority audit verification passed.
+TARGETED_EXIT=0
+CARGO_EXIT=0
+AUDIT_EXIT=0
+DURATION_MS=197

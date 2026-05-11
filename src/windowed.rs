@@ -1,0 +1,279 @@
+//! Windowed app wiring (feature `windowed`): winit + wgpu + bevy_ui + egui.
+//!
+//! Provides the egui combat panel, roster/turn-order side panels, and an
+//! optional validation tick that exits cleanly after a soak window.
+
+use bevy::prelude::*;
+use bevy_egui::{EguiContexts, EguiPlugin, EguiPrimaryContextPass, egui};
+
+use crate::combat::events::CombatEvent;
+use crate::combat::follow_up::{
+    follow_up_listener_system, form_identity_listener_system, resolve_follow_up_action_system,
+};
+use crate::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
+use crate::combat::turn_order::{TurnAdvanced, TurnOrder};
+use crate::combat::turn_system::{
+    advance_turn_system, check_victory_system, resolve_action_system,
+};
+use crate::combat::types::{Attribute, UnitId};
+use crate::combat::ultimate::{flush_ult_gain_system, ult_accumulation_system};
+use crate::combat::unit::Unit;
+use crate::data::{self, DataPlugin};
+
+#[derive(Resource, Debug, Clone, Copy, PartialEq, Eq)]
+pub struct WindowedValidationConfig {
+    soak_secs: u64,
+}
+
+#[derive(Resource, Debug, Default, Clone, Copy, PartialEq)]
+struct WindowedValidationState {
+    started_at_secs: Option<f32>,
+    snapshot_logged: bool,
+    finished: bool,
+}
+
+fn parse_windowed_validation_toggle(raw: Option<&str>) -> Result<bool, String> {
+    match raw {
+        None | Some("0" | "false" | "False" | "FALSE" | "no" | "No" | "NO" | "off") => Ok(false),
+        Some("") | Some("1" | "true" | "True" | "TRUE" | "yes" | "Yes" | "YES" | "on") => Ok(true),
+        Some(other) => Err(format!(
+            "BEVYROGUE_VALIDATION_WINDOWED must be one of: 1,true,yes,on,0,false,no,off (got {other:?})"
+        )),
+    }
+}
+
+fn parse_windowed_validation_config(
+    enabled_raw: Option<&str>,
+    soak_secs_raw: Option<&str>,
+) -> Result<Option<WindowedValidationConfig>, String> {
+    if !parse_windowed_validation_toggle(enabled_raw)? {
+        return Ok(None);
+    }
+
+    let soak_secs = match soak_secs_raw {
+        None => 300,
+        Some(raw) => raw.parse::<u64>().map_err(|_| {
+            format!(
+                "BEVYROGUE_VALIDATION_WINDOWED_SOAK_SECS must be a positive integer (got {raw:?})"
+            )
+        })?,
+    };
+
+    if soak_secs == 0 {
+        return Err(
+            "BEVYROGUE_VALIDATION_WINDOWED_SOAK_SECS must be greater than zero".to_string(),
+        );
+    }
+
+    Ok(Some(WindowedValidationConfig { soak_secs }))
+}
+
+pub fn config_from_env() -> Result<Option<WindowedValidationConfig>, String> {
+    parse_windowed_validation_config(
+        std::env::var("BEVYROGUE_VALIDATION_WINDOWED")
+            .ok()
+            .as_deref(),
+        std::env::var("BEVYROGUE_VALIDATION_WINDOWED_SOAK_SECS")
+            .ok()
+            .as_deref(),
+    )
+}
+
+pub fn register(app: &mut App, validation: Option<WindowedValidationConfig>) {
+    app.add_plugins(DefaultPlugins.set(AssetPlugin {
+        watch_for_changes_override: Some(true),
+        ..default()
+    }))
+    .add_plugins(DataPlugin)
+    .add_plugins(EguiPlugin::default())
+    .init_resource::<crate::ui::combat_panel::PendingAction>()
+    .add_systems(Startup, setup)
+    .add_systems(EguiPrimaryContextPass, roster_panel)
+    .add_systems(EguiPrimaryContextPass, turn_order_panel)
+    .add_systems(
+        EguiPrimaryContextPass,
+        crate::ui::combat_panel::combat_panel,
+    );
+
+    if let Some(config) = validation {
+        app.insert_resource(config)
+            .init_resource::<WindowedValidationState>()
+            .add_systems(Update, windowed_validation_tick);
+    }
+}
+
+pub fn register_combat_systems(app: &mut App) {
+    app.add_systems(
+        Update,
+        (
+            resolve_action_system,
+            follow_up_listener_system,
+            form_identity_listener_system,
+            resolve_follow_up_action_system,
+            ult_accumulation_system,
+            flush_ult_gain_system,
+            advance_turn_system,
+            check_victory_system,
+        )
+            .chain(),
+    );
+}
+
+fn setup(mut commands: Commands) {
+    commands.spawn(Camera2d);
+}
+
+fn windowed_validation_tick(world: &mut World) {
+    if !world.contains_resource::<data::DataReady>() {
+        return;
+    }
+
+    let soak_secs = world.resource::<WindowedValidationConfig>().soak_secs;
+    let elapsed_secs = world.resource::<Time>().elapsed_secs();
+
+    let mut log_start = false;
+    let mut log_snapshot = false;
+    let mut log_finish = false;
+
+    {
+        let mut state = world.resource_mut::<WindowedValidationState>();
+        if state.started_at_secs.is_none() {
+            state.started_at_secs = Some(elapsed_secs);
+            log_start = true;
+        }
+        if !state.snapshot_logged {
+            state.snapshot_logged = true;
+            log_snapshot = true;
+        }
+        if !state.finished
+            && state
+                .started_at_secs
+                .is_some_and(|started_at| elapsed_secs - started_at >= soak_secs as f32)
+        {
+            state.finished = true;
+            log_finish = true;
+        }
+    }
+
+    if log_start {
+        info!("validation_windowed:start soak_secs={soak_secs}");
+    }
+
+    if log_snapshot {
+        match capture_validation_snapshot(world) {
+            Ok(snapshot) => info!(
+                "validation_snapshot: {}",
+                format_validation_snapshot(&snapshot)
+            ),
+            Err(err) => error!("validation_snapshot_error: {err}"),
+        }
+    }
+
+    if log_finish {
+        info!("validation_windowed:finish soak_secs={soak_secs}");
+        world.write_message(AppExit::Success);
+    }
+}
+
+fn roster_panel(
+    mut contexts: EguiContexts,
+    units: Query<&Unit>,
+    asset_server: Res<AssetServer>,
+) -> Result {
+    let ctx = contexts.ctx_mut()?;
+    egui::SidePanel::left("roster").show(ctx, |ui| {
+        ui.heading("Roster (S04 RON-driven)");
+        for u in &units {
+            ui.label(format!(
+                "{} — {:?} — HP {}/{}",
+                u.name, u.attribute, u.hp_current, u.hp_max
+            ));
+        }
+        if ui.button("reload combat").clicked() {
+            asset_server.reload("data/units.ron");
+            asset_server.reload("data/skills.ron");
+        }
+    });
+    Ok(())
+}
+
+fn turn_order_panel(
+    mut contexts: EguiContexts,
+    mut order: ResMut<TurnOrder>,
+    units: Query<&Unit>,
+    mut turn_advanced: MessageWriter<TurnAdvanced>,
+) -> Result {
+    let ctx = contexts.ctx_mut()?;
+    egui::TopBottomPanel::top("av_bar").show(ctx, |ui| {
+        ui.heading("AV Bar (next 5)");
+        ui.horizontal(|ui| {
+            for id in &order.future_preview.clone() {
+                let (label, color) = unit_chip(*id, &units);
+                let bg = egui::Frame::default()
+                    .fill(color)
+                    .inner_margin(egui::Margin::symmetric(6, 4));
+                bg.show(ui, |ui| {
+                    ui.label(label);
+                });
+            }
+        });
+        ui.horizontal(|ui| {
+            if ui.button("Advance").clicked() {
+                if let Some(id) = order.future_preview.first().copied() {
+                    turn_advanced.write(TurnAdvanced::of(id));
+                }
+            }
+        });
+    });
+    Ok(())
+}
+
+fn unit_chip(id: UnitId, units: &Query<&Unit>) -> (String, egui::Color32) {
+    let u = units.iter().find(|u| u.id == id);
+    match u {
+        Some(u) => (u.name.clone(), attr_color(u.attribute)),
+        None => (format!("{:?}", id), egui::Color32::from_gray(80)),
+    }
+}
+
+pub(crate) fn attr_color(a: Attribute) -> egui::Color32 {
+    match a {
+        Attribute::Vaccine => egui::Color32::from_rgb(80, 140, 220),
+        Attribute::Data => egui::Color32::from_rgb(220, 200, 60),
+        Attribute::Virus => egui::Color32::from_rgb(200, 60, 180),
+        Attribute::Free => egui::Color32::from_gray(160),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn windowed_validation_is_disabled_when_flag_absent_or_false() {
+        assert_eq!(parse_windowed_validation_config(None, None).unwrap(), None);
+        assert_eq!(
+            parse_windowed_validation_config(Some("false"), Some("300")).unwrap(),
+            None
+        );
+    }
+
+    #[test]
+    fn windowed_validation_uses_default_soak_when_enabled_without_override() {
+        assert_eq!(
+            parse_windowed_validation_config(Some("1"), None).unwrap(),
+            Some(WindowedValidationConfig { soak_secs: 300 })
+        );
+    }
+
+    #[test]
+    fn windowed_validation_rejects_bad_inputs() {
+        assert_eq!(
+            parse_windowed_validation_config(Some("true"), Some("120")).unwrap(),
+            Some(WindowedValidationConfig { soak_secs: 120 })
+        );
+        assert!(parse_windowed_validation_config(Some("true"), Some("0")).is_err());
+        assert!(parse_windowed_validation_config(Some("true"), Some("bogus")).is_err());
+        assert!(parse_windowed_validation_config(Some("maybe"), None).is_err());
+    }
+}

@@ -1,0 +1,21 @@
+# §6 — Out of scope esplicito (per evitare scope creep)
+
+- Champion evolutions (M018+)
+- Windowed UI sprite animation (M018+, ma lo schema animation .ron è prep work)
+- **Editor custom in-process** (M019+, ma il catalogo RON §2.5 e i derive `Reflect` sono prep work)
+- VFX library (`vfx.ron` riservato come namespace, contenuto in M018+)
+- AI tuning RON (AI resta in Rust, RON solo se diventa bottleneck)
+- Cross-run meta-progression (Slay-the-Spire-style)
+- Skill upgrade tra encounter
+- Reward economy
+- Map branching
+- Save/load partita
+- Sound effects
+- Localizzazione
+- **`skill_tree.ron` runtime resolver** (§2.2b §I/§O): schema riservato, FSM in M017 legge `UnlockedPassives` come resource opzionale vuota. Edge `Predicate::Unlock(...)` parsate ma mai matchate. Implementazione resolver col primo unlock concreto in M018+.
+- **`effects.ron` cost/cooldown catalog** (§2.2b §J): schema riservato, `skills.ron` in M017 mantiene `sp_cost` numero diretto. Migrazione a `cost_effect: "cost.sp_basic"` ref differita al primo unlock cost-modifier (M018+).
+- **Cancel-tag pattern GAS-style** (§2.2b §O): edge `*→Cancel when KernelEvent(StatusApplied{Stun})` gestibile manualmente dal blueprint per ora. Formalizzazione tag-cancel deferred.
+- **Granted abilities dinamico** (status-gated, form-gated, equip-gated): `kit_swap` statico in `skill_tree.ron` sarà sufficiente per M018+. Granted dinamico arriva con Digivolution / equip system.
+- **GameplayTag hierarchy** (GAS-style con wildcard `status.elemental.*`): tag flat sufficienti per M017–M018 Rookie roster.
+- **AttributeSet pipeline** (pre/post modify hooks GAS): HP/SP diretti + `DamageMod` minimal (§08 §10) bastano fino a quando emerge complessità giustificata.
+- **Editor visuale AnimGraph FSM** (§2.2b §O): RON-first + `tools/graphviz_dump_fsm.py` per debug. Editor visuale = milestone separata (M019+).

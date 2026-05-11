@@ -1,0 +1,18 @@
+{
+  "id": "e95a58ba-f49c-4f53-97e6-490c93c26949",
+  "runtime": "bash",
+  "purpose": "confirm battery_loop_kernel remains the replacement coverage",
+  "script_chars": 72,
+  "started_at": "2026-05-08T10:52:45.525Z",
+  "finished_at": "2026-05-08T10:52:45.877Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 352,
+  "stdout_bytes": 3257,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/e95a58ba-f49c-4f53-97e6-490c93c26949.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/e95a58ba-f49c-4f53-97e6-490c93c26949.stderr"
+}

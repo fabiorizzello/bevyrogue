@@ -1,0 +1,77 @@
+src/bin/combat_cli.rs:141:fn event_logger_system(mut events: MessageReader<CombatEvent>) {
+src/bin/combat_cli.rs:152:    mut combat_events: MessageReader<CombatEvent>,
+src/combat/turn_system/pipeline.rs:13:use crate::combat::kernel::{CombatBeatId, CombatKernelRegistry};
+src/combat/turn_system/pipeline.rs:109:    registry: Option<&CombatKernelRegistry>,
+src/combat/turn_system/pipeline.rs:133:    registry: Option<&CombatKernelRegistry>,
+tests/event_stream.rs:272:            | CombatEventKind::OnCombatBeat { .. }
+tests/event_stream.rs:273:            | CombatEventKind::OnKernelTransition { .. }
+tests/event_stream.rs:284:            CombatEventKind::OnCombatBeat { beat } => Some(*beat),
+tests/event_stream.rs:298:            CombatEventKind::OnKernelTransition {
+tests/event_stream.rs:299:                transition: CombatKernelTransition::Beat(beat),
+tests/event_stream.rs:307:        CombatEventKind::OnKernelTransition {
+src/combat/turn_system/mod.rs:11:    kernel::{CombatBeatId, CombatKernelRegistry, CombatKernelTransition},
+src/combat/turn_system/mod.rs:114:    registry: Option<&CombatKernelRegistry>,
+src/combat/turn_system/mod.rs:121:        .map(|registry| registry.dispatch(transition.clone()))
+src/combat/turn_system/mod.rs:127:            CombatEventKind::OnKernelTransition { transition },
+src/combat/turn_system/mod.rs:137:    registry: Option<&CombatKernelRegistry>,
+src/combat/turn_system/mod.rs:145:        CombatEventKind::OnCombatBeat { beat },
+src/combat/turn_system/mod.rs:153:        CombatKernelTransition::Beat(beat),
+src/combat/turn_system/mod.rs:171:    registry: Option<Res<CombatKernelRegistry>>,
+src/combat/holy_support.rs:169:    mut events: MessageReader<CombatEvent>,
+src/combat/holy_support.rs:173:        let CombatEventKind::OnKernelTransition { transition } = &event.kind else {
+src/combat/ultimate.rs:107:    mut events: MessageReader<CombatEvent>,
+src/combat/events.rs:109:    OnKernelTransition {
+src/combat/twin_core.rs:145:            CombatKernelTransition::Beat(CombatBeatId::Damage) => {
+src/combat/twin_core.rs:164:    mut events: MessageReader<CombatEvent>,
+src/combat/twin_core.rs:168:        let CombatEventKind::OnKernelTransition { transition } = &event.kind else {
+src/combat/jsonl_logger.rs:7:pub fn jsonl_logger_system(mut events: MessageReader<CombatEvent>) {
+src/combat/follow_up.rs:7:    kernel::{CombatBeatId, CombatKernelRegistry},
+src/combat/follow_up.rs:220:    mut events: MessageReader<CombatEvent>,
+src/combat/follow_up.rs:365:    mut events: MessageReader<CombatEvent>,
+src/combat/follow_up.rs:472:    registry: Option<Res<CombatKernelRegistry>>,
+tests/holy_support_mechanics.rs:10:    CombatKernelConfig, CombatKernelRegistry, CombatKernelTransition, CombatTagChangeKind,
+tests/holy_support_mechanics.rs:32:        let registry = app.world().resource::<CombatKernelRegistry>();
+tests/holy_support_mechanics.rs:33:        registry.dispatch(transition)
+tests/holy_support_mechanics.rs:38:            kind: CombatEventKind::OnKernelTransition { transition },
+tests/holy_support_mechanics.rs:53:    let mut registry = CombatKernelRegistry::new();
+tests/holy_support_mechanics.rs:70:    let outputs = registry.dispatch(grace);
+tests/holy_support_mechanics.rs:88:    let martyr_outputs = registry.dispatch(martyr);
+tests/holy_support_mechanics.rs:99:    assert_eq!(registry.dispatch(unrelated).len(), 1);
+src/combat/predator_loop.rs:225:    mut messages: ParamSet<(MessageReader<CombatEvent>, MessageWriter<CombatEvent>)>,
+src/combat/predator_loop.rs:233:            let CombatEventKind::OnKernelTransition { transition } = &event.kind else {
+tests/validation_snapshot.rs:191:            kind: CombatEventKind::OnKernelTransition { transition },
+src/combat/kernel.rs:6:// CombatKernelRegistry must be Resource so it can be accessed via Bevy ECS Res<>.
+src/combat/kernel.rs:1042:pub struct CombatKernelRegistry {
+src/combat/kernel.rs:1046:impl CombatKernelRegistry {
+src/combat/kernel.rs:1058:    pub fn dispatch(&self, transition: CombatKernelTransition) -> Vec<CombatKernelTransition> {
+src/combat/kernel.rs:1068:    let mut registry = CombatKernelRegistry::new();
+src/combat/kernel.rs:1336:                out.push(CombatKernelTransition::Beat(CombatBeatId::Impact));
+src/combat/kernel.rs:1343:        let mut registry = CombatKernelRegistry::new();
+src/combat/kernel.rs:1346:        let transitions = registry.dispatch(CombatKernelTransition::Flow(FlowTransition {
+src/combat/kernel.rs:1356:            CombatKernelTransition::Beat(CombatBeatId::Impact)
+tests/holy_support_affordance.rs:38:        kind: CombatEventKind::OnKernelTransition {
+tests/twin_core_integration.rs:5:    CombatBeatId, CombatKernelRegistry, CombatKernelTransition, CombatTagChangeKind,
+tests/twin_core_integration.rs:75:    let mut registry = CombatKernelRegistry::new();
+tests/twin_core_integration.rs:108:        let registry = app.world().resource::<CombatKernelRegistry>();
+tests/twin_core_integration.rs:109:        registry.dispatch(transition)
+tests/twin_core_integration.rs:114:            kind: CombatEventKind::OnKernelTransition { transition },
+tests/twin_core_integration.rs:195:        CombatKernelTransition::Beat(CombatBeatId::Damage),
+tests/battery_loop_kernel.rs:25:        kind: CombatEventKind::OnKernelTransition { transition },
+tests/roster_smoke.rs:37:fn record_events(mut reader: MessageReader<CombatEvent>, mut log: ResMut<EventLog>) {
+src/combat/precision_mind_game.rs:94:    mut events: MessageReader<CombatEvent>,
+src/combat/precision_mind_game.rs:98:        let CombatEventKind::OnKernelTransition { transition } = &event.kind else {
+src/combat/battery_loop.rs:129:    mut events: MessageReader<CombatEvent>,
+src/combat/battery_loop.rs:133:        let CombatEventKind::OnKernelTransition { transition } = &event.kind else {
+tests/holy_support_resolution.rs:6:use bevyrogue::combat::kernel::{CombatKernelRegistry, CombatKernelTransition};
+tests/holy_support_resolution.rs:84:            let registry = app.world().resource::<CombatKernelRegistry>();
+tests/holy_support_resolution.rs:85:            registry.dispatch(transition)
+tests/holy_support_resolution.rs:91:                kind: CombatEventKind::OnKernelTransition { transition },
+tests/holy_support_resolution.rs:137:        CombatEventKind::OnKernelTransition {
+tests/holy_support_resolution.rs:174:fn plain_patamon_skill_has_no_holy_support_blueprint_dispatch() {
+tests/twin_core_mechanics.rs:5:    CombatBeatId, CombatKernelRegistry, CombatKernelTransition, CombatTagChangeKind,
+tests/twin_core_mechanics.rs:22:        let registry = app.world().resource::<CombatKernelRegistry>();
+tests/twin_core_mechanics.rs:23:        registry.dispatch(transition)
+tests/twin_core_mechanics.rs:28:            kind: CombatEventKind::OnKernelTransition { transition },
+tests/twin_core_mechanics.rs:79:    let mut registry = CombatKernelRegistry::new();
+tests/twin_core_mechanics.rs:142:        CombatKernelTransition::Beat(CombatBeatId::Damage),
+tests/patamon_blueprint_seam.rs:285:            CombatEventKind::OnKernelTransition {

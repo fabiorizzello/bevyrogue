@@ -1,0 +1,18 @@
+{
+  "id": "7734a152-73c5-4203-936c-939146429078",
+  "runtime": "bash",
+  "purpose": "M015 T03 CLI smoke from worktree cwd",
+  "script_chars": 34,
+  "started_at": "2026-05-08T10:56:31.361Z",
+  "finished_at": "2026-05-08T10:56:31.581Z",
+  "exit_code": 101,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 220,
+  "stdout_bytes": 203,
+  "stderr_bytes": 4691,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/7734a152-73c5-4203-936c-939146429078.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/7734a152-73c5-4203-936c-939146429078.stderr"
+}

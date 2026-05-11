@@ -1,0 +1,94 @@
+[
+  {
+    "kind": "bash",
+    "toolCallId": "call_8HRny5HCOlIkk5gYR25ZRHVE|fc_066c6838f16263460169f393c706008191b2c32cf5a39f91eb",
+    "command": "test -e docs/skill_legality_contract.md; echo doc:$?; test -e tests/skill_legality_contract_docs.rs; echo test:$?",
+    "exitCode": 0,
+    "outputSnippet": "doc:1\ntest:1\n",
+    "timestamp": 1777570760860
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_YSOzqmZMWzHY2tjmUpng6uAQ|fc_066c6838f16263460169f393c7060c8191afc0f81961f81c99",
+    "command": "ls tests | grep -E 'ui_readiness|skill_legality' || true",
+    "exitCode": 0,
+    "outputSnippet": "ui_readiness_gap_matrix_docs.rs\n",
+    "timestamp": 1777570760860
+  },
+  {
+    "kind": "write",
+    "toolCallId": "call_yxF46WAamKA9njQv6I7p7aSj|fc_066c6838f16263460169f393dd02e481919f418cd9f4f170ee",
+    "path": "docs/skill_legality_contract.md",
+    "timestamp": 1777570814443
+  },
+  {
+    "kind": "write",
+    "toolCallId": "call_zLl3H1wRj197RJQ2lK7CZlGi|fc_066c6838f16263460169f39406135c819185d38dcc69ca7eda",
+    "path": "tests/skill_legality_contract_docs.rs",
+    "timestamp": 1777570835499
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_Hj6JtpuXdmjm0yxjMEmvfLDf|fc_066c6838f16263460169f3942d4b788191b2fb11ecc1cc0c30",
+    "command": "ls -l tests/skill_legality_contract_docs.rs tests/ui_readiness_gap_matrix_docs.rs && cargo test --test ui_readiness_gap_matrix_docs",
+    "exitCode": 0,
+    "outputSnippet": "-rw-r--r-- 1 fabio fabio 4798 Apr 30 19:40 tests/skill_legality_contract_docs.rs\n-rw-r--r-- 1 fabio fabio 3237 Apr 30 19:36 tests/ui_readiness_gap_matrix_docs.rs\nwarning: unused import: `MAX_AV`\n  --> src/combat/bootstrap.rs:10:30\n   |\n10 | use super::av::{ActionValue, MAX_AV};\n   |                              ^^^^^^\n   |\n   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default\n\nwarning: unused import: `order_from_speeds`\n  --> src/combat/bootstrap.rs:16:36\n   |\n16 | use s",
+    "timestamp": 1777570866192
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_WEejoRfcbbVmvu9CC9GntcAK|fc_066c6838f16263460169f3944c06a481919962a9b206ae6368",
+    "command": "cargo test --test skill_legality_contract_docs -p bevyrogue",
+    "exitCode": 0,
+    "outputSnippet": "warning: unused import: `MAX_AV`\n  --> src/combat/bootstrap.rs:10:30\n   |\n10 | use super::av::{ActionValue, MAX_AV};\n   |                              ^^^^^^\n   |\n   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default\n\nwarning: unused import: `order_from_speeds`\n  --> src/combat/bootstrap.rs:16:36\n   |\n16 | use super::turn_order::{TurnOrder, order_from_speeds};\n   |                                    ^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `turn_order::TurnOrder`\n  -->",
+    "timestamp": 1777570894431
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_0wRAhjbMbxw9yBFWSiF2Pmys|fc_066c6838f16263460169f39469b98081918ee179cdbd836857",
+    "command": "cargo metadata --no-deps --format-version 1 | python3 - <<'PY'\nimport json,sys\nm=json.load(sys.stdin)\nfor p in m['packages']:\n    print('pkg', p['name'], p.get('source'))\n    for t in p['targets']:\n        if t['kind']==['test'] or 'test' in t['kind']:\n            print(t['name'], t['src_path'])\nPY",
+    "exitCode": 1,
+    "outputSnippet": "Traceback (most recent call last):\n  File \"<stdin>\", line 2, in <module>\n  File \"/usr/lib/python3.12/json/__init__.py\", line 293, in load\n    return loads(fp.read(),\n           ^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/json/__init__.py\", line 346, in loads\n    return _default_decoder.decode(s)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/json/decoder.py\", line 337, in decode\n    obj, end = self.raw_decode(s, idx=_w(s, 0).end())\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "timestamp": 1777570925531
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_UMgQ5rEbbuusZRyNpLQlKtTZ|fc_066c6838f16263460169f3947477508191a15a315ed4ec7ea5",
+    "command": "cargo metadata --no-deps --format-version 1 > /tmp/bevyrogue_metadata.json && python3 -c 'import json; m=json.load(open(\"/tmp/bevyrogue_metadata.json\"));\nfor p in m[\"packages\"]:\n print(\"pkg\", p[\"name\"]);\n for t in p[\"targets\"]:\n  k=t[\"kind\"]\n  if \"test\" in k:\n   print(\" \", t[\"name\"], t[\"src_path\"])'",
+    "exitCode": 0,
+    "outputSnippet": "pkg bevyrogue\n  bootstrap_spawn_composition /home/fabio/dev/bevyrogue/.gsd/worktrees/M012/tests/bootstrap_spawn_composition.rs\n  boundary_contract /home/fabio/dev/bevyrogue/.gsd/worktrees/M012/tests/boundary_contract.rs\n  combat_coherence /home/fabio/dev/bevyrogue/.gsd/worktrees/M012/tests/combat_coherence.rs\n  commander_flow /home/fabio/dev/bevyrogue/.gsd/worktrees/M012/tests/commander_flow.rs\n  damage_breakdown_log /home/fabio/dev/bevyrogue/.gsd/worktrees/M012/tests/damage_breakdown_log.rs\n  e",
+    "timestamp": 1777570934471
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_ndt9r1Jro13IYBH8jY0w7Pya|fc_066c6838f16263460169f39480a66481918e047f8cf7dad0ab",
+    "command": "type cargo && cargo test --test ui_readiness_gap_matrix_docs --test skill_legality_contract_docs",
+    "exitCode": 0,
+    "outputSnippet": "cargo is /home/fabio/.cargo/bin/cargo\nwarning: unused import: `MAX_AV`\n  --> src/combat/bootstrap.rs:10:30\n   |\n10 | use super::av::{ActionValue, MAX_AV};\n   |                              ^^^^^^\n   |\n   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default\n\nwarning: unused import: `order_from_speeds`\n  --> src/combat/bootstrap.rs:16:36\n   |\n16 | use super::turn_order::{TurnOrder, order_from_speeds};\n   |                                    ^^^^^^^^^^^^^^^^^\n\nwarning: unused",
+    "timestamp": 1777570946894
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_j3dqdYfNwa48uDCdUVIjgzvR|fc_066c6838f16263460169f3948b7ee88191b3054410c7cbf971",
+    "command": "cargo test --test skill_legality_contract_docs",
+    "exitCode": 0,
+    "outputSnippet": "warning: unused import: `MAX_AV`\n  --> src/combat/bootstrap.rs:10:30\n   |\n10 | use super::av::{ActionValue, MAX_AV};\n   |                              ^^^^^^\n   |\n   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default\n\nwarning: unused import: `order_from_speeds`\n  --> src/combat/bootstrap.rs:16:36\n   |\n16 | use super::turn_order::{TurnOrder, order_from_speeds};\n   |                                    ^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `turn_order::TurnOrder`\n  -->",
+    "timestamp": 1777570956466
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_WYRqFPGbFsLzVXjewooW2GNh|fc_066c6838f16263460169f394982ed881919f5bff278c60c8c3",
+    "command": "set -o pipefail\n/usr/bin/time -f 'DURATION_MS:%e' cargo test --test skill_legality_contract_docs 2>&1 | tee /tmp/t02_skill_legality_contract_docs.out\nexit ${PIPESTATUS[0]}",
+    "exitCode": 0,
+    "outputSnippet": "warning: unused import: `MAX_AV`\n  --> src/combat/bootstrap.rs:10:30\n   |\n10 | use super::av::{ActionValue, MAX_AV};\n   |                              ^^^^^^\n   |\n   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default\n\nwarning: unused import: `order_from_speeds`\n  --> src/combat/bootstrap.rs:16:36\n   |\n16 | use super::turn_order::{TurnOrder, order_from_speeds};\n   |                                    ^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `turn_order::TurnOrder`\n  -->",
+    "timestamp": 1777570969933
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_QW8r3zEjTUj4jrF1j4lYaU9S|fc_066c6838f16263460169f394a14cdc819193092846509f3fb6",
+    "command": "set -o pipefail\n/usr/bin/time -f 'DURATION_MS:%e' cargo test --test ui_readiness_gap_matrix_docs --test skill_legality_contract_docs 2>&1 | tee /tmp/t02_slice_doc_tests.out\nexit ${PIPESTATUS[0]}",
+    "exitCode": 0,
+    "outputSnippet": "warning: unused import: `MAX_AV`\n  --> src/combat/bootstrap.rs:10:30\n   |\n10 | use super::av::{ActionValue, MAX_AV};\n   |                              ^^^^^^\n   |\n   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default\n\nwarning: unused import: `order_from_speeds`\n  --> src/combat/bootstrap.rs:16:36\n   |\n16 | use super::turn_order::{TurnOrder, order_from_speeds};\n   |                                    ^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `turn_order::TurnOrder`\n  -->",
+    "timestamp": 1777570980267
+  }
+]

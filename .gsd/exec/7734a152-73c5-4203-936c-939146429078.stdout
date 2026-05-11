@@ -1,0 +1,3 @@
+=== BevyRogue Combat CLI Harness ===
+Non-interactive mode — using default party: [UnitId(1), UnitId(2), UnitId(5), UnitId(7)]
+Non-interactive mode — using default encounter: Boss Encounter (Devimon)

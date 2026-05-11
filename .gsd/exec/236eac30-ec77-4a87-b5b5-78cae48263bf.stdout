@@ -1,0 +1,120 @@
+error: couldn't read `tests/../docs/combat_ui_readiness_gap_matrix.md`: No such file or directory (os error 2)
+ --> tests/ui_readiness_gap_matrix_docs.rs:1:19
+  |
+1 | const DOC: &str = include_str!("../docs/combat_ui_readiness_gap_matrix.md");
+error[E0062]: field `enemy_traits` specified more than once
+   --> tests/roster_smoke.rs:103:13
+    |
+ 87 |             enemy_traits: vec![],
+error[E0062]: field `charged_attack` specified more than once
+   --> tests/roster_smoke.rs:104:13
+    |
+ 88 |             charged_attack: None,
+error[E0062]: field `enemy_traits` specified more than once
+   --> tests/roster_smoke.rs:135:13
+    |
+119 |             enemy_traits: vec![],
+error[E0062]: field `charged_attack` specified more than once
+   --> tests/roster_smoke.rs:136:13
+    |
+120 |             charged_attack: None,
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+  --> tests/sp_economy.rs:56:9
+   |
+56 |         SkillDef {
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+  --> tests/sp_economy.rs:74:9
+   |
+74 |         SkillDef {
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+  --> tests/sp_economy.rs:92:9
+   |
+92 |         SkillDef {
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+   --> tests/sp_economy.rs:110:9
+    |
+110 |         SkillDef {
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+   --> tests/sp_economy.rs:125:9
+    |
+125 |         SkillDef {
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+  --> tests/combat_coherence.rs:42:17
+   |
+42 |     book.0.push(SkillDef {
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+  --> tests/combat_coherence.rs:74:9
+   |
+74 |         SkillDef {
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+  --> tests/combat_coherence.rs:92:9
+   |
+92 |         SkillDef {
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+   --> tests/combat_coherence.rs:110:9
+    |
+110 |         SkillDef {
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+   --> tests/combat_coherence.rs:128:9
+    |
+128 |         SkillDef {
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+  --> tests/action_affordance_query.rs:90:5
+   |
+90 |     SkillDef {
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+   --> tests/combat_coherence.rs:143:9
+    |
+143 |         SkillDef {
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+   --> tests/action_affordance_query.rs:111:5
+    |
+111 |     SkillDef {
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+   --> tests/action_affordance_query.rs:132:5
+    |
+132 |     SkillDef {
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+   --> tests/action_affordance_query.rs:153:5
+    |
+153 |     SkillDef {
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+   --> tests/action_affordance_query.rs:173:5
+    |
+173 |     SkillDef {
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+   --> tests/action_affordance_query.rs:191:5
+    |
+191 |     SkillDef {
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+   --> tests/action_affordance_query.rs:212:5
+    |
+212 |     SkillDef {
+error[E0062]: field `enemy_traits` specified more than once
+   --> tests/follow_up_chains.rs:191:9
+    |
+175 |         enemy_traits: vec![],
+error[E0062]: field `charged_attack` specified more than once
+   --> tests/follow_up_chains.rs:192:9
+    |
+176 |         charged_attack: None,
+error[E0062]: field `enemy_traits` specified more than once
+   --> tests/follow_up_chains.rs:384:9
+    |
+368 |         enemy_traits: vec![],
+error[E0062]: field `charged_attack` specified more than once
+   --> tests/follow_up_chains.rs:385:9
+    |
+369 |         charged_attack: None,
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+  --> tests/boundary_contract.rs:86:31
+   |
+86 |     let book = SkillBook(vec![SkillDef {
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+   --> tests/boundary_contract.rs:203:9
+    |
+203 |         SkillDef {
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+   --> tests/boundary_contract.rs:224:9
+    |
+224 |         SkillDef {

@@ -1,0 +1,181 @@
+src/combat/bootstrap.rs:11:30: warning: unused import: `MAX_AV`
+src/combat/bootstrap.rs:17:36: warning: unused import: `order_from_speeds`
+src/combat/turn_system/pipeline.rs:17:5: warning: unused import: `grant_free_skill_events`
+src/combat/turn_system/pipeline.rs:25:5: warning: unused import: `crate::combat::team::Team`
+src/combat/turn_system/pipeline.rs:27:5: warning: unused import: `crate::combat::types::SkillId`
+src/combat/turn_system/pipeline.rs:125:65: warning: variable does not need to be mutable
+src/combat/turn_system/pipeline.rs:125:201: warning: variable does not need to be mutable
+src/combat/turn_system/pipeline.rs:344:58: warning: variable does not need to be mutable
+src/combat/turn_system/pipeline.rs:96:5: warning: unused variable: `turn_order`: help: if this is intentional, prefix it with an underscore: `_turn_order`
+src/combat/turn_system/pipeline.rs:344:133: warning: unused variable: `attacker_commander`: help: if this is intentional, prefix it with an underscore: `_attacker_commander`
+src/combat/follow_up.rs:298:5: warning: field `is_stunned` is never read
+warning: `bevyrogue` (lib) generated 11 warnings (run `cargo fix --lib -p bevyrogue` to apply 10 suggestions)
+   Compiling bevyrogue v0.1.0 (/home/fabio/dev/bevyrogue/.gsd/worktrees/M015)
+src/bin/combat_cli.rs:95:5: warning: variable does not need to be mutable
+src/bin/combat_cli.rs:95:5: warning: unused variable: `turn_advanced`: help: if this is intentional, prefix it with an underscore: `_turn_advanced`
+src/combat/mod.rs:66:9: warning: unused import: `round_flags::RoundFlags`
+src/combat/mod.rs:69:9: warning: unused import: `toughness::ToughnessCategory`
+src/combat/counterplay.rs:5:9: warning: unused import: `ImplementationStatus as EnemyCounterplayStatus`
+src/data/units_ron.rs:5:5: warning: unused import: `EnemyCounterplayKind`
+src/main.rs:21:18: warning: unused import: `ActionValue`
+src/headless.rs:195:5: warning: variable does not need to be mutable
+src/headless.rs:195:5: warning: unused variable: `turn_advanced`: help: if this is intentional, prefix it with an underscore: `_turn_advanced`
+src/combat/action_query.rs:236:13: warning: variants `Deferred` and `Hidden` are never constructed
+src/combat/action_query.rs:255:5: warning: variants `Hidden` and `Visible` are never constructed
+src/combat/action_query.rs:268:10: warning: enum `ResourceKind` is never used
+src/combat/action_query.rs:279:12: warning: struct `ResourceAffordanceDetail` is never constructed
+src/combat/action_query.rs:287:12: warning: struct `ActionAffordance` is never constructed
+src/combat/action_query.rs:299:12: warning: struct `EnemyTraitAffordance` is never constructed
+src/combat/action_query.rs:306:12: warning: struct `ChargedTelegraphAffordance` is never constructed
+src/combat/action_query.rs:313:4: warning: function `counterplay_reason` is never used
+src/combat/action_query.rs:317:4: warning: function `enemy_trait_implementation` is never used
+src/combat/action_query.rs:329:4: warning: function `enemy_trait_resource_detail` is never used
+src/combat/action_query.rs:342:4: warning: function `charged_telegraph_implementation` is never used
+src/combat/action_query.rs:346:4: warning: function `charged_telegraph_resource_detail` is never used
+src/combat/action_query.rs:359:8: warning: function `query_enemy_trait_affordances` is never used
+src/combat/action_query.rs:374:8: warning: function `query_charged_telegraph_affordance` is never used
+src/combat/action_query.rs:420:4: warning: function `target_toughness_affordance` is never used
+src/combat/action_query.rs:529:8: warning: function `query_target_affordance` is never used
+src/combat/action_query.rs:552:8: warning: function `query_all_target_affordances` is never used
+src/combat/action_query.rs:571:8: warning: function `enabled_target_ids` is never used
+src/combat/action_query.rs:581:8: warning: function `first_enabled_target_id` is never used
+src/combat/action_query.rs:624:4: warning: function `resource_detail_status` is never used
+src/combat/action_query.rs:649:4: warning: function `hidden_resource_detail` is never used
+src/combat/action_query.rs:658:4: warning: function `deferred_resource_detail` is never used
+src/combat/action_query.rs:667:4: warning: function `energy_cap_remaining` is never used
+src/combat/action_query.rs:681:8: warning: function `query_energy_cap_affordance` is never used
+src/combat/action_query.rs:701:8: warning: function `query_tamer_gauge_affordance` is never used
+src/combat/action_query.rs:705:8: warning: function `query_tamer_command_affordances` is never used
+src/combat/action_query.rs:719:4: warning: function `build_resource_details` is never used
+src/combat/action_query.rs:884:4: warning: function `implementation_block` is never used
+src/combat/action_query.rs:904:4: warning: function `missing_skill_affordance` is never used
+src/combat/action_query.rs:918:8: warning: function `query_action_affordance` is never used
+src/combat/damage.rs:18:9: warning: field `tough_modifier` is never read
+src/combat/enemy_ai.rs:20:9: warning: fields `hp_current` and `hp_max` are never read
+src/combat/events.rs:103:5: warning: variants `OnCombatBeat`, `OnKernelTransition`, `BatteryLoopResolved`, and `PredatorLoopResolved` are never constructed
+src/combat/battery_loop.rs:12:11: warning: constant `STATIC_CHARGE_THRESHOLD` is never used
+src/combat/battery_loop.rs:13:11: warning: constant `CIRCUIT_CHARGE_CAP` is never used
+src/combat/battery_loop.rs:14:11: warning: constant `BATTERY_ENERGY_GRANT` is never used
+src/combat/battery_loop.rs:17:10: warning: enum `BatteryLoopDesignTag` is never used
+src/combat/battery_loop.rs:24:10: warning: enum `BatteryLoopRequestKind` is never used
+src/combat/battery_loop.rs:32:12: warning: struct `BatteryLoopState` is never constructed
+src/combat/battery_loop.rs:59:12: warning: multiple methods are never used
+src/combat/battery_loop.rs:104:8: warning: function `apply_battery_loop_transition` is never used
+src/combat/battery_loop.rs:128:8: warning: function `apply_battery_loop_transitions_system` is never used
+src/combat/battery_loop.rs:145:12: warning: struct `BatteryLoopHook` is never constructed
+src/combat/battery_loop.rs:171:4: warning: function `apply_static_charge` is never used
+src/combat/battery_loop.rs:198:4: warning: function `apply_circuit_charge` is never used
+src/combat/battery_loop.rs:220:4: warning: function `spend_circuit_charge` is never used
+src/combat/battery_loop.rs:238:4: warning: function `record_applied_transition` is never used
+src/combat/holy_support.rs:17:11: warning: constant `TAG_GRACE` is never used
+src/combat/holy_support.rs:18:11: warning: constant `TAG_MARTYR_LIGHT` is never used
+src/combat/holy_support.rs:21:10: warning: enum `HolySupportDesignTag` is never used
+src/combat/holy_support.rs:26:8: warning: function `holy_support_design_tag_name` is never used
+src/combat/holy_support.rs:33:8: warning: function `holy_support_design_tag` is never used
+src/combat/holy_support.rs:37:8: warning: function `classify_holy_support_tag` is never used
+src/combat/holy_support.rs:45:8: warning: function `holy_support_added_tag_transition` is never used
+src/combat/holy_support.rs:100:12: warning: method `snapshot` is never used
+src/combat/holy_support.rs:105:12: warning: struct `HolySupportHook` is never constructed
+src/combat/holy_support.rs:168:8: warning: function `apply_holy_support_transitions_system` is never used
+src/combat/holy_support.rs:185:4: warning: function `apply_holy_support_transition` is never used
+src/combat/predator_loop.rs:19:10: warning: enum `PredatorLoopDesignTag` is never used
+src/combat/predator_loop.rs:32:18: warning: associated items `active`, `consumed`, `tick`, `is_active`, and `is_expired` are never used
+src/combat/predator_loop.rs:154:12: warning: multiple methods are never used
+src/combat/predator_loop.rs:194:10: warning: enum `PredatorLoopRequestKind` is never used
+src/combat/predator_loop.rs:203:8: warning: function `apply_predator_loop_transition` is never used
+src/combat/predator_loop.rs:225:8: warning: function `apply_predator_loop_transitions_system` is never used
+src/combat/predator_loop.rs:261:12: warning: struct `PredatorLoopHook` is never constructed
+src/combat/predator_loop.rs:287:4: warning: function `apply_build_exploit` is never used
+src/combat/predator_loop.rs:331:4: warning: function `apply_prey_lock` is never used
+src/combat/predator_loop.rs:369:4: warning: function `apply_prey_lock_payoff` is never used
+src/combat/predator_loop.rs:407:4: warning: function `apply_enter_berserk` is never used
+src/combat/predator_loop.rs:424:4: warning: function `tick_all_prey_locks` is never used
+src/combat/predator_loop.rs:432:4: warning: function `apply_expire_prey_lock` is never used
+src/combat/predator_loop.rs:468:4: warning: function `record_applied_transition` is never used
+src/combat/kernel.rs:17:15: warning: associated items `ALL`, `next`, and `as_str` are never used
+src/combat/kernel.rs:56:12: warning: struct `CombatKernelConfig` is never constructed
+src/combat/kernel.rs:101:12: warning: struct `Strain` is never constructed
+src/combat/kernel.rs:112:12: warning: methods `gain`, `spend`, and `decay` are never used
+src/combat/kernel.rs:180:12: warning: methods `enter`, `decay`, `exit`, and `momentum` are never used
+src/combat/kernel.rs:247:12: warning: struct `Fatigue` is never constructed
+src/combat/kernel.rs:272:12: warning: methods `gain`, `carry_over`, and `reset` are never used
+src/combat/kernel.rs:347:12: warning: associated items `new`, `is_active`, `tick`, and `consume` are never used
+src/combat/kernel.rs:409:15: warning: associated items `ALL` and `as_str` are never used
+src/combat/kernel.rs:451:18: warning: multiple associated functions are never used
+src/combat/kernel.rs:557:18: warning: multiple associated functions are never used
+src/combat/kernel.rs:718:18: warning: associated functions `open_window`, `commit`, `reveal`, `resolve`, `rejected`, and `ignored` are never used
+src/combat/kernel.rs:796:18: warning: multiple associated functions are never used
+src/combat/kernel.rs:952:18: warning: multiple associated functions are never used
+src/combat/kernel.rs:1017:12: warning: method `advance` is never used
+src/combat/kernel.rs:1045:12: warning: struct `CombatKernelRegistry` is never constructed
+src/combat/kernel.rs:1050:12: warning: associated items `new`, `register`, and `dispatch` are never used
+src/combat/kernel.rs:1070:8: warning: function `register_combat_kernel_runtime` is never used
+src/combat/kernel.rs:1095:11: warning: trait `CombatKernelHook` is never used
+src/combat/kernel.rs:1107:10: warning: enum `CombatKernelHookDomain` is never used
+src/combat/kernel.rs:1115:12: warning: struct `CombatKernelState` is never constructed
+src/combat/kernel.rs:1138:12: warning: multiple methods are never used
+src/combat/observability.rs:57:12: warning: struct `BatteryLoopSnapshot` is never constructed
+src/combat/observability.rs:537:8: warning: function `format_battery_loop_snapshot` is never used
+src/combat/observability.rs:557:4: warning: function `format_battery_loop_transition` is never used
+src/combat/observability.rs:599:4: warning: function `format_battery_loop_step` is never used
+src/combat/observability.rs:619:4: warning: function `format_battery_loop_blocked_reason` is never used
+src/combat/precision_mind_game.rs:62:12: warning: methods `is_window_open` and `snapshot` are never used
+src/combat/precision_mind_game.rs:71:12: warning: struct `PrecisionMindGameHook` is never constructed
+src/combat/precision_mind_game.rs:88:8: warning: function `register_precision_mind_game_runtime` is never used
+src/combat/precision_mind_game.rs:93:8: warning: function `apply_precision_mind_game_transitions_system` is never used
+src/combat/precision_mind_game.rs:110:4: warning: function `apply_precision_mind_game_transition` is never used
+src/combat/resolution.rs:20:8: warning: function `grant_free_skill_events` is never used
+src/combat/twin_core.rs:12:11: warning: constant `TAG_HEATED` is never used
+src/combat/twin_core.rs:13:11: warning: constant `TAG_CHILLED` is never used
+src/combat/twin_core.rs:14:11: warning: constant `TAG_THERMAL_SPARK` is never used
+src/combat/twin_core.rs:15:11: warning: constant `TAG_PRIMED` is never used
+src/combat/twin_core.rs:16:11: warning: constant `TAG_MELTDOWN_CRACK` is never used
+src/combat/twin_core.rs:17:11: warning: constant `TAG_DEEP_CRACK` is never used
+src/combat/twin_core.rs:20:10: warning: enum `TwinCoreDesignTag` is never used
+src/combat/twin_core.rs:29:8: warning: function `twin_core_design_tag_name` is never used
+src/combat/twin_core.rs:40:8: warning: function `twin_core_design_tag` is never used
+src/combat/twin_core.rs:44:8: warning: function `classify_twin_core_tag` is never used
+src/combat/twin_core.rs:56:8: warning: function `twin_core_added_tag_transition` is never used
+src/combat/twin_core.rs:95:12: warning: struct `TwinCoreHook` is never constructed
+src/combat/twin_core.rs:163:8: warning: function `apply_twin_core_transitions_system` is never used
+src/combat/twin_core.rs:180:4: warning: function `apply_twin_core_transition` is never used
+src/combat/av.rs:19:12: warning: associated items `new`, `delay`, and `self_advance` are never used
+src/combat/turn_order.rs:13:9: warning: fields `future_preview` and `queue` are never read
+src/combat/turn_order.rs:20:12: warning: methods `seed` and `insert_out_of_queue` are never used
+src/combat/turn_order.rs:37:12: warning: associated function `of` is never used
+src/combat/turn_system/mod.rs:30:11: warning: constant `TICK_AV_AMOUNT` is never used
+src/data/skills_ron.rs:175:8: warning: function `validate_skill_book` is never used
+src/data/skills_ron.rs:182:4: warning: function `validation_error` is never used
+src/data/skills_ron.rs:196:4: warning: function `skill_has_effect` is never used
+src/data/skills_ron.rs:200:4: warning: function `validate_skill_def` is never used
+warning: `bevyrogue` (bin "combat_cli") generated 2 warnings (run `cargo fix --bin "combat_cli" -p bevyrogue` to apply 2 suggestions)
+warning: `bevyrogue` (bin "bevyrogue") generated 147 warnings (12 duplicates) (run `cargo fix --bin "bevyrogue" -p bevyrogue` to apply 7 suggestions)
+warning: unused import: `CombatKernelState`
+ --> tests/predator_loop_kernel.rs:3:5
+  |
+3 |     CombatKernelState, PredatorLoopBlockedReason, PredatorLoopCapKind, PredatorLoopSignal,
+  |     ^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `LegalityReasonCode`
+  --> tests/event_stream.rs:19:124
+   |
+19 | ...killTargeting, TargetLife, TargetSide, SelfTargetRule, LegalityReasonCode, TargetShape},
+   |                                                           ^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `rejected_build` is never used
+  --> tests/predator_loop_kernel.rs:19:4
+   |
+19 | fn rejected_build(target: UnitId, amount: u16, reason: PredatorLoopBlockedReason) -> PredatorLoopTransition {
+   |    ^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `bevyrogue` (test "predator_loop_kernel") generated 2 warnings (run `cargo fix --test "predator_loop_kernel" -p bevyrogue` to apply 1 suggestion)
+warning: `bevyrogue` (test "event_stream") generated 1 warning (run `cargo fix --test "event_stream" -p bevyrogue` to apply 1 suggestion)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.72s
+     Running tests/battery_loop_kernel.rs (target/debug/deps/battery_loop_kernel-b02b1e317f70733e)
+error: test failed, to rerun pass `--test battery_loop_kernel`

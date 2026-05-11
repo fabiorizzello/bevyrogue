@@ -1,0 +1,18 @@
+{
+  "id": "2d8dd7f5-452c-4acc-b7e3-a805d312339c",
+  "runtime": "bash",
+  "purpose": "T04 no-run verification after UnitDef/duplicate-field repairs",
+  "script_chars": 19,
+  "started_at": "2026-05-08T22:17:35.239Z",
+  "finished_at": "2026-05-08T22:17:35.554Z",
+  "exit_code": 101,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 315,
+  "stdout_bytes": 0,
+  "stderr_bytes": 51971,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/2d8dd7f5-452c-4acc-b7e3-a805d312339c.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/2d8dd7f5-452c-4acc-b7e3-a805d312339c.stderr"
+}

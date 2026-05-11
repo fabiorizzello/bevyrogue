@@ -1,0 +1,11 @@
+
+running 1 test
+test martyr_light_is_only_marked_and_consumed_once_per_cycle ... FAILED
+
+failures:
+
+failures:
+    martyr_light_is_only_marked_and_consumed_once_per_cycle
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+

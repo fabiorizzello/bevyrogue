@@ -1,0 +1,18 @@
+{
+  "id": "9af2e302-173b-4629-8cb2-d4855017bfc5",
+  "runtime": "bash",
+  "purpose": "Examine existing query helpers and LegalityReasonCode definition",
+  "script_chars": 225,
+  "started_at": "2026-05-01T09:18:57.846Z",
+  "finished_at": "2026-05-01T09:18:57.860Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 14,
+  "stdout_bytes": 1684,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M012/.gsd/exec/9af2e302-173b-4629-8cb2-d4855017bfc5.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M012/.gsd/exec/9af2e302-173b-4629-8cb2-d4855017bfc5.stderr"
+}

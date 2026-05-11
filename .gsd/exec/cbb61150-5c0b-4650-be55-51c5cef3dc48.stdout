@@ -1,0 +1,220 @@
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `format_battery_loop_step` is never used
+   --> src/combat/observability.rs:599:4
+    |
+599 | fn format_battery_loop_step(step: super::kernel::BatteryLoopStep) -> String {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `format_battery_loop_blocked_reason` is never used
+   --> src/combat/observability.rs:619:4
+    |
+619 | fn format_battery_loop_blocked_reason(reason: BatteryLoopBlockedReason) -> String {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: methods `is_window_open` and `snapshot` are never used
+  --> src/combat/precision_mind_game.rs:62:12
+   |
+61 | impl PrecisionMindGameState {
+   | --------------------------- methods in this implementation
+62 |     pub fn is_window_open(&self) -> bool {
+   |            ^^^^^^^^^^^^^^
+...
+66 |     pub fn snapshot(&self) -> PrecisionMindGameSnapshot {
+   |            ^^^^^^^^
+
+warning: struct `PrecisionMindGameHook` is never constructed
+  --> src/combat/precision_mind_game.rs:71:12
+   |
+71 | pub struct PrecisionMindGameHook;
+   |            ^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `register_precision_mind_game_runtime` is never used
+  --> src/combat/precision_mind_game.rs:88:8
+   |
+88 | pub fn register_precision_mind_game_runtime(app: &mut App) {
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `apply_precision_mind_game_transitions_system` is never used
+  --> src/combat/precision_mind_game.rs:93:8
+   |
+93 | pub fn apply_precision_mind_game_transitions_system(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `apply_precision_mind_game_transition` is never used
+   --> src/combat/precision_mind_game.rs:110:4
+    |
+110 | fn apply_precision_mind_game_transition(
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `grant_free_skill_events` is never used
+  --> src/combat/resolution.rs:20:8
+   |
+20 | pub fn grant_free_skill_events(count: usize, ally_basics: &[SkillId]) -> Vec<CombatEventKind> {
+   |        ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `TAG_HEATED` is never used
+  --> src/combat/twin_core.rs:12:11
+   |
+12 | pub const TAG_HEATED: &str = "Heated";
+   |           ^^^^^^^^^^
+
+warning: constant `TAG_CHILLED` is never used
+  --> src/combat/twin_core.rs:13:11
+   |
+13 | pub const TAG_CHILLED: &str = "Chilled";
+   |           ^^^^^^^^^^^
+
+warning: constant `TAG_THERMAL_SPARK` is never used
+  --> src/combat/twin_core.rs:14:11
+   |
+14 | pub const TAG_THERMAL_SPARK: &str = "Thermal Spark";
+   |           ^^^^^^^^^^^^^^^^^
+
+warning: constant `TAG_PRIMED` is never used
+  --> src/combat/twin_core.rs:15:11
+   |
+15 | pub const TAG_PRIMED: &str = "Primed";
+   |           ^^^^^^^^^^
+
+warning: constant `TAG_MELTDOWN_CRACK` is never used
+  --> src/combat/twin_core.rs:16:11
+   |
+16 | pub const TAG_MELTDOWN_CRACK: &str = "Meltdown Crack";
+   |           ^^^^^^^^^^^^^^^^^^
+
+warning: constant `TAG_DEEP_CRACK` is never used
+  --> src/combat/twin_core.rs:17:11
+   |
+17 | pub const TAG_DEEP_CRACK: &str = "Deep Crack";
+   |           ^^^^^^^^^^^^^^
+
+warning: enum `TwinCoreDesignTag` is never used
+  --> src/combat/twin_core.rs:20:10
+   |
+20 | pub enum TwinCoreDesignTag {
+   |          ^^^^^^^^^^^^^^^^^
+
+warning: function `twin_core_design_tag_name` is never used
+  --> src/combat/twin_core.rs:29:8
+   |
+29 | pub fn twin_core_design_tag_name(tag: TwinCoreDesignTag) -> &'static str {
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `twin_core_design_tag` is never used
+  --> src/combat/twin_core.rs:40:8
+   |
+40 | pub fn twin_core_design_tag(tag: TwinCoreDesignTag) -> CombatTagId {
+   |        ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `classify_twin_core_tag` is never used
+  --> src/combat/twin_core.rs:44:8
+   |
+44 | pub fn classify_twin_core_tag(tag: &CombatTagId) -> Option<TwinCoreDesignTag> {
+   |        ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `twin_core_added_tag_transition` is never used
+  --> src/combat/twin_core.rs:56:8
+   |
+56 | pub fn twin_core_added_tag_transition(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `TwinCoreHook` is never constructed
+  --> src/combat/twin_core.rs:95:12
+   |
+95 | pub struct TwinCoreHook;
+   |            ^^^^^^^^^^^^
+
+warning: function `apply_twin_core_transitions_system` is never used
+   --> src/combat/twin_core.rs:163:8
+    |
+163 | pub fn apply_twin_core_transitions_system(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `apply_twin_core_transition` is never used
+   --> src/combat/twin_core.rs:180:4
+    |
+180 | fn apply_twin_core_transition(
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: associated items `new`, `delay`, and `self_advance` are never used
+  --> src/combat/av.rs:19:12
+   |
+17 | impl ActionValue {
+   | ---------------- associated items in this implementation
+18 |     /// Creates a new ActionValue, ensuring it does not exceed MAX_AV.
+19 |     pub fn new(value: i32) -> Self {
+   |            ^^^
+...
+31 |     pub fn delay(&mut self, amount: i32) {
+   |            ^^^^^
+...
+38 |     pub fn self_advance(&mut self, amount: i32) {
+   |            ^^^^^^^^^^^^
+
+warning: fields `future_preview` and `queue` are never read
+  --> src/combat/turn_order.rs:13:9
+   |
+ 9 | pub struct TurnOrder {
+   |            --------- fields in this struct
+...
+13 |     pub future_preview: Vec<UnitId>,
+   |         ^^^^^^^^^^^^^^
+14 |     /// Compat shim for pre-AV tests: always empty in the AV system.
+15 |     pub queue: VecDeque<UnitId>,
+   |         ^^^^^
+   |
+   = note: `TurnOrder` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: methods `seed` and `insert_out_of_queue` are never used
+  --> src/combat/turn_order.rs:20:12
+   |
+18 | impl TurnOrder {
+   | -------------- methods in this implementation
+19 |     /// No-op in the AV system; seeds were needed only for the old VecDeque order.
+20 |     pub fn seed(&mut self, _units: impl IntoIterator<Item = UnitId>) {}
+   |            ^^^^
+...
+23 |     pub fn insert_out_of_queue(&mut self, _unit_id: UnitId) {}
+   |            ^^^^^^^^^^^^^^^^^^^
+
+warning: associated function `of` is never used
+  --> src/combat/turn_order.rs:37:12
+   |
+35 | impl TurnAdvanced {
+   | ----------------- associated function in this implementation
+36 |     /// Convenience constructor for tests and compatibility code; sets AV metadata to zero.
+37 |     pub fn of(unit_id: UnitId) -> Self {
+   |            ^^
+
+warning: constant `TICK_AV_AMOUNT` is never used
+  --> src/combat/turn_system/mod.rs:30:11
+   |
+30 | pub const TICK_AV_AMOUNT: i32 = 1000; // Arbitrary tick amount for AV accumulation. For deterministic turns
+   |           ^^^^^^^^^^^^^^
+
+warning: function `validate_skill_book` is never used
+   --> src/data/skills_ron.rs:175:8
+    |
+175 | pub fn validate_skill_book(book: &SkillBook) -> Result<(), SkillBookValidationError> {
+    |        ^^^^^^^^^^^^^^^^^^^
+
+warning: function `validation_error` is never used
+   --> src/data/skills_ron.rs:182:4
+    |
+182 | fn validation_error(
+    |    ^^^^^^^^^^^^^^^^
+
+warning: function `skill_has_effect` is never used
+   --> src/data/skills_ron.rs:196:4
+    |
+196 | fn skill_has_effect(skill: &SkillDef, predicate: impl Fn(&Effect) -> bool) -> bool {
+    |    ^^^^^^^^^^^^^^^^
+
+warning: function `validate_skill_def` is never used
+   --> src/data/skills_ron.rs:200:4
+    |
+200 | fn validate_skill_def(skill: &SkillDef) -> Result<(), SkillBookValidationError> {
+    |    ^^^^^^^^^^^^^^^^^^
+
+warning: `bevyrogue` (bin "bevyrogue") generated 147 warnings (10 duplicates) (run `cargo fix --bin "bevyrogue" -p bevyrogue` to apply 7 suggestions)

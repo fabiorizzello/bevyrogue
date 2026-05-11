@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T03",
+  "unitId": "M012/S09/T03",
+  "timestamp": 1777655737317,
+  "passed": true,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "test -f docs/ui_handoff_m012.md",
+      "exitCode": 0,
+      "durationMs": 1,
+      "verdict": "pass"
+    },
+    {
+      "command": "grep -q 'action_query' docs/ui_handoff_m012.md",
+      "exitCode": 0,
+      "durationMs": 3,
+      "verdict": "pass"
+    },
+    {
+      "command": "grep -q 'UnitQuerySnapshot' docs/ui_handoff_m012.md",
+      "exitCode": 0,
+      "durationMs": 2,
+      "verdict": "pass"
+    }
+  ]
+}

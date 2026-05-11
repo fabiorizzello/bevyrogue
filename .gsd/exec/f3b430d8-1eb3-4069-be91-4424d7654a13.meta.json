@@ -1,0 +1,18 @@
+{
+  "id": "f3b430d8-1eb3-4069-be91-4424d7654a13",
+  "runtime": "bash",
+  "purpose": "T06 post-requirements verification",
+  "script_chars": 1525,
+  "started_at": "2026-05-08T22:33:19.801Z",
+  "finished_at": "2026-05-08T22:33:21.019Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 1218,
+  "stdout_bytes": 4390,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/f3b430d8-1eb3-4069-be91-4424d7654a13.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/f3b430d8-1eb3-4069-be91-4424d7654a13.stderr"
+}

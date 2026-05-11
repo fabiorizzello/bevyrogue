@@ -1,0 +1,18 @@
+{
+  "id": "e4220319-980c-4dc1-8088-2a2ee8dbeb0f",
+  "runtime": "bash",
+  "purpose": "extract design mentions for UI readiness gap matrix",
+  "script_chars": 191,
+  "started_at": "2026-04-30T17:27:43.983Z",
+  "finished_at": "2026-04-30T17:27:43.993Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 10,
+  "stdout_bytes": 21876,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M012/.gsd/exec/e4220319-980c-4dc1-8088-2a2ee8dbeb0f.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M012/.gsd/exec/e4220319-980c-4dc1-8088-2a2ee8dbeb0f.stderr"
+}

@@ -1,0 +1,147 @@
+src/combat/action_query.rs:254:pub enum ToughnessAffordance {
+src/combat/action_query.rs:260:pub struct TargetAffordance {
+src/combat/action_query.rs:262:    pub toughness: ToughnessAffordance,
+src/combat/action_query.rs:279:pub struct ResourceAffordanceDetail {
+src/combat/action_query.rs:287:pub struct ActionAffordance<'a> {
+src/combat/action_query.rs:291:    pub targets: Vec<(UnitId, TargetAffordance)>,
+src/combat/action_query.rs:293:    pub resource_details: Vec<ResourceAffordanceDetail>,
+src/combat/action_query.rs:295:    pub toughness: ToughnessAffordance,
+src/combat/action_query.rs:299:pub struct EnemyTraitAffordance {
+src/combat/action_query.rs:302:    pub resource: ResourceAffordanceDetail,
+src/combat/action_query.rs:306:pub struct ChargedTelegraphAffordance {
+src/combat/action_query.rs:310:    pub resource: ResourceAffordanceDetail,
+src/combat/action_query.rs:329:fn enemy_trait_resource_detail(status: &ImplementationStatus) -> ResourceAffordanceDetail {
+src/combat/action_query.rs:331:        ImplementationStatus::Implemented => ResourceAffordanceDetail {
+src/combat/action_query.rs:346:fn charged_telegraph_resource_detail(status: &ImplementationStatus) -> ResourceAffordanceDetail {
+src/combat/action_query.rs:348:        ImplementationStatus::Implemented => ResourceAffordanceDetail {
+src/combat/action_query.rs:359:pub fn query_enemy_trait_affordances(unit: &UnitQuerySnapshot) -> Vec<EnemyTraitAffordance> {
+src/combat/action_query.rs:365:            EnemyTraitAffordance {
+src/combat/action_query.rs:374:pub fn query_charged_telegraph_affordance(unit: &UnitQuerySnapshot) -> Option<ChargedTelegraphAffordance> {
+src/combat/action_query.rs:378:    Some(ChargedTelegraphAffordance {
+src/combat/action_query.rs:423:) -> (ToughnessAffordance, Option<ToughnessView>, Option<LegalityReasonCode>) {
+src/combat/action_query.rs:428:                    ToughnessAffordance::Hidden,
+src/combat/action_query.rs:435:                Some(view) => (ToughnessAffordance::Visible, Some(view), None),
+src/combat/action_query.rs:437:                    ToughnessAffordance::Hidden,
+src/combat/action_query.rs:444:            ToughnessAffordance::Hidden,
+src/combat/action_query.rs:529:pub fn query_target_affordance(
+src/combat/action_query.rs:534:) -> TargetAffordance {
+src/combat/action_query.rs:539:            ToughnessAffordance::Hidden,
+src/combat/action_query.rs:544:    TargetAffordance {
+src/combat/action_query.rs:552:pub fn query_all_target_affordances(
+src/combat/action_query.rs:556:) -> Vec<(UnitId, TargetAffordance)> {
+src/combat/action_query.rs:560:            let affordance = query_target_affordance(snapshot, actor_id, skill_def, unit.id);
+src/combat/action_query.rs:571:pub fn enabled_target_ids(affordance: &ActionAffordance<'_>) -> Vec<UnitId> {
+src/combat/action_query.rs:581:pub fn first_enabled_target_id(affordance: &ActionAffordance<'_>) -> Option<UnitId> {
+src/combat/action_query.rs:624:fn resource_detail_status(kind: ResourceKind, current: i32, required: i32) -> ResourceAffordanceDetail {
+src/combat/action_query.rs:641:    ResourceAffordanceDetail {
+src/combat/action_query.rs:649:fn hidden_resource_detail(kind: ResourceKind, reason: LegalityReasonCode) -> ResourceAffordanceDetail {
+src/combat/action_query.rs:650:    ResourceAffordanceDetail {
+src/combat/action_query.rs:658:fn deferred_resource_detail(kind: ResourceKind, reason: LegalityReasonCode) -> ResourceAffordanceDetail {
+src/combat/action_query.rs:659:    ResourceAffordanceDetail {
+src/combat/action_query.rs:681:pub fn query_energy_cap_affordance(
+src/combat/action_query.rs:685:) -> ResourceAffordanceDetail {
+src/combat/action_query.rs:690:        ResourceAffordanceDetail {
+src/combat/action_query.rs:701:pub fn query_tamer_gauge_affordance() -> ResourceAffordanceDetail {
+src/combat/action_query.rs:705:pub fn query_tamer_command_affordances() -> Vec<ResourceAffordanceDetail> {
+src/combat/action_query.rs:708:        .map(|cost| ResourceAffordanceDetail {
+src/combat/action_query.rs:724:) -> Vec<ResourceAffordanceDetail> {
+src/combat/action_query.rs:758:    targets: &[(UnitId, TargetAffordance)],
+src/combat/action_query.rs:786:    targets: &[(UnitId, TargetAffordance)],
+src/combat/action_query.rs:904:fn missing_skill_affordance<'a>(kind: ActionQueryKind<'a>) -> ActionAffordance<'a> {
+src/combat/action_query.rs:906:    ActionAffordance {
+src/combat/action_query.rs:914:        toughness: ToughnessAffordance::Hidden,
+src/combat/action_query.rs:918:pub fn query_action_affordance<'a>(
+src/combat/action_query.rs:923:) -> ActionAffordance<'a> {
+src/combat/action_query.rs:930:        let targets = query_all_target_affordances(snapshot, actor_id, skill_def);
+src/combat/action_query.rs:934:            .any(|(_, affordance)| matches!(affordance.toughness, ToughnessAffordance::Visible));
+src/combat/action_query.rs:935:        return ActionAffordance {
+src/combat/action_query.rs:944:                ToughnessAffordance::Visible
+src/combat/action_query.rs:946:                ToughnessAffordance::Hidden
+src/combat/action_query.rs:951:    let targets = query_all_target_affordances(snapshot, actor_id, skill_def);
+src/combat/action_query.rs:958:        .any(|(_, affordance)| matches!(affordance.toughness, ToughnessAffordance::Visible));
+src/combat/action_query.rs:960:    ActionAffordance {
+src/combat/action_query.rs:969:            ToughnessAffordance::Visible
+src/combat/action_query.rs:971:            ToughnessAffordance::Hidden
+tests/holy_support_affordance.rs:3:    HolySupportAffordance, ResourceAffordanceDetail, ResourceKind, ResourceStatus,
+tests/holy_support_affordance.rs:4:    query_holy_support_affordance,
+tests/holy_support_affordance.rs:8:    HolySupportState, HolySupportTransition, apply_holy_support_transitions_system,
+tests/holy_support_affordance.rs:15:use bevyrogue::combat::twin_core::TwinCoreState;
+tests/holy_support_affordance.rs:24:        .insert_resource(TwinCoreState::default())
+tests/holy_support_affordance.rs:25:        .insert_resource(HolySupportState::default())
+tests/holy_support_affordance.rs:30:fn emit_holy_transition(app: &mut App, transition: HolySupportTransition) {
+tests/holy_support_affordance.rs:33:            transition: CombatKernelTransition::HolySupport(transition),
+tests/holy_support_affordance.rs:44:    let state = HolySupportState {
+tests/holy_support_affordance.rs:48:        last_signal: Some(HolySupportTransition::build_grace(3)),
+tests/holy_support_affordance.rs:51:    let affordance = query_holy_support_affordance(Some(&state));
+tests/holy_support_affordance.rs:55:        HolySupportAffordance {
+tests/holy_support_affordance.rs:56:            grace: ResourceAffordanceDetail {
+tests/holy_support_affordance.rs:62:            martyr_light: ResourceAffordanceDetail {
+tests/holy_support_affordance.rs:68:            last_signal: Some(HolySupportTransition::build_grace(3)),
+tests/holy_support_affordance.rs:75:    let affordance = query_holy_support_affordance(None);
+tests/holy_support_affordance.rs:79:        HolySupportAffordance {
+tests/holy_support_affordance.rs:80:            grace: ResourceAffordanceDetail {
+tests/holy_support_affordance.rs:88:            martyr_light: ResourceAffordanceDetail {
+tests/holy_support_affordance.rs:103:    let state = HolySupportState::default();
+tests/holy_support_affordance.rs:104:    let affordance = query_holy_support_affordance(Some(&state));
+tests/holy_support_affordance.rs:108:        HolySupportAffordance {
+tests/holy_support_affordance.rs:109:            grace: ResourceAffordanceDetail {
+tests/holy_support_affordance.rs:115:            martyr_light: ResourceAffordanceDetail {
+tests/holy_support_affordance.rs:131:    emit_holy_transition(&mut app, HolySupportTransition::build_grace(2));
+tests/holy_support_affordance.rs:132:    emit_holy_transition(&mut app, HolySupportTransition::mark_martyr_light());
+tests/holy_support_affordance.rs:143:    assert_eq!(holy_support.last_signal, Some(HolySupportTransition::mark_martyr_light()));
+tests/action_affordance_query.rs:2:    query_action_affordance, query_all_target_affordances, query_energy_cap_affordance,
+tests/action_affordance_query.rs:3:    query_intent_legality, query_tamer_command_affordances, query_tamer_gauge_affordance,
+tests/action_affordance_query.rs:4:    query_target_affordance, ActionQueryKind, ActionStatus, CombatQuerySnapshot,
+tests/action_affordance_query.rs:5:    ImplementationStatus, ResourceAffordanceDetail, ResourceKind, ResourceStatus, TargetStatus,
+tests/action_affordance_query.rs:6:    ToughnessAffordance, UnitQuerySnapshot,
+tests/action_affordance_query.rs:235:fn resource_detail<'a>(details: &'a [ResourceAffordanceDetail], kind: ResourceKind) -> &'a ResourceAffordanceDetail {
+tests/action_affordance_query.rs:265:    let affordance = query_action_affordance(
+tests/action_affordance_query.rs:278:    assert!(matches!(enemy_aff.1.toughness, ToughnessAffordance::Visible));
+tests/action_affordance_query.rs:296:    assert!(matches!(ally_aff.1.toughness, ToughnessAffordance::Hidden));
+tests/action_affordance_query.rs:306:    assert!(matches!(zero_aff.1.toughness, ToughnessAffordance::Hidden));
+tests/action_affordance_query.rs:309:    assert!(matches!(affordance.toughness, ToughnessAffordance::Visible));
+tests/action_affordance_query.rs:332:    let affordance = query_action_affordance(
+tests/action_affordance_query.rs:343:    assert!(matches!(affordance.toughness, ToughnessAffordance::Visible));
+tests/action_affordance_query.rs:364:    let affordance = query_action_affordance(
+tests/action_affordance_query.rs:387:    let affordance = query_action_affordance(
+tests/action_affordance_query.rs:409:    let affordance = query_action_affordance(
+tests/action_affordance_query.rs:432:    let affordance = query_action_affordance(
+tests/action_affordance_query.rs:454:    let affordance = query_action_affordance(
+tests/action_affordance_query.rs:480:    let affordance = query_action_affordance(
+tests/action_affordance_query.rs:508:    let affordance = query_action_affordance(
+tests/action_affordance_query.rs:532:    let affordance = query_action_affordance(
+tests/action_affordance_query.rs:556:    let affordance = query_action_affordance(
+tests/action_affordance_query.rs:566:    assert!(affordance.targets.iter().all(|(_, target)| matches!(target.toughness, ToughnessAffordance::Hidden)));
+tests/action_affordance_query.rs:570:    assert!(matches!(affordance.toughness, ToughnessAffordance::Hidden));
+tests/action_affordance_query.rs:584:    let affordance = query_action_affordance(
+tests/action_affordance_query.rs:594:    assert!(affordance.targets.iter().all(|(_, target)| matches!(target.toughness, ToughnessAffordance::Hidden)));
+tests/action_affordance_query.rs:598:    assert!(matches!(affordance.toughness, ToughnessAffordance::Hidden));
+tests/action_affordance_query.rs:618:        query_target_affordance(&snapshot, UnitId(1), &skill, UnitId(2)).status,
+tests/action_affordance_query.rs:622:        query_target_affordance(&snapshot, UnitId(1), &skill, UnitId(3)).status,
+tests/action_affordance_query.rs:626:        query_target_affordance(&snapshot, UnitId(1), &skill, UnitId(4)).status,
+tests/action_affordance_query.rs:630:        query_target_affordance(&snapshot, UnitId(1), &skill, UnitId(5)).status,
+tests/action_affordance_query.rs:634:        query_target_affordance(&snapshot, UnitId(1), &skill, UnitId(1)).status,
+tests/action_affordance_query.rs:655:        query_target_affordance(&snapshot, UnitId(1), &skill, UnitId(2)).status,
+tests/action_affordance_query.rs:659:        query_target_affordance(&snapshot, UnitId(1), &skill, UnitId(3)).status,
+tests/action_affordance_query.rs:663:        query_target_affordance(&snapshot, UnitId(1), &skill, UnitId(4)).status,
+tests/action_affordance_query.rs:683:        query_target_affordance(&snapshot, UnitId(1), &skill, UnitId(2)).status,
+tests/action_affordance_query.rs:687:        query_target_affordance(&snapshot, UnitId(1), &skill, UnitId(3)).status,
+tests/action_affordance_query.rs:706:    let affordances = query_all_target_affordances(&snapshot, UnitId(1), &skill);
+tests/action_affordance_query.rs:737:    let affordance = query_energy_cap_affordance(&unit, bevyrogue::combat::energy::EnergyGainSource::SecondaryAction, 5);
+tests/action_affordance_query.rs:772:    let exhausted_affordance = query_energy_cap_affordance(
+tests/action_affordance_query.rs:777:    let partial_affordance = query_energy_cap_affordance(
+tests/action_affordance_query.rs:794:    let gauge = query_tamer_gauge_affordance();
+tests/action_affordance_query.rs:795:    let commands = query_tamer_command_affordances();
+tests/action_affordance_query.rs:811:    let gauge = query_tamer_gauge_affordance();
+tests/action_affordance_consumers.rs:6:    query_action_affordance,
+tests/action_affordance_consumers.rs:7:    query_charged_telegraph_affordance,
+tests/action_affordance_consumers.rs:8:    query_enemy_trait_affordances,
+tests/action_affordance_consumers.rs:203:) -> bevyrogue::combat::action_query::ActionAffordance<'a> {
+tests/action_affordance_consumers.rs:204:    query_action_affordance(snapshot, skill_book, actor_id, kind)
+tests/action_affordance_consumers.rs:679:    let affordances = query_enemy_trait_affordances(unit);
+tests/action_affordance_consumers.rs:700:    let affordances = query_enemy_trait_affordances(unit);
+tests/action_affordance_consumers.rs:725:    let affordance = query_charged_telegraph_affordance(unit).expect("expected charged telegraph");
+tests/action_affordance_consumers.rs:751:    assert!(query_enemy_trait_affordances(unit).is_empty());
+tests/action_affordance_consumers.rs:752:    assert!(query_charged_telegraph_affordance(unit).is_none());
+tests/action_affordance_consumers.rs:782:    let traits = query_enemy_trait_affordances(unit);
+tests/action_affordance_consumers.rs:792:    let charged = query_charged_telegraph_affordance(unit).expect("charged telegraph");

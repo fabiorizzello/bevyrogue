@@ -1,0 +1,18 @@
+{
+  "id": "ff3c335c-d866-4224-8dc2-165c8ecb1163",
+  "runtime": "bash",
+  "purpose": "verify combat_cli proof bounded readiness failure exits nonzero",
+  "script_chars": 669,
+  "started_at": "2026-05-08T19:58:40.843Z",
+  "finished_at": "2026-05-08T19:58:41.534Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 691,
+  "stdout_bytes": 155,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/ff3c335c-d866-4224-8dc2-165c8ecb1163.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/ff3c335c-d866-4224-8dc2-165c8ecb1163.stderr"
+}

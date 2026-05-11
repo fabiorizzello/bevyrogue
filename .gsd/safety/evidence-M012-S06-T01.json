@@ -1,0 +1,26 @@
+[
+  {
+    "kind": "edit",
+    "toolCallId": "edit_1777627294034_5",
+    "path": "src/combat/action_query.rs",
+    "timestamp": 1777627294165
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "edit_1777627320359_6",
+    "path": "tests/action_affordance_query.rs",
+    "timestamp": 1777627320501
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "edit_1777627417863_7",
+    "path": "tests/action_affordance_query.rs",
+    "timestamp": 1777627417913
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "edit_1777627452898_8",
+    "path": "tests/action_affordance_query.rs",
+    "timestamp": 1777627453032
+  }
+]

@@ -1,0 +1,17 @@
+Cargo.toml: exists
+docs/m015_failure_ledger.md: exists
+scripts/verify_m015_failure_ledger.py: exists
+scripts/verify_combat_authority_audit.py: exists
+tests/combat_cli_shared_surface.rs: exists
+tests/presentation_metadata_boundary.rs: exists
+tests/event_stream.rs: exists
+tests/patamon_blueprint_seam.rs: exists
+tests/ui_readiness_gap_matrix_docs.rs: exists
+docs/skill_legality_contract.md: exists
+docs/combat_authority_map.md: exists
+docs/combat_mixed_pattern_drift_ledger.md: exists
+docs/presentation_metadata_boundary.md: exists
+docs/combat_cli_shared_surface_proof.md: exists
+src/bin/combat_cli.rs: exists
+Cargo.toml contains battery_loop_resolution: False
+Cargo.toml contains battery_loop_kernel: True

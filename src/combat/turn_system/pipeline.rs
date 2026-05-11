@@ -1,0 +1,803 @@
+//! M010 action pipeline (WIP). Multi-phase action lifecycle:
+//! Declaration → PreApp → App → Resolution.
+//!
+//! See `.gsd/M010-HANDOFF.md` for integration status. The functions here
+//! are the scaffolding; wire-up into the Bevy schedule is incomplete.
+
+use bevy::prelude::*;
+
+use crate::combat::damage::triangle_modifiers;
+use crate::combat::energy::{Energy, EnergyGainSource, RoundEnergyTracker};
+use crate::combat::events::{CombatEvent, CombatEventKind};
+use crate::combat::floating::FloatingDamage;
+use crate::combat::kernel::{CombatBeatId, CombatKernelRegistry};
+use crate::combat::log::{ActionLog, LogEntry};
+use crate::combat::resolution::{
+    apply_effects, grant_free_skill_events, resolve_action, target_shape_rejection_reason,
+};
+use crate::combat::rng::CombatRng;
+use crate::combat::sp::{RoundSpTracker, SpPool};
+use crate::combat::state::{CombatPhase, CombatState, InFlightAction, UltEffect};
+use crate::combat::status_effect::StatusEffect;
+use crate::combat::stun::Stunned;
+use crate::combat::team::Team;
+use crate::combat::turn_order::TurnOrder;
+use crate::combat::types::SkillId;
+use crate::combat::unit::{BasicStreak, Ko};
+use crate::data::{
+    SkillBookHandle,
+    skills_ron::{SkillBook, TargetShape},
+};
+
+use super::{
+    ActionIntent, ResolveActorsQuery, emit_combat_beat, emit_combat_event, emit_kernel_transition,
+    set_phase,
+};
+
+pub(crate) fn step_declaration(
+    _commands: &mut Commands,
+    intent: &ActionIntent,
+    follow_up_depth: u8,
+    _state: &mut ResMut<CombatState>,
+    follow_up_origin_kind: super::super::follow_up::FollowUpOriginKind,
+    skill_books: &Res<Assets<SkillBook>>,
+    skill_book_handle: Option<&Res<SkillBookHandle>>,
+    log: &mut ResMut<ActionLog>,
+    event_writer: &mut MessageWriter<CombatEvent>,
+    actors: &mut ResolveActorsQuery,
+) -> Option<InFlightAction> {
+    let (attacker_id, _target_id) = match intent {
+        ActionIntent::Basic { attacker, target }
+        | ActionIntent::Skill {
+            attacker, target, ..
+        }
+        | ActionIntent::Ultimate { attacker, target } => (*attacker, *target),
+    };
+
+    let (_entity, kit) =
+        actors
+            .iter()
+            .find_map(|(entity, _, unit, kit, _, _, _, _, _, _, _, _, _)| {
+                if unit.id == attacker_id {
+                    Some((entity, kit))
+                } else {
+                    None
+                }
+            })?;
+
+    let Some(kit) = kit else {
+        return None;
+    };
+    let skill_book = skill_book_handle.and_then(|h| skill_books.get(&h.0));
+    let mut action = resolve_action(intent, kit, skill_book)?;
+
+    if follow_up_origin_kind == super::super::follow_up::FollowUpOriginKind::FormIdentity
+        && action.target_shape == TargetShape::SelfOnly
+        && action.base_damage == 0
+        && action.toughness_damage == 0
+        && action.revive_pct == 0
+    {
+        action.target = action.source;
+    } else if follow_up_origin_kind != super::super::follow_up::FollowUpOriginKind::FormIdentity
+        && let Some(reason) = target_shape_rejection_reason(action.target_shape)
+    {
+        log.push(LogEntry::ActionFailed {
+            reason: reason.clone(),
+        });
+        emit_combat_event(
+            event_writer,
+            CombatEventKind::OnActionFailed { reason },
+            action.source,
+            action.target,
+            follow_up_depth,
+        );
+        return None;
+    }
+
+    let inflight = InFlightAction {
+        action,
+        interrupted: false,
+        follow_up_depth,
+    };
+
+    Some(inflight)
+}
+
+fn dispatch_blueprint_transitions(
+    inflight: &InFlightAction,
+    log: &mut ResMut<ActionLog>,
+    event_writer: &mut MessageWriter<CombatEvent>,
+    registry: Option<&CombatKernelRegistry>,
+) {
+    match crate::combat::blueprints::transitions_for_action_checked(&inflight.action) {
+        Ok(transitions) => {
+            for transition in transitions {
+                emit_kernel_transition(
+                    event_writer,
+                    registry,
+                    transition,
+                    inflight.action.source,
+                    inflight.action.target,
+                    inflight.follow_up_depth,
+                );
+            }
+        }
+        Err(error) => {
+            let reason = error.to_string();
+            log.push(LogEntry::ActionFailed {
+                reason: reason.clone(),
+            });
+            emit_combat_event(
+                event_writer,
+                CombatEventKind::OnActionFailed { reason },
+                inflight.action.source,
+                inflight.action.target,
+                inflight.follow_up_depth,
+            );
+        }
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn step_app(
+    commands: &mut Commands,
+    inflight: &InFlightAction,
+    state: &mut ResMut<CombatState>,
+    sp: &mut ResMut<SpPool>,
+    log: &mut ResMut<ActionLog>,
+    turn_order: &mut ResMut<TurnOrder>,
+    time: &Res<Time>,
+    event_writer: &mut MessageWriter<CombatEvent>,
+    registry: Option<&CombatKernelRegistry>,
+    actors: &mut ResolveActorsQuery,
+    rng: &mut Option<ResMut<CombatRng>>,
+    energy_q: &mut Query<(&mut Energy, Option<&mut RoundEnergyTracker>)>,
+) {
+    if inflight.interrupted {
+        return;
+    }
+
+    let attacker_id = inflight.action.source;
+    let target_id = inflight.action.target;
+
+    let attacker_entity = actors.iter().find_map(|(entity, _, unit, ..)| {
+        if unit.id == attacker_id {
+            Some(entity)
+        } else {
+            None
+        }
+    });
+    let target_entity = actors.iter().find_map(|(entity, _, unit, ..)| {
+        if unit.id == target_id {
+            Some(entity)
+        } else {
+            None
+        }
+    });
+    let (Some(attacker_entity), Some(target_entity)) = (attacker_entity, target_entity) else {
+        return;
+    };
+
+    if attacker_entity == target_entity
+        && inflight.action.base_damage == 0
+        && inflight.action.toughness_damage == 0
+        && inflight.action.revive_pct == 0
+    {
+        let Ok((
+            _,
+            attacker_team,
+            attacker_unit,
+            _attacker_kit,
+            mut attacker_ult,
+            mut defender_tough,
+            _attacker_counterplay,
+            attacker_ko,
+            attacker_stunned,
+            attacker_commander,
+            _,
+            mut attacker_streak,
+            mut attacker_round_flags,
+        )) = actors.get_mut(attacker_entity)
+        else {
+            return;
+        };
+
+        if attacker_stunned.is_some() {
+            log.push(LogEntry::ActionFailed {
+                reason: "Attacker is stunned".to_string(),
+            });
+            emit_combat_event(
+                event_writer,
+                CombatEventKind::OnActionFailed {
+                    reason: "Attacker is stunned".to_string(),
+                },
+                attacker_id,
+                target_id,
+                inflight.follow_up_depth,
+            );
+            set_phase(state, CombatPhase::WaitingAction);
+            return;
+        }
+        if attacker_ko.is_some() {
+            log.push(LogEntry::ActionFailed {
+                reason: "Attacker is KO".to_string(),
+            });
+            emit_combat_event(
+                event_writer,
+                CombatEventKind::OnActionFailed {
+                    reason: "Attacker is KO".to_string(),
+                },
+                attacker_id,
+                target_id,
+                inflight.follow_up_depth,
+            );
+            set_phase(state, CombatPhase::WaitingAction);
+            return;
+        }
+        if attacker_commander.is_some() {
+            log.push(LogEntry::ActionFailed {
+                reason: "Target is a Commander".to_string(),
+            });
+            emit_combat_event(
+                event_writer,
+                CombatEventKind::OnActionFailed {
+                    reason: "Target is a Commander".to_string(),
+                },
+                attacker_id,
+                target_id,
+                inflight.follow_up_depth,
+            );
+            set_phase(state, CombatPhase::WaitingAction);
+            return;
+        }
+
+        set_phase(state, CombatPhase::Resolving);
+        emit_combat_beat(
+            event_writer,
+            registry,
+            CombatBeatId::Impact,
+            attacker_id,
+            target_id,
+            inflight.follow_up_depth,
+        );
+        let Some(mut attacker_ult) = attacker_ult else {
+            return;
+        };
+        let mut local_streak = BasicStreak::default();
+        let streak_ref: &mut BasicStreak = if let Some(ref mut s) = attacker_streak {
+            &mut **s
+        } else {
+            &mut local_streak
+        };
+        let mut defender_unit = attacker_unit.clone();
+        let defender_team = *attacker_team;
+        let defender_break_sealed = attacker_round_flags
+            .as_ref()
+            .map(|flags| flags.break_sealed)
+            .unwrap_or(false);
+        let ult_before = attacker_ult.current;
+        let mut sp_tracker = RoundSpTracker::default();
+        let (outcome, core_events) = apply_effects(
+            &inflight.action,
+            &attacker_unit,
+            &mut defender_unit,
+            defender_team,
+            defender_tough.as_deref_mut(),
+            &mut attacker_ult,
+            sp,
+            &mut sp_tracker,
+            streak_ref,
+            attacker_commander.is_some(),
+            defender_break_sealed,
+        );
+
+        if !outcome.sp_ok {
+            emit_combat_event(
+                event_writer,
+                CombatEventKind::OnActionFailed {
+                    reason: "SP shortfall".to_string(),
+                },
+                attacker_id,
+                target_id,
+                inflight.follow_up_depth,
+            );
+            set_phase(state, CombatPhase::WaitingAction);
+            return;
+        }
+
+        for kind in core_events {
+            let hit_taken_amount = if let CombatEventKind::OnDamageDealt { amount, .. } = &kind {
+                Some(*amount)
+            } else {
+                None
+            };
+
+            match &kind {
+                CombatEventKind::OnDamageDealt {
+                    amount,
+                    kind: dkind,
+                    ..
+                } => {
+                    log.push(LogEntry::BasicHit {
+                        attacker: attacker_id,
+                        target: target_id,
+                        amount: *amount,
+                        kind: *dkind,
+                    });
+                    commands.spawn(FloatingDamage {
+                        target: target_id,
+                        amount: *amount,
+                        kind: *dkind,
+                        spawn_time: time.elapsed_secs(),
+                    });
+                }
+                CombatEventKind::OnBreak { damage_tag } => {
+                    commands
+                        .entity(target_entity)
+                        .insert(Stunned { turns_left: 1 });
+                    log.push(LogEntry::Break {
+                        target: target_id,
+                        damage_tag: *damage_tag,
+                    });
+                }
+                CombatEventKind::OnKO => {
+                    commands.entity(target_entity).insert(Ko);
+                    log.push(LogEntry::Ko { target: target_id });
+                }
+                CombatEventKind::OnRevive { hp_after } => {
+                    commands.entity(target_entity).remove::<Ko>();
+                    log.push(LogEntry::Revive {
+                        target: target_id,
+                        hp_after: *hp_after,
+                    });
+                }
+                CombatEventKind::OnActionFailed { reason } => {
+                    log.push(LogEntry::ActionFailed {
+                        reason: reason.clone(),
+                    });
+                }
+                CombatEventKind::TurnAdvance {
+                    target: t_id,
+                    amount_pct,
+                } => {
+                    log.push(LogEntry::TurnAdvance {
+                        target: *t_id,
+                        amount_pct: *amount_pct,
+                    });
+                }
+                _ => {}
+            }
+            emit_combat_event(
+                event_writer,
+                kind,
+                inflight.action.source,
+                inflight.action.target,
+                inflight.follow_up_depth,
+            );
+
+            if let Some(amount) = hit_taken_amount {
+                emit_combat_event(
+                    event_writer,
+                    CombatEventKind::OnHitTaken { amount },
+                    attacker_id,
+                    target_id,
+                    inflight.follow_up_depth,
+                );
+                emit_combat_beat(
+                    event_writer,
+                    registry,
+                    CombatBeatId::Damage,
+                    attacker_id,
+                    target_id,
+                    inflight.follow_up_depth,
+                );
+            }
+        }
+
+        if matches!(inflight.action.ult_effect, UltEffect::GainFromBasic) {
+            let delta = attacker_ult.current - ult_before;
+            if delta > 0 {
+                emit_combat_event(
+                    event_writer,
+                    CombatEventKind::UltGain {
+                        unit_id: attacker_id,
+                        amount: delta,
+                    },
+                    attacker_id,
+                    attacker_id,
+                    inflight.follow_up_depth,
+                );
+            }
+        }
+
+        if outcome.succeeded && inflight.action.energy_grant > 0 {
+            if let Ok((mut energy, mut tracker)) = energy_q.get_mut(attacker_entity) {
+                let granted_by_round_cap = tracker
+                    .as_deref_mut()
+                    .map(|tracker| {
+                        tracker.try_gain(
+                            EnergyGainSource::SecondaryAction,
+                            inflight.action.energy_grant,
+                        )
+                    })
+                    .unwrap_or(inflight.action.energy_grant);
+                let applied = energy.gain_capped(granted_by_round_cap);
+                if applied > 0 {
+                    emit_combat_event(
+                        event_writer,
+                        CombatEventKind::EnergyGained {
+                            unit_id: attacker_id,
+                            amount: applied,
+                        },
+                        attacker_id,
+                        attacker_id,
+                        inflight.follow_up_depth,
+                    );
+                }
+            }
+        }
+
+        if outcome.succeeded {
+            dispatch_blueprint_transitions(inflight, log, event_writer, registry);
+        }
+
+        set_phase(state, CombatPhase::WaitingAction);
+        return;
+    }
+
+    let Ok([attacker, defender]) = actors.get_many_mut([attacker_entity, target_entity]) else {
+        return;
+    };
+
+    let (
+        _,
+        attacker_team,
+        attacker_unit,
+        _attacker_kit,
+        mut attacker_ult,
+        _,
+        _attacker_counterplay,
+        attacker_ko,
+        attacker_stunned,
+        attacker_commander,
+        _,
+        mut attacker_streak,
+        _attacker_round_flags,
+    ) = attacker;
+    let (
+        _,
+        defender_team,
+        mut defender_unit,
+        _,
+        _,
+        mut defender_tough,
+        _defender_counterplay,
+        defender_ko,
+        _,
+        defender_commander,
+        _,
+        _,
+        mut defender_round_flags,
+    ) = defender;
+
+    if attacker_stunned.is_some() {
+        log.push(LogEntry::ActionFailed {
+            reason: "Attacker is stunned".to_string(),
+        });
+        emit_combat_event(
+            event_writer,
+            CombatEventKind::OnActionFailed {
+                reason: "Attacker is stunned".to_string(),
+            },
+            attacker_id,
+            target_id,
+            inflight.follow_up_depth,
+        );
+        set_phase(state, CombatPhase::WaitingAction);
+        return;
+    }
+    if attacker_ko.is_some() {
+        log.push(LogEntry::ActionFailed {
+            reason: "Attacker is KO".to_string(),
+        });
+        emit_combat_event(
+            event_writer,
+            CombatEventKind::OnActionFailed {
+                reason: "Attacker is KO".to_string(),
+            },
+            attacker_id,
+            target_id,
+            inflight.follow_up_depth,
+        );
+        set_phase(state, CombatPhase::WaitingAction);
+        return;
+    }
+    if defender_ko.is_some() && inflight.action.revive_pct == 0 {
+        log.push(LogEntry::ActionFailed {
+            reason: "Target is KO".to_string(),
+        });
+        emit_combat_event(
+            event_writer,
+            CombatEventKind::OnActionFailed {
+                reason: "Target is KO".to_string(),
+            },
+            attacker_id,
+            target_id,
+            inflight.follow_up_depth,
+        );
+        set_phase(state, CombatPhase::WaitingAction);
+        return;
+    }
+    if defender_ko.is_none() && inflight.action.revive_pct > 0 {
+        log.push(LogEntry::ActionFailed {
+            reason: "Target is not KO".to_string(),
+        });
+        emit_combat_event(
+            event_writer,
+            CombatEventKind::OnActionFailed {
+                reason: "Target is not KO".to_string(),
+            },
+            attacker_id,
+            target_id,
+            inflight.follow_up_depth,
+        );
+        set_phase(state, CombatPhase::WaitingAction);
+        return;
+    }
+
+    let Some(mut attacker_ult) = attacker_ult else {
+        return;
+    };
+    let mut local_streak = BasicStreak::default();
+    let streak_ref: &mut BasicStreak = if let Some(ref mut s) = attacker_streak {
+        &mut **s
+    } else {
+        &mut local_streak
+    };
+
+    let hp_before = defender_unit.hp_current;
+    let low_hp_threshold = defender_unit.hp_max * 3 / 10;
+    let ult_before = attacker_ult.current;
+
+    set_phase(state, CombatPhase::Resolving);
+    emit_combat_beat(
+        event_writer,
+        registry,
+        CombatBeatId::Impact,
+        attacker_id,
+        target_id,
+        inflight.follow_up_depth,
+    );
+    let mut sp_tracker = RoundSpTracker::default();
+    let defender_break_sealed = defender_round_flags
+        .as_ref()
+        .map(|f| f.break_sealed)
+        .unwrap_or(false);
+    let (outcome, core_events) = apply_effects(
+        &inflight.action,
+        &attacker_unit,
+        &mut defender_unit,
+        *defender_team,
+        defender_tough.as_deref_mut(),
+        &mut attacker_ult,
+        sp,
+        &mut sp_tracker,
+        streak_ref,
+        defender_commander.is_some(),
+        defender_break_sealed,
+    );
+
+    if !outcome.sp_ok {
+        emit_combat_event(
+            event_writer,
+            CombatEventKind::OnActionFailed {
+                reason: "SP shortfall".to_string(),
+            },
+            attacker_id,
+            target_id,
+            inflight.follow_up_depth,
+        );
+        set_phase(state, CombatPhase::WaitingAction);
+        return;
+    }
+
+    for kind in core_events {
+        let hit_taken_amount = if let CombatEventKind::OnDamageDealt { amount, .. } = &kind {
+            Some(*amount)
+        } else {
+            None
+        };
+
+        match &kind {
+            CombatEventKind::OnDamageDealt {
+                amount,
+                kind: dkind,
+                ..
+            } => {
+                log.push(LogEntry::BasicHit {
+                    attacker: attacker_id,
+                    target: target_id,
+                    amount: *amount,
+                    kind: *dkind,
+                });
+                commands.spawn(FloatingDamage {
+                    target: target_id,
+                    amount: *amount,
+                    kind: *dkind,
+                    spawn_time: time.elapsed_secs(),
+                });
+            }
+            CombatEventKind::OnBreak { damage_tag } => {
+                commands
+                    .entity(target_entity)
+                    .insert(Stunned { turns_left: 1 });
+                log.push(LogEntry::Break {
+                    target: target_id,
+                    damage_tag: *damage_tag,
+                });
+            }
+            CombatEventKind::OnKO => {
+                commands.entity(target_entity).insert(Ko);
+                log.push(LogEntry::Ko { target: target_id });
+                if *attacker_team != *defender_team {
+                    emit_combat_event(
+                        event_writer,
+                        CombatEventKind::OnEnemyKill,
+                        attacker_id,
+                        target_id,
+                        inflight.follow_up_depth,
+                    );
+                }
+            }
+            CombatEventKind::OnRevive { hp_after } => {
+                commands.entity(target_entity).remove::<Ko>();
+                log.push(LogEntry::Revive {
+                    target: target_id,
+                    hp_after: *hp_after,
+                });
+            }
+            CombatEventKind::OnActionFailed { reason } => {
+                log.push(LogEntry::ActionFailed {
+                    reason: reason.clone(),
+                });
+            }
+            CombatEventKind::TurnAdvance {
+                target: t_id,
+                amount_pct,
+            } => {
+                log.push(LogEntry::TurnAdvance {
+                    target: *t_id,
+                    amount_pct: *amount_pct,
+                });
+            }
+            _ => {}
+        }
+        emit_combat_event(
+            event_writer,
+            kind,
+            inflight.action.source,
+            inflight.action.target,
+            inflight.follow_up_depth,
+        );
+
+        if let Some(amount) = hit_taken_amount {
+            emit_combat_event(
+                event_writer,
+                CombatEventKind::OnHitTaken { amount },
+                attacker_id,
+                target_id,
+                inflight.follow_up_depth,
+            );
+            emit_combat_beat(
+                event_writer,
+                registry,
+                CombatBeatId::Damage,
+                attacker_id,
+                target_id,
+                inflight.follow_up_depth,
+            );
+        }
+    }
+
+    if outcome.broke {
+        if let Some(ref mut flags) = defender_round_flags {
+            flags.break_sealed = true;
+        }
+    }
+
+    if hp_before > low_hp_threshold
+        && defender_unit.hp_current <= low_hp_threshold
+        && !defender_unit.is_ko()
+    {
+        emit_combat_event(
+            event_writer,
+            CombatEventKind::OnAllyLowHp,
+            target_id,
+            target_id,
+            inflight.follow_up_depth,
+        );
+    }
+
+    if outcome.succeeded {
+        if let Some((kind, duration)) = inflight.action.status_to_apply.clone() {
+            if !outcome.ko {
+                let tri = triangle_modifiers(attacker_unit.attribute, defender_unit.attribute);
+                let threshold = (tri.status_acc_modifier * 100.0) as i32;
+                let passes = match rng {
+                    Some(r) => r.roll_pct(threshold),
+                    None => CombatRng::from_seed(42).roll_pct(threshold),
+                };
+                if passes {
+                    commands.entity(target_entity).insert(StatusEffect {
+                        kind: kind.clone(),
+                        duration_remaining: duration,
+                    });
+                    emit_combat_event(
+                        event_writer,
+                        CombatEventKind::OnStatusApplied { kind },
+                        attacker_id,
+                        target_id,
+                        inflight.follow_up_depth,
+                    );
+                } else {
+                    emit_combat_event(
+                        event_writer,
+                        CombatEventKind::OnStatusResisted { kind },
+                        attacker_id,
+                        target_id,
+                        inflight.follow_up_depth,
+                    );
+                }
+            }
+        }
+    }
+
+    if matches!(inflight.action.ult_effect, UltEffect::GainFromBasic) {
+        let delta = attacker_ult.current - ult_before;
+        if delta > 0 {
+            emit_combat_event(
+                event_writer,
+                CombatEventKind::UltGain {
+                    unit_id: attacker_id,
+                    amount: delta,
+                },
+                attacker_id,
+                attacker_id,
+                inflight.follow_up_depth,
+            );
+        }
+    }
+
+    if outcome.succeeded && inflight.action.energy_grant > 0 {
+        if let Ok((mut energy, mut tracker)) = energy_q.get_mut(attacker_entity) {
+            let granted_by_round_cap = tracker
+                .as_deref_mut()
+                .map(|tracker| {
+                    tracker.try_gain(
+                        EnergyGainSource::SecondaryAction,
+                        inflight.action.energy_grant,
+                    )
+                })
+                .unwrap_or(inflight.action.energy_grant);
+            let applied = energy.gain_capped(granted_by_round_cap);
+            if applied > 0 {
+                emit_combat_event(
+                    event_writer,
+                    CombatEventKind::EnergyGained {
+                        unit_id: attacker_id,
+                        amount: applied,
+                    },
+                    attacker_id,
+                    attacker_id,
+                    inflight.follow_up_depth,
+                );
+            }
+        }
+    }
+
+    if outcome.succeeded {
+            dispatch_blueprint_transitions(inflight, log, event_writer, registry);
+    }
+
+    set_phase(state, CombatPhase::WaitingAction);
+}

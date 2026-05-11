@@ -1,0 +1,38 @@
+
+running 5 tests
+test circuit_spend_cannot_underflow_and_records_a_blocked_reason ... ok
+test static_charge_caps_and_reports_a_stable_blocked_reason_on_the_fourth_hit ... ok
+test static_charge_starts_clean_and_grants_energy_on_the_third_hit ... ok
+test tactical_cycle_reset_is_visible_after_message_flush ... ok
+test runtime_registration_applies_battery_transition_once ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test s09_event_stream_observes_all_variants ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 7 tests
+test predator_loop_blocks_berserk_when_strain_is_at_threshold ... ok
+test predator_loop_builds_exploit_applies_prey_lock_and_consumes_payoff ... ok
+test predator_loop_event_and_snapshot_surfaces_are_serializable_and_readable ... ok
+test predator_loop_rejects_cap_overflow_and_records_blocked_reason ... ok
+test predator_loop_rejects_invalid_target_and_malformed_builds ... ok
+test predator_loop_requires_exploit_before_prey_lock ... ok
+test predator_loop_ticking_expires_prey_lock_and_blocks_consumption_after_expiry ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 5 tests
+test snapshot_contract_covers_promised_fields_and_shape ... ok
+test runtime_registration_populates_snapshot_kernel_resources ... ok
+test snapshot_defaults_empty_optional_surfaces ... ok
+test snapshot_hides_ally_missing_toughness_and_zero_max_enemy_bars ... ok
+test runtime_registration_applies_all_kernel_transition_domains ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T02",
+  "unitId": "M012/S06/T02",
+  "timestamp": 1777632470262,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "cargo test-dev --test target_shape_truthfulness --test revive_semantics --test pipeline_dispatch",
+      "exitCode": 0,
+      "durationMs": 2665,
+      "verdict": "pass"
+    },
+    {
+      "command": "cargo test-dev",
+      "exitCode": 101,
+      "durationMs": 2547,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}

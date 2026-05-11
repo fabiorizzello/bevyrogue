@@ -1,0 +1,18 @@
+{
+  "id": "63673532-d77f-48e2-a6e1-a000d6a3bbdb",
+  "runtime": "python",
+  "purpose": "summarize canonical units toughness by team",
+  "script_chars": 504,
+  "started_at": "2026-04-30T19:25:11.627Z",
+  "finished_at": "2026-04-30T19:25:11.696Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 69,
+  "stdout_bytes": 714,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M012/.gsd/exec/63673532-d77f-48e2-a6e1-a000d6a3bbdb.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M012/.gsd/exec/63673532-d77f-48e2-a6e1-a000d6a3bbdb.stderr"
+}

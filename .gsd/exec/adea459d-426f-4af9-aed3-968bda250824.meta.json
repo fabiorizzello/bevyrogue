@@ -1,0 +1,18 @@
+{
+  "id": "adea459d-426f-4af9-aed3-968bda250824",
+  "runtime": "bash",
+  "purpose": "Run the action affordance query tests",
+  "script_chars": 41,
+  "started_at": "2026-05-01T09:25:05.620Z",
+  "finished_at": "2026-05-01T09:25:09.616Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 3996,
+  "stdout_bytes": 1846,
+  "stderr_bytes": 17649,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M012/.gsd/exec/adea459d-426f-4af9-aed3-968bda250824.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M012/.gsd/exec/adea459d-426f-4af9-aed3-968bda250824.stderr"
+}

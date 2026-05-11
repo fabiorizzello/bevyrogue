@@ -1,0 +1,18 @@
+{
+  "id": "a3bf6618-72ba-4eae-9982-f1d010adf1dc",
+  "runtime": "bash",
+  "purpose": "Run targeted bootstrap and AV tests after shared component fix",
+  "script_chars": 86,
+  "started_at": "2026-05-08T19:48:47.899Z",
+  "finished_at": "2026-05-08T19:48:47.918Z",
+  "exit_code": 1,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 19,
+  "stdout_bytes": 0,
+  "stderr_bytes": 154,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/a3bf6618-72ba-4eae-9982-f1d010adf1dc.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/a3bf6618-72ba-4eae-9982-f1d010adf1dc.stderr"
+}

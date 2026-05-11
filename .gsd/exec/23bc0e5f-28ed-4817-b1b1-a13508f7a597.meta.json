@@ -1,0 +1,18 @@
+{
+  "id": "23bc0e5f-28ed-4817-b1b1-a13508f7a597",
+  "runtime": "bash",
+  "purpose": "summarize RON skill effects and target shapes",
+  "script_chars": 581,
+  "started_at": "2026-04-30T17:26:00.081Z",
+  "finished_at": "2026-04-30T17:26:00.100Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 19,
+  "stdout_bytes": 1908,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M012/.gsd/exec/23bc0e5f-28ed-4817-b1b1-a13508f7a597.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M012/.gsd/exec/23bc0e5f-28ed-4817-b1b1-a13508f7a597.stderr"
+}

@@ -1,0 +1,525 @@
+
+## tests/boundary_contract.rs
+15: fn unit(id: u32, attribute: Attribute, hp: i32) -> Unit {
+27: #[test]
+28: fn s08_boundary_turn_advance_and_action_intent() {
+115: assert_eq!(state.phase, CombatPhase::WaitingAction);
+129: assert_eq!(ult_charge.current, 0);
+137: assert!(defender.hp_current < 100);
+140: #[test]
+141: fn s08_ultimate_interrupt_flow() {
+268: assert!(defender_hp < 100);
+271: // The assertion above (defender_hp < 100) verifies the ultimate resolved correctly.
+
+## tests/twin_core_roster_contract.rs
+1: #[test]
+2: fn twin_core_roster_contract_placeholder() {
+3: assert!(true);
+
+## tests/holy_support_roster_contract.rs
+7: fn canonical_roster() -> UnitRoster {
+8: ron::from_str(include_str!("../assets/data/units.ron")).expect("parse units.ron")
+11: fn canonical_skill_book() -> SkillBook {
+12: ron::from_str(include_str!("../assets/data/skills.ron")).expect("parse skills.ron")
+15: #[test]
+16: fn patamon_angemon_declare_holy_metadata() {
+20: assert_eq!(patamon.holy_support.line, Some(HolySupportLine::Hope));
+21: assert_eq!(patamon.holy_support.role, Some(HolySupportRole::GraceAccumulator));
+22: assert_eq!(patamon.holy_support.personal_resource_label, Some(HolySupportPersonalLabel::Grace));
+25: assert_eq!(angemon.holy_support.line, Some(HolySupportLine::Hope));
+26: assert_eq!(angemon.holy_support.role, Some(HolySupportRole::MartyrSpender));
+27: assert_eq!(angemon.holy_support.personal_resource_label, Some(HolySupportPersonalLabel::MartyrLight));
+30: #[test]
+31: fn holy_skills_target_shape_constraints() {
+46: assert!(
+56: #[test]
+57: fn patamon_angemon_skill_references_carry_holy_effects() {
+63: assert!(revive.effects.iter().any(|e| matches!(e, Effect::HolySupportRequest(_))), "Patamon revive missing HolySupportRequest");
+67: assert!(angemon_ult.effects.iter().any(|e| matches!(e, Effect::HolySupportTag(_))), "Angemon ult missing HolySupportTag");
+70: #[test]
+71: fn backward_compatibility_units_without_holy_metadata() {
+74: assert_eq!(agumon.holy_support.line, None);
+75: assert_eq!(agumon.holy_support.role, None);
+
+## tests/twin_core_resolution.rs
+1: #[test]
+2: fn twin_core_resolution_placeholder() {
+3: assert!(true);
+
+## tests/holy_support_resolution.rs
+7: use bevyrogue::combat::kernel::{CombatKernelRegistry, CombatKernelTransition};
+22: fn load_skill_book() -> SkillBook {
+23: ron::from_str(include_str!("../assets/data/skills.ron")).expect("parse skills.ron")
+26: fn unit(id: u32, hp_current: i32) -> Unit {
+38: fn resolved_skill(book: &SkillBook, skill_id: &str, attacker: UnitId, target: UnitId) -> bevyrogue::combat::state::ResolvedAction {
+60: fn app_with_holy_support() -> App {
+71: fn emit_events(
+76: ) -> Vec<CombatKernelTransition> {
+112: #[test]
+113: fn patamon_ult_builds_grace_through_the_shared_kernel_path() {
+143: assert!(outcome.succeeded);
+144: assert!(events.iter().any(|event| matches!(
+147: transition: CombatKernelTransition::Tag(_)
+154: assert!(matches!(
+157: CombatKernelTransition::Tag(_),
+158: CombatKernelTransition::HolySupport(holy)
+163: assert_eq!(state.grace, 1);
+164: assert_eq!(state.last_signal, Some(HolySupportTransition::build_grace(1)));
+168: assert!(formatted.contains("holy_support=grace=1/3"));
+169: assert!(formatted.contains("last=build(1)"));
+172: #[test]
+173: fn angemon_ult_marks_then_consumes_martyr_light_and_revives_the_target() {
+203: assert!(outcome.succeeded);
+204: assert_eq!(defender.hp_current, 20);
+205: assert!(events.iter().any(|event| matches!(
+213: assert!(matches!(
+216: CombatKernelTransition::Tag(_),
+217: CombatKernelTransition::HolySupport(holy_mark),
+218: CombatKernelTransition::HolySupport(holy_consume)
+224: assert!(state.martyr_light_marked_this_cycle);
+225: assert!(state.martyr_light_consumed_this_cycle);
+226: assert_eq!(state.last_signal, Some(HolySupportTransition::consume_martyr_light()));
+230: assert!(formatted.contains("martyr_marked=true"));
+231: assert!(formatted.contains("martyr_consumed=true"));
+232: assert!(formatted.contains("last=consume-martyr"));
+
+## tests/battery_loop_kernel.rs
+10: BatteryLoopTransition, CombatKernelTransition,
+15: fn app_with_battery_loop() -> App {
+23: fn emit_kernel_transition(app: &mut App, transition: CombatKernelTransition) {
+33: #[test]
+34: fn static_charge_starts_clean_and_grants_energy_on_the_third_hit() {
+37: assert_eq!(state.static_charge, 0);
+38: assert_eq!(state.circuit_charge, 0);
+39: assert!(!state.threshold_grant_eligible());
+42: assert_eq!(state.static_charge, 1);
+43: assert_eq!(first, BatteryLoopTransition::build_static_charge(1));
+46: assert_eq!(state.static_charge, 2);
+47: assert_eq!(second, BatteryLoopTransition::build_static_charge(1));
+50: assert_eq!(state.static_charge, 3);
+51: assert!(!state.threshold_grant_eligible());
+52: assert_eq!(third, BatteryLoopTransition::grant_energy(BATTERY_ENERGY_GRANT));
+55: assert_eq!(snapshot.static_charge, 3);
+56: assert_eq!(snapshot.static_charge_cap, 3);
+57: assert_eq!(snapshot.last_transition, Some(third));
+58: assert_eq!(snapshot.last_blocked_reason, None);
+59: assert!(format_battery_loop_snapshot(&snapshot).contains("grant(5)"));
+62: #[test]
+63: fn static_charge_caps_and_reports_a_stable_blocked_reason_on_the_fourth_hit() {
+71: assert_eq!(state.static_charge, 3);
+72: assert_eq!(fourth.signal, BatteryLoopSignal::Rejected);
+73: assert_eq!(
+82: assert_eq!(state.last_transition, Some(fourth));
+83: assert_eq!(state.last_blocked_reason, Some(BatteryLoopBlockedReason::ChargeCapReached {
+88: assert_eq!(snapshot.last_transition, Some(fourth));
+89: assert_eq!(snapshot.last_blocked_reason, Some(BatteryLoopBlockedReason::ChargeCapReached {
+94: #[test]
+95: fn circuit_spend_cannot_underflow_and_records_a_blocked_reason() {
+99: assert_eq!(state.circuit_charge, 0);
+100: assert_eq!(
+109: assert_eq!(state.last_blocked_reason, Some(BatteryLoopBlockedReason::ChargeUnderflow {
+117: assert_eq!(accepted, BatteryLoopTransition::build_circuit_charge(3));
+118: assert_eq!(state.circuit_charge, 3);
+121: assert_eq!(spent, BatteryLoopTransition::spend_circuit_charge(2));
+122: assert_eq!(state.circuit_charge, 1);
+125: #[test]
+126: fn tactical_cycle_reset_is_visible_after_message_flush() {
+134: assert_eq!(state.static_charge, 3);
+135: assert!(state.threshold_grant_emitted_this_cycle);
+140: CombatKernelTransition::BatteryLoop(BatteryLoopTransition::cycle_reset()),
+144: assert_eq!(state.static_charge, 0);
+145: assert!(!state.threshold_grant_emitted_this_cycle);
+146: assert_eq!(
+
+## tests/predator_loop_kernel.rs
+13: fn tracked_state() -> PredatorLoopState {
+19: fn rejected_build(target: UnitId, amount: u16, reason: PredatorLoopBlockedReason) -> PredatorLoopTransition {
+23: #[test]
+24: fn predator_loop_builds_exploit_applies_prey_lock_and_consumes_payoff() {
+29: assert_eq!(build, PredatorLoopTransition::build_exploit(target, 2));
+30: assert_eq!(state.targets.get(&target).unwrap().exploit_stacks, 2);
+31: assert_eq!(state.last_transition, Some(build));
+32: assert_eq!(state.last_blocked_reason, None);
+35: assert_eq!(prey_lock, PredatorLoopTransition::apply_prey_lock(target, state.prey_lock_duration as u16));
+36: assert_eq!(state.targets.get(&target).unwrap().prey_lock.unwrap().turns_left, state.prey_lock_duration);
+39: assert_eq!(payoff, PredatorLoopTransition::consume_prey_lock_payoff(target, 1));
+40: assert_eq!(state.targets.get(&target).unwrap().exploit_stacks, 1);
+42: assert!(lock.consumed);
+43: assert_eq!(lock.turns_left, 0);
+44: assert_eq!(state.last_transition, Some(payoff));
+45: assert_eq!(state.last_blocked_reason, None);
+48: #[test]
+49: fn predator_loop_rejects_cap_overflow_and_records_blocked_reason() {
+54: assert_eq!(build, PredatorLoopTransition::build_exploit(target, 3));
+57: assert_eq!(blocked, PredatorLoopTransition::rejected(
+63: assert_eq!(state.last_transition, Some(blocked));
+64: assert_eq!(state.last_blocked_reason, Some(PredatorLoopBlockedReason::CapReached {
+69: #[test]
+70: fn predator_loop_requires_exploit_before_prey_lock() {
+75: assert_eq!(blocked, PredatorLoopTransition::rejected(
+79: assert_eq!(state.last_blocked_reason, Some(PredatorLoopBlockedReason::MissingExploit));
+82: #[test]
+83: fn predator_loop_ticking_expires_prey_lock_and_blocks_consumption_after_expiry() {
+90: assert_eq!(tick_1.signal, PredatorLoopSignal::Tick);
+91: assert_eq!(state.targets.get(&target).unwrap().prey_lock.unwrap().turns_left, 1);
+94: assert_eq!(tick_2.signal, PredatorLoopSignal::Tick);
+95: assert_eq!(state.targets.get(&target).unwrap().prey_lock.unwrap().turns_left, 0);
+98: assert_eq!(blocked, PredatorLoopTransition::rejected(
+102: assert_eq!(state.last_blocked_reason, Some(PredatorLoopBlockedReason::ExpiredPreyLock));
+105: #[test]
+106: fn predator_loop_rejects_invalid_target_and_malformed_builds() {
+110: assert_eq!(blocked, PredatorLoopTransition::rejected(
+117: assert_eq!(state.last_blocked_reason, Some(PredatorLoopBlockedReason::InvalidTarget));
+120: assert_eq!(malformed, PredatorLoopTransition::rejected(
+127: assert_eq!(state.last_blocked_reason, Some(PredatorLoopBlockedReason::MalformedData));
+130: #[test]
+131: fn predator_loop_blocks_berserk_when_strain_is_at_threshold() {
+136: assert_eq!(blocked, PredatorLoopTransition::rejected(
+143: assert_eq!(state.last_blocked_reason, Some(PredatorLoopBlockedReason::BerserkBlockedByStrain {
+149: assert_eq!(allowed.signal, PredatorLoopSignal::EnterBerserk);
+150: assert_eq!(allowed.amount, 49);
+151: assert_eq!(state.last_blocked_reason, None);
+154: #[test]
+155: fn predator_loop_event_and_snapshot_surfaces_are_serializable_and_readable() {
+163: assert_eq!(snapshot.targets.len(), 1);
+164: assert_eq!(snapshot.targets[0].unit_id, target);
+189: assert!(rendered.contains("predator"));
+190: assert!(rendered.contains("exploit_cap=3"));
+191: assert!(rendered.contains("targets=[7"));
+201: assert!(json.contains("PredatorLoopResolved"));
+202: assert!(json.contains("BuildExploit"));
+203: assert!(json.contains("7"));
+207: assert_eq!(roundtrip, transition);
+
+## tests/action_affordance_consumers.rs
+52: fn unit(id: u32, team: Team, hp_current: i32, hp_max: i32, _is_ko: bool, _is_commander: bool) -> Unit {
+67: fn unit_skills(basic: &str, skills: Vec<&str>, ultimate: &str) -> UnitSkills {
+76: fn ecs_units(fixtures: &[Fixture]) -> Vec<Unit> {
+92: fn basic_skill(id: &str) -> SkillDef {
+113: fn revive_skill(id: &str, sp_cost: i32) -> SkillDef {
+131: fn deferred_skill(id: &str) -> SkillDef {
+154: fn snapshot_from_fixtures(
+198: fn action_from_snapshot<'a>(
+207: #[test]
+208: fn explicit_sp_snapshot_blocks_revive_but_bypass_snapshot_remains_separate() {
+267: assert!(matches!(explicit_affordance.action, ActionStatus::Disabled { reason: LegalityReasonCode::SpShortfall }));
+268: assert!(matches!(explicit_affordance.resource, ResourceStatus::Disabled { reason: LegalityReasonCode::SpShortfall }));
+269: assert_eq!(
+278: assert_eq!(
+333: assert!(matches!(bypass_affordance.action, ActionStatus::Enabled));
+334: assert!(matches!(bypass_affordance.target, TargetStatus::Enabled));
+335: assert_eq!(enabled_target_ids(&bypass_affordance), vec![UnitId(2)]);
+338: #[test]
+339: fn snapshot_carries_commander_energy_tracker_and_real_sp() {
+374: assert_eq!(snapshot.acting_unit.sp, 4);
+375: assert!(snapshot.acting_unit.is_commander);
+376: assert_eq!(snapshot.acting_unit.energy, 37);
+377: assert_eq!(snapshot.acting_unit.energy_secondary_gained, 8);
+378: assert_eq!(snapshot.acting_unit.energy_external_gained, 12);
+381: #[test]
+382: fn disabled_resource_keeps_target_reason_codes_for_ko_live_and_enemy_targets() {
+463: assert!(matches!(affordance.action, ActionStatus::Disabled { reason: LegalityReasonCode::SpShortfall }));
+464: assert!(matches!(affordance.resource, ResourceStatus::Disabled { reason: LegalityReasonCode::SpShortfall }));
+465: assert!(matches!(affordance.target, TargetStatus::Enabled));
+466: assert!(affordance.targets.iter().any(|(id, target)| *id == UnitId(2) && matches!(target.status, TargetStatus::Enabled)));
+467: assert!(affordance.targets.iter().any(|(id, target)| *id == UnitId(3) && matches!(target.status, TargetStatus::Disabled { reason: Legalit...
+468: assert!(affordance.targets.iter().any(|(id, target)| *id == UnitId(4) && matches!(target.status, TargetStatus::Disabled { reason: Legalit...
+471: #[test]
+472: fn enabled_basic_target_is_chosen_from_query_output_not_local_team_assumptions() {
+538: assert!(matches!(affordance.action, ActionStatus::Enabled));
+539: assert_eq!(enabled_target_ids(&affordance), vec![UnitId(3)]);
+540: assert_eq!(first_enabled_target_id(&affordance), Some(UnitId(3)));
+541: assert!(affordance.targets.iter().any(|(id, target)| *id == UnitId(2) && matches!(target.status, TargetStatus::Disabled { reason: Legalit...
+545: #[test]
+546: fn deferred_actions_are_excluded_from_enabled_selection() {
+612: assert_eq!(enabled_labels, vec!["Basic"]);
+613: assert!(matches!(deferred_affordance.action, ActionStatus::Deferred { reason: LegalityReasonCode::UnimplementedTargetShape }));
+614: assert!(matches!(deferred_affordance.target, TargetStatus::Deferred { reason: LegalityReasonCode::UnimplementedTargetShape }));
+617: #[test]
+618: fn combat_cli_source_does_not_reintroduce_ko_or_skill_id_hardcoding() {
+621: assert!(!source.contains("patamon_revive"));
+622: assert!(!source.contains("ko.is_none()"));
+625: #[test]
+626: fn combat_windowed_source_does_not_reintroduce_ko_or_skill_id_hardcoding() {
+629: assert!(!source.contains("patamon_revive"));
+630: assert!(!source.contains("ko.is_none()"));
+632: assert!(!source.contains("\"devimon\""), "combat_panel must not hardcode enemy name 'devimon'");
+633: assert!(!source.contains("\"ogremon\""), "combat_panel must not hardcode enemy name 'ogremon'");
+634: assert!(!source.contains("signature_traits"), "combat_panel must not branch on signature_traits");
+637: #[test]
+638: fn combat_cli_source_does_not_hardcode_counterplay_names() {
+641: assert!(!source.contains("\"devimon\""), "combat_cli must not hardcode enemy name 'devimon'");
+642: assert!(!source.contains("\"ogremon\""), "combat_cli must not hardcode enemy name 'ogremon'");
+643: assert!(!source.contains("signature_traits"), "combat_cli must not branch on signature_traits");
+646: fn enemy_fixture_with_traits(id: u32, traits: Vec<EnemyTraitDeclaration>, charged: Option<ChargedAttackDeclaration>) -> Fixture {
+667: #[test]
+668: fn counterplay_snapshot_exposes_implemented_trait() {
+681: assert_eq!(affordances.len(), 1);
+682: assert_eq!(affordances[0].kind, EnemyCounterplayKind::TempoAnchor);
+683: assert!(matches!(affordances[0].implementation, ImplementationStatus::Implemented));
+686: #[test]
+687: fn counterplay_snapshot_exposes_deferred_trait() {
+702: assert_eq!(affordances.len(), 1);
+703: assert_eq!(affordances[0].kind, EnemyCounterplayKind::BreakSeal);
+704: assert!(matches!(
+710: #[test]
+711: fn counterplay_snapshot_exposes_hidden_charged_telegraph() {
+727: assert!(matches!(affordance.implementation, ImplementationStatus::Hidden { .. }));
+728: assert_eq!(affordance.lead_turns, 2);
+731: #[test]
+732: fn empty_enemy_returns_no_counterplay_affordances() {
+751: assert!(query_enemy_trait_affordances(unit).is_empty());
+752: assert!(query_charged_telegraph_affordance(unit).is_none());
+755: #[test]
+756: fn counterplay_deferred_reason_codes_remain_visible_in_resource_status() {
+783: assert_eq!(traits.len(), 2);
+784: assert!(matches!(traits[0].implementation, ImplementationStatus::Implemented));
+785: assert!(matches!(traits[1].implementation, ImplementationStatus::Deferred { .. }));
+787: assert!(matches!(
+793: assert!(matches!(charged.implementation, ImplementationStatus::Deferred { .. }));
+794: assert!(matches!(
+
+## tests/action_affordance_query.rs
+18: fn unit(id: u32, team: Team, hp_current: i32, hp_max: i32, is_ko: bool, is_commander: bool) -> UnitQuerySnapshot {
+41: fn actor_with_skills(mut unit: UnitQuerySnapshot, basic: &str, skills: Vec<&str>, ultimate: &str) -> UnitQuerySnapshot {
+51: fn unit_with_toughness(mut unit: UnitQuerySnapshot, toughness: Toughness) -> UnitQuerySnapshot {
+55: fn snapshot_with(units: Vec<UnitQuerySnapshot>, acting_id: u32, phase: CombatPhase) -> CombatQuerySnapshot {
+70: fn basic_attack_skill(id: &str) -> SkillDef {
+91: fn offensive_skill(id: &str, sp_cost: i32) -> SkillDef {
+112: fn any_target_skill(id: &str) -> SkillDef {
+133: fn hidden_self_only_skill() -> SkillDef {
+153: fn revive_skill() -> SkillDef {
+171: fn damaged_ally_skill() -> SkillDef {
+192: fn row_skill() -> SkillDef {
+213: fn deferred_row_skill() -> SkillDef {
+222: fn hidden_row_skill() -> SkillDef {
+231: fn skill_book(skills: Vec<SkillDef>) -> SkillBook {
+235: fn resource_detail<'a>(details: &'a [ResourceAffordanceDetail], kind: ResourceKind) -> &'a ResourceAffordanceDetail {
+242: #[test]
+243: fn implemented_enemy_toughness_is_visible_while_ally_and_zero_bars_stay_hidden() {
+277: assert!(matches!(enemy_aff.1.status, TargetStatus::Enabled));
+278: assert!(matches!(enemy_aff.1.toughness, ToughnessAffordance::Visible));
+279: assert_eq!(
+288: assert!(enemy_aff.1.toughness_reason.is_none());
+295: assert!(matches!(ally_aff.1.status, TargetStatus::Enabled));
+296: assert!(matches!(ally_aff.1.toughness, ToughnessAffordance::Hidden));
+297: assert!(ally_aff.1.toughness_view.is_none());
+298: assert!(matches!(ally_aff.1.toughness_reason, Some(LegalityReasonCode::ToughnessEnemyOnly)));
+305: assert!(matches!(zero_aff.1.status, TargetStatus::Enabled));
+306: assert!(matches!(zero_aff.1.toughness, ToughnessAffordance::Hidden));
+307: assert!(zero_aff.1.toughness_view.is_none());
+308: assert!(matches!(zero_aff.1.toughness_reason, Some(LegalityReasonCode::ToughnessEnemyOnly)));
+309: assert!(matches!(affordance.toughness, ToughnessAffordance::Visible));
+312: #[test]
+313: fn enabled_offensive_action_reports_target_and_resource_details() {
+339: assert!(matches!(affordance.action, ActionStatus::Enabled));
+340: assert!(matches!(affordance.target, TargetStatus::Enabled));
+341: assert!(matches!(affordance.resource, ResourceStatus::Enabled));
+342: assert!(matches!(affordance.implementation, ImplementationStatus::Implemented));
+343: assert!(matches!(affordance.toughness, ToughnessAffordance::Visible));
+344: assert_eq!(affordance.targets.len(), 2);
+345: assert!(matches!(affordance.targets[1].1.status, TargetStatus::Enabled));
+346: assert_eq!(affordance.resource_details.len(), 2);
+347: assert_eq!(resource_detail(&affordance.resource_details, ResourceKind::Sp).current, Some(5));
+348: assert_eq!(resource_detail(&affordance.resource_details, ResourceKind::Sp).required, Some(0));
+349: assert_eq!(resource_detail(&affordance.resource_details, ResourceKind::Ultimate).current, Some(120));
+350: assert_eq!(resource_detail(&affordance.resource_details, ResourceKind::Ultimate).required, Some(100));
+353: #[test]
+354: fn non_active_actor_reports_not_active_without_losing_target_affordances() {
+371: assert!(matches!(affordance.action, ActionStatus::Disabled { reason: LegalityReasonCode::NotActiveUnit }));
+372: assert!(matches!(affordance.target, TargetStatus::Enabled));
+373: assert!(affordance.targets.iter().any(|(id, target)| *id == UnitId(2) && matches!(target.status, TargetStatus::Enabled)));
+377: #[test]
+378: fn wrong_phase_reports_wrong_phase_and_keeps_target_affordances() {
+394: assert!(matches!(affordance.action, ActionStatus::Disabled { reason: LegalityReasonCode::WrongPhase }));
+395: assert!(matches!(affordance.target, TargetStatus::Enabled));
+399: #[test]
+400: fn attacker_ko_blocks_action_before_targets() {
+416: assert!(matches!(affordance.action, ActionStatus::Disabled { reason: LegalityReasonCode::AttackerKo }));
+417: assert!(matches!(affordance.target, TargetStatus::Enabled));
+421: #[test]
+422: fn attacker_stunned_blocks_action_before_targets() {
+439: assert!(matches!(affordance.action, ActionStatus::Disabled { reason: LegalityReasonCode::AttackerStunned }));
+440: assert!(matches!(affordance.target, TargetStatus::Enabled));
+444: #[test]
+445: fn missing_skill_book_entry_returns_missing_skill() {
+461: assert!(matches!(affordance.action, ActionStatus::Disabled { reason: LegalityReasonCode::MissingSkill }));
+462: assert!(affordance.targets.is_empty());
+466: #[test]
+467: fn sp_shortfall_disables_action_and_reports_current_and_required_sp() {
+487: assert!(matches!(affordance.action, ActionStatus::Disabled { reason: LegalityReasonCode::SpShortfall }));
+488: assert!(matches!(resource_detail(&affordance.resource_details, ResourceKind::Sp).status, ResourceStatus::Disabled { reason: LegalityReaso...
+489: assert_eq!(resource_detail(&affordance.resource_details, ResourceKind::Sp).current, Some(1));
+490: assert_eq!(resource_detail(&affordance.resource_details, ResourceKind::Sp).required, Some(3));
+494: #[test]
+495: fn ultimate_not_ready_disables_action_and_reports_current_and_required_ult_charge() {
+515: assert!(matches!(affordance.action, ActionStatus::Disabled { reason: LegalityReasonCode::UltimateNotReady }));
+516: assert!(matches!(resource_detail(&affordance.resource_details, ResourceKind::Ultimate).status, ResourceStatus::Disabled { reason: Legalit...
+517: assert_eq!(resource_detail(&affordance.resource_details, ResourceKind::Ultimate).current, Some(60));
+518: assert_eq!(resource_detail(&affordance.resource_details, ResourceKind::Ultimate).required, Some(100));
+522: #[test]
+523: fn no_valid_targets_disables_action_after_state_and_resource_checks() {
+539: assert!(matches!(affordance.action, ActionStatus::Disabled { reason: LegalityReasonCode::NoValidTargets }));
+540: assert!(matches!(affordance.target, TargetStatus::Disabled { reason: LegalityReasonCode::NoValidTargets }));
+541: assert!(affordance.targets.iter().all(|(_, target)| matches!(target.status, TargetStatus::Disabled { .. })));
+545: #[test]
+546: fn hidden_implementation_returns_hidden_action_and_targets() {
+563: assert!(matches!(affordance.action, ActionStatus::Hidden { reason: LegalityReasonCode::UnimplementedEffect }));
+564: assert!(matches!(affordance.implementation, ImplementationStatus::Hidden { reason: LegalityReasonCode::UnimplementedEffect }));
+565: assert!(affordance.targets.iter().all(|(_, target)| matches!(target.status, TargetStatus::Hidden { reason: LegalityReasonCode::Unimplemen...
+566: assert!(affordance.targets.iter().all(|(_, target)| matches!(target.toughness, ToughnessAffordance::Hidden)));
+567: assert!(affordance.targets.iter().all(|(_, target)| target.toughness_view.is_none()));
+568: assert!(affordance.targets.iter().all(|(_, target)| matches!(target.toughness_reason, Some(LegalityReasonCode::UnimplementedEffect))));
+569: assert!(affordance.resource_details.iter().all(|detail| matches!(detail.status, ResourceStatus::Hidden { reason: LegalityReasonCode::Unim...
+570: assert!(matches!(affordance.toughness, ToughnessAffordance::Hidden));
+574: #[test]
+575: fn deferred_implementation_returns_deferred_action_and_targets() {
+591: assert!(matches!(affordance.action, ActionStatus::Deferred { reason: LegalityReasonCode::UnimplementedTargetShape }));
+592: assert!(matches!(affordance.implementation, ImplementationStatus::Deferred { reason: LegalityReasonCode::UnimplementedTargetShape }));
+593: assert!(affordance.targets.iter().all(|(_, target)| matches!(target.status, TargetStatus::Deferred { reason: LegalityReasonCode::Unimplem...
+594: assert!(affordance.targets.iter().all(|(_, target)| matches!(target.toughness, ToughnessAffordance::Hidden)));
+595: assert!(affordance.targets.iter().all(|(_, target)| target.toughness_view.is_none()));
+596: assert!(affordance.targets.iter().all(|(_, target)| matches!(target.toughness_reason, Some(LegalityReasonCode::UnimplementedTargetShape))));
+597: assert!(affordance.resource_details.iter().all(|detail| matches!(detail.status, ResourceStatus::Deferred { reason: LegalityReasonCode::Un...
+598: assert!(matches!(affordance.toughness, ToughnessAffordance::Hidden));
+602: #[test]
+603: fn target_affordance_surface_still_handles_enemy_ally_ko_commander_and_self() {
+617: assert!(matches!(
+621: assert!(matches!(
+625: assert!(matches!(
+629: assert!(matches!(
+633: assert!(matches!(
+640: #[test]
+641: fn revive_affordance_requires_ko_ally_and_rejects_live_and_enemy_targets() {
+654: assert!(matches!(
+658: assert!(matches!(
+662: assert!(matches!(
+669: #[test]
+670: fn damaged_target_affordance_requires_missing_hp_for_ally_targets() {
+682: assert!(matches!(
+686: assert!(matches!(
+693: #[test]
+694: fn deferred_row_shape_returns_deferred_for_every_target_in_snapshot() {
+707: assert!(affordances.iter().all(|(_, affordance)| matches!(
+714: #[test]
+715: fn energy_cap_affordance_reports_remaining_budget_and_true_cap_reason() {
+739: assert_eq!(affordance.kind, ResourceKind::EnergyCap);
+740: assert!(matches!(affordance.status, ResourceStatus::Enabled));
+741: assert_eq!(affordance.current, Some(7));
+742: assert_eq!(affordance.required, Some(5));
+745: #[test]
+746: fn energy_cap_affordance_disables_when_requested_exceeds_remaining_or_budget_is_exhausted() {
+783: assert!(matches!(exhausted_affordance.status, ResourceStatus::Disabled { reason: LegalityReasonCode::EnergyCapReached }));
+784: assert_eq!(exhausted_affordance.current, Some(0));
+785: assert_eq!(exhausted_affordance.required, Some(1));
+787: assert!(matches!(partial_affordance.status, ResourceStatus::Disabled { reason: LegalityReasonCode::EnergyCapReached }));
+788: assert_eq!(partial_affordance.current, Some(7));
+789: assert_eq!(partial_affordance.required, Some(8));
+792: #[test]
+793: fn tamer_resource_declarations_are_deferred_and_keep_known_command_costs() {
+797: assert_eq!(gauge.kind, ResourceKind::TamerGauge);
+798: assert!(matches!(gauge.status, ResourceStatus::Deferred { reason: LegalityReasonCode::TamerGaugeDeferred }));
+799: assert!(gauge.current.is_none());
+800: assert!(gauge.required.is_none());
+803: assert_eq!(command_costs, vec![Some(20), Some(50), Some(100)]);
+804: assert!(commands.iter().all(|detail| detail.kind == ResourceKind::TamerCommand));
+805: assert!(commands.iter().all(|detail| matches!(detail.status, ResourceStatus::Deferred { reason: LegalityReasonCode::TamerCommandDeferred ...
+806: assert!(commands.iter().all(|detail| detail.current.is_none()));
+809: #[test]
+810: fn child_tamer_gauge_boost_remains_queryable_as_the_shared_tamer_gauge_declaration() {
+813: assert_eq!(gauge.kind, ResourceKind::TamerGauge);
+814: assert!(matches!(gauge.status, ResourceStatus::Deferred { reason: LegalityReasonCode::TamerGaugeDeferred }));
+817: #[test]
+818: fn target_hp_rule_distinguishes_any_and_damaged() {
+819: assert_ne!(TargetHpRule::Any, TargetHpRule::Damaged);
+820: assert!(matches!(TargetHpRule::Any, TargetHpRule::Any));
+821: assert!(matches!(TargetHpRule::Damaged, TargetHpRule::Damaged));
+824: #[test]
+825: fn legality_reason_codes_include_contract_values() {
+841: assert!(!format!("{reason:?}").is_empty());
+845: #[test]
+846: fn intent_legality_respects_priority_and_specific_target_reasons() {
+880: assert_eq!(
+887: assert_eq!(
+892: assert_eq!(
+897: assert_eq!(
+902: assert_eq!(
+913: assert_eq!(
+927: assert_eq!(
+946: assert_eq!(
+959: assert_eq!(
+972: assert_eq!(
+983: assert_eq!(
+995: assert_eq!(
+1007: assert_eq!(
+
+## tests/holy_support_affordance.rs
+10: use bevyrogue::combat::kernel::CombatKernelTransition;
+18: fn app_with_holy_support() -> App {
+30: fn emit_holy_transition(app: &mut App, transition: HolySupportTransition) {
+33: transition: CombatKernelTransition::HolySupport(transition),
+42: #[test]
+43: fn holy_support_affordance_surfaces_grace_capacity_and_martyr_availability() {
+53: assert_eq!(
+73: #[test]
+74: fn holy_support_affordance_defaults_to_hidden_state_when_missing() {
+77: assert_eq!(
+101: #[test]
+102: fn holy_support_affordance_reports_zero_grace_and_deferred_martyr_when_empty() {
+106: assert_eq!(
+128: #[test]
+129: fn validation_snapshot_tracks_holy_support_transitions_and_formats_them() {
+140: assert_eq!(holy_support.grace, 2);
+141: assert!(holy_support.martyr_light_marked_this_cycle);
+142: assert!(!holy_support.martyr_light_consumed_this_cycle);
+143: assert_eq!(holy_support.last_signal, Some(HolySupportTransition::mark_martyr_light()));
+146: assert!(formatted.contains("holy_support=grace=2/3"));
+147: assert!(formatted.contains("martyr_marked=true"));
+148: assert!(formatted.contains("last=mark-martyr"));
+
+## tests/twin_core_integration.rs
+5: CombatBeatId, CombatKernelRegistry, CombatKernelTransition, CombatTagChangeKind,
+22: fn load_roster() -> UnitRoster {
+23: ron::from_str(include_str!("../assets/data/units.ron")).expect("parse units.ron")
+26: fn load_skill_book() -> SkillBook {
+27: ron::from_str(include_str!("../assets/data/skills.ron")).expect("parse skills.ron")
+30: fn unit_def<'a>(roster: &'a UnitRoster, name: &str) -> &'a UnitDef {
+38: fn skill_def<'a>(book: &'a SkillBook, id: &str) -> &'a SkillDef {
+45: fn runtime_unit(def: &UnitDef) -> Unit {
+57: fn spawn_snapshot_unit(app: &mut App, def: &UnitDef) {
+72: fn build_app() -> App {
+88: fn pump_kernel_transition(
+90: transition: CombatKernelTransition,
+111: fn capture_snapshot_string(app: &mut App) -> String {
+116: #[test]
+117: fn canonical_fire_ice_twin_core_loop_is_visible_through_validation_snapshots() {
+127: assert_eq!(skill_def(&skills, "pepper_breath").id, agumon.basic_skill);
+128: assert_eq!(skill_def(&skills, "agumon_ult").id, agumon.ultimate_skill);
+129: assert_eq!(skill_def(&skills, "bubble_blast").id, gabumon.basic_skill);
+130: assert_eq!(skill_def(&skills, "gabumon_ult").id, gabumon.ultimate_skill);
+131: assert_eq!(skill_def(&skills, "greymon_basic").id, greymon.basic_skill);
+132: assert_eq!(skill_def(&skills, "garurumon_basic").id, garurumon.basic_skill);
+144: CombatKernelTransition::Tag(CombatTagTransition {
+153: assert!(after_fire.contains("resonance=5"), "{after_fire}");
+154: assert!(after_fire.contains("heat=10"), "{after_fire}");
+158: CombatKernelTransition::Tag(CombatTagTransition {
+167: assert!(after_ice.contains("resonance=10"), "{after_ice}");
+168: assert!(after_ice.contains("heat=0"), "{after_ice}");
+172: CombatKernelTransition::Beat(CombatBeatId::Damage),
+177: assert!(after_beat.contains("resonance=11"), "{after_beat}");
+178: assert!(after_beat.contains("heat=0"), "{after_beat}");
+179: assert!(after_beat.contains("units=["), "{after_beat}");
+182: assert!(final_snapshot.contains("resonance=11"), "{final_snapshot}");
+183: assert!(final_snapshot.contains("heat=0"), "{final_snapshot}");
+
+## tests/validation_snapshot.rs
+18: fn unit(id: u32, hp_current: i32, hp_max: i32, attribute: Attribute) -> Unit {
+30: #[test]
+31: fn snapshot_contract_covers_promised_fields_and_shape() {
+126: assert_eq!(
+132: #[test]
+133: fn snapshot_defaults_empty_optional_surfaces() {
+158: assert_eq!(
+165: #[test]
+166: fn snapshot_hides_ally_missing_toughness_and_zero_max_enemy_bars() {
+201: assert_eq!(

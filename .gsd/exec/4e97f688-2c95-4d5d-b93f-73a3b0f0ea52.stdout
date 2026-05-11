@@ -1,0 +1,75 @@
+tests/engine_legality_integration.rs:277:        &ActionQueryKind::Skill(&case.skill.id),
+src/combat/resolution.rs:65:    let skill = book?.0.iter().find(|skill| &skill.id == skill_id)?;
+src/combat/resolution.rs:78:        skill_id: skill.id.clone(),
+src/combat/resolution.rs:79:        damage_tag: skill.damage_tag,
+src/combat/resolution.rs:80:        base_damage: skill_base_damage(&skill.effects),
+src/combat/resolution.rs:81:        toughness_damage: skill_toughness_hit(&skill.effects),
+src/combat/resolution.rs:82:        revive_pct: skill_revive_pct(&skill.effects),
+src/combat/resolution.rs:83:        sp_cost: skill.sp_cost,
+src/combat/resolution.rs:85:        grant_free_skill_count: skill_grant_free_count(&skill.effects),
+src/combat/resolution.rs:86:        status_to_apply: skill_apply_status(&skill.effects),
+src/combat/resolution.rs:87:        turn_advance_pct: skill_turn_advance(&skill.effects),
+src/combat/resolution.rs:88:        energy_grant: skill_grant_energy(&skill.effects),
+src/combat/resolution.rs:89:        self_advance_pct: skill_self_advance(&skill.effects),
+src/combat/resolution.rs:90:        target_shape: skill.targeting.shape,
+src/combat/resolution.rs:91:        custom_signals: skill.custom_signals.clone(),
+src/combat/follow_up.rs:321:        .and_then(|book| book.0.iter().find(|skill| &skill.id == skill_id))
+src/combat/follow_up.rs:322:        .map(|skill| skill.damage_tag)
+src/combat/resolution_tests.rs:118:        basic: skill.id.clone(),
+src/combat/resolution_tests.rs:119:        skills: vec![skill.id.clone()],
+src/combat/resolution_tests.rs:120:        ultimate: skill.id,
+src/combat/resolution_tests.rs:176:    let expected_shape = skill.targeting.shape;
+src/combat/resolution_tests.rs:556:        basic: skill.id.clone(),
+src/combat/resolution_tests.rs:557:        skills: vec![skill.id.clone()],
+src/combat/resolution_tests.rs:558:        ultimate: skill.id,
+src/combat/action_query.rs:642:        .find(|skill| &skill.id == skill_id)
+tests/roster_catalog.rs:163:    let skills: HashSet<_> = book.0.iter().map(|skill| skill.id.clone()).collect();
+src/ui/combat_panel.rs:87:        .and_then(|book| book.0.iter().find(|skill| skill.id == *skill_id))
+src/ui/combat_panel.rs:88:        .map(|skill| skill.name.clone())
+src/ui/combat_panel.rs:438:                            ActionQueryKind::Skill(&skill.id),
+src/ui/combat_panel.rs:452:                            pending_request = Some(Some(PendingKind::Skill(skill.id.clone())));
+tests/holy_support_resolution.rs:46:        .find(|skill| skill.id == SkillId(skill_id.into()))
+tests/holy_support_resolution.rs:51:        basic: skill.id.clone(),
+tests/holy_support_resolution.rs:52:        skills: vec![skill.id.clone()],
+tests/holy_support_resolution.rs:53:        ultimate: skill.id.clone(),
+tests/holy_support_resolution.rs:58:        skill_id: skill.id,
+tests/action_affordance_query.rs:296:        ActionQueryKind::Skill(&skill.id),
+tests/action_affordance_query.rs:432:        ActionQueryKind::Skill(&skill.id),
+tests/action_affordance_query.rs:469:        ActionQueryKind::Skill(&skill.id),
+tests/action_affordance_query.rs:500:        ActionQueryKind::Skill(&skill.id),
+tests/action_affordance_query.rs:532:        ActionQueryKind::Skill(&skill.id),
+tests/action_affordance_query.rs:563:        ActionQueryKind::Skill(&skill.id),
+tests/action_affordance_query.rs:598:        ActionQueryKind::Skill(&skill.id),
+tests/action_affordance_query.rs:686:        ActionQueryKind::Skill(&skill.id),
+tests/action_affordance_query.rs:735:        ActionQueryKind::Skill(&skill.id),
+tests/action_affordance_query.rs:800:        ActionQueryKind::Skill(&skill.id),
+tests/patamon_blueprint_seam.rs:31:        .find(|skill| skill.id == SkillId(id.into()))
+tests/patamon_blueprint_seam.rs:140:    assert!(skill.custom_signals.is_empty());
+tests/patamon_blueprint_seam.rs:204:        skills: vec![skill.id.clone()],
+tests/patamon_blueprint_seam.rs:210:        skill_id: skill.id.clone(),
+tests/patamon_blueprint_seam.rs:216:    assert_eq!(resolved.custom_signals, skill.custom_signals);
+tests/patamon_blueprint_seam.rs:228:        basic: skill.id.clone(),
+tests/patamon_blueprint_seam.rs:229:        skills: vec![skill.id.clone()],
+tests/patamon_blueprint_seam.rs:235:        skill_id: skill.id.clone(),
+tests/patamon_blueprint_seam.rs:250:        ultimate: skill.id.clone(),
+tests/twin_core_integration.rs:42:        .find(|skill| skill.id == SkillId(id.into()))
+src/data/skills_ron.rs:217:        skill_id: skill.id.clone(),
+src/data/skills_ron.rs:225:    skill.effects.iter().any(predicate)
+src/data/skills_ron.rs:232:    if matches!(skill.implementation, SkillImplementation::Implemented)
+src/data/skills_ron.rs:233:        && skill.targeting.shape != TargetShape::Single
+src/data/skills_ron.rs:241:                skill.targeting.shape
+src/data/skills_ron.rs:247:        for target in skill.effects.iter().filter_map(|effect| match effect {
+src/data/skills_ron.rs:251:            if target != skill.targeting.shape {
+src/data/skills_ron.rs:258:                        target, skill.targeting.shape
+src/data/skills_ron.rs:266:        if skill.targeting.side != TargetSide::Ally {
+src/data/skills_ron.rs:273:                    skill.targeting.side
+src/data/skills_ron.rs:278:        if skill.targeting.life != TargetLife::Ko {
+src/data/skills_ron.rs:285:                    skill.targeting.life
+src/data/skills_ron.rs:290:        if skill.targeting.shape != TargetShape::Single {
+src/data/skills_ron.rs:297:                    skill.targeting.shape
+src/data/skills_ron.rs:304:        match &skill.implementation {
+src/data/skills_ron.rs:330:        &skill.implementation
+src/data/skills_ron.rs:333:            && skill.targeting.shape == TargetShape::Single
+src/data/skills_ron.rs:741:        let ids: HashSet<_> = book.0.iter().map(|skill| skill.id.clone()).collect();
+src/data/skills_ron.rs:743:        assert!(book.0.iter().all(|skill| !skill.effects.is_empty()));
+src/data/units_ron.rs:500:        let skill_ids: HashSet<_> = book.0.iter().map(|skill| skill.id.clone()).collect();

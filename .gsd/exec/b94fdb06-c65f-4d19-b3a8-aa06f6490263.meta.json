@@ -1,0 +1,18 @@
+{
+  "id": "b94fdb06-c65f-4d19-b3a8-aa06f6490263",
+  "runtime": "bash",
+  "purpose": "Examine src/combat/action_query.rs and src/combat/turn_system/mod.rs to understand existing structures and adapter placement.",
+  "script_chars": 174,
+  "started_at": "2026-05-01T09:49:27.558Z",
+  "finished_at": "2026-05-01T09:49:27.585Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 27,
+  "stdout_bytes": 26384,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M012/.gsd/exec/b94fdb06-c65f-4d19-b3a8-aa06f6490263.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M012/.gsd/exec/b94fdb06-c65f-4d19-b3a8-aa06f6490263.stderr"
+}

@@ -1,0 +1,18 @@
+{
+  "id": "b774c559-24d7-402c-8e4c-9ab45d7fa757",
+  "runtime": "bash",
+  "purpose": "S03 slice-level verification: targeted tests plus combat authority audit",
+  "script_chars": 364,
+  "started_at": "2026-05-08T16:30:18.838Z",
+  "finished_at": "2026-05-08T16:30:19.041Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 203,
+  "stdout_bytes": 3824,
+  "stderr_bytes": 33318,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/b774c559-24d7-402c-8e4c-9ab45d7fa757.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/b774c559-24d7-402c-8e4c-9ab45d7fa757.stderr"
+}

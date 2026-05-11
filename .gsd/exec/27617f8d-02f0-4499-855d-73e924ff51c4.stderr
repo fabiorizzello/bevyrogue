@@ -1,0 +1,278 @@
+warning: unused import: `grant_free_skill_events`
+  --> src/combat/turn_system/pipeline.rs:16:20
+   |
+16 |     apply_effects, grant_free_skill_events, resolve_action, target_shape_rejection_reason,
+   |                    ^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `crate::combat::team::Team`
+  --> src/combat/turn_system/pipeline.rs:23:5
+   |
+23 | use crate::combat::team::Team;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::combat::types::SkillId`
+  --> src/combat/turn_system/pipeline.rs:25:5
+   |
+25 | use crate::combat::types::SkillId;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: variable does not need to be mutable
+   --> src/combat/turn_system/pipeline.rs:173:13
+    |
+173 |             mut attacker_ult,
+    |             ----^^^^^^^^^^^^
+    |             |
+    |             help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+   --> src/combat/turn_system/pipeline.rs:181:13
+    |
+181 |             mut attacker_round_flags,
+    |             ----^^^^^^^^^^^^^^^^^^^^
+    |             |
+    |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/combat/turn_system/pipeline.rs:439:9
+    |
+439 |         mut attacker_ult,
+    |         ----^^^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: unused variable: `turn_order`
+   --> src/combat/turn_system/pipeline.rs:130:5
+    |
+130 |     turn_order: &mut ResMut<TurnOrder>,
+    |     ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_turn_order`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `attacker_commander`
+   --> src/combat/turn_system/pipeline.rs:444:9
+    |
+444 |         attacker_commander,
+    |         ^^^^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_attacker_commander`
+
+warning: field `is_stunned` is never read
+   --> src/combat/follow_up.rs:303:5
+    |
+297 | struct FormIdentitySnapshot {
+    |        -------------------- field in this struct
+...
+303 |     is_stunned: bool,
+    |     ^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `LegalityReasonCode`
+  --> src/combat/follow_up_tests.rs:22:17
+   |
+22 |         Effect, LegalityReasonCode, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
+   |                 ^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `grant_free_skill_events`
+  --> src/combat/turn_system/pipeline.rs:16:20
+   |
+16 |     apply_effects, grant_free_skill_events, resolve_action, target_shape_rejection_reason,
+   |                    ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `LegalityReasonCode`
+  --> src/combat/turn_system/tests.rs:14:13
+   |
+14 |     Effect, LegalityReasonCode, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
+   |             ^^^^^^^^^^^^^^^^^^
+
+warning: variable does not need to be mutable
+    --> src/combat/kernel.rs:1274:13
+     |
+1274 |         let mut step = TacticalCycleStep::default();
+     |             ----^^^^
+     |             |
+     |             help: remove this `mut`
+     |
+     = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+   --> src/combat/turn_system/pipeline.rs:173:13
+    |
+173 |             mut attacker_ult,
+    |             ----^^^^^^^^^^^^
+    |             |
+    |             help: remove this `mut`
+
+warning: function `advance_turn_system_skips_stunned_unit_OLD` should have a snake case name
+  --> src/combat/turn_system/tests.rs:77:4
+   |
+77 | fn advance_turn_system_skips_stunned_unit_OLD() {
+   |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `advance_turn_system_skips_stunned_unit_old`
+   |
+   = note: `#[warn(non_snake_case)]` (part of `#[warn(nonstandard_style)]`) on by default
+
+warning: function `advance_turn_system_burn_clamps_hp_and_expires_OLD` should have a snake case name
+   --> src/combat/turn_system/tests.rs:118:4
+    |
+118 | fn advance_turn_system_burn_clamps_hp_and_expires_OLD() {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `advance_turn_system_burn_clamps_hp_and_expires_old`
+
+warning: function `advance_turn_system_freeze_updates_and_clears_speed_modifier_OLD` should have a snake case name
+   --> src/combat/turn_system/tests.rs:166:4
+    |
+166 | fn advance_turn_system_freeze_updates_and_clears_speed_modifier_OLD() {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `advance_turn_system_freeze_updates_and_clears_speed_modifier_old`
+
+warning: function `advance_turn_system_shock_zero_percent_does_not_cancel_OLD` should have a snake case name
+   --> src/combat/turn_system/tests.rs:211:4
+    |
+211 | fn advance_turn_system_shock_zero_percent_does_not_cancel_OLD() {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `advance_turn_system_shock_zero_percent_does_not_cancel_old`
+
+warning: function `advance_turn_system_shock_full_cancel_emits_action_failed_OLD` should have a snake case name
+   --> src/combat/turn_system/tests.rs:265:4
+    |
+265 | fn advance_turn_system_shock_full_cancel_emits_action_failed_OLD() {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `advance_turn_system_shock_full_cancel_emits_action_failed_old`
+
+warning: function `advance_turn_system_stunned_unit_skips_status_tick_OLD` should have a snake case name
+   --> src/combat/turn_system/tests.rs:318:4
+    |
+318 | fn advance_turn_system_stunned_unit_skips_status_tick_OLD() {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `advance_turn_system_stunned_unit_skips_status_tick_old`
+
+warning: `bevyrogue` (lib) generated 9 warnings (run `cargo fix --lib -p bevyrogue` to apply 8 suggestions)
+warning: `bevyrogue` (lib test) generated 18 warnings (7 duplicates) (run `cargo fix --lib -p bevyrogue --tests` to apply 5 suggestions)
+   Compiling bevyrogue v0.1.0 (/home/fabio/dev/bevyrogue/.gsd/worktrees/M015)
+warning: unused import: `AV_PER_SPEED`
+ --> tests/turn_system_av.rs:2:29
+  |
+2 | use bevyrogue::combat::av::{AV_PER_SPEED, ActionValue, ActionValueUpdated, MAX_AV};
+  |                             ^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `bevyrogue` (test "turn_system_av") generated 1 warning (run `cargo fix --test "turn_system_av" -p bevyrogue` to apply 1 suggestion)
+error: couldn't read `tests/../docs/combat_ui_readiness_gap_matrix.md`: No such file or directory (os error 2)
+ --> tests/ui_readiness_gap_matrix_docs.rs:1:19
+  |
+1 | const DOC: &str = include_str!("../docs/combat_ui_readiness_gap_matrix.md");
+  |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: could not compile `bevyrogue` (test "ui_readiness_gap_matrix_docs") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+warning: unused import: `CombatKernelState`
+ --> tests/predator_loop_kernel.rs:3:5
+  |
+3 |     CombatKernelState, PredatorLoopBlockedReason, PredatorLoopCapKind, PredatorLoopSignal,
+  |     ^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `LegalityReasonCode`
+  --> tests/revive_semantics.rs:17:17
+   |
+17 |         Effect, LegalityReasonCode, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
+   |                 ^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `LegalityReasonCode`
+  --> tests/encounter_e2e.rs:17:17
+   |
+17 |         Effect, LegalityReasonCode, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
+   |                 ^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `rejected_build` is never used
+  --> tests/predator_loop_kernel.rs:19:4
+   |
+19 | fn rejected_build(
+   |    ^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+  --> tests/revive_semantics.rs:43:9
+   |
+43 |         SkillDef {
+   |         ^^^^^^^^ missing `animation_sequence`, `custom_signals` and `qte`
+
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+  --> tests/encounter_e2e.rs:46:9
+   |
+46 |         SkillDef {
+   |         ^^^^^^^^ missing `animation_sequence`, `custom_signals` and `qte`
+
+error[E0063]: missing fields `holy_support` and `twin_core` in initializer of `UnitDef`
+  --> tests/bootstrap_spawn_composition.rs:31:13
+   |
+31 |             UnitDef {
+   |             ^^^^^^^ missing `holy_support` and `twin_core`
+
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+  --> tests/revive_semantics.rs:58:9
+   |
+58 |         SkillDef {
+   |         ^^^^^^^^ missing `animation_sequence`, `custom_signals` and `qte`
+
+error[E0063]: missing fields `holy_support` and `twin_core` in initializer of `UnitDef`
+  --> tests/bootstrap_spawn_composition.rs:62:13
+   |
+62 |             UnitDef {
+   |             ^^^^^^^ missing `holy_support` and `twin_core`
+
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+  --> tests/encounter_e2e.rs:67:9
+   |
+67 |         SkillDef {
+   |         ^^^^^^^^ missing `animation_sequence`, `custom_signals` and `qte`
+
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+  --> tests/encounter_e2e.rs:88:9
+   |
+88 |         SkillDef {
+   |         ^^^^^^^^ missing `animation_sequence`, `custom_signals` and `qte`
+
+error[E0063]: missing fields `holy_support` and `twin_core` in initializer of `UnitDef`
+  --> tests/bootstrap_spawn_composition.rs:93:13
+   |
+93 |             UnitDef {
+   |             ^^^^^^^ missing `holy_support` and `twin_core`
+
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+   --> tests/encounter_e2e.rs:109:9
+    |
+109 |         SkillDef {
+    |         ^^^^^^^^ missing `animation_sequence`, `custom_signals` and `qte`
+
+error[E0063]: missing fields `holy_support` and `twin_core` in initializer of `UnitDef`
+   --> tests/bootstrap_spawn_composition.rs:124:13
+    |
+124 |             UnitDef {
+    |             ^^^^^^^ missing `holy_support` and `twin_core`
+
+error[E0063]: missing fields `holy_support` and `twin_core` in initializer of `UnitDef`
+   --> tests/bootstrap_spawn_composition.rs:155:13
+    |
+155 |             UnitDef {
+    |             ^^^^^^^ missing `holy_support` and `twin_core`
+
+error[E0063]: missing fields `holy_support` and `twin_core` in initializer of `UnitDef`
+   --> tests/bootstrap_spawn_composition.rs:186:13
+    |
+186 |             UnitDef {
+    |             ^^^^^^^ missing `holy_support` and `twin_core`
+
+For more information about this error, try `rustc --explain E0063`.
+warning: `bevyrogue` (test "encounter_e2e") generated 1 warning
+error: could not compile `bevyrogue` (test "encounter_e2e") due to 4 previous errors; 1 warning emitted
+warning: `bevyrogue` (test "revive_semantics") generated 1 warning
+error: could not compile `bevyrogue` (test "revive_semantics") due to 2 previous errors; 1 warning emitted
+error: could not compile `bevyrogue` (test "bootstrap_spawn_composition") due to 6 previous errors
+warning: `bevyrogue` (test "predator_loop_kernel") generated 2 warnings (run `cargo fix --test "predator_loop_kernel" -p bevyrogue` to apply 1 suggestion)

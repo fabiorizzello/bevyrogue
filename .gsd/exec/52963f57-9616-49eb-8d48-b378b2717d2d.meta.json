@@ -1,0 +1,18 @@
+{
+  "id": "52963f57-9616-49eb-8d48-b378b2717d2d",
+  "runtime": "bash",
+  "purpose": "Locate kernel runtime and applier symbols",
+  "script_chars": 202,
+  "started_at": "2026-05-08T15:44:12.920Z",
+  "finished_at": "2026-05-08T15:44:12.932Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 12,
+  "stdout_bytes": 18316,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/52963f57-9616-49eb-8d48-b378b2717d2d.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/52963f57-9616-49eb-8d48-b378b2717d2d.stderr"
+}

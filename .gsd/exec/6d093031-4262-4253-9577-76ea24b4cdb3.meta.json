@@ -1,0 +1,18 @@
+{
+  "id": "6d093031-4262-4253-9577-76ea24b4cdb3",
+  "runtime": "bash",
+  "purpose": "S04 presentation metadata and beat surface scan",
+  "script_chars": 503,
+  "started_at": "2026-05-08T16:34:09.546Z",
+  "finished_at": "2026-05-08T16:34:09.610Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 64,
+  "stdout_bytes": 28151,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/6d093031-4262-4253-9577-76ea24b4cdb3.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/6d093031-4262-4253-9577-76ea24b4cdb3.stderr"
+}

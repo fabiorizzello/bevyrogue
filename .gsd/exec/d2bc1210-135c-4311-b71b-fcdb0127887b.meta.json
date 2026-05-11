@@ -1,0 +1,18 @@
+{
+  "id": "d2bc1210-135c-4311-b71b-fcdb0127887b",
+  "runtime": "bash",
+  "purpose": "Summarize S06 ledger and verifier current boundary markers",
+  "script_chars": 538,
+  "started_at": "2026-05-08T21:17:10.449Z",
+  "finished_at": "2026-05-08T21:17:10.467Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 18,
+  "stdout_bytes": 498,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/d2bc1210-135c-4311-b71b-fcdb0127887b.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/d2bc1210-135c-4311-b71b-fcdb0127887b.stderr"
+}

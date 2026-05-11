@@ -1,0 +1,60 @@
+src/data/skills_ron.rs
+  9: pub enum TargetShape {
+  18: pub enum Effect {
+  36: pub struct SkillDef {
+src/combat/resolution.rs
+  52: pub fn resolve_action(
+  170: pub fn apply_effects(
+src/combat/turn_system/mod.rs
+  34: pub enum ActionIntent {
+  52: pub(crate) type ResolveActorsQuery<'w, 's> = Query<
+  113: pub fn resolve_action_system(
+src/combat/turn_system/pipeline.rs
+  28: pub(crate) fn step_declaration(
+  62: pub(crate) fn step_app(
+  247: // turn_order.advance_unit_pct(*t_id, *amount_pct);
+  298: energy.gain(inflight.action.energy_grant);
+src/combat/bootstrap.rs
+  17: use super::energy::{Energy, RoundEnergyTracker};
+  140: pub fn spawn_unit_from_def(commands: &mut Commands, def: &UnitDef) -> Entity {
+  169: RoundEnergyTracker::default(),
+  194: spawn_unit_from_def(commands, def);
+  198: spawn_unit_from_def(commands, def);
+  246: let entity = spawn_unit_from_def(&mut app.world_mut().commands(), &def);
+  258: let entity = spawn_unit_from_def(&mut app.world_mut().commands(), &def);
+src/combat/energy.rs
+  43: pub struct RoundEnergyTracker {
+  48: impl Default for RoundEnergyTracker {
+  57: impl RoundEnergyTracker {
+  89: let mut tracker = RoundEnergyTracker::default();
+  99: let mut tracker = RoundEnergyTracker::default();
+  109: let mut tracker = RoundEnergyTracker::default();
+  118: let mut tracker = RoundEnergyTracker::default();
+src/bin/combat_cli.rs
+  295: let mut target_entries: Vec<(UnitId, String)> = units.iter()
+  307: target_entries.sort_by_key(|(id, _)| id.0);
+  309: let target_id = if target_entries.is_empty() {
+  312: let target_labels: Vec<String> = target_entries.iter().map(|(_, l)| l.clone()).collect();
+  315: target_entries.iter()
+  320: Err(_) => target_entries[0].0,
+src/ui/combat_panel.rs
+  231: .add_enabled(can_choose_action, egui::Button::new("Basic"))
+  362: .add_enabled(can_pick_target && !enemy.is_ko, chip)
+src/windowed.rs
+  220: && let Some(id) = order.advance()
+src/combat/turn_order.rs
+  9: pub struct TurnOrder {
+src/combat/observability.rs
+  21: pub struct ValidationSnapshot {
+  79: pub enum ValidationSnapshotError {
+  86: impl fmt::Display for ValidationSnapshotError {
+  99: impl std::error::Error for ValidationSnapshotError {}
+  103: ) -> Result<ValidationSnapshot, ValidationSnapshotError> {
+  107: .ok_or(ValidationSnapshotError::MissingResource("CombatState"))?;
+  113: .ok_or(ValidationSnapshotError::MissingResource("SpPool"))?;
+  129: .ok_or(ValidationSnapshotError::MissingResource("ActionLog"))?
+  172: .ok_or(ValidationSnapshotError::MissingTeam { unit: unit.id })?;
+  175: .ok_or(ValidationSnapshotError::MissingToughness { unit: unit.id })?;
+  178: .ok_or(ValidationSnapshotError::MissingUltimateCharge { unit: unit.id })?;
+  201: Ok(ValidationSnapshot {
+  213: pub fn format_validation_snapshot(snapshot: &ValidationSnapshot) -> String {

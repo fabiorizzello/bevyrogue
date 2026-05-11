@@ -1,0 +1,31 @@
+{
+  "model_path": "/home/fabio/dev/provaassets/sprite_pipeline/raw_models/agumon.fbx",
+  "texture_path": "/home/fabio/dev/provaassets/sprite_pipeline/raw_models/chr050a01.png",
+  "output_root": "/home/fabio/dev/provaassets/sprite_pipeline/raw_renders/agumon",
+  "render_size": 256,
+  "ortho_scale_auto": true,
+  "ortho_padding": 1.2,
+  "hide_meshes": ["chr050_1"],
+  "outline_meshes": ["chr050_2"],
+  "_meshes_note": "chr050_0 = body (textured), chr050_1 = specular highlights (hide), chr050_2 = cel-shading outline (black material)",
+  "posterize_levels": 4,
+  "_posterize_note": "Discretize body colors to N levels per channel for cel-shaded look. 3-5 sweet spot.",
+  "model_rotation_deg": [90, 0, 0],
+  "cam_distance": 5.0,
+  "cam_axis": "x",
+  "world_up": "z",
+  "render_engine": "CYCLES",
+  "cycles_samples": 1,
+  "disable_aa": true,
+  "light_energy": 5.0,
+  "world_strength": 1.5,
+  "animations": [
+    {
+      "name": "idle",
+      "action_name": "chr050_armature|chr050_armature|chr050_bn01",
+      "frame_start": 1,
+      "frame_end": 35,
+      "frame_step": 4
+    }
+  ]
+}

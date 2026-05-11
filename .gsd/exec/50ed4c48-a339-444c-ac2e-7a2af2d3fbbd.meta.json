@@ -1,0 +1,18 @@
+{
+  "id": "50ed4c48-a339-444c-ac2e-7a2af2d3fbbd",
+  "runtime": "bash",
+  "purpose": "run S04 authority audit verifier after docs/script edits",
+  "script_chars": 48,
+  "started_at": "2026-05-08T16:54:43.782Z",
+  "finished_at": "2026-05-08T16:54:43.812Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 30,
+  "stdout_bytes": 44,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/50ed4c48-a339-444c-ac2e-7a2af2d3fbbd.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/50ed4c48-a339-444c-ac2e-7a2af2d3fbbd.stderr"
+}

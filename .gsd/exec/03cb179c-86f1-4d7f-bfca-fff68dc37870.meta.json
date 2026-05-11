@@ -1,0 +1,18 @@
+{
+  "id": "03cb179c-86f1-4d7f-bfca-fff68dc37870",
+  "runtime": "bash",
+  "purpose": "Find step_app call sites",
+  "script_chars": 28,
+  "started_at": "2026-05-08T15:45:47.812Z",
+  "finished_at": "2026-05-08T15:45:47.821Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 9,
+  "stdout_bytes": 170,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/03cb179c-86f1-4d7f-bfca-fff68dc37870.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/03cb179c-86f1-4d7f-bfca-fff68dc37870.stderr"
+}

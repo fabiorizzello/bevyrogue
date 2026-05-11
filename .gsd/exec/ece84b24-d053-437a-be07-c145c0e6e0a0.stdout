@@ -1,0 +1,44 @@
+
+running 1 test
+test s09_event_stream_observes_all_variants ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 4 tests
+test action_on_ko_target_produces_no_status ... ok
+test reapply_status_overwrites_existing_component ... ok
+test action_that_kos_target_produces_no_status ... ok
+test apply_status_inserts_component_and_emits_event ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 4 tests
+test standard_breaks_in_one_full_hit ... ok
+test armored_requires_two_full_hits ... ok
+test shielded_never_breaks ... ok
+test break_seal_blocks_repeat_break_in_same_round_then_lifts_on_next_turn ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test canonical_fire_ice_twin_core_loop_is_visible_through_validation_snapshots ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test twin_core_kernel_hooks_apply_current_state_fields ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 3 tests
+test snapshot_defaults_empty_optional_surfaces ... ok
+test snapshot_hides_ally_missing_toughness_and_zero_max_enemy_bars ... ok
+test snapshot_contract_covers_promised_fields_and_shape ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

@@ -1,0 +1,18 @@
+{
+  "id": "eb5ee521-d893-413f-89c1-d9e9b2ea02fa",
+  "runtime": "bash",
+  "purpose": "M015 T03 verification digest",
+  "script_chars": 398,
+  "started_at": "2026-05-08T10:57:52.214Z",
+  "finished_at": "2026-05-08T10:57:52.218Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 4,
+  "stdout_bytes": 30,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/eb5ee521-d893-413f-89c1-d9e9b2ea02fa.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/eb5ee521-d893-413f-89c1-d9e9b2ea02fa.stderr"
+}

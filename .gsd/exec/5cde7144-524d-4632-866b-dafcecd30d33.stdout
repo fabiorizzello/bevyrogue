@@ -1,0 +1,12 @@
+
+running 7 tests
+test gap_matrix_defines_required_classification_vocabulary ... ok
+test gap_matrix_links_requirement_and_decisions ... ok
+test gap_matrix_contains_no_placeholder_text ... ok
+test gap_matrix_states_the_no_skill_id_specific_ui_boundary ... ok
+test gap_matrix_names_all_required_mechanics_and_areas ... ok
+test gap_matrix_uses_each_required_status_family ... ok
+test gap_matrix_names_downstream_contract_reason_examples ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

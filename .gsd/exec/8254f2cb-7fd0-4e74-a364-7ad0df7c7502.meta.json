@@ -1,0 +1,18 @@
+{
+  "id": "8254f2cb-7fd0-4e74-a364-7ad0df7c7502",
+  "runtime": "bash",
+  "purpose": "grep relevant symbols for legality gap research",
+  "script_chars": 237,
+  "started_at": "2026-04-30T17:25:21.671Z",
+  "finished_at": "2026-04-30T17:25:21.705Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 34,
+  "stdout_bytes": 22263,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M012/.gsd/exec/8254f2cb-7fd0-4e74-a364-7ad0df7c7502.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M012/.gsd/exec/8254f2cb-7fd0-4e74-a364-7ad0df7c7502.stderr"
+}

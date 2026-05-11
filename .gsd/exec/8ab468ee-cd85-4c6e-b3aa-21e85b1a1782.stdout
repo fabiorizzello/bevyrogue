@@ -1,0 +1,802 @@
+
+## src/combat/kernel.rs (1393 lines)
+6: // CombatKernelRegistry must be Resource so it can be accessed via Bevy ECS Res<>.
+9: pub enum TacticalCyclePhase {
+16: impl TacticalCyclePhase {
+19: pub const fn next(self) -> Self {
+28: pub const fn as_str(self) -> &'static str {
+39: pub struct TacticalCycleStep {
+45: impl Default for TacticalCycleStep {
+46: fn default() -> Self {
+56: pub struct CombatKernelConfig {
+68: impl Default for CombatKernelConfig {
+69: fn default() -> Self {
+85: pub enum StrainChangeKind {
+92: pub struct StrainTransition {
+101: pub struct Strain {
+105: impl Default for Strain {
+106: fn default() -> Self {
+111: impl Strain {
+112: pub fn gain(&mut self, amount: u16, config: &CombatKernelConfig) -> StrainTransition {
+125: pub fn spend(&mut self, amount: u16) -> StrainTransition {
+138: pub fn decay(&mut self, amount: u16) -> StrainTransition {
+153: pub enum FlowChangeKind {
+161: pub enum FlowState {
+166: impl Default for FlowState {
+167: fn default() -> Self {
+173: pub struct FlowTransition {
+179: impl FlowState {
+180: pub fn enter(&mut self, config: &CombatKernelConfig) -> FlowTransition {
+196: pub fn decay(&mut self, config: &CombatKernelConfig) -> FlowTransition {
+221: pub fn exit(&mut self) -> FlowTransition {
+231: pub fn momentum(self) -> u8 {
+240: pub enum FatigueChangeKind {
+247: pub struct Fatigue {
+252: impl Default for Fatigue {
+253: fn default() -> Self {
+262: pub struct FatigueTransition {
+271: impl Fatigue {
+272: pub fn gain(&mut self, amount: u16, config: &CombatKernelConfig) -> FatigueTransition {
+286: pub fn carry_over(&mut self, config: &CombatKernelConfig) -> FatigueTransition {
+301: pub fn reset(&mut self) -> FatigueTransition {
+317: pub struct CombatTagId(pub String);
+319: impl From<&str> for CombatTagId {
+320: fn from(value: &str) -> Self {
+325: impl From<String> for CombatTagId {
+326: fn from(value: String) -> Self {
+332: pub enum CombatTagChangeKind {
+340: pub struct CombatTagState {
+346: impl CombatTagState {
+347: pub fn new(id: impl Into<CombatTagId>, turns_left: u8) -> Self {
+355: pub fn is_active(&self) -> bool {
+359: pub fn tick(&mut self) -> CombatTagTransition {
+377: pub fn consume(&mut self) -> CombatTagTransition {
+391: pub struct CombatTagTransition {
+398: pub enum CombatBeatId {
+408: impl CombatBeatId {
+419: pub const fn as_str(self) -> &'static str {
+433: pub enum TwinCoreSignal {
+445: pub struct TwinCoreTransition {
+446: pub signal: TwinCoreSignal,
+450: impl TwinCoreTransition {
+451: pub const fn build_cross_resonance(amount: u8) -> Self {
+453: signal: TwinCoreSignal::BuildCrossResonance,
+458: pub const fn spend_cross_resonance(amount: u8) -> Self {
+460: signal: TwinCoreSignal::SpendCrossResonance,
+465: pub const fn thermal_spark(amount: u8) -> Self {
+467: signal: TwinCoreSignal::ThermalSpark,
+472: pub const fn twin_burst(amount: u8) -> Self {
+474: signal: TwinCoreSignal::TwinBurst,
+479: pub const fn shatter(amount: u8) -> Self {
+481: signal: TwinCoreSignal::Shatter,
+486: pub const fn fire_spend_marker(amount: u8) -> Self {
+488: signal: TwinCoreSignal::FireSpendMarker,
+493: pub const fn ice_spend_marker(amount: u8) -> Self {
+495: signal: TwinCoreSignal::IceSpendMarker,
+500: pub const fn cycle_reset() -> Self {
+502: signal: TwinCoreSignal::CycleReset,
+509: pub enum BatteryLoopChargeKind {
+515: pub enum BatteryLoopBlockedReason {
+525: pub enum BatteryLoopStep {
+536: pub enum BatteryLoopSignal {
+549: pub struct BatteryLoopTransition {
+550: pub signal: BatteryLoopSignal,
+556: impl BatteryLoopTransition {
+557: pub const fn build_static_charge(amount: u8) -> Self {
+559: signal: BatteryLoopSignal::BuildStaticCharge,
+566: pub const fn build_circuit_charge(amount: u8) -> Self {
+568: signal: BatteryLoopSignal::BuildCircuitCharge,
+575: pub const fn spend_circuit_charge(amount: u8) -> Self {
+577: signal: BatteryLoopSignal::SpendCircuitCharge,
+584: pub const fn grant_energy(amount: u8) -> Self {
+586: signal: BatteryLoopSignal::GrantEnergy,
+593: pub const fn self_energy_gain(amount: u8) -> Self {
+595: signal: BatteryLoopSignal::SelfEnergyGain,
+602: pub const fn transfer_energy(amount: u8) -> Self {
+604: signal: BatteryLoopSignal::TransferEnergy,
+611: pub const fn cycle_reset() -> Self {
+613: signal: BatteryLoopSignal::CycleReset,
+620: pub const fn rejected(attempted: BatteryLoopStep, reason: BatteryLoopBlockedReason) -> Self {
+622: signal: BatteryLoopSignal::Rejected,
+629: pub const fn ignored(attempted: BatteryLoopStep) -> Self {
+631: signal: BatteryLoopSignal::Ignored,
+640: pub enum PrecisionWindowKind {
+646: pub enum PrecisionCommitment {
+653: pub enum PrecisionReveal {
+660: pub enum PrecisionOutcome {
+667: pub enum PrecisionMindGamePhase {
+676: pub enum PrecisionMindGameRejectReason {
+687: pub enum PrecisionMindGameStep {
+695: pub enum PrecisionMindGameTransition {
+717: impl PrecisionMindGameTransition {
+718: pub const fn open_window(window: PrecisionWindowKind) -> Self {
+722: pub const fn commit(commitment: PrecisionCommitment) -> Self {
+726: pub const fn reveal(reveal: PrecisionReveal) -> Self {
+730: pub const fn resolve(outcome: PrecisionOutcome) -> Self {
+734: pub const fn rejected(
+741: pub const fn ignored(attempted: PrecisionMindGameStep) -> Self {
+747: pub enum PredatorLoopCapKind {
+753: pub enum PredatorLoopBlockedReason {
+765: pub enum PredatorLoopStep {
+775: pub enum PredatorLoopSignal {
+787: pub struct PredatorLoopTransition {
+788: pub signal: PredatorLoopSignal,
+795: impl PredatorLoopTransition {
+796: pub const fn build_exploit(target: UnitId, amount: u16) -> Self {
+798: signal: PredatorLoopSignal::BuildExploit,
+806: pub const fn apply_prey_lock(target: UnitId, duration: u16) -> Self {
+808: signal: PredatorLoopSignal::ApplyPreyLock,
+816: pub const fn consume_prey_lock_payoff(target: UnitId, amount: u16) -> Self {
+818: signal: PredatorLoopSignal::ConsumePreyLockPayoff,
+826: pub const fn enter_berserk(strain_current: u16) -> Self {
+828: signal: PredatorLoopSignal::EnterBerserk,
+836: pub const fn tick() -> Self {
+838: signal: PredatorLoopSignal::Tick,
+846: pub const fn expire(target: UnitId) -> Self {
+848: signal: PredatorLoopSignal::Expire,
+856: pub const fn rejected(
+861: signal: PredatorLoopSignal::Rejected,
+875: pub const fn ignored(attempted: PredatorLoopStep) -> Self {
+877: signal: PredatorLoopSignal::Ignored,
+893: pub enum CombatKernelTransition {
+899: Beat(CombatBeatId),
+908: pub struct TacticalCycleTransition {
+916: pub enum HolySupportSignal {
+927: pub enum HolySupportStep {
+936: pub enum HolySupportRejectReason {
+944: pub struct HolySupportTransition {
+945: pub signal: HolySupportSignal,
+951: impl HolySupportTransition {
+952: pub const fn build_grace(amount: u8) -> Self {
+954: signal: HolySupportSignal::BuildGrace,
+961: pub const fn spend_grace(amount: u8) -> Self {
+963: signal: HolySupportSignal::SpendGrace,
+970: pub const fn mark_martyr_light() -> Self {
+972: signal: HolySupportSignal::MarkMartyrLight,
+979: pub const fn consume_martyr_light() -> Self {
+981: signal: HolySupportSignal::ConsumeMartyrLight,
+988: pub const fn cycle_reset() -> Self {
+990: signal: HolySupportSignal::CycleReset,
+997: pub const fn rejected(attempted: HolySupportStep, reason: HolySupportRejectReason) -> Self {
+999: signal: HolySupportSignal::Rejected,
+1006: pub const fn ignored(attempted: HolySupportStep) -> Self {
+1008: signal: HolySupportSignal::Ignored,
+1016: impl TacticalCycleStep {
+1017: pub fn advance(self, config: &CombatKernelConfig) -> TacticalCycleTransition {
+1045: pub struct CombatKernelRegistry {
+1046: hooks: Vec<Box<dyn CombatKernelHook>>,
+1049: impl CombatKernelRegistry {
+1050: pub fn new() -> Self {
+1054: pub fn register<H>(&mut self, hook: H)
+1056: H: CombatKernelHook + 'static,
+1061: pub fn dispatch(&self, transition: CombatKernelTransition) -> Vec<CombatKernelTransition> {
+1070: pub fn register_combat_kernel_runtime(app: &mut App) {
+1071: let mut registry = CombatKernelRegistry::new();
+1078: app.init_resource::<CombatKernelState>()
+1095: pub trait CombatKernelHook: Send + Sync {
+1096: fn domain(&self) -> CombatKernelHookDomain;
+1098: fn on_transition(
+1100: _transition: &CombatKernelTransition,
+1101: _out: &mut Vec<CombatKernelTransition>,
+1107: pub enum CombatKernelHookDomain {
+1115: pub struct CombatKernelState {
+1116: pub config: CombatKernelConfig,
+1124: impl Default for CombatKernelState {
+1125: fn default() -> Self {
+1127: config: CombatKernelConfig::default(),
+1137: impl CombatKernelState {
+1138: pub fn gain_strain(&mut self, amount: u16) -> StrainTransition {
+1142: pub fn spend_strain(&mut self, amount: u16) -> StrainTransition {
+1146: pub fn decay_strain(&mut self) -> StrainTransition {
+1150: pub fn enter_flow(&mut self) -> FlowTransition {
+1154: pub fn decay_flow(&mut self) -> FlowTransition {
+1158: pub fn exit_flow(&mut self) -> FlowTransition {
+1162: pub fn gain_fatigue(&mut self, amount: u16) -> FatigueTransition {
+1166: pub fn carry_over_fatigue(&mut self) -> FatigueTransition {
+1170: pub fn reset_fatigue(&mut self) -> FatigueTransition {
+1174: pub fn advance_tactical_cycle(&mut self) -> TacticalCycleTransition {
+1180: pub fn add_tag(&mut self, id: impl Into<CombatTagId>) -> CombatTagTransition {
+1191: pub fn consume_tag(&mut self, id: &CombatTagId) -> Option<CombatTagTransition> {
+1196: pub fn tick_tags(&mut self) -> Vec<CombatTagTransition> {
+1206: fn strain_clamps_gain_and_spend() {
+1207: let config = CombatKernelConfig::default();
+1226: fn flow_enters_decays_and_exits() {
+1227: let config = CombatKernelConfig::default();
+1252: fn fatigue_carryover_and_reset_are_deterministic() {
+1253: let config = CombatKernelConfig::default();
+1273: fn tactical_cycle_advances_through_phases_and_wraps_cycle() {
+1274: let config = CombatKernelConfig::default();
+1299: fn canonical_beat_ids_are_stable_and_ordered() {
+1300: let labels: Vec<&'static str> = CombatBeatId::ALL
+1302: .map(CombatBeatId::as_str)
+1318: struct HookSmokeTest;
+1320: impl CombatKernelHook for HookSmokeTest {
+1321: fn domain(&self) -> CombatKernelHookDomain {
+1322: CombatKernelHookDomain::Shared
+1325: fn on_transition(
+1327: transition: &CombatKernelTransition,
+1328: out: &mut Vec<CombatKernelTransition>,
+1332: CombatKernelTransition::Flow(FlowTransition {
+1337: out.push(CombatKernelTransition::Beat(CombatBeatId::Impact));
+1343: fn registry_can_attach_extension_behavior_without_core_match_ladders() {
+1344: let mut registry = CombatKernelRegistry::new();
+1347: let transitions = registry.dispatch(CombatKernelTransition::Flow(FlowTransition {
+1354: assert!(matches!(transitions[0], CombatKernelTransition::Flow(_)));
+1357: CombatKernelTransition::Beat(CombatBeatId::Impact)
+1362: fn tag_lifetime_ticks_and_consumes() {
+1378: fn state_delegates_to_kernel_primitives() {
+1379: let mut kernel = CombatKernelState::default();
+
+## src/combat/action_query.rs (1022 lines)
+23: pub struct CombatQuerySnapshot {
+25: pub acting_unit: UnitQuerySnapshot,
+26: pub target_unit: Option<UnitQuerySnapshot>,
+27: pub units: Vec<UnitQuerySnapshot>,
+31: pub struct UnitQuerySnapshot {
+53: impl Default for UnitQuerySnapshot {
+54: fn default() -> Self {
+79: pub fn build_snapshot_from_ecs(
+99: ) -> CombatQuerySnapshot {
+115: pub fn build_snapshot_from_ecs_with_sp(
+135: ) -> CombatQuerySnapshot {
+159: units.push(UnitQuerySnapshot {
+190: UnitQuerySnapshot {
+215: CombatQuerySnapshot {
+224: pub enum ActionQueryKind<'a> {
+230: macro_rules! status_enum {
+233: pub enum $name {
+247: pub enum ImplementationStatus {
+254: pub enum ToughnessAffordance {
+260: pub struct TargetAffordance {
+268: pub enum ResourceKind {
+279: pub struct ResourceAffordanceDetail {
+287: pub struct ActionAffordance<'a> {
+288: pub kind: ActionQueryKind<'a>,
+299: pub struct EnemyTraitAffordance {
+306: pub struct ChargedTelegraphAffordance {
+313: fn counterplay_reason(reason: &CounterplayLegalityReasonCode) -> CounterplayLegalityReasonCode {
+317: fn enemy_trait_implementation(status: &EnemyCounterplayStatus) -> ImplementationStatus {
+329: fn enemy_trait_resource_detail(status: &ImplementationStatus) -> ResourceAffordanceDetail {
+342: fn charged_telegraph_implementation(status: &EnemyCounterplayStatus) -> ImplementationStatus {
+346: fn charged_telegraph_resource_detail(status: &ImplementationStatus) -> ResourceAffordanceDetail {
+359: pub fn query_enemy_trait_affordances(unit: &UnitQuerySnapshot) -> Vec<EnemyTraitAffordance> {
+374: pub fn query_charged_telegraph_affordance(unit: &UnitQuerySnapshot) -> Option<ChargedTelegraphAffordance> {
+387: fn snapshot_units(snapshot: &CombatQuerySnapshot) -> Vec<UnitQuerySnapshot> {
+401: fn resolve_unit(snapshot: &CombatQuerySnapshot, unit_id: UnitId) -> Option<UnitQuerySnapshot> {
+407: fn implementation_status(skill_def: &SkillDef) -> ImplementationStatus {
+420: fn target_toughness_affordance(
+422: target: &UnitQuerySnapshot,
+451: fn target_status_for_unit(
+452: snapshot: &CombatQuerySnapshot,
+529: pub fn query_target_affordance(
+530: snapshot: &CombatQuerySnapshot,
+552: pub fn query_all_target_affordances(
+553: snapshot: &CombatQuerySnapshot,
+571: pub fn enabled_target_ids(affordance: &ActionAffordance<'_>) -> Vec<UnitId> {
+581: pub fn first_enabled_target_id(affordance: &ActionAffordance<'_>) -> Option<UnitId> {
+585: fn kit_has_skill(kit: &UnitSkills, skill_id: &SkillId) -> bool {
+591: fn resolve_action_skill<'a>(
+592: snapshot: &'a CombatQuerySnapshot,
+595: kind: &ActionQueryKind<'_>,
+596: ) -> Result<(UnitQuerySnapshot, &'a SkillDef), LegalityReasonCode> {
+601: ActionQueryKind::Basic => &kit.basic,
+602: ActionQueryKind::Skill(skill_id) => {
+608: ActionQueryKind::Ultimate => &kit.ultimate,
+624: fn resource_detail_status(kind: ResourceKind, current: i32, required: i32) -> ResourceAffordanceDetail {
+649: fn hidden_resource_detail(kind: ResourceKind, reason: LegalityReasonCode) -> ResourceAffordanceDetail {
+658: fn deferred_resource_detail(kind: ResourceKind, reason: LegalityReasonCode) -> ResourceAffordanceDetail {
+667: fn energy_cap_remaining(unit: &UnitQuerySnapshot, source: EnergyGainSource) -> i32 {
+681: pub fn query_energy_cap_affordance(
+682: unit: &UnitQuerySnapshot,
+701: pub fn query_tamer_gauge_affordance() -> ResourceAffordanceDetail {
+705: pub fn query_tamer_command_affordances() -> Vec<ResourceAffordanceDetail> {
+719: fn build_resource_details(
+720: actor: &UnitQuerySnapshot,
+722: kind: &ActionQueryKind<'_>,
+744: if matches!(kind, ActionQueryKind::Ultimate) {
+757: fn aggregate_target_status(
+781: fn action_and_resource_status_for_snapshot(
+782: snapshot: &CombatQuerySnapshot,
+783: actor: &UnitQuerySnapshot,
+785: kind: &ActionQueryKind<'_>,
+833: ActionQueryKind::Ultimate => {
+856: ActionQueryKind::Basic | ActionQueryKind::Skill(_) => {
+884: fn implementation_block(
+904: fn missing_skill_affordance<'a>(kind: ActionQueryKind<'a>) -> ActionAffordance<'a> {
+918: pub fn query_action_affordance<'a>(
+919: snapshot: &CombatQuerySnapshot,
+922: kind: ActionQueryKind<'a>,
+980: pub fn query_intent_legality(
+981: snapshot: &CombatQuerySnapshot,
+984: kind: &ActionQueryKind<'_>,
+
+## src/combat/observability.rs (816 lines)
+9: predator_loop::{PredatorLoopSnapshot, PredatorLoopState},
+11: holy_support::HolySupportSnapshot,
+15: PrecisionWindowKind, PredatorLoopTransition, TwinCoreSignal, TwinCoreTransition,
+18: precision_mind_game::PrecisionMindGameSnapshot,
+30: pub struct ValidationSnapshot {
+38: pub units: Vec<ValidationUnitSnapshot>,
+39: pub twin_core: ValidationTwinCoreSnapshot,
+40: pub holy_support: Option<HolySupportSnapshot>,
+41: pub predator_loop: Option<PredatorLoopSnapshot>,
+42: pub precision_mind_game: Option<PrecisionMindGameSnapshot>,
+46: pub struct ValidationTwinCoreSnapshot {
+57: pub struct BatteryLoopSnapshot {
+68: impl From<&BatteryLoopState> for BatteryLoopSnapshot {
+69: fn from(state: &BatteryLoopState) -> Self {
+84: pub enum ValidationLogEntry {
+112: pub struct ValidationToughnessSnapshot {
+120: pub struct ValidationUnitSnapshot {
+125: pub toughness: Option<ValidationToughnessSnapshot>,
+135: pub enum ValidationSnapshotError {
+142: impl fmt::Display for ValidationSnapshotError {
+143: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+155: impl std::error::Error for ValidationSnapshotError {}
+157: pub fn capture_validation_snapshot(
+159: ) -> Result<ValidationSnapshot, ValidationSnapshotError> {
+163: .ok_or(ValidationSnapshotError::MissingResource("CombatState"))?;
+169: .ok_or(ValidationSnapshotError::MissingResource("SpPool"))?;
+185: .ok_or(ValidationSnapshotError::MissingResource("ActionLog"))?
+231: .ok_or(ValidationSnapshotError::MissingTeam { unit: unit.id })?;
+234: return Err(ValidationSnapshotError::MissingToughness { unit: unit.id });
+240: .ok_or(ValidationSnapshotError::MissingUltimateCharge { unit: unit.id })?;
+243: visible_toughness(team, toughness).map(|view| ValidationToughnessSnapshot {
+250: units.push(ValidationUnitSnapshot {
+270: .ok_or(ValidationSnapshotError::MissingResource("TwinCoreState"))?;
+273: .map(HolySupportSnapshot::from);
+279: .map(PrecisionMindGameSnapshot::from);
+281: Ok(ValidationSnapshot {
+290: twin_core: ValidationTwinCoreSnapshot {
+305: pub fn format_validation_snapshot(snapshot: &ValidationSnapshot) -> String {
+323: fn format_phase(phase: CombatPhase) -> &'static str {
+333: fn format_winner(winner: Option<Team>) -> &'static str {
+341: fn format_unit_ids(ids: &[UnitId]) -> String {
+350: fn format_twin_core_snapshot(snapshot: &ValidationTwinCoreSnapshot) -> String {
+366: fn format_holy_support_snapshot(snapshot: Option<&HolySupportSnapshot>) -> String {
+383: fn format_predator_loop_snapshot(snapshot: Option<&PredatorLoopSnapshot>) -> String {
+404: fn format_predator_targets(targets: &[crate::combat::predator_loop::PredatorTargetSnapshot]) -> String {
+423: fn format_predator_loop_transition(transition: PredatorLoopTransition) -> String {
+425: crate::combat::kernel::PredatorLoopSignal::BuildExploit => "build-exploit",
+426: crate::combat::kernel::PredatorLoopSignal::ApplyPreyLock => "prey-lock",
+427: crate::combat::kernel::PredatorLoopSignal::ConsumePreyLockPayoff => "payoff",
+428: crate::combat::kernel::PredatorLoopSignal::EnterBerserk => "berserk",
+429: crate::combat::kernel::PredatorLoopSignal::Tick => "tick",
+430: crate::combat::kernel::PredatorLoopSignal::Expire => "expire",
+431: crate::combat::kernel::PredatorLoopSignal::Rejected => "rejected",
+432: crate::combat::kernel::PredatorLoopSignal::Ignored => "ignored",
+435: crate::combat::kernel::PredatorLoopSignal::BuildExploit
+436: | crate::combat::kernel::PredatorLoopSignal::ApplyPreyLock
+437: | crate::combat::kernel::PredatorLoopSignal::ConsumePreyLockPayoff
+438: | crate::combat::kernel::PredatorLoopSignal::EnterBerserk
+439: | crate::combat::kernel::PredatorLoopSignal::Expire => {
+442: crate::combat::kernel::PredatorLoopSignal::Tick => signal.to_string(),
+443: crate::combat::kernel::PredatorLoopSignal::Rejected
+444: | crate::combat::kernel::PredatorLoopSignal::Ignored => match (
+460: fn format_predator_loop_step(step: crate::combat::kernel::PredatorLoopStep) -> String {
+479: fn format_holy_support_transition(transition: super::kernel::HolySupportTransition) -> String {
+481: super::kernel::HolySupportSignal::BuildGrace => "build",
+482: super::kernel::HolySupportSignal::SpendGrace => "spend",
+483: super::kernel::HolySupportSignal::MarkMartyrLight => "mark-martyr",
+484: super::kernel::HolySupportSignal::ConsumeMartyrLight => "consume-martyr",
+485: super::kernel::HolySupportSignal::CycleReset => "cycle-reset",
+486: super::kernel::HolySupportSignal::Rejected => "rejected",
+487: super::kernel::HolySupportSignal::Ignored => "ignored",
+491: super::kernel::HolySupportSignal::BuildGrace
+492: | super::kernel::HolySupportSignal::SpendGrace => {
+495: super::kernel::HolySupportSignal::Rejected | super::kernel::HolySupportSignal::Ignored => {
+513: fn format_holy_support_step(step: super::kernel::HolySupportStep) -> String {
+523: fn format_twin_core_transition(transition: TwinCoreTransition) -> String {
+525: TwinCoreSignal::BuildCrossResonance => "build",
+526: TwinCoreSignal::SpendCrossResonance => "spend",
+527: TwinCoreSignal::ThermalSpark => "spark",
+528: TwinCoreSignal::TwinBurst => "twin-burst",
+529: TwinCoreSignal::Shatter => "shatter",
+530: TwinCoreSignal::FireSpendMarker => "fire-spend",
+531: TwinCoreSignal::IceSpendMarker => "ice-spend",
+532: TwinCoreSignal::CycleReset => "cycle-reset",
+537: pub fn format_battery_loop_snapshot(snapshot: &BatteryLoopSnapshot) -> String {
+557: fn format_battery_loop_transition(transition: BatteryLoopTransition) -> String {
+559: super::kernel::BatteryLoopSignal::BuildStaticCharge => {
+562: super::kernel::BatteryLoopSignal::BuildCircuitCharge => {
+565: super::kernel::BatteryLoopSignal::SpendCircuitCharge => {
+568: super::kernel::BatteryLoopSignal::GrantEnergy => {
+571: super::kernel::BatteryLoopSignal::SelfEnergyGain => {
+574: super::kernel::BatteryLoopSignal::TransferEnergy => {
+577: super::kernel::BatteryLoopSignal::CycleReset => "cycle-reset".to_string(),
+578: super::kernel::BatteryLoopSignal::Rejected => {
+592: super::kernel::BatteryLoopSignal::Ignored => match transition.attempted {
+599: fn format_battery_loop_step(step: super::kernel::BatteryLoopStep) -> String {
+619: fn format_battery_loop_blocked_reason(reason: BatteryLoopBlockedReason) -> String {
+634: fn format_precision_mind_game_snapshot(snapshot: Option<&PrecisionMindGameSnapshot>) -> String {
+653: fn format_precision_phase(phase: PrecisionMindGamePhase) -> &'static str {
+663: fn format_precision_window(window: Option<PrecisionWindowKind>) -> &'static str {
+671: fn format_precision_commitment(commitment: Option<PrecisionCommitment>) -> &'static str {
+680: fn format_precision_reveal(reveal: Option<PrecisionReveal>) -> &'static str {
+689: fn format_precision_outcome(outcome: Option<PrecisionOutcome>) -> &'static str {
+698: fn format_precision_transition(transition: PrecisionMindGameTransition) -> String {
+723: fn format_precision_step(step: super::kernel::PrecisionMindGameStep) -> String {
+740: fn format_action_log_tail(events: &[ValidationLogEntry]) -> String {
+749: fn format_log_entry(entry: &ValidationLogEntry) -> String {
+774: fn format_units(units: &[ValidationUnitSnapshot]) -> String {
+779: fn format_unit(unit: &ValidationUnitSnapshot) -> String {
+809: fn format_weaknesses(weaknesses: &[DamageTag]) -> String {
+
+## src/combat/twin_core.rs (253 lines)
+6: CombatBeatId, CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition,
+8: TwinCoreSignal, TwinCoreTransition,
+20: pub enum TwinCoreDesignTag {
+29: pub fn twin_core_design_tag_name(tag: TwinCoreDesignTag) -> &'static str {
+40: pub fn twin_core_design_tag(tag: TwinCoreDesignTag) -> CombatTagId {
+44: pub fn classify_twin_core_tag(tag: &CombatTagId) -> Option<TwinCoreDesignTag> {
+56: pub fn twin_core_added_tag_transition(
+59: ) -> CombatKernelTransition {
+63: CombatKernelTransition::Tag(CombatTagTransition {
+71: pub struct TwinCoreState {
+81: impl Default for TwinCoreState {
+82: fn default() -> Self {
+95: pub struct TwinCoreHook;
+97: impl CombatKernelHook for TwinCoreHook {
+98: fn domain(&self) -> CombatKernelHookDomain {
+99: CombatKernelHookDomain::Shared
+102: fn on_transition(
+104: transition: &CombatKernelTransition,
+105: out: &mut Vec<CombatKernelTransition>,
+108: CombatKernelTransition::Tag(tag_transition)
+115: | TwinCoreDesignTag::Primed => out.push(CombatKernelTransition::TwinCore(
+119: CombatKernelTransition::TwinCore(TwinCoreTransition::thermal_spark(1)),
+122: out.push(CombatKernelTransition::TwinCore(
+126: TwinCoreDesignTag::DeepCrack => out.push(CombatKernelTransition::TwinCore(
+132: CombatKernelTransition::Tag(tag_transition)
+140: out.push(CombatKernelTransition::TwinCore(
+145: CombatKernelTransition::Beat(CombatBeatId::Damage) => {
+146: out.push(CombatKernelTransition::TwinCore(
+150: CombatKernelTransition::TacticalCycle(TacticalCycleTransition {
+154: out.push(CombatKernelTransition::TwinCore(
+163: pub fn apply_twin_core_transitions_system(
+172: let CombatKernelTransition::TwinCore(twin_trans) = transition else {
+180: fn apply_twin_core_transition(
+186: TwinCoreSignal::BuildCrossResonance => {
+193: TwinCoreSignal::SpendCrossResonance => {
+197: TwinCoreSignal::ThermalSpark => {
+203: TwinCoreSignal::TwinBurst => {
+215: TwinCoreSignal::Shatter => {
+226: TwinCoreSignal::FireSpendMarker => {
+230: TwinCoreSignal::IceSpendMarker => {
+234: TwinCoreSignal::CycleReset => {
+
+## src/combat/holy_support.rs (254 lines)
+5: HolySupportRejectReason, HolySupportSignal, HolySupportStep, HolySupportTransition,
+10: CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition, CombatTagChangeKind,
+21: pub enum HolySupportDesignTag {
+26: pub fn holy_support_design_tag_name(tag: HolySupportDesignTag) -> &'static str {
+33: pub fn holy_support_design_tag(tag: HolySupportDesignTag) -> CombatTagId {
+37: pub fn classify_holy_support_tag(tag: &CombatTagId) -> Option<HolySupportDesignTag> {
+45: pub fn holy_support_added_tag_transition(
+48: ) -> CombatKernelTransition {
+52: CombatKernelTransition::Tag(CombatTagTransition {
+60: pub struct HolySupportState {
+67: impl Default for HolySupportState {
+68: fn default() -> Self {
+79: pub struct HolySupportSnapshot {
+87: impl From<&HolySupportState> for HolySupportSnapshot {
+88: fn from(state: &HolySupportState) -> Self {
+99: impl HolySupportState {
+100: pub fn snapshot(&self) -> HolySupportSnapshot {
+101: HolySupportSnapshot::from(self)
+105: pub struct HolySupportHook;
+107: impl CombatKernelHook for HolySupportHook {
+108: fn domain(&self) -> CombatKernelHookDomain {
+109: CombatKernelHookDomain::Shared
+112: fn on_transition(
+114: transition: &CombatKernelTransition,
+115: out: &mut Vec<CombatKernelTransition>,
+118: CombatKernelTransition::Tag(tag_transition)
+124: out.push(CombatKernelTransition::HolySupport(
+129: out.push(CombatKernelTransition::HolySupport(
+136: CombatKernelTransition::Tag(tag_transition)
+143: out.push(CombatKernelTransition::HolySupport(
+148: out.push(CombatKernelTransition::HolySupport(
+155: CombatKernelTransition::TacticalCycle(TacticalCycleTransition {
+159: out.push(CombatKernelTransition::HolySupport(
+168: pub fn apply_holy_support_transitions_system(
+177: let CombatKernelTransition::HolySupport(holy_transition) = transition else {
+185: fn apply_holy_support_transition(
+191: HolySupportSignal::BuildGrace => {
+195: HolySupportSignal::SpendGrace => {
+208: HolySupportSignal::MarkMartyrLight => {
+220: HolySupportSignal::ConsumeMartyrLight => {
+236: HolySupportSignal::CycleReset => {
+241: HolySupportSignal::Rejected | HolySupportSignal::Ignored => {
+
+## src/combat/battery_loop.rs (261 lines)
+6: BatteryLoopBlockedReason, BatteryLoopChargeKind, BatteryLoopSignal, BatteryLoopStep,
+7: BatteryLoopTransition, CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition,
+10: use super::observability::BatteryLoopSnapshot;
+17: pub enum BatteryLoopDesignTag {
+24: pub enum BatteryLoopRequestKind {
+32: pub struct BatteryLoopState {
+43: impl Default for BatteryLoopState {
+44: fn default() -> Self {
+58: impl BatteryLoopState {
+59: pub fn threshold_grant_eligible(&self) -> bool {
+64: pub fn snapshot(&self) -> BatteryLoopSnapshot {
+65: BatteryLoopSnapshot::from(self)
+68: pub fn gain_static_charge(&mut self, amount: u8) -> BatteryLoopTransition {
+72: pub fn gain_circuit_charge(&mut self, amount: u8) -> BatteryLoopTransition {
+76: pub fn spend_circuit_charge(&mut self, amount: u8) -> BatteryLoopTransition {
+80: pub fn record_self_energy_gain(&mut self, amount: u8) -> BatteryLoopTransition {
+84: pub fn record_transfer_success(&mut self, amount: u8) -> BatteryLoopTransition {
+88: pub fn record_transfer_blocked(
+99: pub fn reset_cycle_guards(&mut self) -> BatteryLoopTransition {
+104: pub fn apply_battery_loop_transition(
+109: BatteryLoopSignal::BuildStaticCharge => apply_static_charge(state, transition.amount),
+110: BatteryLoopSignal::BuildCircuitCharge => apply_circuit_charge(state, transition.amount),
+111: BatteryLoopSignal::SpendCircuitCharge => spend_circuit_charge(state, transition.amount),
+112: BatteryLoopSignal::GrantEnergy
+113: | BatteryLoopSignal::SelfEnergyGain
+114: | BatteryLoopSignal::TransferEnergy
+115: | BatteryLoopSignal::CycleReset => {
+116: if matches!(transition.signal, BatteryLoopSignal::CycleReset) {
+122: BatteryLoopSignal::Rejected | BatteryLoopSignal::Ignored => transition,
+128: pub fn apply_battery_loop_transitions_system(
+137: let CombatKernelTransition::BatteryLoop(battery_transition) = transition else {
+145: pub struct BatteryLoopHook;
+147: impl CombatKernelHook for BatteryLoopHook {
+148: fn domain(&self) -> CombatKernelHookDomain {
+149: CombatKernelHookDomain::Shared
+152: fn on_transition(
+154: transition: &CombatKernelTransition,
+155: out: &mut Vec<CombatKernelTransition>,
+159: CombatKernelTransition::TacticalCycle(TacticalCycleTransition {
+164: out.push(CombatKernelTransition::BatteryLoop(
+171: fn apply_static_charge(state: &mut BatteryLoopState, amount: u8) -> BatteryLoopTransition {
+198: fn apply_circuit_charge(state: &mut BatteryLoopState, amount: u8) -> BatteryLoopTransition {
+220: fn spend_circuit_charge(state: &mut BatteryLoopState, amount: u8) -> BatteryLoopTransition {
+238: fn record_applied_transition(
+242: if matches!(transition.signal, BatteryLoopSignal::Rejected) {
+
+## src/combat/predator_loop.rs (489 lines)
+8: CombatKernelHook, CombatKernelHookDomain, CombatKernelState, CombatKernelTransition,
+9: PredatorLoopBlockedReason, PredatorLoopCapKind, PredatorLoopSignal, PredatorLoopStep, PredatorLoopTransition,
+19: pub enum PredatorLoopDesignTag {
+26: pub struct PredatorLockState {
+31: impl PredatorLockState {
+32: pub const fn active(turns_left: u8) -> Self {
+39: pub const fn consumed() -> Self {
+46: pub fn tick(&mut self) -> bool {
+55: pub fn is_active(&self) -> bool {
+59: pub fn is_expired(&self) -> bool {
+65: pub struct PredatorTargetState {
+70: impl PredatorTargetState {
+71: pub const fn new() -> Self {
+79: impl Default for PredatorTargetState {
+80: fn default() -> Self {
+86: pub struct PredatorLoopState {
+95: impl Default for PredatorLoopState {
+96: fn default() -> Self {
+109: pub struct PredatorTargetSnapshot {
+116: pub struct PredatorLoopSnapshot {
+120: pub targets: Vec<PredatorTargetSnapshot>,
+125: impl From<&PredatorLoopState> for PredatorLoopSnapshot {
+126: fn from(state: &PredatorLoopState) -> Self {
+130: .map(|(unit_id, target)| PredatorTargetSnapshot {
+149: impl PredatorLoopState {
+150: pub fn snapshot(&self) -> PredatorLoopSnapshot {
+151: PredatorLoopSnapshot::from(self)
+154: pub fn track_target(&mut self, unit_id: UnitId) -> &mut PredatorTargetState {
+158: pub fn build_exploit(&mut self, unit_id: UnitId, amount: u16) -> PredatorLoopTransition {
+165: pub fn apply_prey_lock(&mut self, unit_id: UnitId) -> PredatorLoopTransition {
+170: pub fn consume_prey_lock_payoff(&mut self, unit_id: UnitId) -> PredatorLoopTransition {
+177: pub fn enter_berserk(&mut self, strain_current: u16) -> PredatorLoopTransition {
+184: pub fn tick_all_prey_locks(&mut self) -> PredatorLoopTransition {
+188: pub fn expire_prey_lock(&mut self, unit_id: UnitId) -> PredatorLoopTransition {
+194: pub enum PredatorLoopRequestKind {
+203: pub fn apply_predator_loop_transition(
+208: PredatorLoopSignal::BuildExploit => apply_build_exploit(state, transition.target, transition.amount),
+209: PredatorLoopSignal::ApplyPreyLock => apply_prey_lock(state, transition.target),
+210: PredatorLoopSignal::ConsumePreyLockPayoff => {
+213: PredatorLoopSignal::EnterBerserk => apply_enter_berserk(state, transition.amount),
+214: PredatorLoopSignal::Tick => {
+218: PredatorLoopSignal::Expire => apply_expire_prey_lock(state, transition.target),
+219: PredatorLoopSignal::Rejected | PredatorLoopSignal::Ignored => transition,
+225: pub fn apply_predator_loop_transitions_system(
+227: kernel: Res<CombatKernelState>,
+236: let CombatKernelTransition::PredatorLoop(predator_transition) = transition else {
+241: PredatorLoopSignal::EnterBerserk => {
+261: pub struct PredatorLoopHook;
+263: impl CombatKernelHook for PredatorLoopHook {
+264: fn domain(&self) -> CombatKernelHookDomain {
+265: CombatKernelHookDomain::Shared
+268: fn on_transition(
+270: transition: &CombatKernelTransition,
+271: out: &mut Vec<CombatKernelTransition>,
+275: CombatKernelTransition::TacticalCycle(TacticalCycleTransition {
+280: out.push(CombatKernelTransition::PredatorLoop(
+287: fn apply_build_exploit(
+331: fn apply_prey_lock(state: &mut PredatorLoopState, target: Option<UnitId>) -> PredatorLoopTransition {
+369: fn apply_prey_lock_payoff(
+407: fn apply_enter_berserk(
+424: fn tick_all_prey_locks(state: &mut PredatorLoopState) {
+432: fn apply_expire_prey_lock(
+468: fn record_applied_transition(
+472: if matches!(transition.signal, PredatorLoopSignal::Rejected) {
+
+## src/combat/precision_mind_game.rs (211 lines)
+6: CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition, PrecisionCommitment,
+12: pub struct PrecisionMindGameState {
+22: impl Default for PrecisionMindGameState {
+23: fn default() -> Self {
+37: pub struct PrecisionMindGameSnapshot {
+47: impl From<&PrecisionMindGameState> for PrecisionMindGameSnapshot {
+48: fn from(state: &PrecisionMindGameState) -> Self {
+61: impl PrecisionMindGameState {
+62: pub fn is_window_open(&self) -> bool {
+66: pub fn snapshot(&self) -> PrecisionMindGameSnapshot {
+67: PrecisionMindGameSnapshot::from(self)
+71: pub struct PrecisionMindGameHook;
+73: impl CombatKernelHook for PrecisionMindGameHook {
+74: fn domain(&self) -> CombatKernelHookDomain {
+75: CombatKernelHookDomain::Shared
+78: fn on_transition(
+80: _transition: &CombatKernelTransition,
+81: _out: &mut Vec<CombatKernelTransition>,
+88: pub fn register_precision_mind_game_runtime(app: &mut App) {
+93: pub fn apply_precision_mind_game_transitions_system(
+102: let CombatKernelTransition::PrecisionMindGame(precision_transition) = transition else {
+110: fn apply_precision_mind_game_transition(
+
+## src/combat/events.rs (140 lines)
+10: pub use crate::combat::kernel::{BatteryLoopTransition, CombatBeatId, CombatKernelTransition, PredatorLoopTransition};
+16: pub enum ActionIntentKind {
+24: pub enum CombatEventKind {
+103: OnCombatBeat {
+104: beat: CombatBeatId,
+108: transition: CombatKernelTransition,
+132: pub struct CombatEvent {
+
+## src/combat/resolution.rs (354 lines)
+20: pub fn grant_free_skill_events(count: usize, ally_basics: &[SkillId]) -> Vec<CombatEventKind> {
+29: pub struct ResolutionOutcome {
+40: impl Default for ResolutionOutcome {
+41: fn default() -> Self {
+53: pub fn resolve_action(
+94: fn skill_base_damage(effects: &[Effect]) -> i32 {
+104: fn skill_toughness_hit(effects: &[Effect]) -> i32 {
+114: fn skill_revive_pct(effects: &[Effect]) -> i32 {
+124: fn skill_grant_free_count(effects: &[Effect]) -> usize {
+135: fn skill_apply_status(effects: &[Effect]) -> Option<(StatusEffectKind, u32)> {
+142: fn skill_turn_advance(effects: &[Effect]) -> i32 {
+152: fn skill_grant_energy(effects: &[Effect]) -> i32 {
+162: fn skill_self_advance(effects: &[Effect]) -> i32 {
+172: pub fn target_shape_is_executable_now(shape: TargetShape) -> bool {
+176: pub fn target_shape_rejection_reason(shape: TargetShape) -> Option<String> {
+184: pub fn apply_effects(
+
+## src/bin/combat_cli.rs (776 lines)
+42: ActionQueryKind,
+44: CombatQuerySnapshot,
+55: struct TickCounter(u32);
+60: struct PlayerActed(bool);
+64: struct IsInteractive(bool);
+68: struct SelectedAllies(Vec<UnitId>);
+72: struct SelectedEncounter(EncounterPreset);
+74: fn timeout_system(
+86: fn bootstrap_system(
+141: fn event_logger_system(mut events: MessageReader<CombatEvent>) {
+148: fn combat_dashboard_system(
+222: struct ActionMenuEntry<'a> {
+223: kind: ActionQueryKind<'a>,
+228: fn action_kind_label(kind: ActionQueryKind<'_>) -> String {
+230: ActionQueryKind::Basic => "Basic Attack".to_string(),
+231: ActionQueryKind::Skill(skill_id) => format!("Skill: {}", skill_id.0),
+232: ActionQueryKind::Ultimate => "Ultimate".to_string(),
+236: fn action_status_label(status: &ActionStatus) -> String {
+245: fn resource_status_label(status: &ResourceStatus) -> String {
+254: fn target_status_label(status: &TargetStatus) -> String {
+263: fn resource_detail_label(detail: &ResourceAffordanceDetail) -> String {
+282: fn action_entry_label(entry: &ActionMenuEntry<'_>) -> String {
+303: fn target_entry_label(unit: &Unit, team: &Team, affordance: &TargetAffordance) -> String {
+318: fn counterplay_implementation_label(status: &ImplementationStatus) -> &'static str {
+326: fn print_enemy_counterplay_labels(snapshot: &CombatQuerySnapshot) {
+367: fn build_action_entries<'a>(
+368: snapshot: &'a CombatQuerySnapshot,
+376: kind: ActionQueryKind::Basic,
+378: affordance: query_action_affordance(snapshot, skill_book, actor_id, ActionQueryKind::Basic),
+383: let kind = ActionQueryKind::Skill(skill_id);
+393: kind: ActionQueryKind::Ultimate,
+395: affordance: query_action_affordance(snapshot, skill_book, actor_id, ActionQueryKind::Ultimate),
+405: fn print_action_entries(entries: &[ActionMenuEntry<'_>]) {
+412: fn print_target_entries(target_entries: &[(UnitId, String)]) {
+419: fn player_action_system(
+522: .find(|entry| matches!(entry.kind, ActionQueryKind::Basic));
+630: ActionQueryKind::Basic => ActionIntent::Basic {
+634: ActionQueryKind::Skill(skill_id) => ActionIntent::Skill {
+639: ActionQueryKind::Ultimate => ActionIntent::Ultimate {
+649: fn load_ally_roster() -> Vec<UnitDef> {
+659: fn main() {
+
+## src/data/skills_ron.rs (787 lines)
+10: pub enum TargetShape {
+19: pub enum TargetSide {
+27: pub enum TargetLife {
+35: pub enum SelfTargetRule {
+42: pub enum TargetHpRule {
+52: pub struct SkillTargeting {
+61: impl Default for SkillTargeting {
+62: fn default() -> Self {
+75: pub enum LegalityReasonCode {
+104: pub enum SkillImplementation {
+114: pub enum Effect {
+133: pub struct SkillDef {
+149: pub enum SkillBookValidationCategory {
+156: pub struct SkillBookValidationError {
+163: impl fmt::Display for SkillBookValidationError {
+164: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+173: impl std::error::Error for SkillBookValidationError {}
+175: pub fn validate_skill_book(book: &SkillBook) -> Result<(), SkillBookValidationError> {
+182: fn validation_error(
+186: detail: impl Into<String>,
+196: fn skill_has_effect(skill: &SkillDef, predicate: impl Fn(&Effect) -> bool) -> bool {
+200: fn validate_skill_def(skill: &SkillDef) -> Result<(), SkillBookValidationError> {
+324: pub struct SkillBook(pub Vec<SkillDef>);
+331: fn offensive_targeting(shape: TargetShape) -> SkillTargeting {
+341: fn revive_targeting() -> SkillTargeting {
+351: fn sample_skill() -> SkillDef {
+370: fn canonical_skill_book() -> SkillBook {
+375: fn round_trip_skill_def() {
+383: fn effect_roundtrip_damage_struct_variant() {
+395: fn effect_roundtrip_toughness_tuple() {
+404: fn effect_roundtrip_stun_unit() {
+412: fn effect_roundtrip_revive() {
+421: fn effect_roundtrip_apply_status_burn() {
+432: fn effect_roundtrip_apply_status_freeze() {
+443: fn effect_roundtrip_apply_status_shock() {
+454: fn effect_roundtrip_turn_advance() {
+465: fn apply_status_negative_damage_per_turn_accepted_at_parse_time() {
+477: fn apply_status_negative_duration_rejected_at_parse_time() {
+495: fn effect_parse_error_bad_type() {
+507: fn effect_roundtrip_grant_energy() {
+516: fn effect_roundtrip_self_advance() {
+525: fn targeting_roundtrip_and_reason_codes() {
+544: fn missing_targeting_metadata_fails_parse() {
+562: fn unknown_targeting_field_fails_parse() {
+585: fn validate_rejects_row_damage_against_single_targeting() {
+614: fn validate_rejects_revive_with_non_ko_targeting() {
+640: fn validate_rejects_implemented_non_single_shape() {
+669: fn validate_allows_canonical_mixed_effect_deferral() {
+700: fn parse_canonical_skills_ron() {
+
+## assets/data/skills.ron (1105 lines)
+
+## tests/combat_coherence.rs (939 lines)
+32: fn canonical_roster() -> UnitRoster {
+36: fn canonical_skill_book() -> SkillBook {
+40: fn skill_book_with_shock_fixture() -> SkillBook {
+72: fn sp_fixture_skill_book() -> SkillBook {
+164: fn pilot(roster: &UnitRoster, name: &str) -> UnitDef {
+173: fn insert_skill_book(app: &mut App, skill_book: SkillBook) {
+180: fn build_follow_up_app(skill_book: SkillBook) -> App {
+208: fn build_sp_app(skill_book: SkillBook) -> App {
+223: fn build_status_app(skill_book: SkillBook) -> App {
+254: fn spawn_from_def(app: &mut App, def: &UnitDef, hp_current: i32, toughness_current: i32, ultimate_current: i32) -> Entity {
+288: fn spawn_custom_enemy(
+335: fn message_cursor<T: Message>(app: &mut App) -> MessageCursor<T> {
+339: fn drain_messages<T: Message + Clone>(cursor: &mut MessageCursor<T>, app: &App) -> Vec<T> {
+346: fn action_log_entries(app: &App) -> Vec<LogEntry> {
+355: fn unit_hp(app: &mut App, unit_id: UnitId) -> i32 {
+365: fn ult_current(app: &mut App, unit_id: UnitId) -> i32 {
+376: fn status_effect_kind(app: &mut App, unit_id: UnitId) -> Option<StatusEffectKind> {
+385: fn is_ko(app: &mut App, unit_id: UnitId) -> bool {
+393: fn trace_kind_json(kind: &CombatEventKind) -> String {
+442: fn audit_trace(events: &[CombatEvent], traces: &[FollowUpTrace], log: &[LogEntry], sp_history: &[i32]) -> String {
+532: fn cast(app: &mut App, intent: ActionIntent, sp_history: &mut Vec<i32>) {
+539: fn s_m008_s06_break_follow_up_and_ult_timing_trace() {
+649: fn s_m008_s06_shared_sp_history_blocks_and_then_unlocks_a_revive() {
+817: fn s_m008_s06_status_pressure_turns_low_hp_into_a_failed_action_and_a_follow_up_window() {
+
+## tests/validation_snapshot.rs (206 lines)
+18: fn unit(id: u32, hp_current: i32, hp_max: i32, attribute: Attribute) -> Unit {
+31: fn snapshot_contract_covers_promised_fields_and_shape() {
+133: fn snapshot_defaults_empty_optional_surfaces() {
+166: fn snapshot_hides_ally_missing_toughness_and_zero_max_enemy_bars() {

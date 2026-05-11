@@ -1,0 +1,216 @@
+PROJECT_SHAPE=
+M015 files:
+- .gsd/milestones/M015/M015-CONTEXT-DRAFT.md
+- .gsd/milestones/M015/M015-CONTEXT.md
+- .gsd/milestones/M015/M015-DISCUSSION.md
+- .gsd/milestones/M015/M015-ROADMAP.md
+- .gsd/milestones/M015/anchors/plan-slice.json
+- .gsd/milestones/M015/anchors/research-slice.json
+- .gsd/milestones/M015/slices/S01/S01-PLAN.md
+- .gsd/milestones/M015/slices/S01/S01-PRE-EXEC-VERIFY.json
+- .gsd/milestones/M015/slices/S01/S01-RESEARCH.md
+- .gsd/milestones/M015/slices/S01/S01-SUMMARY.md
+- .gsd/milestones/M015/slices/S01/S01-UAT.md
+- .gsd/milestones/M015/slices/S01/tasks/T01-PLAN.md
+- .gsd/milestones/M015/slices/S01/tasks/T01-SUMMARY.md
+- .gsd/milestones/M015/slices/S01/tasks/T01-VERIFY.json
+- .gsd/milestones/M015/slices/S01/tasks/T02-PLAN.md
+- .gsd/milestones/M015/slices/S01/tasks/T02-SUMMARY.md
+- .gsd/milestones/M015/slices/S01/tasks/T02-VERIFY.json
+- .gsd/milestones/M015/slices/S01/tasks/T03-PLAN.md
+- .gsd/milestones/M015/slices/S01/tasks/T03-SUMMARY.md
+- .gsd/milestones/M015/slices/S01/tasks/T03-VERIFY.json
+- .gsd/milestones/M015/slices/S01/tasks/T04-PLAN.md
+- .gsd/milestones/M015/slices/S01/tasks/T04-SUMMARY.md
+- .gsd/milestones/M015/slices/S01/tasks/T04-VERIFY.json
+- .gsd/milestones/M015/slices/S02/S02-PLAN.md
+- .gsd/milestones/M015/slices/S02/S02-PRE-EXEC-VERIFY.json
+- .gsd/milestones/M015/slices/S02/S02-RESEARCH.md
+- .gsd/milestones/M015/slices/S02/S02-SUMMARY.md
+- .gsd/milestones/M015/slices/S02/S02-UAT.md
+- .gsd/milestones/M015/slices/S02/tasks/T01-PLAN.md
+- .gsd/milestones/M015/slices/S02/tasks/T01-SUMMARY.md
+- .gsd/milestones/M015/slices/S02/tasks/T01-VERIFY.json
+- .gsd/milestones/M015/slices/S02/tasks/T02-PLAN.md
+- .gsd/milestones/M015/slices/S02/tasks/T02-SUMMARY.md
+- .gsd/milestones/M015/slices/S02/tasks/T02-VERIFY.json
+- .gsd/milestones/M015/slices/S02/tasks/T03-PLAN.md
+- .gsd/milestones/M015/slices/S02/tasks/T03-SUMMARY.md
+- .gsd/milestones/M015/slices/S02/tasks/T03-VERIFY.json
+- .gsd/milestones/M015/slices/S03/S03-PLAN.md
+- .gsd/milestones/M015/slices/S03/S03-PRE-EXEC-VERIFY.json
+- .gsd/milestones/M015/slices/S03/S03-RESEARCH.md
+- .gsd/milestones/M015/slices/S03/S03-SUMMARY.md
+- .gsd/milestones/M015/slices/S03/S03-UAT.md
+- .gsd/milestones/M015/slices/S03/tasks/T01-PLAN.md
+- .gsd/milestones/M015/slices/S03/tasks/T01-SUMMARY.md
+- .gsd/milestones/M015/slices/S03/tasks/T01-VERIFY.json
+- .gsd/milestones/M015/slices/S03/tasks/T02-PLAN.md
+- .gsd/milestones/M015/slices/S03/tasks/T02-SUMMARY.md
+- .gsd/milestones/M015/slices/S03/tasks/T02-VERIFY.json
+- .gsd/milestones/M015/slices/S03/tasks/T03-PLAN.md
+- .gsd/milestones/M015/slices/S03/tasks/T03-SUMMARY.md
+- .gsd/milestones/M015/slices/S03/tasks/T03-VERIFY.json
+- .gsd/milestones/M015/slices/S03/tasks/T04-PLAN.md
+- .gsd/milestones/M015/slices/S03/tasks/T04-SUMMARY.md
+- .gsd/milestones/M015/slices/S03/tasks/T04-VERIFY.json
+- .gsd/milestones/M015/slices/S03/tasks/T05-PLAN.md
+- .gsd/milestones/M015/slices/S03/tasks/T05-SUMMARY.md
+- .gsd/milestones/M015/slices/S03/tasks/T05-VERIFY.json
+- .gsd/milestones/M015/slices/S04/S04-PLAN.md
+- .gsd/milestones/M015/slices/S04/S04-PRE-EXEC-VERIFY.json
+- .gsd/milestones/M015/slices/S04/S04-RESEARCH.md
+- .gsd/milestones/M015/slices/S04/S04-SUMMARY.md
+- .gsd/milestones/M015/slices/S04/S04-UAT.md
+- .gsd/milestones/M015/slices/S04/tasks/T01-PLAN.md
+- .gsd/milestones/M015/slices/S04/tasks/T01-SUMMARY.md
+- .gsd/milestones/M015/slices/S04/tasks/T01-VERIFY.json
+- .gsd/milestones/M015/slices/S04/tasks/T02-PLAN.md
+- .gsd/milestones/M015/slices/S04/tasks/T02-SUMMARY.md
+- .gsd/milestones/M015/slices/S04/tasks/T02-VERIFY.json
+- .gsd/milestones/M015/slices/S05/S05-PLAN.md
+- .gsd/milestones/M015/slices/S05/S05-PRE-EXEC-VERIFY.json
+- .gsd/milestones/M015/slices/S05/S05-RESEARCH.md
+- .gsd/milestones/M015/slices/S05/S05-SUMMARY.md
+- .gsd/milestones/M015/slices/S05/S05-UAT.md
+- .gsd/milestones/M015/slices/S05/tasks/T01-PLAN.md
+- .gsd/milestones/M015/slices/S05/tasks/T01-SUMMARY.md
+- .gsd/milestones/M015/slices/S05/tasks/T01-VERIFY.json
+- .gsd/milestones/M015/slices/S05/tasks/T02-PLAN.md
+- .gsd/milestones/M015/slices/S05/tasks/T02-SUMMARY.md
+- .gsd/milestones/M015/slices/S05/tasks/T02-VERIFY.json
+- .gsd/milestones/M015/slices/S05/tasks/T03-PLAN.md
+
+Roadmap M015:
+
+Ledgers/docs markers:
+--- docs/m015_failure_ledger.md
+# M015 Failure Ledger
+## Verification snapshot
+| Command | Exit | Result | What it showed |
+|---|---:|---|---|
+| `cargo test --test patamon_blueprint_seam --test holy_support_resolution --test holy_support_roster_contract --test holy_support_affordance --test event_stream --test twin_core_mechanics --test twin_core_integration --test validation_snapshot --test battery_loop_kernel --test predator_loop_kernel && python3 scripts/verify_combat_authority_audit.py` | 0 | ✅ pass | The targeted S03 authority suite is green: custom signals parse, Patamon blueprint dispatch reaches Holy Support state/snapshots, lifecycle beats and kernel transitions are live, Twin Core current fields are asserted, runtime registration populates kernel resources, and the strengthened authority verifier passes. |
+| `python3 scripts/verify_combat_authority_audit.py` | 0 | ✅ pass | The tracked verifier confirms requirement coverage, drift rows D1-D11, tracked evidence paths, placeholder absence, and claim-scoped S03 markers for seeded Patamon blueprint dispatch, live beat/kernel events, Holy Support snapshots, and downstream boundaries. |
+| `cargo test --test combat_cli_shared_surface --test presentation_metadata_boundary --test event_stream --test patamon_blueprint_seam && python3 scripts/verify_combat_authority_audit.py && python3 scripts/verify_m015_failure_ledger.py` | 0 | ✅ pass | The targeted S05 proof bundle is green: the real `combat_cli` binary emits shared action affordance, action/damage/cast event, `OnCombatBeat`, `OnKernelTransition`, and `[CLI_PROOF] validation_snapshot:` markers from a non-root cwd; the docs/verifiers preserve the S06 full-suite boundary. |
+| `BEVYROGUE_JSONL=1 BEVYROGUE_CLI_PROOF=1 cargo run --bin combat_cli` | 0 | ✅ pass | The direct proof command exercises the real CLI proof mode and emits stable shared-surface markers including `Action affordances`, `OnActionResolved`, `OnDamageDealt`, `OnSkillCast`, `[CLI_PROOF] validation_snapshot:`, and `holy_support=grace=` without SkillBook fallback or readiness failure text. |
+| `cargo test --no-run` | 101 | ❌ fail | The whole suite still stops on pre-existing broad-suite blockers. Across T05 no-run probes, Cargo reported missing docs include `docs/combat_ui_readiness_gap_matrix.md`, broad `SkillDef` constructors missing `custom_signals`, `animation_sequence`, and/or `qte`, broad `UnitDef` constructors missing `holy_support` and `twin_core`, and duplicate `UnitDef` fields in `tests/follow_up_chains.rs`. These are outside the now-green targeted S03/S05 authority contracts and remain assigned to S06. |
+## S03-normalized / resolved entries
+| Target(s) | Classification | Evidence | Downstream owner |
+|---|---|---|---|
+| `Cargo.toml` `[[test]] battery_loop_resolution` | Stale declaration superseded by current coverage | `tests/battery_loop_kernel.rs` is the intentional replacement and participates in the passing targeted S03 verification command. | Resolved before T05; do not restore the obsolete resolution-layer target unless the architecture explicitly reintroduces it. |
+| `tests/holy_support_affordance.rs` | Obsolete affordance API normalized to current state/snapshot contract | T05 rewrote the test away from removed `HolySupportAffordance`, `query_holy_support_affordance`, `ResourceKind::Grace`, and `ResourceKind::MartyrLight`. The file now asserts `HolySupportState`, rejected transitions, and `format_validation_snapshot`; targeted verification passes. | Closed for S03. |
+| `tests/holy_support_roster_contract.rs` | Obsolete direct-effect contract normalized to typed custom signals | The current test asserts `SkillCustomSignal::Patamon(PatamonCustomSignal::BuildHolySupportGrace { amount: 1 })` and does not restore removed Holy Support effects or `TargetShape::SelfTarget`. Targeted verification passes. | Closed for S03. |
+| `tests/twin_core_mechanics.rs`, `tests/twin_core_integration.rs`, `tests/validation_snapshot.rs` | Obsolete Twin Core `resonance/heat` assertions normalized to current kernel state fields | Targeted verification passes with assertions on `cross_resonance`, spark targets, spend markers, guards, `last_signal`, and runtime-registered snapshot resources. | Closed for S03. |
+| `docs/combat_authority_map.md`, `docs/combat_mixed_pattern_drift_ledger.md`, `scripts/verify_combat_authority_audit.py` | Docs/verifier refreshed to current source-of-truth flow | The verifier now checks specific S03 claims: Patamon blueprint dispatch, live beat/kernel events, Holy Support snapshot proof, drift row statuses, tracked path references, and no placeholder text. | Closed for S03; future slices should update these docs when expanding the seam. |
+## Remaining `cargo test --no-run` blockers
+### Broad `SkillDef` fixture constructor drift
+| Target(s) | Classification | Evidence | Downstream owner |
+|---|---|---|---|
+| `tests/status_effect_apply.rs` | Pre-existing broad fixture/schema drift | A T05 `cargo test --no-run` probe reported `missing field custom_signals in initializer of SkillDef` at line 59. | S06 / broad fixture repair slice. |
+| `tests/engine_legality_integration.rs` | Pre-existing broad fixture/schema drift | Fresh `cargo test --no-run` reports `missing fields animation_sequence, custom_signals and qte in initializer of SkillDef` at lines 51 and 72. | S06 / broad fixture repair slice. |
+| `tests/action_affordance_consumers.rs` | Pre-existing broad fixture/schema drift | A T05 `cargo test --no-run` probe reported `missing fields animation_sequence, custom_signals and qte in initializer of SkillDef` at lines 93, 114, and 132. | S06 / broad fixture repair slice. |
+| `tests/action_affordance_query.rs` | Pre-existing broad fixture/schema drift | Final `cargo test --no-run` reports `missing fields animation_sequence, custom_signals and qte in initializer of SkillDef` at lines 90, 111, 132, 153, 173, 191, and 212. | S06 / broad fixture repair slice. |
+| `tests/combat_coherence.rs` | Pre-existing broad fixture/schema drift | Final `cargo test --no-run` reports `missing fields animation_sequence, custom_signals and qte in initializer of SkillDef` at lines 42, 74, 92, 110, 128, and 143. | S06 / broad fixture repair slice. |
+| `tests/boundary_contract.rs` | Pre-existing broad fixture/schema drift | A T05 `cargo test --no-run` probe reported `missing fields animation_sequence, custom_signals and qte in initializer of SkillDef` at lines 86, 203, and 224. | S06 / broad fixture repair slice. |
+| `tests/status_effect_integration.rs` | Pre-existing broad fixture/schema drift | A T05 `cargo test --no-run` probe reported `missing fields animation_sequence, custom_signals and qte in initializer of SkillDef` at line 88. | S06 / broad fixture repair slice. |
+| `tests/sp_economy.rs` | Pre-existing broad fixture/schema drift | Final `cargo test --no-run` reports `missing fields animation_sequence, custom_signals and qte in initializer of SkillDef` at lines 56, 74, 92, 110, and 125. | S06 / broad fixture repair slice. |
+| `tests/patamon_revive.rs` | Pre-existing broad fixture/schema drift | Final `cargo test --no-run` reports `missing fields animation_sequence, custom_signals and qte in initializer of SkillDef` at lines 33 and 48. | S06 / broad fixture repair slice. |
+| `tests/ultimate_meter.rs` | Pre-existing broad fixture/schema drift | Final `cargo test --no-run` reports `missing fields animation_sequence, custom_signals and qte in initializer of SkillDef` at lines 105 and 129. | S06 / broad fixture repair slice. |
+### Broad `UnitDef` fixture constructor drift
+| Target(s) | Classification | Evidence | Downstream owner |
+|---|---|---|---|
+| `tests/tempo_resistance.rs` | Pre-existing broad fixture/schema drift | A T05 `cargo test --no-run` probe reported `missing fields holy_support and twin_core in initializer of UnitDef` at lines 241 and 278. | S06 / broad fixture repair slice. |
+| `tests/follow_up_chains.rs` | Pre-existing broad fixture/schema drift | Final `cargo test --no-run` reports duplicate `enemy_traits` and `charged_attack` fields at lines 191, 192, 384, and 385. | S06 / broad fixture repair slice. |
+| `tests/roster_smoke.rs` | Pre-existing broad fixture/schema drift | Final `cargo test --no-run` reports duplicate `enemy_traits` and `charged_attack` fields at lines 103, 104, 135, and 136. | S06 / broad fixture repair slice. |
+## S05-normalized / resolved entries
+| Target(s) | Classification | Evidence | Downstream owner |
+|---|---|---|---|
+| `cargo run --bin combat_cli` / `src/bin/combat_cli.rs` | CLI runtime / asset-path / consumer proof repaired by S05 | `tests/combat_cli_shared_surface.rs` runs the compiled binary from a non-root cwd with `BEVYROGUE_JSONL=1`, `BEVYROGUE_CLI_PROOF=1`, and `BEVYROGUE_CLI_TICK_LIMIT=120`, then requires `Action affordances`, `OnCombatBeat`, `OnKernelTransition`, action resolution/damage/cast events, `[CLI_PROOF] validation_snapshot:`, and `holy_support=grace=`. | Closed for S05; preserve this targeted proof but do not treat it as final full-suite baseline closure. |
+| `docs/combat_cli_shared_surface_proof.md`, `docs/combat_authority_map.md`, `docs/combat_mixed_pattern_drift_ledger.md`, `scripts/verify_combat_authority_audit.py`, `scripts/verify_m015_failure_ledger.py` | S05 claim-scoped proof docs and audit gates refreshed | The docs and verifiers require the S05 proof test/doc references, proof env vars, shared query/event/beat/kernel/snapshot terms, non-authority wording for `animation_sequence`, `qte`, beat wording, and presentation trigger text, plus explicit S06 boundary markers. | Closed for S05; S06 still owns broad fixture repair and final baseline proof. |
+## Runtime / consumer gaps not proven by S03
+| Command / target | Classification | Evidence | Downstream owner |
+|---|---|---|---|
+| `cargo run --bin combat_cli` / `src/bin/combat_cli.rs` | Closed targeted CLI runtime / consumer proof | S05 now proves the real binary through `tests/combat_cli_shared_surface.rs` and documents the contract in `docs/combat_cli_shared_surface_proof.md`. The proof covers manifest-root asset loading from a non-root cwd, shared action affordances, canonical action/damage/cast events, `OnCombatBeat`, `OnKernelTransition`, `[CLI_PROOF] validation_snapshot:`, and `holy_support=grace=`. | Closed for S05; full CLI/future UI migration and final full-suite baseline closure remain S06 or later work. |
+| `docs/combat_ui_readiness_gap_matrix.md` / `tests/ui_readiness_gap_matrix_docs.rs` | Presentation docs artifact gap | Final `cargo test --no-run` fails this target with `couldn't read tests/../docs/combat_ui_readiness_gap_matrix.md: No such file or directory`. This is a docs include/artifact repair, not an S03 combat-authority regression. | S06 (artifact/doc repair). |
+## Current owner recommendations
+- **S03 closed:** targeted combat-authority drift for lifecycle beats, kernel transitions, Patamon custom signal dispatch, Holy Support state/snapshots, Twin Core current fields, and authority docs/verifier.
+- **S04:** expand or protect presentation/blueprint boundaries such as `animation_sequence`, `qte`, and future per-Digimon ownership without making presentation metadata authoritative.
+- **S05 closed:** targeted CLI/headless consumer proof for manifest-root asset loading, SkillBook readiness, shared action affordance output, canonical action/damage/cast events, `OnCombatBeat`, `OnKernelTransition`, and validation snapshots from the real `combat_cli` binary.
+- **S06 / broad fixture repair:** batch remaining constructor updates for `SkillDef` and `UnitDef` fixtures so full-suite `cargo test --no-run` can progress past compile-time fixture drift.
+## Guardrails
+--- docs/combat_authority_map.md
+# Combat source-of-truth authority map
+## How to read this map
+- **Authoritative** means the code path currently drives gameplay state or runtime events.
+- **Declarative** means data is parsed and carried as intent, but does not execute combat by itself.
+- **Observational** means the surface reflects state owned elsewhere.
+## Current source-of-truth flow
+## RON gameplay data: declarative content plus typed custom-signal intent
+## Live action pipeline: action query, declaration, application, beats, blueprint dispatch, events
+## Typed kernel-transition seam: shared combat authority
+## Mechanic modules: owned by shared hooks, surfaced through snapshots
+## Per-Digimon blueprint ownership: seeded seam, not complete migration
+## Lifecycle beats and presentation signals: shared lifecycle output, still non-authoritative
+## Validation snapshots: diagnostic truth, not gameplay truth
+## CLI consumers: S05 real-binary shared-surface proof
+## Requirement coverage findings
+| Requirement | Current-state finding | Evidence | Coverage |
+|---|---|---|---|
+| R092 | The audit map identifies the current single-source-of-truth split across data, custom-signal intent, live action, blueprint dispatch, kernel transitions, mechanic hooks, validation snapshots, and CLI consumers. | `src/data/skills_ron.rs`, `src/data/units_ron.rs`, `src/combat/turn_system/mod.rs`, `src/combat/turn_system/pipeline.rs`, `src/combat/blueprints/mod.rs`, `src/combat/kernel.rs`, `src/combat/observability.rs`, `src/bin/combat_cli.rs` | Covered as a current-state audit |
+| R094 | A narrow per-Digimon blueprint seam now exists for Patamon custom signals, but full blueprint ownership migration remains future work. | `src/combat/blueprints/mod.rs`, `src/combat/blueprints/patamon.rs`, `assets/data/skills.ron`, `tests/patamon_blueprint_seam.rs` | Covered as seeded, not complete |
+| R095 | RON is a declarative data/custom-signal layer; it carries typed intent but does not apply Holy Support state directly. | `src/data/skills_ron.rs`, `assets/data/skills.ron`, `tests/holy_support_roster_contract.rs`, `tests/patamon_blueprint_seam.rs` | Covered |
+| R096 | The combat kernel authority is generic and shared through `CombatKernelTransition` / `CombatKernelState`; per-Digimon blueprints feed it rather than replacing it. | `src/combat/kernel.rs`, `src/combat/holy_support.rs`, `tests/validation_snapshot.rs` | Covered |
+| R097 | `OnCombatBeat` and beat kernel transitions are live shared lifecycle output during action resolution, while presentation metadata remains non-authoritative. | `src/combat/events.rs`, `src/combat/kernel.rs`, `src/combat/turn_system/mod.rs`, `src/combat/turn_system/pipeline.rs`, `tests/event_stream.rs`, `tests/presentation_metadata_boundary.rs`, `docs/presentation_metadata_boundary.md` | Covered with live-event proof and S04 metadata-boundary proof |
+| R098 | The CLI uses shared action-query, event, beat, kernel, and snapshot surfaces, and S05 proves that path through the real `combat_cli` binary from a non-root working directory without granting gameplay authority to CLI presentation metadata. | `src/bin/combat_cli.rs`, `src/combat/action_query.rs`, `src/combat/observability.rs`, `tests/combat_cli_shared_surface.rs`, `docs/combat_cli_shared_surface_proof.md`, `docs/m015_failure_ledger.md` | Covered by S05 real-binary proof; full CLI/future UI migration and final full-suite baseline remain S06 or later boundaries |
+## Explicit assumptions carried from S01/S02
+## Bottom line
+--- docs/combat_mixed_pattern_drift_ledger.md
+# Combat mixed-pattern drift ledger
+## How to use this ledger
+## Drift inventory
+| Drift ID | Severity | Evidence | Classification | Downstream owner | Recommended next action |
+|---|---:|---|---|---|---|
+| D1 | High | `src/combat/events.rs`, `src/combat/turn_system/mod.rs`, `src/combat/turn_system/pipeline.rs`, `tests/event_stream.rs` | normalized local drift in S03 | Closed for S03 | Keep `OnCombatBeat` and mirrored beat kernel transitions live in action resolution; downstream presentation work may consume them but must not make beats gameplay authority. |
+| D2 | High | `src/combat/kernel.rs`, `tests/validation_snapshot.rs`, `tests/battery_loop_kernel.rs`, `tests/predator_loop_kernel.rs` | normalized local drift in S03 | Closed for S03 | Preserve `register_combat_kernel_runtime` as the canonical runtime registration path for shared mechanic appliers and state resources. |
+| D3 | High | `src/main.rs`, `src/headless.rs`, `src/bin/combat_cli.rs`, `tests/combat_cli_shared_surface.rs`, `docs/combat_cli_shared_surface_proof.md`, `docs/m015_failure_ledger.md` | normalized local drift in S05 | Closed for S05 | Preserve manifest-root asset loading, SkillBook readiness, kernel registration, and real-binary proof markers for shared action query, event, beat, kernel, and snapshot surfaces. |
+| D4 | High | `src/combat/blueprints/mod.rs`, `src/combat/blueprints/patamon.rs`, `tests/patamon_blueprint_seam.rs` | rewrite-scale follow-up candidate seeded in S03 | S04 / future blueprint slice | Expand the seeded blueprint seam deliberately; do not migrate all move ownership or add per-Digimon branches inside shared combat systems in this slice. |
+| D5 | Medium | `src/data/skills_ron.rs`, `assets/data/skills.ron`, `tests/holy_support_roster_contract.rs`, `tests/patamon_blueprint_seam.rs` | normalized stale test drift in S03 | Closed for S03 | Keep RON custom signals typed and declarative; do not reintroduce removed `Effect::HolySupportTag` or `Effect::HolySupportRequest` variants. |
+| D6 | Medium | `tests/holy_support_affordance.rs`, `src/combat/holy_support.rs`, `src/combat/observability.rs` | normalized stale test drift in S03 | Closed for S03 | Use Holy Support kernel state and validation snapshots as the contract; do not restore the removed `HolySupportAffordance` query API. |
+| D7 | Medium | `src/combat/twin_core.rs`, `tests/twin_core_mechanics.rs`, `tests/twin_core_integration.rs`, `tests/validation_snapshot.rs` | normalized stale test drift in S03 | Closed for S03 | Keep assertions on `cross_resonance`, spark targets, spend markers, guards, and `last_signal`; do not restore old resonance/heat fields. |
+| D8 | Medium | `src/data/skills_ron.rs`, `src/combat/resolution.rs`, `tests/presentation_metadata_boundary.rs`, `docs/presentation_metadata_boundary.md`, `docs/combat_authority_map.md` | normalized local drift in S04 | Closed for S04 | Preserve the explicit contract proof that `animation_sequence`, `qte`, beat metadata wording, and presentation trigger strings remain presentation metadata and cannot alter combat resolution, action legality, state transitions, damage, or status outcomes. |
+| D9 | Medium | `src/combat/observability.rs`, `src/headless.rs`, `src/bin/combat_cli.rs`, `tests/validation_snapshot.rs`, `tests/combat_cli_shared_surface.rs`, `docs/combat_cli_shared_surface_proof.md` | normalized local drift in S05 | Closed for S05 | Keep validation snapshots backed by registered kernel resources and preserve the real CLI proof that emits `[CLI_PROOF] validation_snapshot:` with `holy_support=grace=` from shared runtime state. |
+| D10 | Low | `tests/bootstrap_spawn_composition.rs`, `tests/tempo_resistance.rs`, `tests/roster_smoke.rs`, `docs/m015_failure_ledger.md` | partially normalized fixture/test drift | S06 / follow-up fixture slice | S03 targeted fixture/test contracts are green; remaining whole-suite fixture or artifact blockers must stay classified in `docs/m015_failure_ledger.md` after `cargo test --no-run`. |
+| D11 | Low | `src/combat/precision_mind_game.rs`, `src/combat/kernel.rs`, `tests/validation_snapshot.rs` | safe placeholder | Future precision slice | Keep Precision Mind Game as a registered kernel/snapshot seam until a later slice adds live precision transitions. |
+## Local vs rewrite-scale boundary
+## R093 coverage
+## R094 downstream handoff
+## R095 downstream handoff
+## R096 downstream handoff
+## R097 downstream handoff
+## R098 downstream handoff
+## Classification notes
+- **normalized local drift in S03** means the codebase already contained the seam and S03 wired or tested it through runtime events, kernel appliers, or snapshots.
+- **normalized local drift in S04** means presentation metadata that was previously a safe placeholder now has executable proof and reader-facing documentation confirming it is non-authoritative.
+- **normalized local drift in S05** means the runtime consumer path now has real-binary proof through shared action query, canonical event, beat, kernel, and validation snapshot surfaces, without making CLI presentation output gameplay authority.
+- **normalized stale test drift in S03** means the old test contract was rewritten to current authority rather than restoring a removed API.
+- **rewrite-scale follow-up candidate seeded in S03** means the seam exists narrowly and must expand in later work.
+- **safe placeholder** means the current behavior is acceptable, but the boundary should stay documented and protected.
+## Bottom line
+--- docs/presentation_metadata_boundary.md
+# Presentation metadata boundary
+## Cold invariant
+## What RON may declare
+| RON surface | Category | Allowed consumers | Boundary |
+|---|---|---|---|
+| Effects, targeting, costs, damage tags | Declarative gameplay content | Action query, resolution, state appliers | May affect legality and outcomes through typed Rust code. |
+| `custom_signals` | Typed gameplay intent | Per-Digimon blueprint Rust modules, then kernel transitions | May affect outcomes only after a typed blueprint maps the signal to canonical transitions. |
+| `animation_sequence` | Presentation metadata | UI, CLI, animation, log narration, accessibility-friendly presentation layers | Must not affect legality, damage, status, resources, kernel state, or snapshots. |
+| `qte` | Presentation metadata | UI/CLI prompts and input affordance descriptions | Must not grant success, resources, damage, status, or transitions by itself. |
+| Presentation trigger wording | Presentation metadata | Display timing, copy, tutorials, narration | Must not become a parser for gameplay commands. |
+## Beats are canonical lifecycle output, not presentation ownership
+## Typed custom signals are the extension seam
+## Executable proof
+## Reader check
+
+M013 artifacts:
+- .gsd/milestones/M013/M013-META.json

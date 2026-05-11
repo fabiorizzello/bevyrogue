@@ -1,0 +1,18 @@
+{
+  "id": "bba314d1-ed0b-485b-9058-85e107a6e794",
+  "runtime": "bash",
+  "purpose": "RED current combat_cli proof mode lacks snapshot marker",
+  "script_chars": 473,
+  "started_at": "2026-05-08T19:54:40.043Z",
+  "finished_at": "2026-05-08T19:54:46.520Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 6477,
+  "stdout_bytes": 82,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/bba314d1-ed0b-485b-9058-85e107a6e794.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/bba314d1-ed0b-485b-9058-85e107a6e794.stderr"
+}

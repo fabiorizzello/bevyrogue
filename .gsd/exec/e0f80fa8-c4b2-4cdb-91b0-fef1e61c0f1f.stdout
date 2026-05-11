@@ -1,0 +1,204 @@
+== OnKernelTransition refs ==
+src/combat/battery_loop.rs:128:pub fn apply_battery_loop_transitions_system(
+src/combat/battery_loop.rs:133:        let CombatEventKind::OnKernelTransition { transition } = &event.kind else {
+src/combat/twin_core.rs:163:pub fn apply_twin_core_transitions_system(
+src/combat/twin_core.rs:168:        let CombatEventKind::OnKernelTransition { transition } = &event.kind else {
+src/combat/predator_loop.rs:225:pub fn apply_predator_loop_transitions_system(
+src/combat/predator_loop.rs:232:        let CombatEventKind::OnKernelTransition { transition } = &event.kind else {
+src/combat/events.rs:107:    OnKernelTransition {
+src/combat/kernel.rs:6:// CombatKernelRegistry must be Resource so it can be accessed via Bevy ECS Res<>.
+src/combat/kernel.rs:1045:pub struct CombatKernelRegistry {
+src/combat/kernel.rs:1049:impl CombatKernelRegistry {
+src/combat/kernel.rs:1061:    pub fn dispatch(&self, transition: CombatKernelTransition) -> Vec<CombatKernelTransition> {
+src/combat/kernel.rs:1070:pub fn register_combat_kernel_runtime(app: &mut App) {
+src/combat/kernel.rs:1071:    let mut registry = CombatKernelRegistry::new();
+src/combat/kernel.rs:1086:            crate::combat::battery_loop::apply_battery_loop_transitions_system,
+src/combat/kernel.rs:1090:            crate::combat::predator_loop::apply_predator_loop_transitions_system,
+src/combat/kernel.rs:1344:        let mut registry = CombatKernelRegistry::new();
+src/combat/kernel.rs:1347:        let transitions = registry.dispatch(CombatKernelTransition::Flow(FlowTransition {
+src/combat/holy_support.rs:168:pub fn apply_holy_support_transitions_system(
+src/combat/holy_support.rs:173:        let CombatEventKind::OnKernelTransition { transition } = &event.kind else {
+src/combat/precision_mind_game.rs:90:        .add_systems(Update, apply_precision_mind_game_transitions_system);
+src/combat/precision_mind_game.rs:93:pub fn apply_precision_mind_game_transitions_system(
+src/combat/precision_mind_game.rs:98:        let CombatEventKind::OnKernelTransition { transition } = &event.kind else {
+tests/twin_core_integration.rs:5:    CombatBeatId, CombatKernelRegistry, CombatKernelTransition, CombatTagChangeKind,
+tests/twin_core_integration.rs:17:    twin_core::{apply_twin_core_transitions_system, TwinCoreHook, TwinCoreState},
+tests/twin_core_integration.rs:74:    let mut registry = CombatKernelRegistry::new();
+tests/twin_core_integration.rs:83:        .add_systems(Update, apply_twin_core_transitions_system);
+tests/twin_core_integration.rs:95:        let registry = app.world().resource::<CombatKernelRegistry>();
+tests/twin_core_integration.rs:96:        registry.dispatch(transition)
+tests/twin_core_integration.rs:101:            kind: CombatEventKind::OnKernelTransition { transition },
+tests/holy_support_affordance.rs:8:    HolySupportState, HolySupportTransition, apply_holy_support_transitions_system,
+tests/holy_support_affordance.rs:26:        .add_systems(Update, apply_holy_support_transitions_system);
+tests/holy_support_affordance.rs:32:        kind: CombatEventKind::OnKernelTransition {
+docs/combat_authority_map.md:39:Current finding: the kernel layer is generic and shared. `register_combat_kernel_runtime` in `src/combat/kernel.rs` wires common mechanics into the app, but it does not indicate per-Digimon ownership. The transition vocabulary is intentionally reusable across mechanics and domains.
+tests/twin_core_mechanics.rs:5:    CombatBeatId, CombatKernelRegistry, CombatKernelTransition, CombatTagChangeKind,
+tests/twin_core_mechanics.rs:8:use bevyrogue::combat::twin_core::{apply_twin_core_transitions_system, TwinCoreHook, TwinCoreState};
+tests/twin_core_mechanics.rs:13:        let registry = app.world().resource::<CombatKernelRegistry>();
+tests/twin_core_mechanics.rs:14:        registry.dispatch(transition)
+tests/twin_core_mechanics.rs:19:            kind: CombatEventKind::OnKernelTransition { transition },
+tests/twin_core_mechanics.rs:33:    let mut registry = CombatKernelRegistry::new();
+tests/twin_core_mechanics.rs:39:    app.add_systems(Update, apply_twin_core_transitions_system);
+tests/holy_support_mechanics.rs:6:    HolySupportStep, HolySupportTransition, apply_holy_support_transitions_system,
+tests/holy_support_mechanics.rs:10:    CombatKernelConfig, CombatKernelRegistry, CombatKernelTransition, CombatTagChangeKind,
+tests/holy_support_mechanics.rs:25:    bevyrogue::combat::kernel::register_combat_kernel_runtime(&mut app);
+tests/holy_support_mechanics.rs:26:    app.add_systems(Update, apply_holy_support_transitions_system);
+tests/holy_support_mechanics.rs:32:        let registry = app.world().resource::<CombatKernelRegistry>();
+tests/holy_support_mechanics.rs:33:        registry.dispatch(transition)
+tests/holy_support_mechanics.rs:38:            kind: CombatEventKind::OnKernelTransition { transition },
+tests/holy_support_mechanics.rs:53:    let mut registry = CombatKernelRegistry::new();
+tests/holy_support_mechanics.rs:70:    let outputs = registry.dispatch(grace);
+tests/holy_support_mechanics.rs:82:    let martyr_outputs = registry.dispatch(martyr);
+tests/holy_support_mechanics.rs:93:    assert_eq!(registry.dispatch(unrelated).len(), 1);
+tests/holy_support_resolution.rs:5:    HolySupportState, HolySupportTransition, apply_holy_support_transitions_system,
+tests/holy_support_resolution.rs:7:use bevyrogue::combat::kernel::{CombatKernelRegistry, CombatKernelTransition};
+tests/holy_support_resolution.rs:63:    bevyrogue::combat::kernel::register_combat_kernel_runtime(&mut app);
+tests/holy_support_resolution.rs:67:        .add_systems(Update, apply_holy_support_transitions_system);
+tests/holy_support_resolution.rs:81:            CombatEventKind::OnKernelTransition { transition } => {
+tests/holy_support_resolution.rs:83:                    let registry = app.world().resource::<CombatKernelRegistry>();
+tests/holy_support_resolution.rs:84:                    registry.dispatch(transition)
+tests/holy_support_resolution.rs:90:                        kind: CombatEventKind::OnKernelTransition { transition },
+tests/holy_support_resolution.rs:146:        CombatEventKind::OnKernelTransition {
+tests/battery_loop_kernel.rs:4:    apply_battery_loop_transition, apply_battery_loop_transitions_system, BatteryLoopState,
+tests/battery_loop_kernel.rs:19:        .add_systems(Update, apply_battery_loop_transitions_system);
+tests/battery_loop_kernel.rs:25:        kind: CombatEventKind::OnKernelTransition { transition },
+
+== register_combat_systems/kernel registration ==
+tests/twin_core_integration.rs:4:use bevyrogue::combat::kernel::{
+tests/twin_core_integration.rs:17:    twin_core::{apply_twin_core_transitions_system, TwinCoreHook, TwinCoreState},
+tests/twin_core_integration.rs:83:        .add_systems(Update, apply_twin_core_transitions_system);
+tests/twin_core_integration.rs:88:fn pump_kernel_transition(
+tests/twin_core_integration.rs:142:    pump_kernel_transition(
+tests/twin_core_integration.rs:156:    pump_kernel_transition(
+tests/twin_core_integration.rs:170:    pump_kernel_transition(
+tests/twin_core_mechanics.rs:4:use bevyrogue::combat::kernel::{
+tests/twin_core_mechanics.rs:8:use bevyrogue::combat::twin_core::{apply_twin_core_transitions_system, TwinCoreHook, TwinCoreState};
+tests/twin_core_mechanics.rs:39:    app.add_systems(Update, apply_twin_core_transitions_system);
+src/combat/mod.rs:33:/// Holy support loop (Grace / Martyr Light) shared kernel seam.
+src/combat/mod.rs:35:/// Predator loop (Exploit / Prey Lock / Berserk) shared kernel seam.
+src/combat/mod.rs:37:/// Revised combat kernel primitives: Tactical Cycle, Strain, Flow, Fatigue, tags, beat IDs, and hooks.
+src/combat/mod.rs:38:pub mod kernel;
+src/combat/observability.rs:12:    kernel::{
+src/combat/observability.rs:425:        crate::combat::kernel::PredatorLoopSignal::BuildExploit => "build-exploit",
+src/combat/observability.rs:426:        crate::combat::kernel::PredatorLoopSignal::ApplyPreyLock => "prey-lock",
+src/combat/observability.rs:427:        crate::combat::kernel::PredatorLoopSignal::ConsumePreyLockPayoff => "payoff",
+src/combat/observability.rs:428:        crate::combat::kernel::PredatorLoopSignal::EnterBerserk => "berserk",
+src/combat/observability.rs:429:        crate::combat::kernel::PredatorLoopSignal::Tick => "tick",
+src/combat/observability.rs:430:        crate::combat::kernel::PredatorLoopSignal::Expire => "expire",
+src/combat/observability.rs:431:        crate::combat::kernel::PredatorLoopSignal::Rejected => "rejected",
+src/combat/observability.rs:432:        crate::combat::kernel::PredatorLoopSignal::Ignored => "ignored",
+src/combat/observability.rs:435:        crate::combat::kernel::PredatorLoopSignal::BuildExploit
+src/combat/observability.rs:436:        | crate::combat::kernel::PredatorLoopSignal::ApplyPreyLock
+src/combat/observability.rs:437:        | crate::combat::kernel::PredatorLoopSignal::ConsumePreyLockPayoff
+src/combat/observability.rs:438:        | crate::combat::kernel::PredatorLoopSignal::EnterBerserk
+src/combat/observability.rs:439:        | crate::combat::kernel::PredatorLoopSignal::Expire => {
+src/combat/observability.rs:442:        crate::combat::kernel::PredatorLoopSignal::Tick => signal.to_string(),
+src/combat/observability.rs:443:        crate::combat::kernel::PredatorLoopSignal::Rejected
+src/combat/observability.rs:444:        | crate::combat::kernel::PredatorLoopSignal::Ignored => match (
+src/combat/observability.rs:460:fn format_predator_loop_step(step: crate::combat::kernel::PredatorLoopStep) -> String {
+src/combat/observability.rs:462:        crate::combat::kernel::PredatorLoopStep::BuildExploit { target, amount } => {
+src/combat/observability.rs:465:        crate::combat::kernel::PredatorLoopStep::ApplyPreyLock { target } => {
+src/combat/observability.rs:468:        crate::combat::kernel::PredatorLoopStep::ConsumePreyLockPayoff { target } => {
+src/combat/observability.rs:471:        crate::combat::kernel::PredatorLoopStep::EnterBerserk => "berserk".to_string(),
+src/combat/observability.rs:472:        crate::combat::kernel::PredatorLoopStep::Tick => "tick".to_string(),
+src/combat/observability.rs:473:        crate::combat::kernel::PredatorLoopStep::Expire { target } => {
+src/combat/observability.rs:479:fn format_holy_support_transition(transition: super::kernel::HolySupportTransition) -> String {
+src/combat/observability.rs:481:        super::kernel::HolySupportSignal::BuildGrace => "build",
+src/combat/observability.rs:482:        super::kernel::HolySupportSignal::SpendGrace => "spend",
+src/combat/observability.rs:483:        super::kernel::HolySupportSignal::MarkMartyrLight => "mark-martyr",
+src/combat/observability.rs:484:        super::kernel::HolySupportSignal::ConsumeMartyrLight => "consume-martyr",
+src/combat/observability.rs:485:        super::kernel::HolySupportSignal::CycleReset => "cycle-reset",
+src/combat/observability.rs:486:        super::kernel::HolySupportSignal::Rejected => "rejected",
+src/combat/observability.rs:487:        super::kernel::HolySupportSignal::Ignored => "ignored",
+src/combat/observability.rs:491:        super::kernel::HolySupportSignal::BuildGrace
+src/combat/observability.rs:492:        | super::kernel::HolySupportSignal::SpendGrace => {
+src/combat/observability.rs:495:        super::kernel::HolySupportSignal::Rejected | super::kernel::HolySupportSignal::Ignored => {
+src/combat/observability.rs:513:fn format_holy_support_step(step: super::kernel::HolySupportStep) -> String {
+src/combat/observability.rs:515:        super::kernel::HolySupportStep::BuildGrace { amount } => format!("build({amount})"),
+src/combat/observability.rs:516:        super::kernel::HolySupportStep::SpendGrace { amount } => format!("spend({amount})"),
+src/combat/observability.rs:517:        super::kernel::HolySupportStep::MarkMartyrLight => "mark-martyr".to_string(),
+src/combat/observability.rs:518:        super::kernel::HolySupportStep::ConsumeMartyrLight => "consume-martyr".to_string(),
+src/combat/observability.rs:519:        super::kernel::HolySupportStep::CycleReset => "cycle-reset".to_string(),
+src/combat/observability.rs:559:        super::kernel::BatteryLoopSignal::BuildStaticCharge => {
+src/combat/observability.rs:562:        super::kernel::BatteryLoopSignal::BuildCircuitCharge => {
+src/combat/observability.rs:565:        super::kernel::BatteryLoopSignal::SpendCircuitCharge => {
+src/combat/observability.rs:568:        super::kernel::BatteryLoopSignal::GrantEnergy => {
+src/combat/observability.rs:571:        super::kernel::BatteryLoopSignal::SelfEnergyGain => {
+src/combat/observability.rs:574:        super::kernel::BatteryLoopSignal::TransferEnergy => {
+src/combat/observability.rs:577:        super::kernel::BatteryLoopSignal::CycleReset => "cycle-reset".to_string(),
+src/combat/observability.rs:578:        super::kernel::BatteryLoopSignal::Rejected => {
+src/combat/observability.rs:592:        super::kernel::BatteryLoopSignal::Ignored => match transition.attempted {
+src/combat/observability.rs:599:fn format_battery_loop_step(step: super::kernel::BatteryLoopStep) -> String {
+src/combat/observability.rs:601:        super::kernel::BatteryLoopStep::BuildStaticCharge { amount } => {
+src/combat/observability.rs:604:        super::kernel::BatteryLoopStep::BuildCircuitCharge { amount } => {
+src/combat/observability.rs:607:        super::kernel::BatteryLoopStep::SpendCircuitCharge { amount } => {
+src/combat/observability.rs:610:        super::kernel::BatteryLoopStep::GrantEnergy { amount } => format!("grant({amount})"),
+src/combat/observability.rs:611:        super::kernel::BatteryLoopStep::SelfEnergyGain { amount } => {
+src/combat/observability.rs:614:        super::kernel::BatteryLoopStep::TransferEnergy { amount } => format!("transfer({amount})"),
+src/combat/observability.rs:615:        super::kernel::BatteryLoopStep::CycleReset => "cycle-reset".to_string(),
+src/combat/observability.rs:723:fn format_precision_step(step: super::kernel::PrecisionMindGameStep) -> String {
+src/combat/observability.rs:725:        super::kernel::PrecisionMindGameStep::OpenWindow { window } => {
+src/combat/observability.rs:728:        super::kernel::PrecisionMindGameStep::Commit { commitment } => {
+src/combat/observability.rs:731:        super::kernel::PrecisionMindGameStep::Reveal { reveal } => {
+src/combat/observability.rs:734:        super::kernel::PrecisionMindGameStep::Resolve { outcome } => {
+tests/predator_loop_kernel.rs:2:use bevyrogue::combat::kernel::{
+src/combat/precision_mind_game.rs:5:use super::kernel::{
+src/combat/precision_mind_game.rs:88:pub fn register_precision_mind_game_runtime(app: &mut App) {
+src/combat/precision_mind_game.rs:90:        .add_systems(Update, apply_precision_mind_game_transitions_system);
+src/combat/precision_mind_game.rs:93:pub fn apply_precision_mind_game_transitions_system(
+src/combat/precision_mind_game.rs:106:        apply_precision_mind_game_transition(&mut state, *precision_transition);
+src/combat/precision_mind_game.rs:110:fn apply_precision_mind_game_transition(
+src/combat/events.rs:9:// Re-export kernel types used in CombatEventKind variants so callers can import from events.
+src/combat/events.rs:10:pub use crate::combat::kernel::{BatteryLoopTransition, CombatBeatId, CombatKernelTransition, PredatorLoopTransition};
+src/combat/events.rs:106:    /// Typed kernel transition for Tactical Cycle / Strain / Flow / Fatigue / tags.
+src/combat/events.rs:110:    /// Typed BatteryLoop outcome after the raw kernel transition has been resolved against
+src/combat/events.rs:115:    /// Typed PredatorLoop outcome after the raw kernel transition has been resolved against
+tests/battery_loop_kernel.rs:8:use bevyrogue::combat::kernel::{
+tests/battery_loop_kernel.rs:23:fn emit_kernel_transition(app: &mut App, transition: CombatKernelTransition) {
+tests/battery_loop_kernel.rs:138:    emit_kernel_transition(
+src/combat/predator_loop.rs:7:use super::kernel::{
+src/combat/predator_loop.rs:227:    kernel: Res<CombatKernelState>,
+src/combat/predator_loop.rs:244:                    PredatorLoopTransition::enter_berserk(kernel.strain.current),
+src/combat/twin_core.rs:5:use super::kernel::{
+src/combat/twin_core.rs:163:pub fn apply_twin_core_transitions_system(
+src/combat/twin_core.rs:176:        apply_twin_core_transition(&mut state, *twin_trans, event.target);
+src/combat/twin_core.rs:180:fn apply_twin_core_transition(
+tests/holy_support_mechanics.rs:6:    HolySupportStep, HolySupportTransition, apply_holy_support_transitions_system,
+tests/holy_support_mechanics.rs:9:use bevyrogue::combat::kernel::{
+tests/holy_support_mechanics.rs:25:    bevyrogue::combat::kernel::register_combat_kernel_runtime(&mut app);
+tests/holy_support_mechanics.rs:26:    app.add_systems(Update, apply_holy_support_transitions_system);
+tests/holy_support_mechanics.rs:30:fn queue_kernel_transition(app: &mut App, transition: CombatKernelTransition) {
+tests/holy_support_mechanics.rs:46:fn emit_kernel_transition(app: &mut App, transition: CombatKernelTransition) {
+tests/holy_support_mechanics.rs:47:    queue_kernel_transition(app, transition);
+tests/holy_support_mechanics.rs:100:    queue_kernel_transition(
+tests/holy_support_mechanics.rs:128:    emit_kernel_transition(
+tests/holy_support_mechanics.rs:148:    emit_kernel_transition(
+tests/holy_support_mechanics.rs:159:    emit_kernel_transition(
+tests/holy_support_mechanics.rs:175:    emit_kernel_transition(
+tests/holy_support_mechanics.rs:186:    emit_kernel_transition(
+tests/holy_support_mechanics.rs:207:    emit_kernel_transition(
+tests/holy_support_mechanics.rs:211:    emit_kernel_transition(
+tests/holy_support_mechanics.rs:230:    emit_kernel_transition(&mut app, wrapped_cycle);
+tests/holy_support_affordance.rs:8:    HolySupportState, HolySupportTransition, apply_holy_support_transitions_system,
+tests/holy_support_affordance.rs:10:use bevyrogue::combat::kernel::CombatKernelTransition;
+tests/holy_support_affordance.rs:26:        .add_systems(Update, apply_holy_support_transitions_system);
+src/combat/battery_loop.rs:5:use super::kernel::{
+src/combat/holy_support.rs:4:pub use super::kernel::{
+src/combat/holy_support.rs:9:use super::kernel::{
+src/combat/holy_support.rs:168:pub fn apply_holy_support_transitions_system(
+src/combat/holy_support.rs:181:        apply_holy_support_transition(&mut state, *holy_transition, event.target);
+src/combat/holy_support.rs:185:fn apply_holy_support_transition(
+tests/holy_support_resolution.rs:5:    HolySupportState, HolySupportTransition, apply_holy_support_transitions_system,
+tests/holy_support_resolution.rs:7:use bevyrogue::combat::kernel::{CombatKernelRegistry, CombatKernelTransition};
+tests/holy_support_resolution.rs:63:    bevyrogue::combat::kernel::register_combat_kernel_runtime(&mut app);
+tests/holy_support_resolution.rs:67:        .add_systems(Update, apply_holy_support_transitions_system);
+tests/holy_support_resolution.rs:113:fn patamon_ult_builds_grace_through_the_shared_kernel_path() {
+src/combat/kernel.rs:1070:pub fn register_combat_kernel_runtime(app: &mut App) {
+src/combat/kernel.rs:1378:    fn state_delegates_to_kernel_primitives() {
+src/combat/kernel.rs:1379:        let mut kernel = CombatKernelState::default();
+src/combat/kernel.rs:1381:        let strain = kernel.gain_strain(55);
+src/combat/kernel.rs:1382:        let flow = kernel.enter_flow();
+src/combat/kernel.rs:1383:        let cycle = kernel.advance_tactical_cycle();
+src/combat/kernel.rs:1384:        let tag = kernel.add_tag("combo_ready");
+src/combat/kernel.rs:1385:        let consumed = kernel.consume_tag(&tag.after.id).expect("tag exists");
+src/combat/kernel.rs:1390:        assert_eq!(kernel.tags.len(), 1);

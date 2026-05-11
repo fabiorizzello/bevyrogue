@@ -1,0 +1,19 @@
+GIMP Palette
+Name: patamon
+#
+ 14   5   4	shadow-deep
+ 48  36  23	shadow-mid
+114  66  36	shadow-mid
+106 126 126	mid-tone
+182 125  41	mid-tone
+228 148  48	highlight
+208 152  80	highlight
+189 151 147	highlight
+200 195 181	highlight
+241 217 161	highlight-bright
+238 237 235	highlight-bright
+254 251 213	highlight-bright
+252 251 223	highlight-bright
+251 250 245	highlight-bright
+252 253 252	highlight-bright
+255 255 255	highlight-bright

@@ -1,0 +1,18 @@
+{
+  "id": "8b5a4dfd-be5b-46b3-af8f-8fd945a93ab7",
+  "runtime": "bash",
+  "purpose": "S04 scan systems consuming combat events/kernel transitions",
+  "script_chars": 224,
+  "started_at": "2026-05-08T16:38:41.907Z",
+  "finished_at": "2026-05-08T16:38:41.918Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 11,
+  "stdout_bytes": 7049,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/8b5a4dfd-be5b-46b3-af8f-8fd945a93ab7.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/8b5a4dfd-be5b-46b3-af8f-8fd945a93ab7.stderr"
+}

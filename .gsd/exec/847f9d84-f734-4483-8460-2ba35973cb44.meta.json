@@ -1,0 +1,18 @@
+{
+  "id": "847f9d84-f734-4483-8460-2ba35973cb44",
+  "runtime": "bash",
+  "purpose": "T04 final no-run verification after fixing UnitDef, SkillDef, and RoundFlags drift",
+  "script_chars": 19,
+  "started_at": "2026-05-08T22:20:23.504Z",
+  "finished_at": "2026-05-08T22:20:24.653Z",
+  "exit_code": 101,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 1149,
+  "stdout_bytes": 0,
+  "stderr_bytes": 48400,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/847f9d84-f734-4483-8460-2ba35973cb44.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/847f9d84-f734-4483-8460-2ba35973cb44.stderr"
+}

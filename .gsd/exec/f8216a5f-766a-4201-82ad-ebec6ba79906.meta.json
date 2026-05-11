@@ -1,0 +1,18 @@
+{
+  "id": "f8216a5f-766a-4201-82ad-ebec6ba79906",
+  "runtime": "bash",
+  "purpose": "map combat authority relevant files",
+  "script_chars": 318,
+  "started_at": "2026-05-08T11:04:18.629Z",
+  "finished_at": "2026-05-08T11:04:18.647Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 18,
+  "stdout_bytes": 2977,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/f8216a5f-766a-4201-82ad-ebec6ba79906.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/f8216a5f-766a-4201-82ad-ebec6ba79906.stderr"
+}

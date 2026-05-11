@@ -1,0 +1,18 @@
+{
+  "id": "6c863919-72ee-49b0-b662-53151c174c60",
+  "runtime": "bash",
+  "purpose": "Final app and CLI wiring cargo check",
+  "script_chars": 11,
+  "started_at": "2026-05-08T15:55:01.329Z",
+  "finished_at": "2026-05-08T15:55:16.236Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 14907,
+  "stdout_bytes": 0,
+  "stderr_bytes": 35788,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/6c863919-72ee-49b0-b662-53151c174c60.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/6c863919-72ee-49b0-b662-53151c174c60.stderr"
+}

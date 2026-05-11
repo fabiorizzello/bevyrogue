@@ -1,0 +1,70 @@
+exists True chars 17290
+Patamon: -1
+Holy Support: -1
+full Rust test suite: -1
+combat_cli: 2269
+M013: 8
+stale tests: 12047
+unrelated blockers: -1
+R089: 11961
+R100: 12656
+classified baseline: -1
+Other: -1
+HEADINGS
+## Project Description
+## Why This Milestone
+## User-Visible Outcome
+### When this milestone is complete, the user can:
+### Entry point / environment
+## Completion Class
+## Final Integrated Acceptance
+## Architectural Decisions
+### Normalize clear drift, not unlimited rewrite
+### Blueprint-like logic is per Digimon
+### RON emits data and custom signals, not final gameplay authority
+### Combat kernel remains generic authority
+### Kernel transitions are canonical observable output, not blueprint source
+### Presentation beats are non-authoritative cues
+## Error Handling Strategy
+## Risks and Unknowns
+## Existing Codebase / Prior Art
+## Relevant Requirements
+## Scope
+### In Scope
+### Out of Scope / Non-Goals
+## Technical Constraints
+## Integration Points
+## Testing Requirements
+## Acceptance Criteria
+## Open Questions
+TAIL
+- `src/combat/action_query.rs` — shared legality/affordance surface.
+- `src/combat/observability.rs` — snapshot proof surface.
+- `src/bin/combat_cli.rs` — shared-surface consumer proof.
+- `.gsd/milestones/M013/M013-VALIDATION.md` — prior closure gap evidence.
+
+## Testing Requirements
+
+- Start with `cargo test --no-run`; classify and resolve stale target/config blockers.
+- Run `cargo test --no-fail-fast` after initial blockers are removed; classify every failure before fixing.
+- Add or repair tests that mechanically protect the responsibility split: RON/custom signals, per-Digimon blueprint seam, kernel authority, presentation non-authority, shared CLI s
+- Prefer deterministic headless tests over manual CLI inspection.
+- CLI e2e/smoke proof should complement kernel/query/snapshot tests, not replace them.
+- Tests that enqueue Bevy messages must call `app.update()` or equivalent wrapper before observing state.
+- Obsolete tests may be removed only with replacement coverage named.
+
+## Acceptance Criteria
+
+- S01: stale/missing test declarations and M013 artifact gaps are inventoried and classified with evidence.
+- S02: a concrete source-of-truth audit maps current gameplay authority and mixed-pattern risks.
+- S03: clear drift around RON/custom signals, per-Digimon blueprint logic, kernel hooks, and canonical output is normalized or split with evidence.
+- S04: tests/docs prove presentation beat/trigger metadata remains non-authoritative and RON remains data/custom-signal input.
+- S05: CLI proof consumes shared action query, event, beat, kernel-observable state, and snapshot surfaces without CLI-only combat logic.
+- S06: final regression baseline and GSD closure artifacts truthfully state what passed, failed, was fixed, was deferred, and what future migration remains.
+
+## Open Questions
+
+- How broad is the current test failure set after `battery_loop_resolution` is resolved? — Unknown until S01 runs verification.
+- Which current mechanic/line modules can remain as shared primitives versus needing per-Digimon ownership now? — To be determined in S02/S03 audit.
+- Does M015 need to create one explicit per-Digimon module as a seed seam, or is a documented boundary plus tests enough? — Decide based on S02 findings.
+- Are M013 artifact gaps best repaired in-place or superseded by M015 closure summaries? — Decide in S06 based on GSD state needs.

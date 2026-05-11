@@ -1,0 +1,18 @@
+{
+  "id": "c2b4422a-1a6b-4ed0-b630-bd13eaf20c64",
+  "runtime": "bash",
+  "purpose": "find snapshot/query-like existing code",
+  "script_chars": 150,
+  "started_at": "2026-04-30T17:28:33.241Z",
+  "finished_at": "2026-04-30T17:28:33.250Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 9,
+  "stdout_bytes": 24059,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M012/.gsd/exec/c2b4422a-1a6b-4ed0-b630-bd13eaf20c64.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M012/.gsd/exec/c2b4422a-1a6b-4ed0-b630-bd13eaf20c64.stderr"
+}

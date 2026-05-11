@@ -1,0 +1,18 @@
+{
+  "id": "ce2fbaf2-15a4-4d96-839b-cb2b5795d84e",
+  "runtime": "bash",
+  "purpose": "red run T04 scoped tests before blueprint dispatch",
+  "script_chars": 139,
+  "started_at": "2026-05-08T16:08:22.965Z",
+  "finished_at": "2026-05-08T16:08:23.785Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 820,
+  "stdout_bytes": 15,
+  "stderr_bytes": 33803,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/ce2fbaf2-15a4-4d96-839b-cb2b5795d84e.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/ce2fbaf2-15a4-4d96-839b-cb2b5795d84e.stderr"
+}

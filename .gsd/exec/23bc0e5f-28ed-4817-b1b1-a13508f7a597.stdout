@@ -1,0 +1,34 @@
+Damage: 65
+Revive: 4
+GrantEnergy: 3
+TargetShape: 0
+Row: 6
+AllEnemies: 0
+SelfOnly: 0
+GrantFreeSkill: 1
+ApplyStatus: 8
+TurnAdvance: 1
+SelfAdvance: 1
+
+Lines with non-Single target or special effects:
+112: effects: [Damage(amount: 30, target: Row), ToughnessHit(20)],
+130: name: "Holy Revive",
+133: effects: [Revive(25)],
+147: effects: [Revive(15)],
+161: effects: [Damage(amount: 30, target: Single), ToughnessHit(15), GrantFreeSkill(count: 4)],
+182: effects: [Damage(amount: 15, target: Single), ToughnessHit(8), ApplyStatus(kind: Burn(damage_per_turn: 5), duration: 3)],
+198: effects: [Damage(amount: 16, target: Single), ToughnessHit(8), ApplyStatus(kind: Shock(cancel_chance_pct: 25), duration: 1)],
+220: effects: [Damage(amount: 22, target: Single), ToughnessHit(12), ApplyStatus(kind: Burn(damage_per_turn: 6), duration: 3)],
+234: effects: [Damage(amount: 55, target: Row), ToughnessHit(35)],
+248: effects: [GrantEnergy(5)],
+255: effects: [GrantEnergy(5)],
+270: effects: [Damage(amount: 20, target: Single), ToughnessHit(10), ApplyStatus(kind: Freeze(speed_reduction: 15), duration: 2)],
+277: effects: [Damage(amount: 24, target: Single), ToughnessHit(14), ApplyStatus(kind: Freeze(speed_reduction: 20), duration: 2)],
+298: effects: [GrantEnergy(5)],
+313: effects: [Damage(amount: 22, target: Single), ToughnessHit(11), ApplyStatus(kind: Shock(cancel_chance_pct: 30), duration: 1)],
+320: effects: [Damage(amount: 18, target: Row), ToughnessHit(12), ApplyStatus(kind: Shock(cancel_chance_pct: 25), duration: 1)],
+327: effects: [Damage(amount: 50, target: Row), ToughnessHit(30)],
+349: effects: [Damage(amount: 22, target: Single), ToughnessHit(10), ApplyStatus(kind: Freeze(speed_reduction: 12), duration: 2)],
+363: effects: [Damage(amount: 50, target: Row), ToughnessHit(28), TurnAdvance(20)],
+377: effects: [SelfAdvance(20)],
+450: effects: [Damage(amount: 48, target: Row), ToughnessHit(28), Revive(20)],

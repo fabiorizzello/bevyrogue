@@ -1,0 +1,73 @@
+
+# ── GSD baseline (auto-generated) ──
+.gsd-id
+.mcp.json
+.bg-shell/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.code-workspace
+.env
+.env.*
+!.env.example
+node_modules/
+.next/
+dist/
+build/
+__pycache__/
+*.pyc
+.venv/
+venv/
+target/
+vendor/
+*.log
+coverage/
+.cache/
+tmp/
+
+# ── GSD: Runtime / Ephemeral (per-developer, per-session) ──────
+# Shared artifacts (tracked): PROJECT.md, REQUIREMENTS.md, DECISIONS.md,
+# KNOWLEDGE.md, CONTEXT.md, OVERRIDES.md, PREFERENCES.md, CODEBASE.md,
+# milestones/**, gsd.db
+.gsd/exec
+.gsd/auto.lock
+.gsd/completed-units*.json
+.gsd/metrics.json
+.gsd/worktrees/
+.gsd/activity/
+.gsd/runtime/
+.gsd/journal/
+.gsd/graphs/
+.gsd/reports/
+.gsd/audit/
+.gsd/quick/
+.gsd/notifications.jsonl
+.gsd/event-log.jsonl
+.gsd/doctor-history.jsonl
+.gsd/last-snapshot.md
+.gsd/repo-meta.json
+.gsd/gsd.db*
+.gsd/completed-units.json
+.gsd/STATE.md
+.gsd/milestones/**/continue.md
+.gsd/milestones/**/*-CONTINUE.md
+.gsd/CODEBASE.md
+
+
+rustc-ice-*.txt
+
+# ── tools/ assets ──
+tools/*.zip
+tools/*.tar.gz
+tools/*.AppImage
+
+# ── Generated sprite atlases (rebuild via tools/sprite_pipeline) ──
+assets/digimon/*_atlas.png
+assets/digimon/*_atlas.json
+
+# ── Scratch / leftover worktrees ──
+.tmp/

@@ -1,0 +1,7 @@
+src/combat/resolution.rs:17:/// Emit one `OnSkillCast` per granted free-skill slot, using the provided ally basic skill ids.
+src/combat/resolution.rs:20:pub fn grant_free_skill_events(count: usize, ally_basics: &[SkillId]) -> Vec<CombatEventKind> {
+src/combat/resolution.rs:24:        .map(|skill_id| CombatEventKind::OnSkillCast {
+src/combat/resolution.rs:55:pub fn resolve_action(
+src/combat/resolution.rs:91:        custom_signals: skill.custom_signals.clone(),
+src/combat/resolution.rs:345:    events.push(CombatEventKind::OnSkillCast {
+src/combat/turn_system/pipeline.rs:16:    apply_effects, grant_free_skill_events, resolve_action, target_shape_rejection_reason,

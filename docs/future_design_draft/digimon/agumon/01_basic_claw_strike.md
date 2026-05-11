@@ -1,0 +1,89 @@
+# Agumon — Basic: `claw_strike` (FSM stress test)
+
+> **Goal**: validare baseline FSM con la skill più semplice. Se la FSM non riesce a esprimere un basic attack pulito, abbiamo già un problema.
+
+## §1 — Intent
+
+- **Cost:** 0 SP — **Gen:** +1 SP, +25 Ult charge (via `OnBasicAttack`)
+- **Effect:** Damage Fire `≈8` su single primary; **+1 Heated stack** (status, target-scoped)
+- **Atlas clip:** `attack` (source frames 0–8, count 9)
+
+## §2 — FSM topology
+
+3-nodo: `Windup → Strike → Recovery → (exit to Idle)`.
+
+```
+            ┌───────────┐  TimeInNode(2)   ┌──────────┐  TimeInNode(2)  ┌────────────┐
+   commit →│  Windup    │ ───────────────▶ │  Strike  │ ──────────────▶ │  Recovery  │ ──▶ exit
+            │ frames: 2 │                  │ frames: 4│                 │ frames: 3  │
+            └───────────┘                  └────┬─────┘                 └────────────┘
+                                                │
+                                              on_enter:
+                                                EmitDamage { hits:1, mul_param:"basic_mul" }
+                                                EmitStatus { id:"heated", dur_param:"heated_dur",
+                                                             chance_param:"heated_chance", target:Primary }
+                                                SpawnParticle { name:"fire_claw_trail", anchor:"weapon" }
+                                                Shake { intensity:1, duration_ms:80 }
+```
+
+## §3 — Nodes table
+
+| Node | frames | atlas src range | ms (@12fps ref) | on_enter (Commands) | exit edge |
+|---|---|---|---|---|---|
+| `Windup` | 2 | 0–1 | 0–166 | `Shake { intensity:1, duration_ms:60 }` (anticipation tick) | `TimeInNode` → `Strike` (prio 0) |
+| `Strike` | 4 | 2–5 | 166–500 | `EmitDamage`, `EmitStatus(Heated)`, `SpawnParticle("fire_claw_trail")`, `Shake { intensity:1, duration_ms:80 }` | `TimeInNode` → `Recovery` (prio 0) |
+| `Recovery` | 3 | 6–8 | 500–750 | — | `TimeInNode` → exit (FSM completes; AnimGraph idle resumes) |
+
+**Frame budget:** 9 frames (= atlas clip esatto). No stretch.
+
+## §4 — Command param resolution (snapshot-once)
+
+Parameters risolti dal blueprint **al commit_action** (snapshot-once, §2.2b §F):
+
+| param | source | esempio value |
+|---|---|---|
+| `basic_mul` | `skills.ron` numbers + caster ATK + target DEF | scalar damage finale ≈ 8 |
+| `heated_dur` | `skills.ron` (TBD: aggiungere `params: { heated_dur: 3 }`) | 3 turni |
+| `heated_chance` | `skills.ron` (TBD: 100% per basic) | 100 (= certain) |
+
+> **Gap rilevato:** `skills.ron` schema attuale (`Effect::Damage{amount,target}`, `Effect::ToughnessHit(n)`) **non ha campo `params`**. Per FSM Commands con `mul_param`/`dur_param` serve estendere `SkillDef`. Vedi §6.
+
+## §5 — Kernel events expected (post-skill)
+
+Sul kernel bus dopo `Strike.on_enter` (= dopo che il blueprint traduce Commands):
+
+1. `CombatEvent::DamageDealt { target, amount, tag: Fire, caster: Agumon }`
+2. `CombatEvent::StatusApplied { target, status: Heated, stacks: 1 }`
+3. `CombatEvent::SpEarned { actor: Agumon, amount: 1 }` (da `OnBasicAttack`)
+4. `CombatEvent::UltimateCharged { actor: Agumon, amount: 25 }` (da `OnBasicAttack`)
+
+**Twin Core listener (passive):** se Gabumon è in team e ha `Chilled` applicato su qualcuno questo turno, il listener Agumon (file 04) può intercettare l'evento `StatusApplied(Chilled)` e modificare il damage di `DamageDealt` next-hit. Vedi `04_passive_twin_core_fire.md`.
+
+## §6 — Stress test findings
+
+### ✅ Cosa funziona
+
+- 3 nodi sono **largamente sufficienti** per un basic. Il caso degenere (1-2 nodi) sarebbe troppo povero per timing particle/shake; 3 nodi danno un anticipation/impact/recovery leggibile.
+- Tutte le Commands usate (`EmitDamage`, `EmitStatus`, `SpawnParticle`, `Shake`) sono nel vocabolario chiuso §2.2b §C. **No drift**.
+- Predicate solo `TimeInNode` → headless deterministic OK senza altri input.
+
+### ⚠️ Contraddizioni / gap
+
+1. **Param plumbing mancante.** Il vocabolario `EmitDamage { mul_param:"basic_mul" }` presuppone che `skills.ron` esponga un campo `params: HashMap<String, Value>`. Oggi `SkillDef` ha solo `effects: Vec<Effect>`. **Action item:** §2.1 (data/logic separation) deve definire `params` map come parte di `SkillDef`. Senza, le Commands o sono inline-literal (rompe data/logic separation) o sono opache.
+
+2. **`heated_chance` da chi viene risolto?** Se il blueprint lo legge da `params`, OK. Se è hard-coded "basic = 100%, skill = 100%, ult = derived", allora la Command `EmitStatus { chance_param }` ha `chance_param` opzionale o si rinomina `chance_pct: u8`? **Proposta:** in M017 lo schema Command include sia `chance_pct` (literal) che `chance_param` (deref), mutex.
+
+3. **`SpawnParticle` headless drop.** §2.2b §G dice "cosmetic Commands sono no-op headless". OK in teoria, ma `EmitDamage` segue lo stesso frame del `SpawnParticle`: chi garantisce che il blueprint headless **non droppi anche `EmitDamage`**? **Action item:** la classificazione Command → cosmetic/gameplay deve essere statica nel match arm (e.g. enum tagging), non un toggle runtime sul blueprint.
+
+4. **Ult charge timing.** `OnBasicAttack` accumula 25 al cap-min. **Domanda:** evento `UltimateCharged` parte allo `Strike.on_enter` (al `EmitDamage`) o al completamento FSM (`Recovery.exit`)? Se durante `Strike`, e nello stesso turno l'ult bar arriva a `ultimate_trigger=100`, il giocatore può ulta-mente subito al turno dopo. Se al `Recovery.exit`, c'è un delay percepito. **Proposta:** ult charge è effect del kernel su `DamageDealt`, non FSM-emit. La FSM emette `EmitDamage`, il kernel applica e contestualmente accumula. **Consistency:** allineare con `agumon_ult` charge rules (la skill ult **non** charga sé stessa).
+
+5. **Shake duration in ms.** §2.2b §C: `Shake { intensity, duration_ms }`. **Conflitto con §G** (frame counter, no wall-clock)? Soluzione: shake è effect **presentation-only**, headless lo droppa, quindi ms in `Shake` è metadata UI come per QTE `window_ms`. Conferma esplicita nel doc §2.2b. ← **da aggiungere** come nota.
+
+### 🟡 Aperte (non blocker)
+
+- Vogliamo `Heated` cap (max 6 stacks)? Decidere prima di scrivere skill 02/03 — la Pepper Breath aggiunge +2, Nova Blast `OnKill→Detonate` consuma; il cap influenza il game-feel.
+- `Hurt` interrupt: se Agumon viene colpito durante `Windup` (rare, non c'è sim. attack), la FSM viene preempted dal kernel? Probabilmente no in turn-based (è sempre il turno di Agumon durante la sua skill). **Skip per ora.**
+
+## §7 — Verdetto
+
+Baseline FSM **funziona** per un basic attack. I gap (1–4) sono **architetturali, non basic-specifici** — emergeranno anche per Heavy/Ult. Risolverli su 02/03.

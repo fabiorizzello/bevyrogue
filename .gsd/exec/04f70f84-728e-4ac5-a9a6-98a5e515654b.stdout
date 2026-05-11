@@ -1,0 +1,21 @@
+## src/data/skills_ron.rs
+133: pub struct SkillDef {
+## src/combat/state.rs
+31: pub struct ResolvedAction {
+## src/combat/resolution.rs
+53: pub fn resolve_action(
+184: pub fn apply_effects(
+## src/combat/kernel.rs
+398: pub enum CombatBeatId {
+893: pub enum CombatKernelTransition {
+1070: pub fn register_combat_kernel_runtime(app: &mut App) {
+## src/combat/turn_system/pipeline.rs
+90: pub(crate) fn step_app(
+## src/combat/turn_system/mod.rs
+116: pub fn resolve_action_system(
+## src/main.rs
+60: .add_message::<CombatEvent>()
+## src/headless.rs
+## src/windowed.rs
+## src/bin/combat_cli.rs
+755: .add_message::<CombatEvent>()

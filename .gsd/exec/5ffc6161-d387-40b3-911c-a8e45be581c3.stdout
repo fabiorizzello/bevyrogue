@@ -1,0 +1,8 @@
+tests/validation_snapshot.rs:65:        cross_resonance: 2,
+src/combat/kernel.rs:451:    pub const fn build_cross_resonance(amount: u8) -> Self {
+src/combat/kernel.rs:458:    pub const fn spend_cross_resonance(amount: u8) -> Self {
+src/combat/twin_core.rs:73:    pub cross_resonance: u8,
+src/combat/twin_core.rs:85:            cross_resonance: 0,
+src/combat/observability.rs:48:    pub cross_resonance: u8,
+src/combat/observability.rs:292:            cross_resonance: twin_core.cross_resonance,
+obsolete S03 APIs found in production/touched S03 surfaces

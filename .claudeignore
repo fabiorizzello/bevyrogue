@@ -1,0 +1,6 @@
+target/
+Cargo.lock
+.idea/
+.bg-shell/
+*.ron.bak
+.gsd/audit-log.jsonl

@@ -1,0 +1,4 @@
+missing S04 authority-map proof reference: tests/presentation_metadata_boundary.rs
+missing R097 S04 proof marker: tests/presentation_metadata_boundary.rs
+missing D8 S04 closure marker: Closed for S04
+missing S04 test proof marker for runtime event/snapshot boundary: runtime_events_and_snapshots_ignore_misleading_presentation_metadata

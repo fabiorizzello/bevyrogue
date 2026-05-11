@@ -1,0 +1,18 @@
+{
+  "id": "6154a301-7344-4e65-96d1-61794e8fd2dd",
+  "runtime": "bash",
+  "purpose": "M015 S06 T05 isolate holy_support_mechanics failure",
+  "script_chars": 111,
+  "started_at": "2026-05-08T22:26:47.419Z",
+  "finished_at": "2026-05-08T22:26:47.575Z",
+  "exit_code": 101,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 156,
+  "stdout_bytes": 270,
+  "stderr_bytes": 32084,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/6154a301-7344-4e65-96d1-61794e8fd2dd.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/6154a301-7344-4e65-96d1-61794e8fd2dd.stderr"
+}

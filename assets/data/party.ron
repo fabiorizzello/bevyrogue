@@ -1,0 +1,4 @@
+(
+    ally_ids: (UnitId(1), UnitId(2), UnitId(11), UnitId(9)),
+    tamer_id: UnitId(0),
+)

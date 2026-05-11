@@ -1,0 +1,24 @@
+action_affordance_consumers.rs
+action_affordance_query.rs
+boundary_contract.rs
+combat_coherence.rs
+enemy_counterplay_affordance.rs
+event_stream.rs
+holy_support_affordance.rs
+holy_support_mechanics.rs
+holy_support_resolution.rs
+holy_support_roster_contract.rs
+patamon_blueprint_seam.rs
+patamon_revive.rs
+skill_legality_contract_docs.rs
+ui_readiness_gap_matrix_docs.rs
+validation_snapshot.rs
+
+Docs relevant:
+combat_authority_map.md
+combat_design.md
+combat_design_revised.md
+combat_mixed_pattern_drift_ledger.md
+m015_failure_ledger.md
+skill_legality_contract.md
+ui_handoff_m012.md

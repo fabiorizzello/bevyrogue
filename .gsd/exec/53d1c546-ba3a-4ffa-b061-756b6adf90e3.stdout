@@ -1,0 +1,38 @@
+error: couldn't read `tests/../docs/combat_ui_readiness_gap_matrix.md`: No such file or directory (os error 2)
+error: could not compile `bevyrogue` (test "ui_readiness_gap_matrix_docs") due to 1 previous error
+error[E0062]: field `enemy_traits` specified more than once
+error[E0062]: field `charged_attack` specified more than once
+error[E0062]: field `enemy_traits` specified more than once
+error[E0062]: field `charged_attack` specified more than once
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error[E0062]: field `enemy_traits` specified more than once
+error[E0062]: field `charged_attack` specified more than once
+error[E0062]: field `enemy_traits` specified more than once
+error[E0062]: field `charged_attack` specified more than once
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error: could not compile `bevyrogue` (test "boundary_contract") due to 3 previous errors; 2 warnings emitted
+error: could not compile `bevyrogue` (test "sp_economy") due to 5 previous errors; 3 warnings emitted
+error: could not compile `bevyrogue` (test "follow_up_chains") due to 4 previous errors
+error: could not compile `bevyrogue` (test "roster_smoke") due to 4 previous errors
+error: could not compile `bevyrogue` (test "action_affordance_query") due to 7 previous errors
+error: could not compile `bevyrogue` (test "combat_coherence") due to 6 previous errors; 1 warning emitted
+ERROR_LINES=37

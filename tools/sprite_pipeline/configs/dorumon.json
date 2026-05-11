@@ -1,0 +1,107 @@
+{
+  "_source": "Cyber Sleuth Dorumon (chr112). High-poly CS version (FBX).",
+  "model_path": "C:/Users/fabio/dev_windows/digimonsprites/sprite_pipeline/raw_models/dorumon/chr112.fbx",
+  "texture_path": "C:/Users/fabio/dev_windows/digimonsprites/sprite_pipeline/raw_models/dorumon/chr112a01.png",
+  "output_root": "C:/Users/fabio/dev_windows/digimonsprites/sprite_pipeline/raw_renders/dorumon",
+  "render_size": 1024,
+  "ortho_scale_auto": true,
+  "ortho_padding": 1.2,
+  "hide_meshes": ["chr112_3"],
+  "outline_meshes": [],
+  "freestyle_outline": {
+    "silhouette": true,
+    "border": true,
+    "contour": false,
+    "thickness": 2.0,
+    "color": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "shader_variant": "mihoyo_style",
+  "shader_opts": {
+    "posterize_levels": 5,
+    "hue": 0.5,
+    "saturation": 1.4,
+    "value": 1.0,
+    "mihoyo_shadow_tint": [0.6, 0.55, 0.7],
+    "mihoyo_mid_tint": [0.95, 0.9, 1.05],
+    "mihoyo_lit_tint": [1.25, 1.2, 1.35],
+    "mihoyo_rim_tint": [0.8, 0.75, 0.9],
+    "eevee_shadow_tint": [0.6, 0.55, 0.7],
+    "eevee_mid_tint": [1.0, 0.9, 1.05],
+    "eevee_lit_tint": [1.35, 1.25, 1.4]
+  },
+  "model_rotation_deg": [
+    90,
+    0,
+    0
+  ],
+  "cam_distance": 5.0,
+  "cam_axis": "x",
+  "world_up": "z",
+  "render_engine": "CYCLES",
+  "cycles_samples": 1,
+  "disable_aa": true,
+  "light_energy": 5.0,
+  "world_strength": 1.5,
+  "animations": [
+    {
+      "name": "idle",
+      "action_name": "chr112_armature|chr112_armature|chr112_bn01",
+      "frame_start": 1,
+      "frame_end": 61,
+      "frame_step": 5
+    },
+    {
+      "name": "attack",
+      "action_name": "chr112_armature|chr112_armature|chr112_ba01",
+      "frame_start": 1,
+      "frame_end": 41,
+      "frame_step": 5
+    },
+    {
+      "name": "heavy_attack",
+      "action_name": "chr112_armature|chr112_armature|chr112_ba02",
+      "frame_start": 1,
+      "frame_end": 46,
+      "frame_step": 5
+    },
+    {
+      "name": "hurt",
+      "action_name": "chr112_armature|chr112_armature|chr112_bd01",
+      "frame_start": 1,
+      "frame_end": 31,
+      "frame_step": 5
+    },
+    {
+      "name": "death",
+      "action_name": "chr112_armature|chr112_armature|chr112_bd03",
+      "frame_start": 1,
+      "frame_end": 83,
+      "frame_step": 5
+    },
+    {
+      "name": "block",
+      "action_name": "chr112_armature|chr112_armature|chr112_bg01",
+      "frame_start": 1,
+      "frame_end": 21,
+      "frame_step": 5
+    },
+    {
+      "name": "skill",
+      "action_name": "chr112_armature|chr112_armature|chr112_bs01",
+      "frame_start": 1,
+      "frame_end": 49,
+      "frame_step": 5
+    },
+    {
+      "name": "victory",
+      "action_name": "chr112_armature|chr112_armature|chr112_bv01",
+      "frame_start": 1,
+      "frame_end": 61,
+      "frame_step": 5
+    }
+  ]
+}

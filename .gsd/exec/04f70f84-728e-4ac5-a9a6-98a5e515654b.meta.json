@@ -1,0 +1,18 @@
+{
+  "id": "04f70f84-728e-4ac5-a9a6-98a5e515654b",
+  "runtime": "bash",
+  "purpose": "extract key S03 function/struct signatures and app wiring status",
+  "script_chars": 820,
+  "started_at": "2026-05-08T14:42:57.961Z",
+  "finished_at": "2026-05-08T14:42:57.982Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 21,
+  "stdout_bytes": 624,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/04f70f84-728e-4ac5-a9a6-98a5e515654b.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/04f70f84-728e-4ac5-a9a6-98a5e515654b.stderr"
+}

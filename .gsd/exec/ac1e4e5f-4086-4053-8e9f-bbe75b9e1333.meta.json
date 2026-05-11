@@ -1,0 +1,18 @@
+{
+  "id": "ac1e4e5f-4086-4053-8e9f-bbe75b9e1333",
+  "runtime": "bash",
+  "purpose": "T03 compile after brace restoration",
+  "script_chars": 86,
+  "started_at": "2026-05-08T22:12:01.794Z",
+  "finished_at": "2026-05-08T22:12:03.725Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 1931,
+  "stdout_bytes": 9311,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/ac1e4e5f-4086-4053-8e9f-bbe75b9e1333.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/ac1e4e5f-4086-4053-8e9f-bbe75b9e1333.stderr"
+}

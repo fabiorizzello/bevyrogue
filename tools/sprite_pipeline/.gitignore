@@ -1,0 +1,39 @@
+# Sprite pipeline gitignore
+# TRACKED: raw_models/, palettes/, configs/, references/, standards/, scripts/
+# TRACKED plugins (small): BlenderToPixels.blend, Lospec_Blender_Toolkit.blend
+# IGNORED: generated outputs + large binaries (AppImage, sample Examples)
+
+# Generated outputs (regenerable)
+output/
+raw_renders/
+
+# Iteration state (per-machine)
+**/iter_state.json
+**/iter_state.json.bak.*
+
+# 3rd-party plugin binaries — granular ignore by extension/subdir
+plugins/*.AppImage
+plugins/*.zip
+plugins/*.tar.gz
+plugins/squashfs-root/
+plugins/libresprite-win/
+plugins/lospec-blender-toolkit/Examples/
+
+# Source archives — keep extracted assets tracked, not zip masters
+raw_models/**/*.zip
+raw_models/**/*.tar.gz
+
+# Legacy / backup files
+*.legacy
+*.bak.*
+*.bak
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Logs
+*.log
+
+# WSL Zone.Identifier metadata files
+*:Zone.Identifier

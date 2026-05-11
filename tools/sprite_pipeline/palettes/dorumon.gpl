@@ -1,0 +1,19 @@
+GIMP Palette
+Name: dorumon
+#
+ 19  18  19	shadow-deep
+ 52  45  53	shadow-mid
+ 70  51  96	shadow-mid
+ 91  74 122	mid-tone
+102  78 143	mid-tone
+113  89 156	mid-tone
+125  99 167	mid-tone
+124 121 140	mid-tone
+146 122 179	mid-tone
+197 130  62	mid-tone
+164 134 198	highlight
+181 152 214	highlight
+167 160 181	highlight
+201 179 220	highlight
+225 207 238	highlight-bright
+251 250 252	highlight-bright

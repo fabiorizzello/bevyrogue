@@ -1,0 +1,5 @@
+error: unexpected argument 'combat::turn_system::tests' found
+
+Usage: cargo test [OPTIONS] [TESTNAME] [-- [ARGS]...]
+
+For more information, try '--help'.

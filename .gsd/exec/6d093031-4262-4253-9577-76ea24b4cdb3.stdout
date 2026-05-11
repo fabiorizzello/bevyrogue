@@ -1,0 +1,213 @@
+== animation_sequence ==
+assets/data/skills.ron:91:        animation_sequence: Some(["Skill(Charge)", "Heavy(Launch)", "Victory"]),
+assets/data/skills.ron:108:        animation_sequence: Some(["Skill(Inhale)", "Skill(Exhale)", "Idle"]),
+assets/data/skills.ron:125:        animation_sequence: Some(["Skill(Focus)", "Heavy(Explosion)", "Victory"]),
+assets/data/skills.ron:142:        animation_sequence: Some(["Skill(Spin)", "Attack(Launch)", "After-images(Retreat)"]),
+assets/data/skills.ron:160:        animation_sequence: Some(["Skill(Rise)", "Skill(Bagliore)", "Heal"]),
+scripts/verify_m015_failure_ledger.py:49:    "SkillDef fixture drift": "missing fields animation_sequence, custom_signals and qte",
+tests/toughness_categories.rs:52:        animation_sequence: None,
+src/data/skills_ron.rs:170:    pub animation_sequence: Option<Vec<String>>,
+tests/event_stream.rs:85:            animation_sequence: None,
+tests/event_stream.rs:109:            animation_sequence: None,
+tests/event_stream.rs:133:            animation_sequence: None,
+tests/status_effect_apply.rs:83:        animation_sequence: None,
+docs/m015_failure_ledger.md:13:| `cargo test --no-run` | 101 | ❌ fail | The whole suite still stops on pre-existing broad-suite blockers. Across T05 no-run probes, Cargo reported missing docs include `docs/combat_ui_readiness_gap_matrix.md`, broad `SkillDef` constructors missing `custom_signals`, `animation_sequence`, and/or `qte`, broad `UnitDef` constructors missing `holy_support` and `twin_core`, and duplicate `UnitDef` fields in `tests/follow_up_chains.rs`. These are outside the now-green targeted S03 authority contracts. |
+docs/m015_failure_ledger.md:32:| `tests/engine_legality_integration.rs` | Pre-existing broad fixture/schema drift | Fresh `cargo test --no-run` reports `missing fields animation_sequence, custom_signals and qte in initializer of SkillDef` at lines 51 and 72. | S06 / broad fixture repair slice. |
+docs/m015_failure_ledger.md:33:| `tests/action_affordance_consumers.rs` | Pre-existing broad fixture/schema drift | A T05 `cargo test --no-run` probe reported `missing fields animation_sequence, custom_signals and qte in initializer of SkillDef` at lines 93, 114, and 132. | S06 / broad fixture repair slice. |
+docs/m015_failure_ledger.md:34:| `tests/action_affordance_query.rs` | Pre-existing broad fixture/schema drift | Final `cargo test --no-run` reports `missing fields animation_sequence, custom_signals and qte in initializer of SkillDef` at lines 90, 111, 132, 153, 173, 191, and 212. | S06 / broad fixture repair slice. |
+docs/m015_failure_ledger.md:35:| `tests/combat_coherence.rs` | Pre-existing broad fixture/schema drift | Final `cargo test --no-run` reports `missing fields animation_sequence, custom_signals and qte in initializer of SkillDef` at lines 42, 74, 92, 110, 128, and 143. | S06 / broad fixture repair slice. |
+docs/m015_failure_ledger.md:36:| `tests/boundary_contract.rs` | Pre-existing broad fixture/schema drift | A T05 `cargo test --no-run` probe reported `missing fields animation_sequence, custom_signals and qte in initializer of SkillDef` at lines 86, 203, and 224. | S06 / broad fixture repair slice. |
+docs/m015_failure_ledger.md:37:| `tests/status_effect_integration.rs` | Pre-existing broad fixture/schema drift | A T05 `cargo test --no-run` probe reported `missing fields animation_sequence, custom_signals and qte in initializer of SkillDef` at line 88. | S06 / broad fixture repair slice. |
+docs/m015_failure_ledger.md:38:| `tests/sp_economy.rs` | Pre-existing broad fixture/schema drift | Final `cargo test --no-run` reports `missing fields animation_sequence, custom_signals and qte in initializer of SkillDef` at lines 56, 74, 92, 110, and 125. | S06 / broad fixture repair slice. |
+docs/m015_failure_ledger.md:39:| `tests/patamon_revive.rs` | Pre-existing broad fixture/schema drift | Final `cargo test --no-run` reports `missing fields animation_sequence, custom_signals and qte in initializer of SkillDef` at lines 33 and 48. | S06 / broad fixture repair slice. |
+docs/m015_failure_ledger.md:40:| `tests/ultimate_meter.rs` | Pre-existing broad fixture/schema drift | Final `cargo test --no-run` reports `missing fields animation_sequence, custom_signals and qte in initializer of SkillDef` at lines 105 and 129. | S06 / broad fixture repair slice. |
+docs/m015_failure_ledger.md:60:- **S04:** expand or protect presentation/blueprint boundaries such as `animation_sequence`, `qte`, and future per-Digimon ownership without making presentation metadata authoritative.
+docs/combat_mixed_pattern_drift_ledger.md:26:| D8 | Medium | `src/data/skills_ron.rs`, `src/combat/resolution.rs`, `docs/combat_authority_map.md` | safe placeholder | S04 | Add explicit contract proof that `animation_sequence` and `qte` remain presentation metadata and do not alter combat resolution. |
+docs/combat_mixed_pattern_drift_ledger.md:78:**Handoff note:** R097 separates typed beat vocabulary from gameplay authority. `OnCombatBeat` is live and synchronized, but presentation fields such as `animation_sequence` and `qte` remain non-authoritative until a later slice proves otherwise.
+docs/combat_authority_map.md:32:Important drift boundary: `SkillDef.animation_sequence` and `SkillDef.qte` remain parsed presentation metadata. They are present in the schema, but the action pipeline does not treat them as gameplay authority.
+docs/combat_authority_map.md:76:The same boundary applies to `animation_sequence` and `qte` in `src/data/skills_ron.rs`: parsed presentation metadata is available, but it is not the runtime source of truth for gameplay outcomes.
+== qte ==
+assets/data/skills.ron:92:        qte: Some("Power Charge: Mash during Charge to increase blast radius."),
+assets/data/skills.ron:109:        qte: Some("Just-Frame Block: Press during enemy counter-hit to mitigate."),
+assets/data/skills.ron:126:        qte: Some("Power Charge: Hold button to stabilize digital glitch for more hits."),
+assets/data/skills.ron:143:        qte: Some("Precision Strike: Hit the moving cursor to ignore enemy DEF."),
+assets/data/skills.ron:161:        qte: Some("Just-Frame Block: Block projectiles while ascending."),
+scripts/verify_m015_failure_ledger.py:49:    "SkillDef fixture drift": "missing fields animation_sequence, custom_signals and qte",
+docs/combat_authority_map.md:32:Important drift boundary: `SkillDef.animation_sequence` and `SkillDef.qte` remain parsed presentation metadata. They are present in the schema, but the action pipeline does not treat them as gameplay authority.
+docs/combat_authority_map.md:76:The same boundary applies to `animation_sequence` and `qte` in `src/data/skills_ron.rs`: parsed presentation metadata is available, but it is not the runtime source of truth for gameplay outcomes.
+tests/toughness_categories.rs:53:        qte: None,
+docs/combat_mixed_pattern_drift_ledger.md:26:| D8 | Medium | `src/data/skills_ron.rs`, `src/combat/resolution.rs`, `docs/combat_authority_map.md` | safe placeholder | S04 | Add explicit contract proof that `animation_sequence` and `qte` remain presentation metadata and do not alter combat resolution. |
+docs/combat_mixed_pattern_drift_ledger.md:78:**Handoff note:** R097 separates typed beat vocabulary from gameplay authority. `OnCombatBeat` is live and synchronized, but presentation fields such as `animation_sequence` and `qte` remain non-authoritative until a later slice proves otherwise.
+src/data/skills_ron.rs:172:    pub qte: Option<String>,
+docs/m015_failure_ledger.md:13:| `cargo test --no-run` | 101 | ❌ fail | The whole suite still stops on pre-existing broad-suite blockers. Across T05 no-run probes, Cargo reported missing docs include `docs/combat_ui_readiness_gap_matrix.md`, broad `SkillDef` constructors missing `custom_signals`, `animation_sequence`, and/or `qte`, broad `UnitDef` constructors missing `holy_support` and `twin_core`, and duplicate `UnitDef` fields in `tests/follow_up_chains.rs`. These are outside the now-green targeted S03 authority contracts. |
+docs/m015_failure_ledger.md:32:| `tests/engine_legality_integration.rs` | Pre-existing broad fixture/schema drift | Fresh `cargo test --no-run` reports `missing fields animation_sequence, custom_signals and qte in initializer of SkillDef` at lines 51 and 72. | S06 / broad fixture repair slice. |
+docs/m015_failure_ledger.md:33:| `tests/action_affordance_consumers.rs` | Pre-existing broad fixture/schema drift | A T05 `cargo test --no-run` probe reported `missing fields animation_sequence, custom_signals and qte in initializer of SkillDef` at lines 93, 114, and 132. | S06 / broad fixture repair slice. |
+docs/m015_failure_ledger.md:34:| `tests/action_affordance_query.rs` | Pre-existing broad fixture/schema drift | Final `cargo test --no-run` reports `missing fields animation_sequence, custom_signals and qte in initializer of SkillDef` at lines 90, 111, 132, 153, 173, 191, and 212. | S06 / broad fixture repair slice. |
+docs/m015_failure_ledger.md:35:| `tests/combat_coherence.rs` | Pre-existing broad fixture/schema drift | Final `cargo test --no-run` reports `missing fields animation_sequence, custom_signals and qte in initializer of SkillDef` at lines 42, 74, 92, 110, 128, and 143. | S06 / broad fixture repair slice. |
+docs/m015_failure_ledger.md:36:| `tests/boundary_contract.rs` | Pre-existing broad fixture/schema drift | A T05 `cargo test --no-run` probe reported `missing fields animation_sequence, custom_signals and qte in initializer of SkillDef` at lines 86, 203, and 224. | S06 / broad fixture repair slice. |
+docs/m015_failure_ledger.md:37:| `tests/status_effect_integration.rs` | Pre-existing broad fixture/schema drift | A T05 `cargo test --no-run` probe reported `missing fields animation_sequence, custom_signals and qte in initializer of SkillDef` at line 88. | S06 / broad fixture repair slice. |
+docs/m015_failure_ledger.md:38:| `tests/sp_economy.rs` | Pre-existing broad fixture/schema drift | Final `cargo test --no-run` reports `missing fields animation_sequence, custom_signals and qte in initializer of SkillDef` at lines 56, 74, 92, 110, and 125. | S06 / broad fixture repair slice. |
+docs/m015_failure_ledger.md:39:| `tests/patamon_revive.rs` | Pre-existing broad fixture/schema drift | Final `cargo test --no-run` reports `missing fields animation_sequence, custom_signals and qte in initializer of SkillDef` at lines 33 and 48. | S06 / broad fixture repair slice. |
+docs/m015_failure_ledger.md:40:| `tests/ultimate_meter.rs` | Pre-existing broad fixture/schema drift | Final `cargo test --no-run` reports `missing fields animation_sequence, custom_signals and qte in initializer of SkillDef` at lines 105 and 129. | S06 / broad fixture repair slice. |
+docs/m015_failure_ledger.md:60:- **S04:** expand or protect presentation/blueprint boundaries such as `animation_sequence`, `qte`, and future per-Digimon ownership without making presentation metadata authoritative.
+tests/event_stream.rs:86:            qte: None,
+tests/event_stream.rs:110:            qte: None,
+tests/event_stream.rs:134:            qte: None,
+tests/status_effect_apply.rs:84:        qte: None,
+== CombatBeat ==
+docs/combat_authority_map.md:41:2. `src/combat/turn_system/mod.rs` reads `ActionIntent`, performs legality checks, emits action lifecycle events, and emits live `OnCombatBeat` markers.
+docs/combat_authority_map.md:46:The live emitted events include `OnActionDeclared`, `OnActionPreApp`, `OnCombatBeat`, `OnKernelTransition`, `OnActionApplied`, `OnActionResolved`, and failure variants such as `OnActionFailed`. `OnCombatBeat` and the mirrored `CombatKernelTransition::Beat` are live during action resolution; they are not just typed vocabulary.
+docs/combat_authority_map.md:72:`src/combat/events.rs` defines `OnCombatBeat`, and `src/combat/kernel.rs` defines the typed `CombatBeatId` vocabulary. S03 made action lifecycle beats live in `src/combat/turn_system/mod.rs` and `src/combat/turn_system/pipeline.rs`.
+docs/combat_authority_map.md:100:| R097 | `OnCombatBeat` and beat kernel transitions are live during action resolution, while presentation metadata remains non-authoritative. | `src/combat/events.rs`, `src/combat/kernel.rs`, `src/combat/turn_system/mod.rs`, `src/combat/turn_system/pipeline.rs`, `tests/event_stream.rs` | Covered with live-event proof |
+src/combat/turn_system/pipeline.rs:13:use crate::combat::kernel::{CombatBeatId, CombatKernelRegistry};
+src/combat/turn_system/pipeline.rs:240:            CombatBeatId::Impact,
+src/combat/turn_system/pipeline.rs:371:                    CombatBeatId::Damage,
+src/combat/turn_system/pipeline.rs:548:        CombatBeatId::Impact,
+src/combat/turn_system/pipeline.rs:676:                CombatBeatId::Damage,
+src/combat/twin_core.rs:6:    CombatBeatId, CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition,
+src/combat/twin_core.rs:145:            CombatKernelTransition::Beat(CombatBeatId::Damage) => {
+docs/combat_mixed_pattern_drift_ledger.md:19:| D1 | High | `src/combat/events.rs`, `src/combat/turn_system/mod.rs`, `src/combat/turn_system/pipeline.rs`, `tests/event_stream.rs` | normalized local drift in S03 | Closed for S03 | Keep `OnCombatBeat` and mirrored beat kernel transitions live in action resolution; downstream presentation work may consume them but must not make beats gameplay authority. |
+docs/combat_mixed_pattern_drift_ledger.md:78:**Handoff note:** R097 separates typed beat vocabulary from gameplay authority. `OnCombatBeat` is live and synchronized, but presentation fields such as `animation_sequence` and `qte` remain non-authoritative until a later slice proves otherwise.
+src/combat/kernel.rs:398:pub enum CombatBeatId {
+src/combat/kernel.rs:408:impl CombatBeatId {
+src/combat/kernel.rs:896:    Beat(CombatBeatId),
+src/combat/kernel.rs:1299:        let labels: Vec<&'static str> = CombatBeatId::ALL
+src/combat/kernel.rs:1301:            .map(CombatBeatId::as_str)
+src/combat/kernel.rs:1336:                out.push(CombatKernelTransition::Beat(CombatBeatId::Impact));
+src/combat/kernel.rs:1356:            CombatKernelTransition::Beat(CombatBeatId::Impact)
+src/combat/turn_system/mod.rs:11:    kernel::{CombatBeatId, CombatKernelRegistry, CombatKernelTransition},
+src/combat/turn_system/mod.rs:138:    beat: CombatBeatId,
+src/combat/turn_system/mod.rs:145:        CombatEventKind::OnCombatBeat { beat },
+src/combat/turn_system/mod.rs:289:            CombatBeatId::Declared,
+src/combat/turn_system/mod.rs:304:            CombatBeatId::PreApp,
+src/combat/turn_system/mod.rs:335:            CombatBeatId::Applied,
+src/combat/turn_system/mod.rs:350:            CombatBeatId::Resolved,
+tests/event_stream.rs:4:    kernel::{CombatBeatId, CombatKernelTransition, register_combat_kernel_runtime},
+tests/event_stream.rs:272:            | CombatEventKind::OnCombatBeat { .. }
+tests/event_stream.rs:281:    let beat_ids: Vec<CombatBeatId> = kinds
+... 21 more
+== OnCombatBeat ==
+docs/combat_authority_map.md:41:2. `src/combat/turn_system/mod.rs` reads `ActionIntent`, performs legality checks, emits action lifecycle events, and emits live `OnCombatBeat` markers.
+docs/combat_authority_map.md:46:The live emitted events include `OnActionDeclared`, `OnActionPreApp`, `OnCombatBeat`, `OnKernelTransition`, `OnActionApplied`, `OnActionResolved`, and failure variants such as `OnActionFailed`. `OnCombatBeat` and the mirrored `CombatKernelTransition::Beat` are live during action resolution; they are not just typed vocabulary.
+docs/combat_authority_map.md:72:`src/combat/events.rs` defines `OnCombatBeat`, and `src/combat/kernel.rs` defines the typed `CombatBeatId` vocabulary. S03 made action lifecycle beats live in `src/combat/turn_system/mod.rs` and `src/combat/turn_system/pipeline.rs`.
+docs/combat_authority_map.md:100:| R097 | `OnCombatBeat` and beat kernel transitions are live during action resolution, while presentation metadata remains non-authoritative. | `src/combat/events.rs`, `src/combat/kernel.rs`, `src/combat/turn_system/mod.rs`, `src/combat/turn_system/pipeline.rs`, `tests/event_stream.rs` | Covered with live-event proof |
+scripts/verify_combat_authority_audit.py:50:        "OnCombatBeat",
+src/combat/turn_system/mod.rs:145:        CombatEventKind::OnCombatBeat { beat },
+docs/combat_mixed_pattern_drift_ledger.md:19:| D1 | High | `src/combat/events.rs`, `src/combat/turn_system/mod.rs`, `src/combat/turn_system/pipeline.rs`, `tests/event_stream.rs` | normalized local drift in S03 | Closed for S03 | Keep `OnCombatBeat` and mirrored beat kernel transitions live in action resolution; downstream presentation work may consume them but must not make beats gameplay authority. |
+docs/combat_mixed_pattern_drift_ledger.md:78:**Handoff note:** R097 separates typed beat vocabulary from gameplay authority. `OnCombatBeat` is live and synchronized, but presentation fields such as `animation_sequence` and `qte` remain non-authoritative until a later slice proves otherwise.
+src/combat/events.rs:105:    OnCombatBeat {
+tests/event_stream.rs:272:            | CombatEventKind::OnCombatBeat { .. }
+tests/event_stream.rs:284:            CombatEventKind::OnCombatBeat { beat } => Some(*beat),
+== CombatEventKind ==
+src/headless.rs:14:use crate::combat::events::{CombatEvent, CombatEventKind};
+src/headless.rs:251:                    kind: CombatEventKind::PartySelected {
+src/headless.rs:260:                    kind: CombatEventKind::TurnOrderSeeded {
+docs/combat_authority_map.md:44:5. `src/combat/events.rs` carries the emitted `CombatEventKind` stream consumed by follow-up systems, logging, UI, and tests.
+src/combat/mod.rs:18:/// `CombatEvent` / `CombatEventKind` — bus single-source-of-truth.
+docs/skill_legality_contract.md:154:Short-term compatibility may keep `CombatEventKind::OnActionFailed { reason: String }`, but the failure text must be derived from the same stable reason returned by preflight. S06 must prove that an illegal action rejected by the engine reports the same reason code, or a display string mapped from that reason code, that the pre-execution query returned.
+tests/resource_caps.rs:5:    events::{CombatEvent, CombatEventKind},
+tests/resource_caps.rs:135:            CombatEventKind::EnergyGained { amount, .. } => Some(*amount),
+tests/toughness_categories.rs:4:    events::{CombatEvent, CombatEventKind},
+tests/toughness_categories.rs:147:        .filter(|e| matches!(e.kind, CombatEventKind::OnBreak { .. }))
+tests/commander_flow.rs:4:    events::{CombatEvent, CombatEventKind},
+tests/commander_flow.rs:143:        kind: CombatEventKind::OnDamageDealt {
+tests/commander_flow.rs:192:        kind: CombatEventKind::OnDamageDealt {
+tests/engine_legality_integration.rs:6:use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
+tests/engine_legality_integration.rs:307:        .filter(|event| matches!(event.kind, CombatEventKind::OnActionFailed { .. }))
+tests/engine_legality_integration.rs:318:            CombatEventKind::OnActionFailed { reason } if reason == &format!("{:?}", case.expected_reason)
+tests/engine_legality_integration.rs:328:            .any(|event| matches!(event.kind, CombatEventKind::OnActionDeclared { .. })),
+tests/engine_legality_integration.rs:335:            CombatEventKind::OnActionPreApp
+tests/engine_legality_integration.rs:336:                | CombatEventKind::OnActionApplied
+tests/engine_legality_integration.rs:337:                | CombatEventKind::OnActionResolved
+src/combat/turn_system/pipeline.rs:11:use crate::combat::events::{CombatEvent, CombatEventKind};
+src/combat/turn_system/pipeline.rs:89:            CombatEventKind::OnActionFailed { reason },
+src/combat/turn_system/pipeline.rs:193:                CombatEventKind::OnActionFailed {
+src/combat/turn_system/pipeline.rs:209:                CombatEventKind::OnActionFailed {
+src/combat/turn_system/pipeline.rs:225:                CombatEventKind::OnActionFailed {
+src/combat/turn_system/pipeline.rs:279:                CombatEventKind::OnActionFailed {
+src/combat/turn_system/pipeline.rs:291:            let hit_taken_amount = if let CombatEventKind::OnDamageDealt { amount, .. } = &kind {
+src/combat/turn_system/pipeline.rs:298:                CombatEventKind::OnDamageDealt {
+src/combat/turn_system/pipeline.rs:316:                CombatEventKind::OnBreak { damage_tag } => {
+src/combat/turn_system/pipeline.rs:325:                CombatEventKind::OnKO => {
+... 340 more
+== Floating ==
+src/combat/turn_system/pipeline.rs:12:use crate::combat::floating::FloatingDamage;
+src/combat/turn_system/pipeline.rs:309:                    commands.spawn(FloatingDamage {
+src/combat/turn_system/pipeline.rs:605:                commands.spawn(FloatingDamage {
+src/ui/combat_panel.rs:16:    floating::{FLOATING_LIFETIME_SECS, FloatingDamage},
+src/ui/combat_panel.rs:231:    floating_q: Query<&FloatingDamage>,
+src/ui/combat_panel.rs:233:    floating_entities: Query<Entity, With<FloatingDamage>>,
+src/combat/observability.rs:9:    floating::FloatingDamage,
+src/combat/observability.rs:265:    let mut floating_query = world.query::<&FloatingDamage>();
+src/combat/mod.rs:31:/// Floating damage numbers (component spawnato a hit, decaduto da `decay_floating_damage`).
+tests/validation_snapshot.rs:4:    floating::FloatingDamage,
+tests/validation_snapshot.rs:123:    world.spawn(FloatingDamage {
+tests/validation_snapshot.rs:129:    world.spawn(FloatingDamage {
+src/combat/floating.rs:12:pub struct FloatingDamage {
+src/combat/floating.rs:22:    q: Query<(Entity, &FloatingDamage)>,
+== Presentation ==
+docs/m015_failure_ledger.md:55:| `docs/combat_ui_readiness_gap_matrix.md` / `tests/ui_readiness_gap_matrix_docs.rs` | Presentation docs artifact gap | Final `cargo test --no-run` fails this target with `couldn't read tests/../docs/combat_ui_readiness_gap_matrix.md: No such file or directory`. This is a docs include/artifact repair, not an S03 combat-authority regression. | S06 (artifact/doc repair). |
+== Trigger ==
+src/combat/turn_system/tests.rs:11:    ultimate::UltAccumulationTrigger,
+src/combat/turn_system/tests.rs:385:            trigger_type: UltAccumulationTrigger::OnBasicAttack,
+src/combat/turn_system/tests.rs:461:            trigger_type: UltAccumulationTrigger::OnBasicAttack,
+src/combat/turn_system/tests.rs:522:            trigger_type: UltAccumulationTrigger::OnBasicAttack,
+src/combat/bootstrap.rs:17:use super::ultimate::{UltAccumulationTrigger, UltimateCharge};
+src/combat/bootstrap.rs:238:        ultimate_accumulation_trigger: UltAccumulationTrigger::OnOffensivePartyEvent,
+docs/combat_design_revised.md:361:### Strain Triggers
+docs/combat_design_revised.md:416:### Strain Triggers
+docs/combat_design_revised.md:475:### Strain Triggers
+docs/combat_design_revised.md:538:### Strain Triggers
+docs/combat_design_revised.md:606:### Strain Triggers
+docs/combat_design_revised.md:674:### Strain Triggers
+docs/combat_design_revised.md:734:### Strain Triggers
+docs/combat_design_revised.md:803:### Strain Triggers
+docs/combat_design_revised.md:878:### Strain Triggers
+docs/combat_design_revised.md:953:### Strain Triggers
+docs/combat_design_revised.md:1016:### Strain Triggers
+docs/combat_design_revised.md:1108:### Strain Triggers
+src/combat/resolution_tests.rs:7:    ultimate::UltAccumulationTrigger,
+src/combat/resolution_tests.rs:191:        trigger_type: UltAccumulationTrigger::OnBasicAttack,
+src/combat/resolution_tests.rs:234:        trigger_type: UltAccumulationTrigger::OnBasicAttack,
+src/combat/resolution_tests.rs:276:        trigger_type: UltAccumulationTrigger::OnBasicAttack,
+src/combat/resolution_tests.rs:316:        trigger_type: UltAccumulationTrigger::OnBasicAttack,
+src/combat/resolution_tests.rs:355:        trigger_type: UltAccumulationTrigger::OnBasicAttack,
+src/combat/resolution_tests.rs:392:        trigger_type: UltAccumulationTrigger::OnBasicAttack,
+src/combat/resolution_tests.rs:430:        trigger_type: UltAccumulationTrigger::OnBasicAttack,
+src/combat/resolution_tests.rs:467:        trigger_type: UltAccumulationTrigger::OnBasicAttack,
+src/combat/resolution_tests.rs:508:        trigger_type: UltAccumulationTrigger::OnBasicAttack,
+src/combat/resolution_tests.rs:595:        trigger_type: UltAccumulationTrigger::OnBasicAttack,
+src/combat/resolution_tests.rs:633:        trigger_type: UltAccumulationTrigger::OnBasicAttack,
+... 185 more
+== Beat ==
+src/combat/twin_core.rs:6:    CombatBeatId, CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition,
+src/combat/twin_core.rs:145:            CombatKernelTransition::Beat(CombatBeatId::Damage) => {
+docs/combat_authority_map.md:41:2. `src/combat/turn_system/mod.rs` reads `ActionIntent`, performs legality checks, emits action lifecycle events, and emits live `OnCombatBeat` markers.
+docs/combat_authority_map.md:46:The live emitted events include `OnActionDeclared`, `OnActionPreApp`, `OnCombatBeat`, `OnKernelTransition`, `OnActionApplied`, `OnActionResolved`, and failure variants such as `OnActionFailed`. `OnCombatBeat` and the mirrored `CombatKernelTransition::Beat` are live during action resolution; they are not just typed vocabulary.
+docs/combat_authority_map.md:72:`src/combat/events.rs` defines `OnCombatBeat`, and `src/combat/kernel.rs` defines the typed `CombatBeatId` vocabulary. S03 made action lifecycle beats live in `src/combat/turn_system/mod.rs` and `src/combat/turn_system/pipeline.rs`.
+docs/combat_authority_map.md:100:| R097 | `OnCombatBeat` and beat kernel transitions are live during action resolution, while presentation metadata remains non-authoritative. | `src/combat/events.rs`, `src/combat/kernel.rs`, `src/combat/turn_system/mod.rs`, `src/combat/turn_system/pipeline.rs`, `tests/event_stream.rs` | Covered with live-event proof |
+docs/combat_mixed_pattern_drift_ledger.md:19:| D1 | High | `src/combat/events.rs`, `src/combat/turn_system/mod.rs`, `src/combat/turn_system/pipeline.rs`, `tests/event_stream.rs` | normalized local drift in S03 | Closed for S03 | Keep `OnCombatBeat` and mirrored beat kernel transitions live in action resolution; downstream presentation work may consume them but must not make beats gameplay authority. |
+docs/combat_mixed_pattern_drift_ledger.md:78:**Handoff note:** R097 separates typed beat vocabulary from gameplay authority. `OnCombatBeat` is live and synchronized, but presentation fields such as `animation_sequence` and `qte` remain non-authoritative until a later slice proves otherwise.
+src/combat/turn_system/pipeline.rs:13:use crate::combat::kernel::{CombatBeatId, CombatKernelRegistry};
+src/combat/turn_system/pipeline.rs:240:            CombatBeatId::Impact,
+src/combat/turn_system/pipeline.rs:371:                    CombatBeatId::Damage,
+src/combat/turn_system/pipeline.rs:548:        CombatBeatId::Impact,
+src/combat/turn_system/pipeline.rs:676:                CombatBeatId::Damage,
+tests/event_stream.rs:4:    kernel::{CombatBeatId, CombatKernelTransition, register_combat_kernel_runtime},
+tests/event_stream.rs:272:            | CombatEventKind::OnCombatBeat { .. }
+tests/event_stream.rs:281:    let beat_ids: Vec<CombatBeatId> = kinds
+tests/event_stream.rs:284:            CombatEventKind::OnCombatBeat { beat } => Some(*beat),
+tests/event_stream.rs:288:    assert!(beat_ids.contains(&CombatBeatId::Declared));
+tests/event_stream.rs:289:    assert!(beat_ids.contains(&CombatBeatId::PreApp));
+tests/event_stream.rs:290:    assert!(beat_ids.contains(&CombatBeatId::Impact));
+tests/event_stream.rs:291:    assert!(beat_ids.contains(&CombatBeatId::Damage));
+tests/event_stream.rs:292:    assert!(beat_ids.contains(&CombatBeatId::Applied));
+tests/event_stream.rs:293:    assert!(beat_ids.contains(&CombatBeatId::Resolved));
+tests/event_stream.rs:295:    let kernel_beat_ids: Vec<CombatBeatId> = kinds
+tests/event_stream.rs:299:                transition: CombatKernelTransition::Beat(beat),
+scripts/verify_combat_authority_audit.py:50:        "OnCombatBeat",
+src/combat/events.rs:11:    BatteryLoopTransition, CombatBeatId, CombatKernelTransition, PredatorLoopTransition,
+src/combat/events.rs:105:    OnCombatBeat {
+src/combat/events.rs:106:        beat: CombatBeatId,
+tests/twin_core_integration.rs:5:    CombatBeatId, CombatKernelRegistry, CombatKernelTransition, CombatTagChangeKind,
+... 23 more

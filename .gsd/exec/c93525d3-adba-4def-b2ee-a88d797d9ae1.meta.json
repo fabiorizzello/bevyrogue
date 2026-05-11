@@ -1,0 +1,18 @@
+{
+  "id": "c93525d3-adba-4def-b2ee-a88d797d9ae1",
+  "runtime": "bash",
+  "purpose": "scan S03-relevant combat/data files and symbols",
+  "script_chars": 563,
+  "started_at": "2026-05-08T14:33:58.727Z",
+  "finished_at": "2026-05-08T14:33:58.741Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 14,
+  "stdout_bytes": 29122,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/c93525d3-adba-4def-b2ee-a88d797d9ae1.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/c93525d3-adba-4def-b2ee-a88d797d9ae1.stderr"
+}

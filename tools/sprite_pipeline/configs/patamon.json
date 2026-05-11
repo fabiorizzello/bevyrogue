@@ -1,0 +1,122 @@
+{
+  "_source": "Cyber Sleuth Patamon (chr096). High-poly CS version (FBX).",
+  "model_path": "C:/Users/fabio/dev_windows/digimonsprites/sprite_pipeline/raw_models/patamon/chr096.fbx",
+  "texture_path": "C:/Users/fabio/dev_windows/digimonsprites/sprite_pipeline/raw_models/patamon/chr096a01.png",
+  "output_root": "C:/Users/fabio/dev_windows/digimonsprites/sprite_pipeline/raw_renders/patamon",
+  "render_size": 1024,
+  "ortho_scale_auto": true,
+  "ortho_padding": 1.2,
+  "hide_meshes": [
+    "chr096_1"
+  ],
+  "outline_meshes": [],
+  "freestyle_outline": {
+    "silhouette": true,
+    "border": true,
+    "contour": false,
+    "thickness": 2.0,
+    "color": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "shader_variant": "mihoyo_style",
+  "shader_opts": {
+    "posterize_levels": 5,
+    "hue": 0.5,
+    "saturation": 1.1,
+    "value": 1.0,
+    "mihoyo_shadow_tint": [
+      0.75,
+      0.7,
+      0.7
+    ],
+    "mihoyo_mid_tint": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "mihoyo_lit_tint": [
+      1.2,
+      1.2,
+      1.2
+    ],
+    "mihoyo_rim_tint": [
+      1.0,
+      0.9,
+      0.85
+    ]
+  },
+  "model_rotation_deg": [
+    90,
+    0,
+    0
+  ],
+  "cam_distance": 5.0,
+  "cam_axis": "x",
+  "world_up": "z",
+  "render_engine": "CYCLES",
+  "cycles_samples": 1,
+  "disable_aa": true,
+  "light_energy": 5.0,
+  "world_strength": 1.5,
+  "animations": [
+    {
+      "name": "idle",
+      "action_name": "chr096_armature|chr096_armature|chr096_bn01",
+      "frame_start": 1,
+      "frame_end": 61,
+      "frame_step": 5
+    },
+    {
+      "name": "attack",
+      "action_name": "chr096_armature|chr096_armature|chr096_ba01",
+      "frame_start": 1,
+      "frame_end": 41,
+      "frame_step": 5
+    },
+    {
+      "name": "heavy_attack",
+      "action_name": "chr096_armature|chr096_armature|chr096_ba02",
+      "frame_start": 1,
+      "frame_end": 71,
+      "frame_step": 5
+    },
+    {
+      "name": "hurt",
+      "action_name": "chr096_armature|chr096_armature|chr096_bd01",
+      "frame_start": 1,
+      "frame_end": 26,
+      "frame_step": 5
+    },
+    {
+      "name": "death",
+      "action_name": "chr096_armature|chr096_armature|chr096_bd03",
+      "frame_start": 1,
+      "frame_end": 71,
+      "frame_step": 5
+    },
+    {
+      "name": "block",
+      "action_name": "chr096_armature|chr096_armature|chr096_bg01",
+      "frame_start": 1,
+      "frame_end": 27,
+      "frame_step": 5
+    },
+    {
+      "name": "skill",
+      "action_name": "chr096_armature|chr096_armature|chr096_bs01",
+      "frame_start": 1,
+      "frame_end": 71,
+      "frame_step": 5
+    },
+    {
+      "name": "victory",
+      "action_name": "chr096_armature|chr096_armature|chr096_bv01",
+      "frame_start": 1,
+      "frame_end": 71,
+      "frame_step": 5
+    }
+  ]
+}

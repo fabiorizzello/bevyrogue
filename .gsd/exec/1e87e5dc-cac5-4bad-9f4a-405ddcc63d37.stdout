@@ -1,0 +1,22 @@
+missing_count 2
+tests/action_affordance_query.rs:260:['custom_signals:', 'animation_sequence:', 'qte:']
+tests/action_affordance_query.rs:269:['custom_signals:', 'animation_sequence:', 'qte:']
+corrupt_count 18
+tests/patamon_blueprint_seam.rs
+tests/patamon_revive.rs
+tests/status_effect_integration.rs
+tests/revive_semantics.rs
+tests/action_affordance_query.rs
+tests/twin_core_integration.rs
+tests/ultimate_meter.rs
+tests/action_affordance_consumers.rs
+tests/presentation_metadata_boundary.rs
+tests/boundary_contract.rs
+tests/damage_breakdown_log.rs
+tests/combat_coherence.rs
+tests/event_stream.rs
+tests/encounter_e2e.rs
+tests/sp_economy.rs
+tests/engine_legality_integration.rs
+tests/resource_caps.rs
+src/data/skills_ron.rs

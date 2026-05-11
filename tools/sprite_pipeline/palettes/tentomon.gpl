@@ -1,0 +1,19 @@
+GIMP Palette
+Name: tentomon
+#
+ 18   9   7	shadow-deep
+ 85  13  13	shadow-deep
+ 64  58  50	shadow-mid
+198  21  47	shadow-mid
+143  39  47	shadow-mid
+210  71  80	mid-tone
+102 113  83	mid-tone
+227 100 110	mid-tone
+135 133 134	mid-tone
+166 165 160	highlight
+226 172  78	highlight
+218 201 175	highlight-bright
+236 226 221	highlight-bright
+248 247 239	highlight-bright
+252 252 251	highlight-bright
+255 255 255	highlight-bright

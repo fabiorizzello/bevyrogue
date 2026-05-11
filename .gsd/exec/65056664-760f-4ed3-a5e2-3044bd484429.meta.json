@@ -1,0 +1,18 @@
+{
+  "id": "65056664-760f-4ed3-a5e2-3044bd484429",
+  "runtime": "bash",
+  "purpose": "short diagnostics for T01 targeted compile blockers",
+  "script_chars": 286,
+  "started_at": "2026-05-08T15:36:45.106Z",
+  "finished_at": "2026-05-08T15:37:05.201Z",
+  "exit_code": 101,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 20095,
+  "stdout_bytes": 16851,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/65056664-760f-4ed3-a5e2-3044bd484429.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/65056664-760f-4ed3-a5e2-3044bd484429.stderr"
+}

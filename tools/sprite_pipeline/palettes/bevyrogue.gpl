@@ -1,0 +1,59 @@
+GIMP Palette
+Name: bevyrogue Master 48
+# Game-wide palette for bevyrogue (HSR-inspired roguelite).
+# Composed of: outline/UI, skin tones, environment, VFX, accents.
+# Per-character accents added separately in <char>.gpl files.
+#
+#--- OUTLINE + UI BASE (8) ---
+  0   0   0	pure-black
+ 25  20  35	near-black
+ 60  55  75	dark-grey
+120 115 130	mid-grey
+180 175 190	light-grey
+220 220 225	off-white
+250 248 245	cream-white
+255 255 255	pure-white
+#--- SKIN TONES generic chibi (8) ---
+ 80  35  20	skin-shadow-deep
+130  65  35	skin-shadow
+180 110  55	skin-mid-warm
+210 145  75	skin-mid-light
+235 180 120	skin-highlight
+245 215 170	skin-highlight-bright
+255 235 200	skin-cream
+180 130  90	skin-tan
+#--- ENVIRONMENT cave/dungeon/sky (10) ---
+ 30  25  40	cave-floor-dark
+ 55  45  70	cave-floor-mid
+ 80  70  95	cave-wall-mid
+110 100 130	cave-wall-light
+ 70  85  60	moss-dark
+100 130  85	moss-mid
+145 175 120	grass-light
+ 60  80 130	sky-night
+120 160 220	sky-day
+200 230 250	sky-pale
+#--- VFX (12) ---
+255  80  40	fire-hot
+255 150  60	fire-mid
+255 220 130	fire-light
+ 60 130 220	ice-deep
+130 180 240	ice-mid
+220 240 255	ice-light
+240 230  60	electric-yellow
+255 255 180	electric-bright
+180  80 220	dark-magic
+220 140 240	light-magic
+ 80 180  90	heal-green
+180 240 130	heal-bright
+#--- ACCENTS reserved (10) ---
+220  40  60	deep-red
+255 100 110	bright-red
+240 150  60	deep-orange
+255 200  90	bright-yellow
+ 50 130  60	deep-green
+120 200 100	bright-green
+ 40 100 180	deep-blue
+130 180 250	bright-cyan
+180  50 200	purple
+255 130 180	pink

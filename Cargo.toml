@@ -1,0 +1,97 @@
+[package]
+name = "bevyrogue"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# Headless-only feature set (D017). `windowed` re-enables the rendering stack.
+bevy = { version = "=0.18.1", default-features = false, features = [
+    "std",
+    "async_executor",
+    "multi_threaded",
+    "bevy_asset",
+    "bevy_log",
+    "bevy_state",
+    "file_watcher",
+] }
+bevy_egui = { version = "=0.39.1", optional = true }
+bevy_common_assets = { version = "0.16", features = ["ron"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+ron = "0.8"
+rand = "0.8"
+inquire = "0.7"
+
+[features]
+default = []
+# Pulls winit + wgpu + bevy_ui + egui only when building for visual inspection.
+windowed = ["dep:bevy_egui", "bevy/2d"]
+dev = ["bevy/dynamic_linking"]
+
+[[test]]
+name = "twin_core_roster_contract"
+path = "tests/twin_core_roster_contract.rs"
+
+[[test]]
+name = "twin_core_resolution"
+path = "tests/twin_core_resolution.rs"
+
+[[test]]
+name = "twin_core_integration"
+path = "tests/twin_core_integration.rs"
+
+[[test]]
+name = "holy_support_mechanics"
+path = "tests/holy_support_mechanics.rs"
+
+[[test]]
+name = "holy_support_resolution"
+path = "tests/holy_support_resolution.rs"
+
+[[test]]
+name = "holy_support_affordance"
+path = "tests/holy_support_affordance.rs"
+
+[[test]]
+name = "holy_support_roster_contract"
+path = "tests/holy_support_roster_contract.rs"
+
+[[test]]
+name = "battery_loop_kernel"
+path = "tests/battery_loop_kernel.rs"
+
+[[test]]
+name = "predator_loop_kernel"
+path = "tests/predator_loop_kernel.rs"
+
+[[test]]
+name = "tentomon_blueprint"
+path = "tests/tentomon_blueprint.rs"
+
+[[test]]
+name = "renamon_precision_runtime"
+path = "tests/renamon_precision_runtime.rs"
+
+[[test]]
+name = "digimon_signal_registry"
+path = "tests/digimon_signal_registry.rs"
+
+[[test]]
+name = "dorumon_predator_runtime"
+path = "tests/dorumon_predator_runtime.rs"
+
+[[test]]
+name = "dorumon_blueprint"
+path = "tests/dorumon_blueprint.rs"
+
+[profile.dev]
+opt-level = 1
+codegen-backend = "cranelift"
+
+# Cranelift backend ICEs on many third-party crates (rustc nightly bug,
+# concurrency_limiter.rs:84 `Option::unwrap() on None`). Force LLVM for ALL
+# dependencies; only the workspace member `bevyrogue` keeps cranelift for fast
+# incremental builds. Remove the wildcard override when nightly fixes the ICE.
+[profile.dev.package."*"]
+codegen-backend = "llvm"
+

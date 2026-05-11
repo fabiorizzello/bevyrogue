@@ -1,0 +1,18 @@
+{
+  "id": "cd461d4d-13d9-4e25-80fe-c240fc682eda",
+  "runtime": "bash",
+  "purpose": "Format after setting CLI combat phase for shared AV turn selection",
+  "script_chars": 52,
+  "started_at": "2026-05-08T19:46:25.564Z",
+  "finished_at": "2026-05-08T19:46:25.789Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 225,
+  "stdout_bytes": 0,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/cd461d4d-13d9-4e25-80fe-c240fc682eda.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/cd461d4d-13d9-4e25-80fe-c240fc682eda.stderr"
+}

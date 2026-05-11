@@ -1,0 +1,19 @@
+GIMP Palette
+Name: agumon
+#
+ 10   8   4	shadow-deep
+ 60  36  25	shadow-mid
+123  66  29	shadow-mid
+104 103 101	mid-tone
+186 112  26	mid-tone
+197 150  68	highlight
+ 98 198  22	highlight
+164 166 174	highlight
+231 185  93	highlight
+201 202 202	highlight-bright
+247 200 100	highlight-bright
+237 237 237	highlight-bright
+238 238 238	highlight-bright
+248 248 248	highlight-bright
+254 254 254	highlight-bright
+255 255 255	highlight-bright

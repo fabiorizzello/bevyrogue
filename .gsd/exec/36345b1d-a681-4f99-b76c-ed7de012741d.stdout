@@ -1,0 +1,29 @@
+src/combat/twin_core.rs:145:            CombatKernelTransition::Beat(CombatBeatId::Damage) => {
+src/combat/twin_core.rs:168:        let CombatEventKind::OnKernelTransition { transition } = &event.kind else {
+src/combat/events.rs:103:    OnCombatBeat {
+src/combat/events.rs:107:    OnKernelTransition {
+src/combat/events.rs:112:    BatteryLoopResolved {
+src/combat/events.rs:117:    PredatorLoopResolved {
+src/combat/predator_loop.rs:232:        let CombatEventKind::OnKernelTransition { transition } = &event.kind else {
+src/combat/predator_loop.rs:251:            kind: CombatEventKind::PredatorLoopResolved { transition: applied },
+src/combat/predator_loop.rs:257:        debug!("PredatorLoopResolved {:?}", applied);
+src/combat/kernel.rs:899:    Beat(CombatBeatId),
+src/combat/kernel.rs:1300:        let labels: Vec<&'static str> = CombatBeatId::ALL
+src/combat/kernel.rs:1302:            .map(CombatBeatId::as_str)
+src/combat/kernel.rs:1337:                out.push(CombatKernelTransition::Beat(CombatBeatId::Impact));
+src/combat/kernel.rs:1357:            CombatKernelTransition::Beat(CombatBeatId::Impact)
+src/combat/precision_mind_game.rs:98:        let CombatEventKind::OnKernelTransition { transition } = &event.kind else {
+src/combat/holy_support.rs:173:        let CombatEventKind::OnKernelTransition { transition } = &event.kind else {
+tests/holy_support_mechanics.rs:38:            kind: CombatEventKind::OnKernelTransition { transition },
+tests/twin_core_integration.rs:101:            kind: CombatEventKind::OnKernelTransition { transition },
+tests/twin_core_integration.rs:172:        CombatKernelTransition::Beat(CombatBeatId::Damage),
+tests/battery_loop_kernel.rs:25:        kind: CombatEventKind::OnKernelTransition { transition },
+tests/holy_support_affordance.rs:32:        kind: CombatEventKind::OnKernelTransition {
+src/combat/battery_loop.rs:133:        let CombatEventKind::OnKernelTransition { transition } = &event.kind else {
+tests/twin_core_mechanics.rs:19:            kind: CombatEventKind::OnKernelTransition { transition },
+tests/twin_core_mechanics.rs:46:        CombatKernelTransition::Beat(CombatBeatId::Damage),
+tests/holy_support_resolution.rs:81:            CombatEventKind::OnKernelTransition { transition } => {
+tests/holy_support_resolution.rs:90:                        kind: CombatEventKind::OnKernelTransition { transition },
+tests/holy_support_resolution.rs:146:        CombatEventKind::OnKernelTransition {
+tests/predator_loop_kernel.rs:195:        kind: CombatEventKind::PredatorLoopResolved { transition },
+tests/predator_loop_kernel.rs:201:    assert!(json.contains("PredatorLoopResolved"));

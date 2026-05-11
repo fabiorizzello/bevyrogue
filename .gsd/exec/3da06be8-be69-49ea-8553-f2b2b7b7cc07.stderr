@@ -1,0 +1,3 @@
+ERROR: missing required ledger section for 'runtime consumer gaps': '## Runtime / consumer gaps not proven by S03'
+ERROR: missing S05 ledger proof marker for 'S06 baseline boundary': 'final full-suite baseline closure remain S06'
+ERROR: missing ledger marker for 'CLI owner': 'Closed for S05; full CLI/future UI migration and final full-suite baseline closure remain S06 or later work'

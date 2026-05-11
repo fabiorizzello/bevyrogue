@@ -1,0 +1,220 @@
+assets/data/skills.ron:91:        animation_sequence: Some(["Skill(Charge)", "Heavy(Launch)", "Victory"]),
+assets/data/skills.ron:92:        qte: Some("Power Charge: Mash during Charge to increase blast radius."),
+assets/data/skills.ron:108:        animation_sequence: Some(["Skill(Inhale)", "Skill(Exhale)", "Idle"]),
+assets/data/skills.ron:109:        qte: Some("Just-Frame Block: Press during enemy counter-hit to mitigate."),
+assets/data/skills.ron:125:        animation_sequence: Some(["Skill(Focus)", "Heavy(Explosion)", "Victory"]),
+assets/data/skills.ron:126:        qte: Some("Power Charge: Hold button to stabilize digital glitch for more hits."),
+assets/data/skills.ron:142:        animation_sequence: Some(["Skill(Spin)", "Attack(Launch)", "After-images(Retreat)"]),
+assets/data/skills.ron:143:        qte: Some("Precision Strike: Hit the moving cursor to ignore enemy DEF."),
+assets/data/skills.ron:159:        animation_sequence: Some(["Skill(Rise)", "Skill(Bagliore)", "Heal"]),
+assets/data/skills.ron:160:        qte: Some("Just-Frame Block: Block projectiles while ascending."),
+tests/resource_caps.rs:43:                Effect::Damage { amount: 5, target: TargetShape::Single },
+tests/resource_caps.rs:44:                Effect::ToughnessHit(1),
+tests/resource_caps.rs:61:                Effect::Damage { amount: 10, target: TargetShape::Single },
+tests/resource_caps.rs:62:                Effect::ToughnessHit(1),
+tests/resource_caps.rs:78:            effects: vec![Effect::GrantEnergy(15)],
+src/combat/turn_system/pipeline.rs:296:        if matches!(inflight.action.ult_effect, UltEffect::GainFromBasic) {
+src/combat/turn_system/pipeline.rs:589:    if matches!(inflight.action.ult_effect, UltEffect::GainFromBasic) {
+tests/toughness_categories.rs:43:            Effect::Damage { amount: 5, target: TargetShape::Single },
+tests/toughness_categories.rs:44:            Effect::ToughnessHit(TOUGHNESS_HIT),
+src/combat/turn_system/tests.rs:43:            Effect::Damage {
+src/combat/turn_system/tests.rs:47:            Effect::ToughnessHit(toughness_damage),
+src/combat/turn_system/tests.rs:423:        effects: vec![Effect::Revive(25)],
+src/combat/twin_core.rs:8:    TwinCoreSignal, TwinCoreTransition,
+src/combat/twin_core.rs:20:pub enum TwinCoreDesignTag {
+src/combat/twin_core.rs:29:pub fn twin_core_design_tag_name(tag: TwinCoreDesignTag) -> &'static str {
+src/combat/twin_core.rs:31:        TwinCoreDesignTag::Heated => TAG_HEATED,
+src/combat/twin_core.rs:32:        TwinCoreDesignTag::Chilled => TAG_CHILLED,
+src/combat/twin_core.rs:33:        TwinCoreDesignTag::ThermalSpark => TAG_THERMAL_SPARK,
+src/combat/twin_core.rs:34:        TwinCoreDesignTag::Primed => TAG_PRIMED,
+src/combat/twin_core.rs:35:        TwinCoreDesignTag::MeltdownCrack => TAG_MELTDOWN_CRACK,
+src/combat/twin_core.rs:36:        TwinCoreDesignTag::DeepCrack => TAG_DEEP_CRACK,
+src/combat/twin_core.rs:40:pub fn twin_core_design_tag(tag: TwinCoreDesignTag) -> CombatTagId {
+src/combat/twin_core.rs:44:pub fn classify_twin_core_tag(tag: &CombatTagId) -> Option<TwinCoreDesignTag> {
+src/combat/twin_core.rs:46:        TAG_HEATED => Some(TwinCoreDesignTag::Heated),
+src/combat/twin_core.rs:47:        TAG_CHILLED => Some(TwinCoreDesignTag::Chilled),
+src/combat/twin_core.rs:48:        TAG_THERMAL_SPARK => Some(TwinCoreDesignTag::ThermalSpark),
+src/combat/twin_core.rs:49:        TAG_PRIMED => Some(TwinCoreDesignTag::Primed),
+src/combat/twin_core.rs:50:        TAG_MELTDOWN_CRACK => Some(TwinCoreDesignTag::MeltdownCrack),
+src/combat/twin_core.rs:51:        TAG_DEEP_CRACK => Some(TwinCoreDesignTag::DeepCrack),
+src/combat/twin_core.rs:57:    tag: TwinCoreDesignTag,
+src/combat/twin_core.rs:71:pub struct TwinCoreState {
+src/combat/twin_core.rs:78:    pub last_signal: Option<TwinCoreTransition>,
+src/combat/twin_core.rs:81:impl Default for TwinCoreState {
+src/combat/twin_core.rs:95:pub struct TwinCoreHook;
+src/combat/twin_core.rs:97:impl CombatKernelHook for TwinCoreHook {
+src/combat/twin_core.rs:113:                        TwinCoreDesignTag::Heated
+src/combat/twin_core.rs:114:                        | TwinCoreDesignTag::Chilled
+src/combat/twin_core.rs:115:                        | TwinCoreDesignTag::Primed => out.push(CombatKernelTransition::TwinCore(
+src/combat/twin_core.rs:116:                            TwinCoreTransition::build_cross_resonance(1),
+src/combat/twin_core.rs:118:                        TwinCoreDesignTag::ThermalSpark => out.push(
+src/combat/twin_core.rs:119:                            CombatKernelTransition::TwinCore(TwinCoreTransition::thermal_spark(1)),
+src/combat/twin_core.rs:121:                        TwinCoreDesignTag::MeltdownCrack => {
+src/combat/twin_core.rs:122:                            out.push(CombatKernelTransition::TwinCore(
+src/combat/twin_core.rs:123:                                TwinCoreTransition::fire_spend_marker(1),
+src/combat/twin_core.rs:126:                        TwinCoreDesignTag::DeepCrack => out.push(CombatKernelTransition::TwinCore(
+src/combat/twin_core.rs:127:                            TwinCoreTransition::ice_spend_marker(1),
+src/combat/twin_core.rs:138:                    Some(TwinCoreDesignTag::ThermalSpark)
+src/combat/twin_core.rs:140:                    out.push(CombatKernelTransition::TwinCore(
+src/combat/twin_core.rs:141:                        TwinCoreTransition::shatter(1),
+src/combat/twin_core.rs:146:                out.push(CombatKernelTransition::TwinCore(
+src/combat/twin_core.rs:147:                    TwinCoreTransition::twin_burst(1),
+src/combat/twin_core.rs:154:                out.push(CombatKernelTransition::TwinCore(
+src/combat/twin_core.rs:155:                    TwinCoreTransition::cycle_reset(),
+src/combat/twin_core.rs:165:    mut state: ResMut<TwinCoreState>,
+src/combat/twin_core.rs:172:        let CombatKernelTransition::TwinCore(twin_trans) = transition else {
+src/combat/twin_core.rs:181:    state: &mut TwinCoreState,
+src/combat/twin_core.rs:182:    transition: TwinCoreTransition,
+src/combat/twin_core.rs:186:        TwinCoreSignal::BuildCrossResonance => {
+src/combat/twin_core.rs:193:        TwinCoreSignal::SpendCrossResonance => {
+src/combat/twin_core.rs:197:        TwinCoreSignal::ThermalSpark => {
+src/combat/twin_core.rs:203:        TwinCoreSignal::TwinBurst => {
+src/combat/twin_core.rs:215:        TwinCoreSignal::Shatter => {
+src/combat/twin_core.rs:226:        TwinCoreSignal::FireSpendMarker => {
+src/combat/twin_core.rs:230:        TwinCoreSignal::IceSpendMarker => {
+src/combat/twin_core.rs:234:        TwinCoreSignal::CycleReset => {
+src/combat/twin_core.rs:244:        "TwinCoreState signal={:?} resonance={} spark_targets={:?} fire_spend={} ice_spend={} burst_guard={} shatter_guard={}",
+src/combat/resolution.rs:67:            (*attacker, *target, UltEffect::GainFromBasic)
+src/combat/resolution.rs:71:        } => (*attacker, *target, UltEffect::None),
+src/combat/resolution.rs:72:        ActionIntent::Ultimate { attacker, target } => (*attacker, *target, UltEffect::Reset),
+src/combat/resolution.rs:98:            Effect::Damage { amount, .. } => Some(*amount),
+src/combat/resolution.rs:108:            Effect::ToughnessHit(amount) => Some(*amount),
+src/combat/resolution.rs:118:            Effect::Revive(pct) => Some(*pct),
+src/combat/resolution.rs:128:            Effect::GrantFreeSkill { count } => Some(*count),
+src/combat/resolution.rs:137:        Effect::ApplyStatus { kind, duration } => Some((kind.clone(), *duration)),
+src/combat/resolution.rs:146:            Effect::TurnAdvance(amount) => Some(*amount),
+src/combat/resolution.rs:156:            Effect::GrantEnergy(amount) => Some(*amount),
+src/combat/resolution.rs:166:            Effect::SelfAdvance(amount) => Some(*amount),
+src/combat/resolution.rs:230:    let effective_sp_cost = if matches!(resolved.ult_effect, UltEffect::None)
+src/combat/resolution.rs:251:    if matches!(resolved.ult_effect, UltEffect::Reset) && !attacker_ult.ready() {
+src/combat/resolution.rs:317:        UltEffect::GainFromBasic => {
+src/combat/resolution.rs:323:        UltEffect::None => {}
+src/combat/resolution.rs:324:        UltEffect::Reset => {
+src/combat/battery_loop.rs:6:    BatteryLoopBlockedReason, BatteryLoopChargeKind, BatteryLoopSignal, BatteryLoopStep,
+src/combat/battery_loop.rs:7:    BatteryLoopTransition, CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition,
+src/combat/battery_loop.rs:10:use super::observability::BatteryLoopSnapshot;
+src/combat/battery_loop.rs:17:pub enum BatteryLoopDesignTag {
+src/combat/battery_loop.rs:24:pub enum BatteryLoopRequestKind {
+src/combat/battery_loop.rs:32:pub struct BatteryLoopState {
+src/combat/battery_loop.rs:39:    pub last_transition: Option<BatteryLoopTransition>,
+src/combat/battery_loop.rs:40:    pub last_blocked_reason: Option<BatteryLoopBlockedReason>,
+src/combat/battery_loop.rs:43:impl Default for BatteryLoopState {
+src/combat/battery_loop.rs:58:impl BatteryLoopState {
+src/combat/battery_loop.rs:64:    pub fn snapshot(&self) -> BatteryLoopSnapshot {
+src/combat/battery_loop.rs:65:        BatteryLoopSnapshot::from(self)
+src/combat/battery_loop.rs:68:    pub fn gain_static_charge(&mut self, amount: u8) -> BatteryLoopTransition {
+src/combat/battery_loop.rs:69:        apply_battery_loop_transition(self, BatteryLoopTransition::build_static_charge(amount))
+src/combat/battery_loop.rs:72:    pub fn gain_circuit_charge(&mut self, amount: u8) -> BatteryLoopTransition {
+src/combat/battery_loop.rs:73:        apply_battery_loop_transition(self, BatteryLoopTransition::build_circuit_charge(amount))
+src/combat/battery_loop.rs:76:    pub fn spend_circuit_charge(&mut self, amount: u8) -> BatteryLoopTransition {
+src/combat/battery_loop.rs:77:        apply_battery_loop_transition(self, BatteryLoopTransition::spend_circuit_charge(amount))
+src/combat/battery_loop.rs:80:    pub fn record_self_energy_gain(&mut self, amount: u8) -> BatteryLoopTransition {
+src/combat/battery_loop.rs:81:        apply_battery_loop_transition(self, BatteryLoopTransition::self_energy_gain(amount))
+src/combat/battery_loop.rs:84:    pub fn record_transfer_success(&mut self, amount: u8) -> BatteryLoopTransition {
+src/combat/battery_loop.rs:85:        apply_battery_loop_transition(self, BatteryLoopTransition::transfer_energy(amount))
+src/combat/battery_loop.rs:91:        reason: BatteryLoopBlockedReason,
+src/combat/battery_loop.rs:92:    ) -> BatteryLoopTransition {
+src/combat/battery_loop.rs:95:            BatteryLoopTransition::rejected(BatteryLoopStep::TransferEnergy { amount }, reason),
+src/combat/battery_loop.rs:99:    pub fn reset_cycle_guards(&mut self) -> BatteryLoopTransition {
+src/combat/battery_loop.rs:100:        apply_battery_loop_transition(self, BatteryLoopTransition::cycle_reset())
+src/combat/battery_loop.rs:105:    state: &mut BatteryLoopState,
+src/combat/battery_loop.rs:106:    transition: BatteryLoopTransition,
+src/combat/battery_loop.rs:107:) -> BatteryLoopTransition {
+src/combat/battery_loop.rs:109:        BatteryLoopSignal::BuildStaticCharge => apply_static_charge(state, transition.amount),
+src/combat/battery_loop.rs:110:        BatteryLoopSignal::BuildCircuitCharge => apply_circuit_charge(state, transition.amount),
+src/combat/battery_loop.rs:111:        BatteryLoopSignal::SpendCircuitCharge => spend_circuit_charge(state, transition.amount),
+src/combat/battery_loop.rs:112:        BatteryLoopSignal::GrantEnergy
+src/combat/battery_loop.rs:113:        | BatteryLoopSignal::SelfEnergyGain
+src/combat/battery_loop.rs:114:        | BatteryLoopSignal::TransferEnergy
+src/combat/battery_loop.rs:115:        | BatteryLoopSignal::CycleReset => {
+src/combat/battery_loop.rs:116:            if matches!(transition.signal, BatteryLoopSignal::CycleReset) {
+src/combat/battery_loop.rs:122:        BatteryLoopSignal::Rejected | BatteryLoopSignal::Ignored => transition,
+src/combat/battery_loop.rs:130:    mut state: ResMut<BatteryLoopState>,
+src/combat/battery_loop.rs:137:        let CombatKernelTransition::BatteryLoop(battery_transition) = transition else {
+src/combat/battery_loop.rs:145:pub struct BatteryLoopHook;
+src/combat/battery_loop.rs:147:impl CombatKernelHook for BatteryLoopHook {
+src/combat/battery_loop.rs:164:            out.push(CombatKernelTransition::BatteryLoop(
+src/combat/battery_loop.rs:165:                BatteryLoopTransition::cycle_reset(),
+src/combat/battery_loop.rs:171:fn apply_static_charge(state: &mut BatteryLoopState, amount: u8) -> BatteryLoopTransition {
+src/combat/battery_loop.rs:173:        return BatteryLoopTransition::ignored(BatteryLoopStep::BuildStaticCharge { amount });
+src/combat/battery_loop.rs:177:        return BatteryLoopTransition::rejected(
+src/combat/battery_loop.rs:178:            BatteryLoopStep::BuildStaticCharge { amount },
+src/combat/battery_loop.rs:179:            BatteryLoopBlockedReason::ChargeCapReached {
+src/combat/battery_loop.rs:180:                charge: BatteryLoopChargeKind::Static,
+src/combat/battery_loop.rs:192:        BatteryLoopTransition::grant_energy(BATTERY_ENERGY_GRANT)
+src/combat/battery_loop.rs:194:        BatteryLoopTransition::build_static_charge(amount)
+src/combat/battery_loop.rs:198:fn apply_circuit_charge(state: &mut BatteryLoopState, amount: u8) -> BatteryLoopTransition {
+src/combat/battery_loop.rs:200:        return BatteryLoopTransition::ignored(BatteryLoopStep::BuildCircuitCharge { amount });
+src/combat/battery_loop.rs:204:        return BatteryLoopTransition::rejected(
+src/combat/battery_loop.rs:205:            BatteryLoopStep::BuildCircuitCharge { amount },
+src/combat/battery_loop.rs:206:            BatteryLoopBlockedReason::ChargeCapReached {
+src/combat/battery_loop.rs:207:                charge: BatteryLoopChargeKind::Circuit,
+src/combat/battery_loop.rs:217:    BatteryLoopTransition::build_circuit_charge(amount)
+src/combat/battery_loop.rs:220:fn spend_circuit_charge(state: &mut BatteryLoopState, amount: u8) -> BatteryLoopTransition {
+src/combat/battery_loop.rs:222:        return BatteryLoopTransition::ignored(BatteryLoopStep::SpendCircuitCharge { amount });
+src/combat/battery_loop.rs:226:        return BatteryLoopTransition::rejected(
+src/combat/battery_loop.rs:227:            BatteryLoopStep::SpendCircuitCharge { amount },
+src/combat/battery_loop.rs:228:            BatteryLoopBlockedReason::ChargeUnderflow {
+src/combat/battery_loop.rs:229:                charge: BatteryLoopChargeKind::Circuit,
+src/combat/battery_loop.rs:235:    BatteryLoopTransition::spend_circuit_charge(amount)
+src/combat/battery_loop.rs:239:    state: &mut BatteryLoopState,
+src/combat/battery_loop.rs:240:    transition: BatteryLoopTransition,
+src/combat/battery_loop.rs:241:) -> BatteryLoopTransition {
+src/combat/battery_loop.rs:242:    if matches!(transition.signal, BatteryLoopSignal::Rejected) {
+src/combat/battery_loop.rs:250:        "BatteryLoopState static={}/{} circuit={}/{} threshold={} grant_guard={} last={:?} blocked={:?}",
+src/combat/predator_loop.rs:9:    PredatorLoopBlockedReason, PredatorLoopCapKind, PredatorLoopSignal, PredatorLoopStep, PredatorLoopTransition,
+src/combat/predator_loop.rs:19:pub enum PredatorLoopDesignTag {
+src/combat/predator_loop.rs:86:pub struct PredatorLoopState {
+src/combat/predator_loop.rs:91:    pub last_transition: Option<PredatorLoopTransition>,
+src/combat/predator_loop.rs:92:    pub last_blocked_reason: Option<PredatorLoopBlockedReason>,
+src/combat/predator_loop.rs:95:impl Default for PredatorLoopState {
+src/combat/predator_loop.rs:116:pub struct PredatorLoopSnapshot {
+src/combat/predator_loop.rs:121:    pub last_transition: Option<PredatorLoopTransition>,
+src/combat/predator_loop.rs:122:    pub last_blocked_reason: Option<PredatorLoopBlockedReason>,
+src/combat/predator_loop.rs:125:impl From<&PredatorLoopState> for PredatorLoopSnapshot {
+src/combat/predator_loop.rs:126:    fn from(state: &PredatorLoopState) -> Self {
+src/combat/predator_loop.rs:149:impl PredatorLoopState {
+src/combat/predator_loop.rs:150:    pub fn snapshot(&self) -> PredatorLoopSnapshot {
+src/combat/predator_loop.rs:151:        PredatorLoopSnapshot::from(self)
+src/combat/predator_loop.rs:158:    pub fn build_exploit(&mut self, unit_id: UnitId, amount: u16) -> PredatorLoopTransition {
+src/combat/predator_loop.rs:161:            PredatorLoopTransition::build_exploit(unit_id, amount),
+src/combat/predator_loop.rs:165:    pub fn apply_prey_lock(&mut self, unit_id: UnitId) -> PredatorLoopTransition {
+src/combat/predator_loop.rs:167:        apply_predator_loop_transition(self, PredatorLoopTransition::apply_prey_lock(unit_id, duration))
+src/combat/predator_loop.rs:170:    pub fn consume_prey_lock_payoff(&mut self, unit_id: UnitId) -> PredatorLoopTransition {
+src/combat/predator_loop.rs:173:            PredatorLoopTransition::consume_prey_lock_payoff(unit_id, 1),
+src/combat/predator_loop.rs:177:    pub fn enter_berserk(&mut self, strain_current: u16) -> PredatorLoopTransition {
+src/combat/predator_loop.rs:180:            PredatorLoopTransition::enter_berserk(strain_current),
+src/combat/predator_loop.rs:184:    pub fn tick_all_prey_locks(&mut self) -> PredatorLoopTransition {
+src/combat/predator_loop.rs:185:        apply_predator_loop_transition(self, PredatorLoopTransition::tick())
+src/combat/predator_loop.rs:188:    pub fn expire_prey_lock(&mut self, unit_id: UnitId) -> PredatorLoopTransition {
+src/combat/predator_loop.rs:189:        apply_predator_loop_transition(self, PredatorLoopTransition::expire(unit_id))
+src/combat/predator_loop.rs:194:pub enum PredatorLoopRequestKind {
+src/combat/predator_loop.rs:204:    state: &mut PredatorLoopState,
+src/combat/predator_loop.rs:205:    transition: PredatorLoopTransition,
+src/combat/predator_loop.rs:206:) -> PredatorLoopTransition {
+src/combat/predator_loop.rs:208:        PredatorLoopSignal::BuildExploit => apply_build_exploit(state, transition.target, transition.amount),
+src/combat/predator_loop.rs:209:        PredatorLoopSignal::ApplyPreyLock => apply_prey_lock(state, transition.target),
+src/combat/predator_loop.rs:210:        PredatorLoopSignal::ConsumePreyLockPayoff => {
+src/combat/predator_loop.rs:213:        PredatorLoopSignal::EnterBerserk => apply_enter_berserk(state, transition.amount),
+src/combat/predator_loop.rs:214:        PredatorLoopSignal::Tick => {
+src/combat/predator_loop.rs:218:        PredatorLoopSignal::Expire => apply_expire_prey_lock(state, transition.target),
+src/combat/predator_loop.rs:219:        PredatorLoopSignal::Rejected | PredatorLoopSignal::Ignored => transition,
+src/combat/predator_loop.rs:228:    mut state: ResMut<PredatorLoopState>,
+src/combat/predator_loop.rs:236:        let CombatKernelTransition::PredatorLoop(predator_transition) = transition else {
+src/combat/predator_loop.rs:241:            PredatorLoopSignal::EnterBerserk => {
+src/combat/predator_loop.rs:244:                    PredatorLoopTransition::enter_berserk(kernel.strain.current),
+src/combat/predator_loop.rs:251:            kind: CombatEventKind::PredatorLoopResolved { transition: applied },
+src/combat/predator_loop.rs:257:        debug!("PredatorLoopResolved {:?}", applied);
+src/combat/predator_loop.rs:261:pub struct PredatorLoopHook;
+src/combat/predator_loop.rs:263:impl CombatKernelHook for PredatorLoopHook {
+src/combat/predator_loop.rs:280:            out.push(CombatKernelTransition::PredatorLoop(
+src/combat/predator_loop.rs:281:                PredatorLoopTransition::tick(),
+src/combat/predator_loop.rs:288:    state: &mut PredatorLoopState,
+src/combat/predator_loop.rs:291:) -> PredatorLoopTransition {
+src/combat/predator_loop.rs:293:        return PredatorLoopTransition::rejected(
+src/combat/predator_loop.rs:294:            PredatorLoopStep::BuildExploit { target: UnitId(0), amount: amount as u16 },
+src/combat/predator_loop.rs:295:            PredatorLoopBlockedReason::MalformedData,
+src/combat/predator_loop.rs:300:        return PredatorLoopTransition::rejected(
+src/combat/predator_loop.rs:301:            PredatorLoopStep::BuildExploit { target, amount: amount as u16 },
+src/combat/predator_loop.rs:302:            PredatorLoopBlockedReason::MalformedData,
+src/combat/predator_loop.rs:307:        return PredatorLoopTransition::rejected(

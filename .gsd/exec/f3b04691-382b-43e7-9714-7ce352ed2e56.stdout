@@ -1,0 +1,240 @@
+docs/m015_failure_ledger.md:23:### Mechanical fixture drift: `SkillDef` missing `animation_sequence` / `qte`
+docs/m015_failure_ledger.md:27:| `tests/action_affordance_consumers.rs`, `tests/action_affordance_query.rs`, `tests/boundary_contract.rs`, `tests/combat_coherence.rs`, `tests/damage_breakdown_log.rs`, `tests/encounter_e2e.rs`, `tests/engine_legality_integration.rs`, `tests/event_stream.rs`, `tests/patamon_revive.rs`, `tests/resource_caps.rs`, `tests/revive_semantics.rs`, `tests/sp_economy.rs`, `tests/status_effect_apply.rs`, `tests/status_effect_integration.rs`, `tests/toughness_categories.rs`, `tests/ultimate_meter.rs` | Mechanical stale fixture drift | Current `cargo test --no-run` output still reports `missing fields animation_sequence and qte in initializer of SkillDef` in the listed targets; the older S01 research inventory shows the full affected set. | S03 (fixture/schema refresh) |
+docs/m015_failure_ledger.md:58:| `tests/twin_core_mechanics.rs`, `tests/validation_snapshot.rs` | Architecture-drift candidate, not a simple fixture fix | Current `src/combat/twin_core.rs` exposes `cross_resonance`, `active_thermal_spark_targets`, `fire_spend_markers`, `ice_spend_markers`, `twin_burst_used_this_cycle`, `shatter_used_this_cycle`, and `last_signal`; it does **not** expose `resonance` / `heat`. The stale tests are asserting an older contract. | S02/S03 (confirm current Twin Core model before rewriting tests) |
+docs/combat_design_revised.md:1:Sì: il sistema è coerente e la direzione è appagante. La cosa da sistemare prima del vero “production lock” non è più il fantasy dei kit, ma la **precisione delle regole**: durata dei tag, trigger di Strain/Flow, anti-loop, conversione degli hard-control sui boss e livello roguelite tra un fight e l’altro.
+docs/combat_design_revised.md:96:| **HEAVY-BREAKER**   | Alto Toughness Damage                       |
+docs/combat_design_revised.md:254:| `Kofuda`               | Nemico       |           Fino alla prossima Skill nemica |               No | Consumato dal trigger            |
+docs/combat_design_revised.md:290:| Toughness lock          | Non blocca phase reset                           |
+docs/combat_design_revised.md:303:4. Toughness Damage;
+docs/combat_design_revised.md:304:5. trigger Heavy;
+docs/combat_design_revised.md:306:7. trigger follow-up/counter;
+docs/combat_design_revised.md:402:**BREAK:** Heavy-Breaker, più Heat Sink = più Toughness Damage.
+docs/combat_design_revised.md:473:* Con Spark: consuma Spark e applica `Deep Crack`, aumentando Toughness Damage ricevuto.
+docs/combat_design_revised.md:913:Quando uno infligge Toughness Damage, l’altro contribuisce con il 50% del proprio prossimo Toughness Damage.
+docs/combat_design_revised.md:919:Il target non rigenera Toughness per 1 Tactical Cycle.
+docs/combat_design_revised.md:939:* +Toughness Damage;
+docs/combat_design_revised.md:1086:Se target ha Toughness sotto 50%, resetta la barra Toughness.
+docs/combat_design_revised.md:1165:* +1 Toughness Damage;
+docs/combat_design_revised.md:1175:* massimo 1 trigger per Tactical Cycle;
+docs/combat_design.md:17:Riduzione di scope per release iniziale: sistemi Mark/Assist Fire, Momentum, Phase Action, Stability (Window e Punitive), Anti-Evolved trait family, Tamer Commands secondari, Toughness varianti avanzate, Ultimate Windows multiple, Damage Tags ridondanti — tutti rimossi o tagliati a versione minima. Aggiunto schema DNA Chips e schema EvoStage forward-compat. Vedi changelog finale.
+docs/combat_design.md:24:La battaglia si vince preparando il team giusto, scegliendo la forma giusta e leggendo Attribute, Damage Tag, Intent, Toughness e risorse.
+docs/combat_design.md:41:* +15% Toughness damage
+docs/combat_design.md:73:Include Basic Attack e Skill. Può generare SP (solo Basic), Energy piena, status, Break, e triggerare reazioni.
+docs/combat_design.md:116:# 6. Toughness / Break / DoT
+docs/combat_design.md:119:Toughness e Break esistono **solo lato nemico**. Gli alleati non hanno una barra Toughness.
+docs/combat_design.md:121:## Categorie di Toughness Nemica (MVP: 3 sole)
+docs/combat_design.md:122:* **Standard Toughness**: comportamento normale.
+docs/combat_design.md:123:* **Armored Toughness**: alta Toughness, HP più basso. Tipico di Elite.
+docs/combat_design.md:124:* **Shielded Toughness**: non può essere Broken finché una condizione non viene risolta (vedi Break Seal). Tipico di Boss.
+docs/combat_design.md:134:DoT non possono causare Break, ma preparano il "Break Setup" a 1 Toughness.
+docs/combat_design.md:167:Ogni Adult ha 1-2 trigger di Form Identity, dichiarati sul kit. Sono tracking flag round-scoped, non risorse visibili al player.
+docs/combat_design.md:173:| Greymon | `OnFirstHitVsTagThisRound(Fire)` | `GrantEnergy(5)` |
+docs/combat_design.md:174:| Garurumon | `OnFirstHitVsTagThisRound(Ice)` | `GrantEnergy(5)` |
+docs/combat_design.md:175:| Kabuterimon | `OnFirstHitVsTagThisRound(Electric)` | `GrantEnergy(5)` |
+docs/combat_design.md:176:| Kyubimon | `OnStatusApplied(Freeze)` | `SelfAdvance(15%)` |
+docs/combat_design.md:177:| DORUgamon | `OnFirstSkillCastWithTag(Dark)` | Skill separata `dorugamon_form_identity` → `ToughnessHit(10)` |
+docs/combat_design.md:178:| Angemon | `OnAttackVsAttribute(Virus)` | Skill separata `angemon_form_identity` → `Damage(15, Light)` |
+docs/combat_design.md:180:**Pattern implementativo scelto (D050):** DORUgamon e Angemon usano un follow-up skill separato anziché i variant `BonusToughnessDamage`/`BonusDamageVsAttribute` dell'enum `Effect`. Quei variant sono stati rimossi in S09 come MVP debt — il `fire-a-separate-skill` approach è più semplice e garantisce lo stesso risultato comportamentale (verificato dai test `form_identity.rs` e dalle fixture TTK).
+docs/combat_design.md:210:* **Break** (DORUmon line): forte contro elite/boss windows. *Debole contro*: Break Seal, Toughness adattiva.
+docs/combat_design.md:226:* **Greymon** (Toughness Pressure vs Burning):
+docs/combat_design.md:228:  * **Skill 1 — Mega Flame** (1 SP): Fire dmg. If Burning, +15% Toughness dmg.
+docs/combat_design.md:229:  * **Skill 2 — Horn Impulse** (2 SP): Physical charge. High Toughness dmg.
+docs/combat_design.md:230:  * **Ultimate — Tail Crash** (100 E): AoE Physical sweep. Massive Toughness dmg contro nemici Burning (niente Detonation).
+docs/combat_design.md:231:  * **Form Identity**: First hit vs Burning each round grants 5 Energy o +10% Toughness dmg ("Se brucia, lo rompo").
+docs/combat_design.md:270:  * **Ultimate — Onibidama** (100 E): AoE Fire/Dark. Se usato su nemici Slowed, triggera un Delay immediato su tutti i bersagli colpiti.
+docs/combat_design.md:274:* **DORUmon** (Toughness Damage):
+docs/combat_design.md:275:  * **Basic**: Physical hit. Contro un nemico ad alta Toughness (>50%), infligge Toughness damage bonus.
+docs/combat_design.md:276:  * **Skill 1 — Metal Cannon** (1 SP): Physical dmg. High Toughness dmg.
+docs/combat_design.md:277:  * **Skill 2 — Dash Metal** (1 SP): Physical hit. Bonus Toughness dmg se Toughness >50%.
+docs/combat_design.md:278:  * **Ultimate — Metal Cannon** (100 E): AoE Toughness reduction.
+docs/combat_design.md:279:  * **Passive**: +20% Toughness dmg vs target sopra 50% Toughness.
+docs/combat_design.md:281:  * **Basic**: Physical hit. Bonus Toughness dmg se >50%. Se il nemico ha Shield (Break Seal), questo attacco intacca leggermente lo scudo.
+docs/combat_design.md:282:  * **Skill 1 — Power Metal** (1 SP): Physical dmg. Applies Cracked se target >75% Toughness.
+docs/combat_design.md:284:  * **Ultimate — Power Metal** (100 E): Heavy Physical. Se Cracked, prossimo direct hit guadagna +50% Toughness dmg.
+docs/combat_design.md:285:  * **Form Identity**: Infligge Toughness dmg aumentato a target Cracked.
+docs/combat_design.md:343:- **DORUmon Passive**: design prevede "+20% Toughness dmg vs target >50% Toughness" — non presente.
+docs/combat_design.md:374:* **Mechanic**: Il bersaglio subisce il 50% in meno di HP damage dalle Secondary Actions (Follow-up, Counter, Detonation). Il Toughness damage rimane normale.
+docs/combat_design.md:375:* **Counter**: Affidarsi a burst Primary, o usare Toughness pressure (DORUmon line) per scalfire il nemico invece di cercare DPS reaction-based.
+docs/combat_design.md:379:* **Counter**: Il Toughness damage inflitto allo scudo riduce l'efficacia del prossimo Charged Attack del boss. DORUgamon e DORUmon restano utili per mitigarne i danni.
+docs/combat_design.md:414:    triggers: Vec<ChipTrigger>, // quando il chip si attiva
+docs/combat_design.md:500:  * **QTE (Precision Strike)**: Colpisci il punto debole per ignorare la Toughness.
+docs/combat_design.md:549:* **Meccanica**: 'Armored' estremo. Riduce del 90% ogni danno non-critico e ha Toughness infinita.
+docs/combat_design.md:581:* **Toughness varianti ridotte.**
+docs/combat_design.md:594:  * *Modifica*: 3 finestre → 1 (End-of-Action). Start Window e Danger Window esplicite differite. Danger Window è gestita implicitamente dal trigger di Charged Attack + Emergency Guard.
+src/headless.rs:16:use crate::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
+src/headless.rs:21:use crate::combat::toughness::{visible_toughness, Toughness};
+src/headless.rs:22:use crate::combat::turn_order::{TurnAdvanced, TurnOrder};
+src/headless.rs:24:    ActionIntent, advance_turn_system, apply_turn_advance_system, check_victory_system, resolve_action_system,
+src/headless.rs:46:    EmitIntent(ActionIntent),
+src/headless.rs:81:        actions.push_back(EmitIntent(ActionIntent::Basic {
+src/headless.rs:86:    actions.push_back(EmitIntent(ActionIntent::Ultimate {
+src/headless.rs:91:        actions.push_back(EmitIntent(ActionIntent::Basic {
+src/headless.rs:161:        Option<&'static Toughness>,
+src/headless.rs:177:    match capture_validation_snapshot(world) {
+src/headless.rs:180:            format_validation_snapshot(&snapshot)
+src/headless.rs:195:    mut turn_advanced: MessageWriter<TurnAdvanced>,
+src/headless.rs:196:    mut action_intent: MessageWriter<ActionIntent>,
+src/headless.rs:279:                    team, view.current, view.max, view.weaknesses, ult.current, ult.trigger, ult.cap
+src/headless.rs:281:                None => info!("  team={:?} tough=N/A weak=N/A ult={}/{}->{}", team, ult.current, ult.trigger, ult.cap),
+src/headless.rs:366:                ScriptStep::EmitIntent(ActionIntent::Basic {
+src/headless.rs:378:            Some(ScriptStep::EmitIntent(ActionIntent::Basic {
+tests/enemy_counterplay_affordance.rs:6:use bevyrogue::combat::toughness::{Toughness, ToughnessCategory};
+tests/enemy_counterplay_affordance.rs:16:    toughness: Option<Toughness>,
+tests/enemy_counterplay_affordance.rs:31:        ultimate_trigger: 100,
+tests/enemy_counterplay_affordance.rs:44:fn shielded_toughness() -> Toughness {
+tests/enemy_counterplay_affordance.rs:45:    Toughness::with_category(30, vec![DamageTag::Fire], ToughnessCategory::Shielded)
+tests/enemy_counterplay_affordance.rs:55:        Some(Toughness::with_category(
+tests/enemy_counterplay_affordance.rs:144:        Some(Toughness::with_category(30, vec![DamageTag::Fire], ToughnessCategory::Armored)),
+tests/enemy_counterplay_affordance.rs:176:        Some(Toughness::with_category(20, vec![DamageTag::Fire], ToughnessCategory::Standard)),
+assets/data/skills.ron:15:        effects: [Damage(amount: 18, target: Single), ToughnessHit(10)],
+assets/data/skills.ron:30:        effects: [Damage(amount: 16, target: Single), ToughnessHit(8)],
+assets/data/skills.ron:45:        effects: [Damage(amount: 17, target: Single), ToughnessHit(9)],
+assets/data/skills.ron:60:        effects: [Damage(amount: 16, target: Single), ToughnessHit(8)],
+assets/data/skills.ron:75:        effects: [Damage(amount: 15, target: Single), ToughnessHit(8)],
+assets/data/skills.ron:90:        effects: [Damage(amount: 50, target: Single), ToughnessHit(30)],
+assets/data/skills.ron:91:        animation_sequence: Some(["Skill(Charge)", "Heavy(Launch)", "Victory"]),
+assets/data/skills.ron:107:        effects: [Damage(amount: 48, target: Single), ToughnessHit(28)],
+assets/data/skills.ron:108:        animation_sequence: Some(["Skill(Inhale)", "Skill(Exhale)", "Idle"]),
+assets/data/skills.ron:124:        effects: [Damage(amount: 48, target: Single), ToughnessHit(30)],
+assets/data/skills.ron:125:        animation_sequence: Some(["Skill(Focus)", "Heavy(Explosion)", "Victory"]),
+assets/data/skills.ron:141:        effects: [Damage(amount: 48, target: Single), ToughnessHit(30)],
+assets/data/skills.ron:142:        animation_sequence: Some(["Skill(Spin)", "Attack(Launch)", "After-images(Retreat)"]),
+assets/data/skills.ron:158:        effects: [Damage(amount: 45, target: Single), ToughnessHit(28)],
+assets/data/skills.ron:159:        animation_sequence: Some(["Skill(Rise)", "Skill(Bagliore)", "Heal"]),
+assets/data/skills.ron:175:        effects: [Damage(amount: 22, target: Single), ToughnessHit(12)],
+assets/data/skills.ron:190:        effects: [Damage(amount: 20, target: Single), ToughnessHit(10)],
+assets/data/skills.ron:205:        effects: [Damage(amount: 20, target: Single), ToughnessHit(10)],
+assets/data/skills.ron:220:        effects: [Damage(amount: 23, target: Single), ToughnessHit(13)],
+assets/data/skills.ron:235:        effects: [Damage(amount: 18, target: Single), ToughnessHit(9)],
+assets/data/skills.ron:250:        effects: [Damage(amount: 30, target: Row), ToughnessHit(20)],
+assets/data/skills.ron:265:        effects: [Damage(amount: 44, target: Single), ToughnessHit(30)],
+assets/data/skills.ron:280:        effects: [Damage(amount: 45, target: Single), ToughnessHit(30)],
+assets/data/skills.ron:310:        effects: [Damage(amount: 10, target: Single)],
+assets/data/skills.ron:340:        effects: [Damage(amount: 5, target: Single)],
+assets/data/skills.ron:355:        effects: [Damage(amount: 30, target: Single), ToughnessHit(15), GrantFreeSkill(count: 4)],
+assets/data/skills.ron:370:        effects: [Damage(amount: 20, target: Single), ToughnessHit(12)],
+assets/data/skills.ron:385:        effects: [Damage(amount: 45, target: Single), ToughnessHit(25)],
+assets/data/skills.ron:400:        effects: [Damage(amount: 15, target: Single), ToughnessHit(8), ApplyStatus(kind: Burn(damage_per_turn: 5), duration: 3)],
+assets/data/skills.ron:417:        effects: [Damage(amount: 12, target: Single), ToughnessHit(6)],
+assets/data/skills.ron:432:        effects: [Damage(amount: 16, target: Single), ToughnessHit(8), ApplyStatus(kind: Shock(cancel_chance_pct: 25), duration: 1)],
+assets/data/skills.ron:447:        effects: [Damage(amount: 18, target: Single), ToughnessHit(9)],
+assets/data/skills.ron:463:        effects: [Damage(amount: 16, target: Single), ToughnessHit(10)],
+assets/data/skills.ron:478:        effects: [Damage(amount: 22, target: Single), ToughnessHit(12), ApplyStatus(kind: Burn(damage_per_turn: 6), duration: 3)],
+assets/data/skills.ron:493:        effects: [Damage(amount: 18, target: Single), ToughnessHit(20)],
+assets/data/skills.ron:508:        effects: [Damage(amount: 55, target: Row), ToughnessHit(35)],
+assets/data/skills.ron:523:        effects: [Damage(amount: 24, target: Single), ToughnessHit(14)],
+assets/data/skills.ron:538:        effects: [GrantEnergy(5)],
+assets/data/skills.ron:553:        effects: [GrantEnergy(5)],
+assets/data/skills.ron:569:        effects: [Damage(amount: 15, target: Single), ToughnessHit(8)],
+assets/data/skills.ron:584:        effects: [Damage(amount: 20, target: Single), ToughnessHit(10), ApplyStatus(kind: Freeze(speed_reduction: 15), duration: 2)],
+assets/data/skills.ron:599:        effects: [Damage(amount: 24, target: Single), ToughnessHit(14), ApplyStatus(kind: Freeze(speed_reduction: 20), duration: 2)],
+assets/data/skills.ron:614:        effects: [Damage(amount: 52, target: Single), ToughnessHit(32)],
+assets/data/skills.ron:629:        effects: [Damage(amount: 22, target: Single), ToughnessHit(12)],
+assets/data/skills.ron:644:        effects: [GrantEnergy(5)],
+assets/data/skills.ron:660:        effects: [Damage(amount: 15, target: Single), ToughnessHit(8)],
+assets/data/skills.ron:675:        effects: [Damage(amount: 22, target: Single), ToughnessHit(11), ApplyStatus(kind: Shock(cancel_chance_pct: 30), duration: 1)],
+assets/data/skills.ron:690:        effects: [Damage(amount: 18, target: Row), ToughnessHit(12), ApplyStatus(kind: Shock(cancel_chance_pct: 25), duration: 1)],
+assets/data/skills.ron:705:        effects: [Damage(amount: 50, target: Row), ToughnessHit(30)],
+assets/data/skills.ron:720:        effects: [Damage(amount: 22, target: Single), ToughnessHit(12)],
+assets/data/skills.ron:736:        effects: [Damage(amount: 16, target: Single), ToughnessHit(8)],
+assets/data/skills.ron:751:        effects: [Damage(amount: 22, target: Single), ToughnessHit(10), ApplyStatus(kind: Freeze(speed_reduction: 12), duration: 2)],
+assets/data/skills.ron:766:        effects: [Damage(amount: 28, target: Single), ToughnessHit(14)],
+assets/data/skills.ron:781:        effects: [Damage(amount: 50, target: Row), ToughnessHit(28), TurnAdvance(20)],
+assets/data/skills.ron:796:        effects: [Damage(amount: 22, target: Single), ToughnessHit(12)],
+assets/data/skills.ron:811:        effects: [SelfAdvance(20)],
+assets/data/skills.ron:827:        effects: [Damage(amount: 15, target: Single), ToughnessHit(12)],
+assets/data/skills.ron:842:        effects: [Damage(amount: 22, target: Single), ToughnessHit(18)],
+assets/data/skills.ron:857:        effects: [Damage(amount: 26, target: Single), ToughnessHit(20)],
+assets/data/skills.ron:872:        effects: [Damage(amount: 50, target: Single), ToughnessHit(38)],
+assets/data/skills.ron:887:        effects: [Damage(amount: 24, target: Single), ToughnessHit(15)],
+assets/data/skills.ron:889:    // S09 Form Identity: fires on OnFirstSkillCastWithTag(Dark); fires a separate ToughnessHit follow-up (see D050)
+assets/data/skills.ron:903:        effects: [ToughnessHit(10)],
+assets/data/skills.ron:919:        effects: [Damage(amount: 14, target: Single), ToughnessHit(20)],
+assets/data/skills.ron:934:        effects: [Damage(amount: 22, target: Single), ToughnessHit(11)],
+assets/data/skills.ron:949:        effects: [Damage(amount: 26, target: Single), ToughnessHit(14)],
+assets/data/skills.ron:964:        effects: [Damage(amount: 48, target: Row), ToughnessHit(28), Revive(20)],
+assets/data/skills.ron:979:        effects: [Damage(amount: 20, target: Single), ToughnessHit(10)],
+assets/data/skills.ron:995:        effects: [Damage(amount: 15, target: Single)],
+assets/data/skills.ron:1012:        effects: [Damage(amount: 12, target: Single)],
+assets/data/skills.ron:1027:        effects: [Damage(amount: 15, target: Single)],
+assets/data/skills.ron:1042:        effects: [Damage(amount: 28, target: Single)],
+assets/data/skills.ron:1058:        effects: [Damage(amount: 18, target: Single), ToughnessHit(10)],
+assets/data/skills.ron:1073:        effects: [Damage(amount: 25, target: Single), ToughnessHit(14)],
+assets/data/skills.ron:1088:        effects: [Damage(amount: 32, target: Single), ToughnessHit(18)],
+assets/data/skills.ron:1103:        effects: [Damage(amount: 60, target: Single), ToughnessHit(25)],
+assets/data/units.ron:15:            trigger: OnEnemyBreak,
+assets/data/units.ron:21:        ultimate_trigger: 100,
+assets/data/units.ron:23:        ultimate_accumulation_trigger: OnBasicAttack,
+assets/data/units.ron:43:            trigger: OnAllyLowHp,
+assets/data/units.ron:49:        ultimate_trigger: 100,
+assets/data/units.ron:51:        ultimate_accumulation_trigger: OnBasicAttack,
+assets/data/units.ron:71:            trigger: OnEnemyKill,
+assets/data/units.ron:77:        ultimate_trigger: 100,
+assets/data/units.ron:79:        ultimate_accumulation_trigger: OnKill,
+assets/data/units.ron:99:            trigger: OnAllyLowHp,
+assets/data/units.ron:105:        ultimate_trigger: 100,
+assets/data/units.ron:107:        ultimate_accumulation_trigger: OnAllyFollowUp,
+assets/data/units.ron:127:            trigger: OnAllyLowHp,
+assets/data/units.ron:133:        ultimate_trigger: 80,
+assets/data/units.ron:135:        ultimate_accumulation_trigger: OnBasicAttack,
+assets/data/units.ron:157:            trigger: OnAllyLowHp,
+assets/data/units.ron:163:        ultimate_trigger: 100,
+assets/data/units.ron:165:        ultimate_accumulation_trigger: OnBasicAttack,
+assets/data/units.ron:172:    // Greymon (Adult of Agumon) — Burn + Toughness pressure
+assets/data/units.ron:186:            trigger: OnEnemyBreak,
+assets/data/units.ron:190:            trigger: OnFirstHitVsTagThisRound(Fire),
+assets/data/units.ron:196:        ultimate_trigger: 100,
+assets/data/units.ron:198:        ultimate_accumulation_trigger: OnBasicAttack,
+assets/data/units.ron:219:            trigger: OnAllyLowHp,
+assets/data/units.ron:223:            trigger: OnFirstHitVsTagThisRound(Ice),
+assets/data/units.ron:229:        ultimate_trigger: 100,
+assets/data/units.ron:231:        ultimate_accumulation_trigger: OnBasicAttack,
+assets/data/units.ron:252:            trigger: OnAllyLowHp,
+assets/data/units.ron:256:            trigger: OnFirstHitVsTagThisRound(Electric),
+assets/data/units.ron:262:        ultimate_trigger: 100,
+assets/data/units.ron:264:        ultimate_accumulation_trigger: OnBasicAttack,
+assets/data/units.ron:285:            trigger: OnEnemyBreak,
+assets/data/units.ron:289:            trigger: OnStatusApplied(Freeze(speed_reduction: 0)),
+assets/data/units.ron:295:        ultimate_trigger: 100,
+assets/data/units.ron:297:        ultimate_accumulation_trigger: OnBasicAttack,
+assets/data/units.ron:318:            trigger: OnEnemyBreak,
+assets/data/units.ron:322:            trigger: OnFirstSkillCastWithTag(Dark),
+assets/data/units.ron:328:        ultimate_trigger: 100,
+assets/data/units.ron:330:        ultimate_accumulation_trigger: OnBasicAttack,
+assets/data/units.ron:351:            trigger: OnAllyLowHp,
+assets/data/units.ron:355:            trigger: OnAttackVsAttribute(Virus),
+assets/data/units.ron:361:        ultimate_trigger: 100,
+assets/data/units.ron:363:        ultimate_accumulation_trigger: OnBasicAttack,
+assets/data/units.ron:407:        ultimate_trigger: 100,
+assets/data/units.ron:409:        ultimate_accumulation_trigger: OnBasicAttack,
+assets/data/units.ron:435:        ultimate_trigger: 50,
+assets/data/units.ron:437:        ultimate_accumulation_trigger: OnBasicAttack,
+assets/data/units.ron:470:        ultimate_trigger: 100,
+assets/data/units.ron:472:        ultimate_accumulation_trigger: OnBasicAttack,
+tests/resource_caps.rs:13:    toughness::Toughness,
+tests/resource_caps.rs:15:    turn_system::{advance_turn_system, ActionIntent, resolve_action_system},
+tests/resource_caps.rs:44:                Effect::ToughnessHit(1),
+tests/resource_caps.rs:62:                Effect::ToughnessHit(1),
+tests/resource_caps.rs:78:            effects: vec![Effect::GrantEnergy(15)],
+tests/resource_caps.rs:89:        .add_message::<ActionIntent>()
+tests/resource_caps.rs:91:        .add_message::<bevyrogue::combat::turn_order::TurnAdvanced>()
+tests/resource_caps.rs:100:        trigger: 100,
+tests/resource_caps.rs:102:        trigger_type: UltAccumulationTrigger::OnBasicAttack,
+tests/resource_caps.rs:107:fn cast(app: &mut App, intent: ActionIntent) {
+tests/resource_caps.rs:171:            Toughness {
+tests/resource_caps.rs:180:                trigger: def.ultimate_trigger,
+tests/resource_caps.rs:182:                trigger_type: def.ultimate_accumulation_trigger,
+tests/resource_caps.rs:206:            Toughness {
+tests/resource_caps.rs:215:                trigger: 100,
+tests/resource_caps.rs:217:                trigger_type: UltAccumulationTrigger::OnBasicAttack,
+tests/resource_caps.rs:253:        .add_message::<ActionIntent>()
+tests/resource_caps.rs:296:            Toughness::new(1000, vec![]),
+tests/resource_caps.rs:308:    // Dummy enemy — needs Unit + Team + Toughness to satisfy ResolveActorsQuery
+tests/resource_caps.rs:322:            Toughness::new(1000, vec![]),
+tests/resource_caps.rs:328:    cast(&mut app, ActionIntent::Basic { attacker: UnitId(1), target: UnitId(2) });
+tests/resource_caps.rs:329:    cast(&mut app, ActionIntent::Basic { attacker: UnitId(1), target: UnitId(2) });
+tests/resource_caps.rs:339:    cast(&mut app, ActionIntent::Skill {
+tests/resource_caps.rs:355:    cast(&mut app, ActionIntent::Skill {
+tests/resource_caps.rs:417:            Toughness::new(1000, vec![]),
+tests/resource_caps.rs:443:            Toughness::new(1000, vec![]),
+tests/resource_caps.rs:449:    cast(&mut app, ActionIntent::Skill {

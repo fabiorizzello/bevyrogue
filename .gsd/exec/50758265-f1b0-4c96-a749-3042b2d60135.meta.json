@@ -1,0 +1,18 @@
+{
+  "id": "50758265-f1b0-4c96-a749-3042b2d60135",
+  "runtime": "bash",
+  "purpose": "final S04 T01 verification after formatting",
+  "script_chars": 98,
+  "started_at": "2026-05-08T16:50:07.298Z",
+  "finished_at": "2026-05-08T16:50:07.838Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 540,
+  "stdout_bytes": 1209,
+  "stderr_bytes": 32017,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/50758265-f1b0-4c96-a749-3042b2d60135.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/50758265-f1b0-4c96-a749-3042b2d60135.stderr"
+}

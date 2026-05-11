@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T03",
+  "unitId": "M012/S07/T03",
+  "timestamp": 1777644667298,
+  "passed": true,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "cargo test-dev --test action_affordance_consumers",
+      "exitCode": 0,
+      "durationMs": 199,
+      "verdict": "pass"
+    },
+    {
+      "command": "cargo check --features \"dev windowed\"",
+      "exitCode": 0,
+      "durationMs": 265,
+      "verdict": "pass"
+    }
+  ]
+}

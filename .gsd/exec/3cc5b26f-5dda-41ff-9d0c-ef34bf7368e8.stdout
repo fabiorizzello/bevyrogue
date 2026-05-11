@@ -1,0 +1,23 @@
+
+running 5 tests
+test circuit_spend_cannot_underflow_and_records_a_blocked_reason ... ok
+test static_charge_caps_and_reports_a_stable_blocked_reason_on_the_fourth_hit ... ok
+test static_charge_starts_clean_and_grants_energy_on_the_third_hit ... ok
+test runtime_registration_applies_battery_transition_once ... FAILED
+test tactical_cycle_reset_is_visible_after_message_flush ... ok
+
+failures:
+
+---- runtime_registration_applies_battery_transition_once stdout ----
+
+thread 'runtime_registration_applies_battery_transition_once' (23701) panicked at /home/fabio/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_ecs-0.18.1/src/system/system_param.rs:851:13:
+error[B0002]: ResMut<<Enable the debug feature to see the name>> in system <Enable the debug feature to see the name> conflicts with a previous Res<<Enable the debug feature to see the name>> access. Consider removing the duplicate access. See: https://bevy.org/learn/errors/b0002
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+Encountered a panic in system `<Enable the debug feature to see the name>`!
+
+
+failures:
+    runtime_registration_applies_battery_transition_once
+
+test result: FAILED. 4 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

@@ -1,0 +1,18 @@
+{
+  "id": "c7cccd36-262e-4513-9013-59f57837a92b",
+  "runtime": "bash",
+  "purpose": "T03 compile after final SkillDef fix",
+  "script_chars": 82,
+  "started_at": "2026-05-08T22:09:48.435Z",
+  "finished_at": "2026-05-08T22:09:49.539Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 1104,
+  "stdout_bytes": 8332,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/c7cccd36-262e-4513-9013-59f57837a92b.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/c7cccd36-262e-4513-9013-59f57837a92b.stderr"
+}

@@ -1,0 +1,18 @@
+{
+  "id": "1fca339c-023b-4498-8644-c19c8360cc3f",
+  "runtime": "python",
+  "purpose": "resume M015 context state and artifact existence",
+  "script_chars": 1403,
+  "started_at": "2026-05-08T15:24:47.872Z",
+  "finished_at": "2026-05-08T15:24:47.930Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 58,
+  "stdout_bytes": 1221,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/1fca339c-023b-4498-8644-c19c8360cc3f.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/1fca339c-023b-4498-8644-c19c8360cc3f.stderr"
+}

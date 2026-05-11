@@ -1,0 +1,18 @@
+{
+  "id": "f0eb2e5e-b8be-44d6-913f-e0a40c7e2fc3",
+  "runtime": "bash",
+  "purpose": "reverify ledger after update",
+  "script_chars": 45,
+  "started_at": "2026-05-08T11:00:58.241Z",
+  "finished_at": "2026-05-08T11:00:58.259Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 18,
+  "stdout_bytes": 41,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/f0eb2e5e-b8be-44d6-913f-e0a40c7e2fc3.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/f0eb2e5e-b8be-44d6-913f-e0a40c7e2fc3.stderr"
+}

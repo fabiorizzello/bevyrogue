@@ -1,0 +1,18 @@
+{
+  "id": "1d99dbac-d6f4-4c15-b1fc-422f44ac5912",
+  "runtime": "bash",
+  "purpose": "smoke non-proof combat_cli mode after proof changes",
+  "script_chars": 515,
+  "started_at": "2026-05-08T19:59:23.347Z",
+  "finished_at": "2026-05-08T19:59:29.833Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 6486,
+  "stdout_bytes": 48,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/1d99dbac-d6f4-4c15-b1fc-422f44ac5912.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/1d99dbac-d6f4-4c15-b1fc-422f44ac5912.stderr"
+}

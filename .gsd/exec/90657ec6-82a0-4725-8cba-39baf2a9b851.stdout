@@ -1,0 +1,29 @@
+## src/main.rs
+  ActionValueUpdated: lines [13, 61]
+
+## src/headless.rs
+  capture_validation_snapshot: lines [20, 184]
+  format_validation_snapshot: lines [20, 187]
+  DataReady: lines [176, 198]
+  jsonl_logger_system: lines [18, 144]
+
+## src/data/mod.rs
+  DataReady: lines [23, 62, 105]
+  SkillBookHandle: lines [17, 48]
+
+## src/combat/observability.rs
+  capture_validation_snapshot: lines [157]
+  format_validation_snapshot: lines [305]
+
+## src/combat/action_query.rs
+  build_snapshot_from_ecs_with_sp: lines [102, 110]
+  query_action_affordance: lines [989]
+  first_enabled_target_id: lines [602]
+
+## src/combat/jsonl_logger.rs
+  jsonl_logger_system: lines [7]
+
+## src/combat/events.rs
+  OnCombatBeat: lines [105]
+  OnKernelTransition: lines [109]
+

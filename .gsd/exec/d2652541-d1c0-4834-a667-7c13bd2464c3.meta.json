@@ -1,0 +1,18 @@
+{
+  "id": "d2652541-d1c0-4834-a667-7c13bd2464c3",
+  "runtime": "bash",
+  "purpose": "T03 rescan remaining SkillDef drift after patch pass",
+  "script_chars": 1461,
+  "started_at": "2026-05-08T22:05:10.064Z",
+  "finished_at": "2026-05-08T22:05:10.095Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 31,
+  "stdout_bytes": 1303,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/d2652541-d1c0-4834-a667-7c13bd2464c3.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/d2652541-d1c0-4834-a667-7c13bd2464c3.stderr"
+}

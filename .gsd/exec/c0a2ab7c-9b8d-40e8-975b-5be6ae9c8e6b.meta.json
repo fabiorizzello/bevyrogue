@@ -1,0 +1,18 @@
+{
+  "id": "c0a2ab7c-9b8d-40e8-975b-5be6ae9c8e6b",
+  "runtime": "bash",
+  "purpose": "Summarize kernel transition and runtime registration definitions",
+  "script_chars": 504,
+  "started_at": "2026-05-08T19:27:33.221Z",
+  "finished_at": "2026-05-08T19:27:33.240Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 19,
+  "stdout_bytes": 13319,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/c0a2ab7c-9b8d-40e8-975b-5be6ae9c8e6b.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/c0a2ab7c-9b8d-40e8-975b-5be6ae9c8e6b.stderr"
+}

@@ -1,0 +1,68 @@
+--- Patamon @ 3491 ---
+(9),
+        name: "Patamon",
+        role_tags: ["support", "healer"],
+        signature_traits: ["hope", "light"],
+        hp_max: 88,
+        attribute: Vaccine,
+        team: Ally,
+        basic_damage_tag: Light,
+        basic_skill: SkillId("holy_breeze"),
+--- Agumon @ 39 ---
+(1),
+        name: "Agumon",
+        role_tags: ["vanguard", "breaker"],
+        signature_traits: ["courage", "fire"],
+        hp_max: 100,
+        attribute: Vaccine,
+        team: Ally,
+        basic_damage_tag: Fire,
+        basic_skill: SkillId("pepper_breath"),
+--- Gabumon @ 904 ---
+(2),
+        name: "Gabumon",
+        role_tags: ["controller", "ranged"],
+        signature_traits: ["loyalty", "water"],
+        hp_max: 95,
+        attribute: Data,
+        team: Ally,
+        basic_damage_tag: Ice,
+        basic_skill: SkillId("bubble_blast"),
+--- Renamon @ 2625 ---
+(7),
+        name: "Renamon",
+        role_tags: ["sniper", "support"],
+        signature_traits: ["calm", "illusion"],
+        hp_max: 90,
+        attribute: Data,
+        team: Ally,
+        basic_damage_tag: Light,
+        basic_skill: SkillId("diamond_storm"),
+--- DORUmon @ -1 ---
+--- Devimon @ 12050 ---
+(101),
+        name: "Devimon",
+        role_tags: ["boss", "dark"],
+        signature_traits: ["evil", "dark"],
+        hp_max: 300,
+        attribute: Virus,
+        team: Enemy,
+        basic_damage_tag: Dark,
+        basic_skill: SkillId("enemy_skill_fire"),
+--- Ogremon @ 14459 ---
+(103),
+        name: "Ogremon",
+        role_tags: ["miniboss", "physical"],
+        signature_traits: ["brute", "power"],
+        hp_max: 200,
+        attribute: Data,
+        team: Enemy,
+        basic_damage_tag: Physical,
+        basic_skill: SkillId("ogremon_basic"),
+--- Patamon skills ---
+--- patamon_basic @ -1 ---
+--- holy_breeze @ -1 ---
+--- patamon_revive @ -1 ---
+--- patamon_ult @ -1 ---
+--- agumon_ult @ -1 ---
+--- holy_breeze @ -1 ---

@@ -1,0 +1,18 @@
+{
+  "id": "9f40b93c-0af3-45cc-902e-5a599a8e0909",
+  "runtime": "bash",
+  "purpose": "m015 failure ledger verifier after ledger/script sync",
+  "script_chars": 45,
+  "started_at": "2026-05-08T22:02:23.242Z",
+  "finished_at": "2026-05-08T22:02:23.261Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 19,
+  "stdout_bytes": 41,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/9f40b93c-0af3-45cc-902e-5a599a8e0909.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/9f40b93c-0af3-45cc-902e-5a599a8e0909.stderr"
+}

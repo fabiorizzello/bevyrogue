@@ -1,0 +1,80 @@
+src/headless.rs:200:    mut exit: MessageWriter<AppExit>,
+src/headless.rs:233:            exit.write(AppExit::error());
+src/headless.rs:268:                exit.write(AppExit::error());
+src/headless.rs:350:                        exit.write(AppExit::Success);
+src/headless.rs:356:                        exit.write(AppExit::error());
+src/headless.rs:362:                exit.write(AppExit::error());
+src/headless.rs:382:        exit.write(AppExit::Success);
+tests/resource_caps.rs:120:    app.world_mut().write_message(intent);
+tests/resource_caps.rs:662:        .write_message(bevyrogue::combat::turn_order::TurnAdvanced::of(UnitId(30)));
+tests/resource_caps.rs:700:    app.world_mut().write_message(ActionIntent::Skill {
+tests/resource_caps.rs:725:    app.world_mut().write_message(ActionIntent::Skill {
+tests/resource_caps.rs:749:    app.world_mut().write_message(ActionIntent::Skill {
+tests/resource_caps.rs:780:    app.world_mut().write_message(ActionIntent::Skill {
+src/windowed.rs:174:        world.write_message(AppExit::Success);
+tests/toughness_categories.rs:153:        .write_message(ActionIntent::Basic { attacker, target });
+tests/toughness_categories.rs:321:    app.world_mut().write_message(TurnAdvanced::of(UnitId(2)));
+src/combat/turn_system/tests.rs:101:    app.world_mut().write_message(TurnAdvanced::of(UnitId(1)));
+src/combat/turn_system/tests.rs:140:    app.world_mut().write_message(TurnAdvanced::of(UnitId(1)));
+src/combat/turn_system/tests.rs:187:    app.world_mut().write_message(TurnAdvanced::of(UnitId(1)));
+src/combat/turn_system/tests.rs:242:    app.world_mut().write_message(TurnAdvanced::of(UnitId(1)));
+src/combat/turn_system/tests.rs:296:    app.world_mut().write_message(TurnAdvanced::of(UnitId(1)));
+src/combat/turn_system/tests.rs:339:    app.world_mut().write_message(TurnAdvanced::of(UnitId(1)));
+src/combat/turn_system/tests.rs:396:    app.world_mut().write_message(ActionIntent::Basic {
+src/combat/turn_system/tests.rs:472:    app.world_mut().write_message(ActionIntent::Skill {
+src/combat/turn_system/tests.rs:533:    app.world_mut().write_message(ActionIntent::Basic {
+tests/commander_flow.rs:59:    app.world_mut().write_message(TurnAdvanced::of(UnitId(2)));
+tests/commander_flow.rs:110:    app.world_mut().write_message(TurnAdvanced::of(UnitId(2)));
+tests/commander_flow.rs:142:    app.world_mut().write_message(CombatEvent {
+tests/commander_flow.rs:191:    app.world_mut().write_message(CombatEvent {
+tests/engine_legality_integration.rs:301:    app.world_mut().write_message(case.intent.clone());
+tests/form_identity.rs:191:    app.world_mut().write_message(ActionIntent::Skill {
+tests/form_identity.rs:233:    app.world_mut().write_message(ActionIntent::Skill {
+tests/form_identity.rs:246:    app.world_mut().write_message(ActionIntent::Skill {
+tests/form_identity.rs:273:    app.world_mut().write_message(ActionIntent::Skill {
+tests/form_identity.rs:292:    app.world_mut().write_message(ActionIntent::Skill {
+tests/form_identity.rs:371:    app.world_mut().write_message(ActionIntent::Skill {
+tests/form_identity.rs:402:    app.world_mut().write_message(ActionIntent::Skill {
+tests/form_identity.rs:439:    app.world_mut().write_message(ActionIntent::Skill {
+tests/form_identity.rs:461:    app.world_mut().write_message(ActionIntent::Skill {
+tests/form_identity.rs:535:    app.world_mut().write_message(ActionIntent::Skill {
+tests/form_identity.rs:557:    app.world_mut().write_message(ActionIntent::Skill {
+tests/form_identity.rs:592:    app.world_mut().write_message(ActionIntent::Skill {
+tests/form_identity.rs:632:    app.world_mut().write_message(ActionIntent::Skill {
+tests/form_identity.rs:662:    app.world_mut().write_message(ActionIntent::Skill {
+src/bin/combat_cli.rs:76:    mut exit: MessageWriter<AppExit>,
+src/bin/combat_cli.rs:82:        exit.write(AppExit::Success);
+src/bin/combat_cli.rs:97:    mut exit: MessageWriter<AppExit>,
+src/bin/combat_cli.rs:139:            exit.write(AppExit::error());
+src/bin/combat_cli.rs:463:    mut exit: MessageWriter<AppExit>,
+src/bin/combat_cli.rs:467:        exit.write(AppExit::Success);
+src/bin/combat_cli.rs:472:        exit.write(AppExit::Success);
+tests/sp_economy.rs:160:    app.world_mut().write_message(intent);
+tests/pipeline_dispatch.rs:190:    app.world_mut().write_message(ActionIntent::Basic {
+tests/pipeline_dispatch.rs:326:    app.world_mut().write_message(ActionIntent::Basic {
+tests/pipeline_dispatch.rs:417:    app.world_mut().write_message(ActionIntent::Skill {
+tests/toughness_enemy_only.rs:161:    app.world_mut().write_message(ActionIntent::Skill {
+tests/toughness_enemy_only.rs:231:    app.world_mut().write_message(ActionIntent::Skill {
+tests/scenario_boss_ttk.rs:131:            app.world_mut().write_message(ActionIntent::Basic {
+tests/encounter_e2e.rs:242:        app.world_mut().write_message(intent);
+tests/event_stream.rs:217:    app.world_mut().write_message(ActionIntent::Skill {
+tests/event_stream.rs:225:    app.world_mut().write_message(ActionIntent::Basic {
+src/combat/follow_up_tests.rs:182:    app.world_mut().write_message(ActionIntent::Skill {
+src/combat/follow_up_tests.rs:262:    app.world_mut().write_message(ActionIntent::Skill {
+tests/follow_up_chains.rs:270:    app.world_mut().write_message(ActionIntent::Ultimate {
+tests/follow_up_chains.rs:459:    app.world_mut().write_message(ActionIntent::Skill {
+tests/twin_core_integration.rs:113:        app.world_mut().write_message(CombatEvent {
+tests/revive_semantics.rs:131:    app.world_mut().write_message(ActionIntent::Basic {
+tests/revive_semantics.rs:149:    app.world_mut().write_message(ActionIntent::Skill {
+tests/revive_semantics.rs:173:    app.world_mut().write_message(ActionIntent::Skill {
+tests/revive_semantics.rs:190:    app.world_mut().write_message(ActionIntent::Basic {
+tests/revive_semantics.rs:198:    app.world_mut().write_message(ActionIntent::Basic {
+tests/holy_support_mechanics.rs:37:        app.world_mut().write_message(CombatEvent {
+tests/battery_loop_kernel.rs:24:    app.world_mut().write_message(CombatEvent {
+src/main.rs:38:            return AppExit::error();
+tests/enemy_ai.rs:104:    app.world_mut().write_message(TurnAdvanced::of(UnitId(101)));
+tests/enemy_ai.rs:156:    app.world_mut().write_message(TurnAdvanced::of(UnitId(101)));
+tests/enemy_ai.rs:225:    app.world_mut().write_message(TurnAdvanced::of(UnitId(101)));
+tests/combat_coherence.rs:553:    app.world_mut().write_message(intent);
+tests/combat_coherence.rs:588:    app.world_mut().write_message(ActionIntent::Basic {
+tests/combat_coherence.rs:608:    app.world_mut().write_message(ActionIntent::Ultimate {

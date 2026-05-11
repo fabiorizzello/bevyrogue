@@ -1,0 +1,1426 @@
+   Compiling proc-macro2 v1.0.106
+   Compiling quote v1.0.45
+   Compiling unicode-ident v1.0.24
+   Compiling serde_core v1.0.228
+   Compiling libc v0.2.185
+   Compiling cfg-if v1.0.4
+   Compiling crossbeam-utils v0.8.21
+   Compiling pin-project-lite v0.2.17
+   Compiling parking v2.2.1
+   Compiling equivalent v1.0.2
+   Compiling winnow v1.0.2
+   Compiling hashbrown v0.17.0
+   Compiling serde v1.0.228
+   Compiling toml_datetime v0.7.5+spec-1.1.0
+   Compiling log v0.4.29
+   Compiling winnow v0.7.15
+   Compiling futures-core v0.3.32
+   Compiling toml_parser v1.1.2+spec-1.1.0
+   Compiling smallvec v1.15.1
+   Compiling fastrand v2.4.1
+   Compiling futures-io v0.3.32
+   Compiling thread_local v1.1.9
+   Compiling typeid v1.0.3
+   Compiling unicode-segmentation v1.13.2
+   Compiling futures-lite v2.6.1
+   Compiling indexmap v2.14.0
+   Compiling unicode-xid v0.2.6
+   Compiling libm v0.2.16
+   Compiling spin v0.10.0
+   Compiling getrandom v0.4.2
+   Compiling concurrent-queue v2.5.0
+   Compiling convert_case v0.10.0
+   Compiling foldhash v0.2.0
+   Compiling syn v2.0.117
+   Compiling event-listener v5.4.1
+   Compiling async-task v4.7.1
+   Compiling thiserror v2.0.18
+   Compiling slab v0.4.12
+   Compiling atomic-waker v1.1.2
+   Compiling erased-serde v0.4.10
+   Compiling event-listener-strategy v0.5.4
+   Compiling version_check v0.9.5
+   Compiling cfg_aliases v0.2.1
+   Compiling disqualified v1.0.0
+   Compiling arrayvec v0.7.6
+   Compiling async-channel v2.5.0
+   Compiling nix v0.31.2
+   Compiling downcast-rs v2.0.2
+   Compiling bevy_ptr v0.18.1
+   Compiling async-executor v1.14.0
+   Compiling crossbeam-queue v0.3.12
+   Compiling bumpalo v3.20.2
+   Compiling slotmap v1.1.1
+   Compiling once_cell v1.21.4
+   Compiling nonmax v0.5.5
+   Compiling fixedbitset v0.5.7
+   Compiling tracing-core v0.1.36
+   Compiling toml_edit v0.23.10+spec-1.0.0
+   Compiling either v1.15.0
+   Compiling find-msvc-tools v0.1.9
+   Compiling rustix v1.1.4
+   Compiling shlex v1.3.0
+   Compiling tracing v0.1.44
+   Compiling cc v1.2.60
+   Compiling inotify-sys v0.1.5
+   Compiling same-file v1.0.6
+   Compiling regex-syntax v0.8.10
+   Compiling linux-raw-sys v0.12.1
+   Compiling bitflags v2.11.1
+   Compiling hashbrown v0.16.1
+   Compiling uuid v1.23.1
+   Compiling autocfg v1.5.0
+   Compiling notify-types v2.1.0
+   Compiling ctrlc v3.5.2
+   Compiling async-io v2.6.0
+   Compiling inotify v0.11.1
+   Compiling walkdir v2.5.0
+   Compiling mio v1.2.0
+   Compiling piper v0.2.5
+   Compiling crossbeam-channel v0.5.15
+   Compiling regex-automata v0.4.14
+   Compiling blake3 v1.8.4
+   Compiling typewit v1.15.2
+   Compiling lazy_static v1.5.0
+   Compiling const_panic v0.2.15
+   Compiling sharded-slab v0.1.7
+   Compiling notify v8.2.0
+   Compiling blocking v1.6.2
+   Compiling itertools v0.14.0
+   Compiling tracing-log v0.2.0
+   Compiling errno v0.3.14
+   Compiling async-lock v3.4.2
+   Compiling parking_lot_core v0.9.12
+   Compiling bevy_macro_utils v0.18.1
+   Compiling futures-task v0.3.32
+   Compiling constant_time_eq v0.4.2
+   Compiling arrayref v0.3.9
+   Compiling const-fnv1a-hash v1.1.0
+   Compiling file-id v0.2.3
+   Compiling zerocopy v0.8.48
+   Compiling nu-ansi-term v0.50.3
+   Compiling signal-hook v0.3.18
+   Compiling cpufeatures v0.3.0
+   Compiling async-fs v2.2.0
+   Compiling notify-debouncer-full v0.6.0
+   Compiling signal-hook-registry v1.4.8
+   Compiling stackfuture v0.3.1
+   Compiling async-broadcast v0.7.2
+   Compiling scopeguard v1.2.0
+   Compiling atomicow v1.2.0
+   Compiling lock_api v0.4.14
+   Compiling matchers v0.2.0
+   Compiling tracing-subscriber v0.3.23
+   Compiling serde_derive v1.0.228
+   Compiling bytemuck_derive v1.10.2
+   Compiling derive_more-impl v2.1.1
+   Compiling thiserror-impl v2.0.18
+   Compiling bevy_reflect_derive v0.18.1
+   Compiling assert_type_match v0.1.1
+   Compiling bytemuck v1.25.0
+   Compiling glam v0.30.10
+   Compiling variadics_please v1.1.0
+   Compiling bevy_ecs_macros v0.18.1
+   Compiling bevy_derive v0.18.1
+   Compiling polling v3.11.0
+   Compiling futures-macro v0.3.32
+   Compiling derive_more v2.1.1
+   Compiling bevy_asset_macros v0.18.1
+   Compiling bevy_state_macros v0.18.1
+   Compiling futures-util v0.3.32
+   Compiling getrandom v0.2.17
+   Compiling bevy_platform v0.18.1
+   Compiling ron v0.12.1
+   Compiling mio v0.8.11
+   Compiling anyhow v1.0.102
+   Compiling bevy_utils v0.18.1
+   Compiling bevy_tasks v0.18.1
+   Compiling zmij v1.0.21
+   Compiling signal-hook-mio v0.2.5
+   Compiling ppv-lite86 v0.2.21
+   Compiling rand_core v0.6.4
+   Compiling parking_lot v0.12.5
+   Compiling base64 v0.22.1
+   Compiling serde_json v1.0.149
+   Compiling byteorder v1.5.0
+   Compiling bitflags v1.3.2
+   Compiling crossterm v0.25.0
+   Compiling newline-converter v0.3.0
+   Compiling fxhash v0.2.1
+   Compiling ron v0.11.0
+   Compiling rand_chacha v0.3.1
+   Compiling fuzzy-matcher v0.3.7
+   Compiling itoa v1.0.18
+   Compiling base64 v0.21.7
+   Compiling unicode-width v0.1.14
+   Compiling memchr v2.8.0
+   Compiling dyn-clone v1.0.20
+   Compiling inquire v0.7.5
+   Compiling ron v0.8.1
+   Compiling rand v0.8.6
+   Compiling bevy_reflect v0.18.1
+   Compiling bevy_ecs v0.18.1
+   Compiling bevy_math v0.18.1
+   Compiling bevy_app v0.18.1
+   Compiling bevy_time v0.18.1
+   Compiling bevy_log v0.18.1
+   Compiling bevy_input v0.18.1
+   Compiling bevy_state v0.18.1
+   Compiling bevy_transform v0.18.1
+   Compiling bevy_diagnostic v0.18.1
+   Compiling bevy_asset v0.18.1
+   Compiling bevy_common_assets v0.16.0
+   Compiling bevy_internal v0.18.1
+   Compiling bevy v0.18.1
+   Compiling bevyrogue v0.1.0 (/home/fabio/dev/bevyrogue/.gsd/worktrees/M015)
+warning: unused import: `MAX_AV`
+  --> src/combat/bootstrap.rs:11:30
+   |
+11 | use super::av::{ActionValue, MAX_AV};
+   |                              ^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `order_from_speeds`
+  --> src/combat/bootstrap.rs:17:36
+   |
+17 | use super::turn_order::{TurnOrder, order_from_speeds};
+   |                                    ^^^^^^^^^^^^^^^^^
+
+warning: unused import: `grant_free_skill_events`
+  --> src/combat/turn_system/pipeline.rs:17:5
+   |
+17 |     grant_free_skill_events,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::combat::team::Team`
+  --> src/combat/turn_system/pipeline.rs:25:5
+   |
+25 | use crate::combat::team::Team;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::combat::types::SkillId`
+  --> src/combat/turn_system/pipeline.rs:27:5
+   |
+27 | use crate::combat::types::SkillId;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: variable does not need to be mutable
+   --> src/combat/turn_system/pipeline.rs:125:65
+    |
+125 | ...   let Ok((_, attacker_team, attacker_unit, _attacker_kit, mut attacker_ult, mut defender_tough, _attacker_counterplay, attacker...
+    |                                                               ----^^^^^^^^^^^^
+    |                                                               |
+    |                                                               help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+   --> src/combat/turn_system/pipeline.rs:125:201
+    |
+125 | ...nned, attacker_commander, _, mut attacker_streak, mut attacker_round_flags)) =
+    |                                                      ----^^^^^^^^^^^^^^^^^^^^
+    |                                                      |
+    |                                                      help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/combat/turn_system/pipeline.rs:344:58
+    |
+344 |     let (_, attacker_team, attacker_unit, _attacker_kit, mut attacker_ult, _, _attacker_counterplay, attacker_ko, attacker_stunned,...
+    |                                                          ----^^^^^^^^^^^^
+    |                                                          |
+    |                                                          help: remove this `mut`
+
+warning: unused variable: `turn_order`
+  --> src/combat/turn_system/pipeline.rs:96:5
+   |
+96 |     turn_order: &mut ResMut<TurnOrder>,
+   |     ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_turn_order`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `attacker_commander`
+   --> src/combat/turn_system/pipeline.rs:344:133
+    |
+344 | ...cker_stunned, attacker_commander, _, mut attacker_streak, _attacker_round_flags) = attacker;
+    |                  ^^^^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_attacker_commander`
+
+warning: unused import: `LegalityReasonCode`
+  --> src/combat/follow_up_tests.rs:21:124
+   |
+21 | ...killTargeting, TargetLife, TargetSide, SelfTargetRule, LegalityReasonCode, TargetShape},
+   |                                                           ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `LegalityReasonCode`
+  --> src/combat/turn_system/tests.rs:14:137
+   |
+14 | ...killTargeting, TargetLife, TargetSide, SelfTargetRule, LegalityReasonCode, TargetShape};
+   |                                                           ^^^^^^^^^^^^^^^^^^
+
+warning: field `is_stunned` is never read
+   --> src/combat/follow_up.rs:298:5
+    |
+292 | struct FormIdentitySnapshot {
+    |        -------------------- field in this struct
+...
+298 |     is_stunned: bool,
+    |     ^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+    --> src/combat/kernel.rs:1275:13
+     |
+1275 |         let mut step = TacticalCycleStep::default();
+     |             ----^^^^
+     |             |
+     |             help: remove this `mut`
+     |
+     = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+   --> src/combat/turn_system/pipeline.rs:125:65
+    |
+125 | ...   let Ok((_, attacker_team, attacker_unit, _attacker_kit, mut attacker_ult, mut defender_tough, _attacker_counterplay, attacker...
+    |                                                               ----^^^^^^^^^^^^
+    |                                                               |
+    |                                                               help: remove this `mut`
+
+warning: function `advance_turn_system_skips_stunned_unit_OLD` should have a snake case name
+  --> src/combat/turn_system/tests.rs:69:4
+   |
+69 | fn advance_turn_system_skips_stunned_unit_OLD() {
+   |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `advance_turn_system_skips_stunned_unit_old`
+   |
+   = note: `#[warn(non_snake_case)]` (part of `#[warn(nonstandard_style)]`) on by default
+
+warning: function `advance_turn_system_burn_clamps_hp_and_expires_OLD` should have a snake case name
+   --> src/combat/turn_system/tests.rs:110:4
+    |
+110 | fn advance_turn_system_burn_clamps_hp_and_expires_OLD() {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `advance_turn_system_burn_clamps_hp_and_expires_old`
+
+warning: function `advance_turn_system_freeze_updates_and_clears_speed_modifier_OLD` should have a snake case name
+   --> src/combat/turn_system/tests.rs:156:4
+    |
+156 | fn advance_turn_system_freeze_updates_and_clears_speed_modifier_OLD() {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `advance_turn_system_freeze_updates_and_clears_speed_modifier_old`
+
+warning: function `advance_turn_system_shock_zero_percent_does_not_cancel_OLD` should have a snake case name
+   --> src/combat/turn_system/tests.rs:201:4
+    |
+201 | fn advance_turn_system_shock_zero_percent_does_not_cancel_OLD() {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `advance_turn_system_shock_zero_percent_does_not_cancel_old`
+
+warning: function `advance_turn_system_shock_full_cancel_emits_action_failed_OLD` should have a snake case name
+   --> src/combat/turn_system/tests.rs:252:4
+    |
+252 | fn advance_turn_system_shock_full_cancel_emits_action_failed_OLD() {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `advance_turn_system_shock_full_cancel_emits_action_failed_old`
+
+warning: function `advance_turn_system_stunned_unit_skips_status_tick_OLD` should have a snake case name
+   --> src/combat/turn_system/tests.rs:303:4
+    |
+303 | fn advance_turn_system_stunned_unit_skips_status_tick_OLD() {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `advance_turn_system_stunned_unit_skips_status_tick_old`
+
+warning: `bevyrogue` (lib) generated 11 warnings (run `cargo fix --lib -p bevyrogue` to apply 10 suggestions)
+error: couldn't read `tests/../docs/combat_ui_readiness_gap_matrix.md`: No such file or directory (os error 2)
+ --> tests/ui_readiness_gap_matrix_docs.rs:1:19
+  |
+1 | const DOC: &str = include_str!("../docs/combat_ui_readiness_gap_matrix.md");
+  |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `LegalityReasonCode`
+  --> tests/event_stream.rs:18:124
+   |
+18 | ...killTargeting, TargetLife, TargetSide, SelfTargetRule, LegalityReasonCode, TargetShape},
+   |                                                           ^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `LegalityReasonCode`
+  --> tests/status_effect_apply.rs:24:159
+   |
+24 | ...killTargeting, TargetLife, TargetSide, SelfTargetRule, LegalityReasonCode, TargetShape},};
+   |                                                           ^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `LegalityReasonCode`
+  --> tests/toughness_categories.rs:21:124
+   |
+21 | ...killTargeting, TargetLife, TargetSide, SelfTargetRule, LegalityReasonCode, TargetShape},
+   |                                                           ^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `LegalityReasonCode`
+  --> tests/status_accuracy.rs:29:124
+   |
+29 | ...killTargeting, TargetLife, TargetSide, SelfTargetRule, LegalityReasonCode, TargetShape},
+   |                                                           ^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+error: could not compile `bevyrogue` (test "ui_readiness_gap_matrix_docs") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error[E0063]: missing fields `animation_sequence` and `qte` in initializer of `SkillDef`
+  --> tests/status_effect_apply.rs:53:5
+   |
+53 |     SkillDef {
+   |     ^^^^^^^^ missing `animation_sequence` and `qte`
+
+error[E0063]: missing fields `animation_sequence` and `qte` in initializer of `SkillDef`
+  --> tests/toughness_categories.rs:29:20
+   |
+29 |     SkillBook(vec![SkillDef {
+   |                    ^^^^^^^^ missing `animation_sequence` and `qte`
+
+error[E0063]: missing fields `animation_sequence` and `qte` in initializer of `SkillDef`
+  --> tests/event_stream.rs:58:9
+   |
+58 |         SkillDef {
+   |         ^^^^^^^^ missing `animation_sequence` and `qte`
+
+error[E0063]: missing fields `animation_sequence` and `qte` in initializer of `SkillDef`
+  --> tests/event_stream.rs:79:9
+   |
+79 |         SkillDef {
+   |         ^^^^^^^^ missing `animation_sequence` and `qte`
+
+error[E0063]: missing fields `animation_sequence` and `qte` in initializer of `SkillDef`
+   --> tests/event_stream.rs:100:9
+    |
+100 |         SkillDef {
+    |         ^^^^^^^^ missing `animation_sequence` and `qte`
+
+For more information about this error, try `rustc --explain E0063`.
+warning: `bevyrogue` (test "event_stream") generated 1 warning
+error: could not compile `bevyrogue` (test "event_stream") due to 3 previous errors; 1 warning emitted
+warning: `bevyrogue` (test "status_effect_apply") generated 1 warning
+error: could not compile `bevyrogue` (test "status_effect_apply") due to 1 previous error; 1 warning emitted
+warning: `bevyrogue` (test "toughness_categories") generated 1 warning
+error: could not compile `bevyrogue` (test "toughness_categories") due to 1 previous error; 1 warning emitted
+warning: variable does not need to be mutable
+  --> src/bin/combat_cli.rs:95:5
+   |
+95 |     mut turn_advanced: MessageWriter<TurnAdvanced>,
+   |     ----^^^^^^^^^^^^^
+   |     |
+   |     help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `turn_advanced`
+  --> src/bin/combat_cli.rs:95:5
+   |
+95 |     mut turn_advanced: MessageWriter<TurnAdvanced>,
+   |     ^^^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_turn_advanced`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `round_flags::RoundFlags`
+  --> src/combat/mod.rs:66:9
+   |
+66 | pub use round_flags::RoundFlags;
+   |         ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `toughness::ToughnessCategory`
+  --> src/combat/mod.rs:69:9
+   |
+69 | pub use toughness::ToughnessCategory;
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `ImplementationStatus as EnemyCounterplayStatus`
+ --> src/combat/counterplay.rs:5:9
+  |
+5 | pub use ImplementationStatus as EnemyCounterplayStatus;
+  |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `EnemyCounterplayKind`
+ --> src/data/units_ron.rs:5:5
+  |
+5 |     EnemyCounterplayKind,
+  |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `ActionValue`
+  --> src/main.rs:21:18
+   |
+21 | use combat::av::{ActionValue, ActionValueUpdated};
+   |                  ^^^^^^^^^^^
+
+warning: `bevyrogue` (test "status_accuracy") generated 1 warning (run `cargo fix --test "status_accuracy" -p bevyrogue` to apply 1 suggestion)
+warning: `bevyrogue` (bin "combat_cli") generated 2 warnings (run `cargo fix --bin "combat_cli" -p bevyrogue` to apply 2 suggestions)
+warning: `bevyrogue` (lib test) generated 20 warnings (10 duplicates) (run `cargo fix --lib -p bevyrogue --tests` to apply 4 suggestions)
+warning: variable does not need to be mutable
+   --> src/headless.rs:195:5
+    |
+195 |     mut turn_advanced: MessageWriter<TurnAdvanced>,
+    |     ----^^^^^^^^^^^^^
+    |     |
+    |     help: remove this `mut`
+
+warning: unused variable: `turn_advanced`
+   --> src/headless.rs:195:5
+    |
+195 |     mut turn_advanced: MessageWriter<TurnAdvanced>,
+    |     ^^^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_turn_advanced`
+
+warning: variants `Deferred` and `Hidden` are never constructed
+   --> src/combat/action_query.rs:236:13
+    |
+236 |             Deferred { reason: LegalityReasonCode },
+    |             ^^^^^^^^
+237 |             Hidden { reason: LegalityReasonCode },
+    |             ^^^^^^
+...
+242 | status_enum!(ActionStatus);
+    | --------------------------
+    | |            |
+    | |            variants in this enum
+    | in this macro invocation
+    |
+    = note: `ActionStatus` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+    = note: this warning originates in the macro `status_enum` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: variants `Deferred` and `Hidden` are never constructed
+   --> src/combat/action_query.rs:236:13
+    |
+236 |             Deferred { reason: LegalityReasonCode },
+    |             ^^^^^^^^
+237 |             Hidden { reason: LegalityReasonCode },
+    |             ^^^^^^
+...
+244 | status_enum!(ResourceStatus);
+    | ----------------------------
+    | |            |
+    | |            variants in this enum
+    | in this macro invocation
+    |
+    = note: `ResourceStatus` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+    = note: this warning originates in the macro `status_enum` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: variants `Hidden` and `Visible` are never constructed
+   --> src/combat/action_query.rs:255:5
+    |
+254 | pub enum ToughnessAffordance {
+    |          ------------------- variants in this enum
+255 |     Hidden,
+    |     ^^^^^^
+256 |     Visible,
+    |     ^^^^^^^
+    |
+    = note: `ToughnessAffordance` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: enum `ResourceKind` is never used
+   --> src/combat/action_query.rs:268:10
+    |
+268 | pub enum ResourceKind {
+    |          ^^^^^^^^^^^^
+
+warning: struct `ResourceAffordanceDetail` is never constructed
+   --> src/combat/action_query.rs:279:12
+    |
+279 | pub struct ResourceAffordanceDetail {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `ActionAffordance` is never constructed
+   --> src/combat/action_query.rs:287:12
+    |
+287 | pub struct ActionAffordance<'a> {
+    |            ^^^^^^^^^^^^^^^^
+
+warning: struct `EnemyTraitAffordance` is never constructed
+   --> src/combat/action_query.rs:299:12
+    |
+299 | pub struct EnemyTraitAffordance {
+    |            ^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `ChargedTelegraphAffordance` is never constructed
+   --> src/combat/action_query.rs:306:12
+    |
+306 | pub struct ChargedTelegraphAffordance {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `counterplay_reason` is never used
+   --> src/combat/action_query.rs:313:4
+    |
+313 | fn counterplay_reason(reason: &CounterplayLegalityReasonCode) -> CounterplayLegalityReasonCode {
+    |    ^^^^^^^^^^^^^^^^^^
+
+warning: function `enemy_trait_implementation` is never used
+   --> src/combat/action_query.rs:317:4
+    |
+317 | fn enemy_trait_implementation(status: &EnemyCounterplayStatus) -> ImplementationStatus {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `enemy_trait_resource_detail` is never used
+   --> src/combat/action_query.rs:329:4
+    |
+329 | fn enemy_trait_resource_detail(status: &ImplementationStatus) -> ResourceAffordanceDetail {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `charged_telegraph_implementation` is never used
+   --> src/combat/action_query.rs:342:4
+    |
+342 | fn charged_telegraph_implementation(status: &EnemyCounterplayStatus) -> ImplementationStatus {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `charged_telegraph_resource_detail` is never used
+   --> src/combat/action_query.rs:346:4
+    |
+346 | fn charged_telegraph_resource_detail(status: &ImplementationStatus) -> ResourceAffordanceDetail {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `query_enemy_trait_affordances` is never used
+   --> src/combat/action_query.rs:359:8
+    |
+359 | pub fn query_enemy_trait_affordances(unit: &UnitQuerySnapshot) -> Vec<EnemyTraitAffordance> {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `query_charged_telegraph_affordance` is never used
+   --> src/combat/action_query.rs:374:8
+    |
+374 | pub fn query_charged_telegraph_affordance(unit: &UnitQuerySnapshot) -> Option<ChargedTelegraphAffordance> {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `target_toughness_affordance` is never used
+   --> src/combat/action_query.rs:420:4
+    |
+420 | fn target_toughness_affordance(
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `query_target_affordance` is never used
+   --> src/combat/action_query.rs:529:8
+    |
+529 | pub fn query_target_affordance(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `query_all_target_affordances` is never used
+   --> src/combat/action_query.rs:552:8
+    |
+552 | pub fn query_all_target_affordances(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `enabled_target_ids` is never used
+   --> src/combat/action_query.rs:571:8
+    |
+571 | pub fn enabled_target_ids(affordance: &ActionAffordance<'_>) -> Vec<UnitId> {
+    |        ^^^^^^^^^^^^^^^^^^
+
+warning: function `first_enabled_target_id` is never used
+   --> src/combat/action_query.rs:581:8
+    |
+581 | pub fn first_enabled_target_id(affordance: &ActionAffordance<'_>) -> Option<UnitId> {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `resource_detail_status` is never used
+   --> src/combat/action_query.rs:624:4
+    |
+624 | fn resource_detail_status(kind: ResourceKind, current: i32, required: i32) -> ResourceAffordanceDetail {
+    |    ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `hidden_resource_detail` is never used
+   --> src/combat/action_query.rs:649:4
+    |
+649 | fn hidden_resource_detail(kind: ResourceKind, reason: LegalityReasonCode) -> ResourceAffordanceDetail {
+    |    ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `deferred_resource_detail` is never used
+   --> src/combat/action_query.rs:658:4
+    |
+658 | fn deferred_resource_detail(kind: ResourceKind, reason: LegalityReasonCode) -> ResourceAffordanceDetail {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `energy_cap_remaining` is never used
+   --> src/combat/action_query.rs:667:4
+    |
+667 | fn energy_cap_remaining(unit: &UnitQuerySnapshot, source: EnergyGainSource) -> i32 {
+    |    ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `query_energy_cap_affordance` is never used
+   --> src/combat/action_query.rs:681:8
+    |
+681 | pub fn query_energy_cap_affordance(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `query_tamer_gauge_affordance` is never used
+   --> src/combat/action_query.rs:701:8
+    |
+701 | pub fn query_tamer_gauge_affordance() -> ResourceAffordanceDetail {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `query_tamer_command_affordances` is never used
+   --> src/combat/action_query.rs:705:8
+    |
+705 | pub fn query_tamer_command_affordances() -> Vec<ResourceAffordanceDetail> {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_resource_details` is never used
+   --> src/combat/action_query.rs:719:4
+    |
+719 | fn build_resource_details(
+    |    ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `implementation_block` is never used
+   --> src/combat/action_query.rs:884:4
+    |
+884 | fn implementation_block(
+    |    ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `missing_skill_affordance` is never used
+   --> src/combat/action_query.rs:904:4
+    |
+904 | fn missing_skill_affordance<'a>(kind: ActionQueryKind<'a>) -> ActionAffordance<'a> {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `query_action_affordance` is never used
+   --> src/combat/action_query.rs:918:8
+    |
+918 | pub fn query_action_affordance<'a>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: field `tough_modifier` is never read
+  --> src/combat/damage.rs:18:9
+   |
+12 | pub struct TriangleMods {
+   |            ------------ field in this struct
+...
+18 |     pub tough_modifier: f32,
+   |         ^^^^^^^^^^^^^^
+
+warning: fields `hp_current` and `hp_max` are never read
+  --> src/combat/enemy_ai.rs:20:9
+   |
+16 | pub struct TargetInfo {
+   |            ---------- fields in this struct
+...
+20 |     pub hp_current: i32,
+   |         ^^^^^^^^^^
+21 |     pub hp_max: i32,
+   |         ^^^^^^
+   |
+   = note: `TargetInfo` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: variants `OnCombatBeat`, `OnKernelTransition`, `BatteryLoopResolved`, and `PredatorLoopResolved` are never constructed
+   --> src/combat/events.rs:103:5
+    |
+ 24 | pub enum CombatEventKind {
+    |          --------------- variants in this enum
+...
+103 |     OnCombatBeat {
+    |     ^^^^^^^^^^^^
+...
+107 |     OnKernelTransition {
+    |     ^^^^^^^^^^^^^^^^^^
+...
+112 |     BatteryLoopResolved {
+    |     ^^^^^^^^^^^^^^^^^^^
+...
+117 |     PredatorLoopResolved {
+    |     ^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `CombatEventKind` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: constant `STATIC_CHARGE_THRESHOLD` is never used
+  --> src/combat/battery_loop.rs:12:11
+   |
+12 | pub const STATIC_CHARGE_THRESHOLD: u8 = 3;
+   |           ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `CIRCUIT_CHARGE_CAP` is never used
+  --> src/combat/battery_loop.rs:13:11
+   |
+13 | pub const CIRCUIT_CHARGE_CAP: u8 = 3;
+   |           ^^^^^^^^^^^^^^^^^^
+
+warning: constant `BATTERY_ENERGY_GRANT` is never used
+  --> src/combat/battery_loop.rs:14:11
+   |
+14 | pub const BATTERY_ENERGY_GRANT: u8 = 5;
+   |           ^^^^^^^^^^^^^^^^^^^^
+
+warning: enum `BatteryLoopDesignTag` is never used
+  --> src/combat/battery_loop.rs:17:10
+   |
+17 | pub enum BatteryLoopDesignTag {
+   |          ^^^^^^^^^^^^^^^^^^^^
+
+warning: enum `BatteryLoopRequestKind` is never used
+  --> src/combat/battery_loop.rs:24:10
+   |
+24 | pub enum BatteryLoopRequestKind {
+   |          ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `BatteryLoopState` is never constructed
+  --> src/combat/battery_loop.rs:32:12
+   |
+32 | pub struct BatteryLoopState {
+   |            ^^^^^^^^^^^^^^^^
+
+warning: multiple methods are never used
+  --> src/combat/battery_loop.rs:59:12
+   |
+58 | impl BatteryLoopState {
+   | --------------------- methods in this implementation
+59 |     pub fn threshold_grant_eligible(&self) -> bool {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^
+...
+64 |     pub fn snapshot(&self) -> BatteryLoopSnapshot {
+   |            ^^^^^^^^
+...
+68 |     pub fn gain_static_charge(&mut self, amount: u8) -> BatteryLoopTransition {
+   |            ^^^^^^^^^^^^^^^^^^
+...
+72 |     pub fn gain_circuit_charge(&mut self, amount: u8) -> BatteryLoopTransition {
+   |            ^^^^^^^^^^^^^^^^^^^
+...
+76 |     pub fn spend_circuit_charge(&mut self, amount: u8) -> BatteryLoopTransition {
+   |            ^^^^^^^^^^^^^^^^^^^^
+...
+80 |     pub fn record_self_energy_gain(&mut self, amount: u8) -> BatteryLoopTransition {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^
+...
+84 |     pub fn record_transfer_success(&mut self, amount: u8) -> BatteryLoopTransition {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^
+...
+88 |     pub fn record_transfer_blocked(
+   |            ^^^^^^^^^^^^^^^^^^^^^^^
+...
+99 |     pub fn reset_cycle_guards(&mut self) -> BatteryLoopTransition {
+   |            ^^^^^^^^^^^^^^^^^^
+
+warning: function `apply_battery_loop_transition` is never used
+   --> src/combat/battery_loop.rs:104:8
+    |
+104 | pub fn apply_battery_loop_transition(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `apply_battery_loop_transitions_system` is never used
+   --> src/combat/battery_loop.rs:128:8
+    |
+128 | pub fn apply_battery_loop_transitions_system(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `BatteryLoopHook` is never constructed
+   --> src/combat/battery_loop.rs:145:12
+    |
+145 | pub struct BatteryLoopHook;
+    |            ^^^^^^^^^^^^^^^
+
+warning: function `apply_static_charge` is never used
+   --> src/combat/battery_loop.rs:171:4
+    |
+171 | fn apply_static_charge(state: &mut BatteryLoopState, amount: u8) -> BatteryLoopTransition {
+    |    ^^^^^^^^^^^^^^^^^^^
+
+warning: function `apply_circuit_charge` is never used
+   --> src/combat/battery_loop.rs:198:4
+    |
+198 | fn apply_circuit_charge(state: &mut BatteryLoopState, amount: u8) -> BatteryLoopTransition {
+    |    ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `spend_circuit_charge` is never used
+   --> src/combat/battery_loop.rs:220:4
+    |
+220 | fn spend_circuit_charge(state: &mut BatteryLoopState, amount: u8) -> BatteryLoopTransition {
+    |    ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `record_applied_transition` is never used
+   --> src/combat/battery_loop.rs:238:4
+    |
+238 | fn record_applied_transition(
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: field `is_stunned` is never read
+   --> src/combat/follow_up.rs:298:5
+    |
+292 | struct FormIdentitySnapshot {
+    |        -------------------- field in this struct
+...
+298 |     is_stunned: bool,
+    |     ^^^^^^^^^^
+
+warning: constant `TAG_GRACE` is never used
+  --> src/combat/holy_support.rs:17:11
+   |
+17 | pub const TAG_GRACE: &str = "Grace";
+   |           ^^^^^^^^^
+
+warning: constant `TAG_MARTYR_LIGHT` is never used
+  --> src/combat/holy_support.rs:18:11
+   |
+18 | pub const TAG_MARTYR_LIGHT: &str = "Martyr Light";
+   |           ^^^^^^^^^^^^^^^^
+
+warning: enum `HolySupportDesignTag` is never used
+  --> src/combat/holy_support.rs:21:10
+   |
+21 | pub enum HolySupportDesignTag {
+   |          ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `holy_support_design_tag_name` is never used
+  --> src/combat/holy_support.rs:26:8
+   |
+26 | pub fn holy_support_design_tag_name(tag: HolySupportDesignTag) -> &'static str {
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `holy_support_design_tag` is never used
+  --> src/combat/holy_support.rs:33:8
+   |
+33 | pub fn holy_support_design_tag(tag: HolySupportDesignTag) -> CombatTagId {
+   |        ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `classify_holy_support_tag` is never used
+  --> src/combat/holy_support.rs:37:8
+   |
+37 | pub fn classify_holy_support_tag(tag: &CombatTagId) -> Option<HolySupportDesignTag> {
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `holy_support_added_tag_transition` is never used
+  --> src/combat/holy_support.rs:45:8
+   |
+45 | pub fn holy_support_added_tag_transition(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: method `snapshot` is never used
+   --> src/combat/holy_support.rs:100:12
+    |
+ 99 | impl HolySupportState {
+    | --------------------- method in this implementation
+100 |     pub fn snapshot(&self) -> HolySupportSnapshot {
+    |            ^^^^^^^^
+
+warning: struct `HolySupportHook` is never constructed
+   --> src/combat/holy_support.rs:105:12
+    |
+105 | pub struct HolySupportHook;
+    |            ^^^^^^^^^^^^^^^
+
+warning: function `apply_holy_support_transitions_system` is never used
+   --> src/combat/holy_support.rs:168:8
+    |
+168 | pub fn apply_holy_support_transitions_system(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `apply_holy_support_transition` is never used
+   --> src/combat/holy_support.rs:185:4
+    |
+185 | fn apply_holy_support_transition(
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: enum `PredatorLoopDesignTag` is never used
+  --> src/combat/predator_loop.rs:19:10
+   |
+19 | pub enum PredatorLoopDesignTag {
+   |          ^^^^^^^^^^^^^^^^^^^^^
+
+warning: associated items `active`, `consumed`, `tick`, `is_active`, and `is_expired` are never used
+  --> src/combat/predator_loop.rs:32:18
+   |
+31 | impl PredatorLockState {
+   | ---------------------- associated items in this implementation
+32 |     pub const fn active(turns_left: u8) -> Self {
+   |                  ^^^^^^
+...
+39 |     pub const fn consumed() -> Self {
+   |                  ^^^^^^^^
+...
+46 |     pub fn tick(&mut self) -> bool {
+   |            ^^^^
+...
+55 |     pub fn is_active(&self) -> bool {
+   |            ^^^^^^^^^
+...
+59 |     pub fn is_expired(&self) -> bool {
+   |            ^^^^^^^^^^
+
+warning: multiple methods are never used
+   --> src/combat/predator_loop.rs:154:12
+    |
+149 | impl PredatorLoopState {
+    | ---------------------- methods in this implementation
+...
+154 |     pub fn track_target(&mut self, unit_id: UnitId) -> &mut PredatorTargetState {
+    |            ^^^^^^^^^^^^
+...
+158 |     pub fn build_exploit(&mut self, unit_id: UnitId, amount: u16) -> PredatorLoopTransition {
+    |            ^^^^^^^^^^^^^
+...
+165 |     pub fn apply_prey_lock(&mut self, unit_id: UnitId) -> PredatorLoopTransition {
+    |            ^^^^^^^^^^^^^^^
+...
+170 |     pub fn consume_prey_lock_payoff(&mut self, unit_id: UnitId) -> PredatorLoopTransition {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^
+...
+177 |     pub fn enter_berserk(&mut self, strain_current: u16) -> PredatorLoopTransition {
+    |            ^^^^^^^^^^^^^
+...
+184 |     pub fn tick_all_prey_locks(&mut self) -> PredatorLoopTransition {
+    |            ^^^^^^^^^^^^^^^^^^^
+...
+188 |     pub fn expire_prey_lock(&mut self, unit_id: UnitId) -> PredatorLoopTransition {
+    |            ^^^^^^^^^^^^^^^^
+
+warning: enum `PredatorLoopRequestKind` is never used
+   --> src/combat/predator_loop.rs:194:10
+    |
+194 | pub enum PredatorLoopRequestKind {
+    |          ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `apply_predator_loop_transition` is never used
+   --> src/combat/predator_loop.rs:203:8
+    |
+203 | pub fn apply_predator_loop_transition(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `apply_predator_loop_transitions_system` is never used
+   --> src/combat/predator_loop.rs:225:8
+    |
+225 | pub fn apply_predator_loop_transitions_system(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `PredatorLoopHook` is never constructed
+   --> src/combat/predator_loop.rs:261:12
+    |
+261 | pub struct PredatorLoopHook;
+    |            ^^^^^^^^^^^^^^^^
+
+warning: function `apply_build_exploit` is never used
+   --> src/combat/predator_loop.rs:287:4
+    |
+287 | fn apply_build_exploit(
+    |    ^^^^^^^^^^^^^^^^^^^
+
+warning: function `apply_prey_lock` is never used
+   --> src/combat/predator_loop.rs:331:4
+    |
+331 | fn apply_prey_lock(state: &mut PredatorLoopState, target: Option<UnitId>) -> PredatorLoopTransition {
+    |    ^^^^^^^^^^^^^^^
+
+warning: function `apply_prey_lock_payoff` is never used
+   --> src/combat/predator_loop.rs:369:4
+    |
+369 | fn apply_prey_lock_payoff(
+    |    ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `apply_enter_berserk` is never used
+   --> src/combat/predator_loop.rs:407:4
+    |
+407 | fn apply_enter_berserk(
+    |    ^^^^^^^^^^^^^^^^^^^
+
+warning: function `tick_all_prey_locks` is never used
+   --> src/combat/predator_loop.rs:424:4
+    |
+424 | fn tick_all_prey_locks(state: &mut PredatorLoopState) {
+    |    ^^^^^^^^^^^^^^^^^^^
+
+warning: function `apply_expire_prey_lock` is never used
+   --> src/combat/predator_loop.rs:432:4
+    |
+432 | fn apply_expire_prey_lock(
+    |    ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `record_applied_transition` is never used
+   --> src/combat/predator_loop.rs:468:4
+    |
+468 | fn record_applied_transition(
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: associated items `ALL` and `as_str` are never used
+  --> src/combat/kernel.rs:17:15
+   |
+16 | impl TacticalCyclePhase {
+   | ----------------------- associated items in this implementation
+17 |     pub const ALL: [Self; 4] = [Self::Declared, Self::PreApp, Self::Impact, Self::Applied];
+   |               ^^^
+...
+28 |     pub const fn as_str(self) -> &'static str {
+   |                  ^^^^^^
+
+warning: multiple associated functions are never used
+   --> src/combat/kernel.rs:451:18
+    |
+450 | impl TwinCoreTransition {
+    | ----------------------- associated functions in this implementation
+451 |     pub const fn build_cross_resonance(amount: u8) -> Self {
+    |                  ^^^^^^^^^^^^^^^^^^^^^
+...
+458 |     pub const fn spend_cross_resonance(amount: u8) -> Self {
+    |                  ^^^^^^^^^^^^^^^^^^^^^
+...
+465 |     pub const fn thermal_spark(amount: u8) -> Self {
+    |                  ^^^^^^^^^^^^^
+...
+472 |     pub const fn twin_burst(amount: u8) -> Self {
+    |                  ^^^^^^^^^^
+...
+479 |     pub const fn shatter(amount: u8) -> Self {
+    |                  ^^^^^^^
+...
+486 |     pub const fn fire_spend_marker(amount: u8) -> Self {
+    |                  ^^^^^^^^^^^^^^^^^
+...
+493 |     pub const fn ice_spend_marker(amount: u8) -> Self {
+    |                  ^^^^^^^^^^^^^^^^
+...
+500 |     pub const fn cycle_reset() -> Self {
+    |                  ^^^^^^^^^^^
+
+warning: multiple associated functions are never used
+   --> src/combat/kernel.rs:557:18
+    |
+556 | impl BatteryLoopTransition {
+    | -------------------------- associated functions in this implementation
+557 |     pub const fn build_static_charge(amount: u8) -> Self {
+    |                  ^^^^^^^^^^^^^^^^^^^
+...
+566 |     pub const fn build_circuit_charge(amount: u8) -> Self {
+    |                  ^^^^^^^^^^^^^^^^^^^^
+...
+575 |     pub const fn spend_circuit_charge(amount: u8) -> Self {
+    |                  ^^^^^^^^^^^^^^^^^^^^
+...
+584 |     pub const fn grant_energy(amount: u8) -> Self {
+    |                  ^^^^^^^^^^^^
+...
+593 |     pub const fn self_energy_gain(amount: u8) -> Self {
+    |                  ^^^^^^^^^^^^^^^^
+...
+602 |     pub const fn transfer_energy(amount: u8) -> Self {
+    |                  ^^^^^^^^^^^^^^^
+...
+611 |     pub const fn cycle_reset() -> Self {
+    |                  ^^^^^^^^^^^
+...
+620 |     pub const fn rejected(attempted: BatteryLoopStep, reason: BatteryLoopBlockedReason) -> Self {
+    |                  ^^^^^^^^
+...
+629 |     pub const fn ignored(attempted: BatteryLoopStep) -> Self {
+    |                  ^^^^^^^
+
+warning: associated functions `open_window`, `commit`, `reveal`, `resolve`, `rejected`, and `ignored` are never used
+   --> src/combat/kernel.rs:718:18
+    |
+717 | impl PrecisionMindGameTransition {
+    | -------------------------------- associated functions in this implementation
+718 |     pub const fn open_window(window: PrecisionWindowKind) -> Self {
+    |                  ^^^^^^^^^^^
+...
+722 |     pub const fn commit(commitment: PrecisionCommitment) -> Self {
+    |                  ^^^^^^
+...
+726 |     pub const fn reveal(reveal: PrecisionReveal) -> Self {
+    |                  ^^^^^^
+...
+730 |     pub const fn resolve(outcome: PrecisionOutcome) -> Self {
+    |                  ^^^^^^^
+...
+734 |     pub const fn rejected(
+    |                  ^^^^^^^^
+...
+741 |     pub const fn ignored(attempted: PrecisionMindGameStep) -> Self {
+    |                  ^^^^^^^
+
+warning: multiple associated functions are never used
+   --> src/combat/kernel.rs:796:18
+    |
+795 | impl PredatorLoopTransition {
+    | --------------------------- associated functions in this implementation
+796 |     pub const fn build_exploit(target: UnitId, amount: u16) -> Self {
+    |                  ^^^^^^^^^^^^^
+...
+806 |     pub const fn apply_prey_lock(target: UnitId, duration: u16) -> Self {
+    |                  ^^^^^^^^^^^^^^^
+...
+816 |     pub const fn consume_prey_lock_payoff(target: UnitId, amount: u16) -> Self {
+    |                  ^^^^^^^^^^^^^^^^^^^^^^^^
+...
+826 |     pub const fn enter_berserk(strain_current: u16) -> Self {
+    |                  ^^^^^^^^^^^^^
+...
+836 |     pub const fn tick() -> Self {
+    |                  ^^^^
+...
+846 |     pub const fn expire(target: UnitId) -> Self {
+    |                  ^^^^^^
+...
+856 |     pub const fn rejected(
+    |                  ^^^^^^^^
+...
+875 |     pub const fn ignored(attempted: PredatorLoopStep) -> Self {
+    |                  ^^^^^^^
+
+warning: multiple associated functions are never used
+    --> src/combat/kernel.rs:952:18
+     |
+ 951 | impl HolySupportTransition {
+     | -------------------------- associated functions in this implementation
+ 952 |     pub const fn build_grace(amount: u8) -> Self {
+     |                  ^^^^^^^^^^^
+...
+ 961 |     pub const fn spend_grace(amount: u8) -> Self {
+     |                  ^^^^^^^^^^^
+...
+ 970 |     pub const fn mark_martyr_light() -> Self {
+     |                  ^^^^^^^^^^^^^^^^^
+...
+ 979 |     pub const fn consume_martyr_light() -> Self {
+     |                  ^^^^^^^^^^^^^^^^^^^^
+...
+ 988 |     pub const fn cycle_reset() -> Self {
+     |                  ^^^^^^^^^^^
+...
+ 997 |     pub const fn rejected(attempted: HolySupportStep, reason: HolySupportRejectReason) -> Self {
+     |                  ^^^^^^^^
+...
+1006 |     pub const fn ignored(attempted: HolySupportStep) -> Self {
+     |                  ^^^^^^^
+
+warning: function `register_combat_kernel_runtime` is never used
+    --> src/combat/kernel.rs:1070:8
+     |
+1070 | pub fn register_combat_kernel_runtime(app: &mut App) {
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: method `domain` is never used
+    --> src/combat/kernel.rs:1096:8
+     |
+1095 | pub trait CombatKernelHook: Send + Sync {
+     |           ---------------- method in this trait
+1096 |     fn domain(&self) -> CombatKernelHookDomain;
+     |        ^^^^^^
+
+warning: enum `CombatKernelHookDomain` is never used
+    --> src/combat/kernel.rs:1107:10
+     |
+1107 | pub enum CombatKernelHookDomain {
+     |          ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: multiple methods are never used
+    --> src/combat/kernel.rs:1142:12
+     |
+1137 | impl CombatKernelState {
+     | ---------------------- methods in this implementation
+...
+1142 |     pub fn spend_strain(&mut self, amount: u16) -> StrainTransition {
+     |            ^^^^^^^^^^^^
+...
+1146 |     pub fn decay_strain(&mut self) -> StrainTransition {
+     |            ^^^^^^^^^^^^
+...
+1154 |     pub fn decay_flow(&mut self) -> FlowTransition {
+     |            ^^^^^^^^^^
+...
+1158 |     pub fn exit_flow(&mut self) -> FlowTransition {
+     |            ^^^^^^^^^
+...
+1162 |     pub fn gain_fatigue(&mut self, amount: u16) -> FatigueTransition {
+     |            ^^^^^^^^^^^^
+...
+1166 |     pub fn carry_over_fatigue(&mut self) -> FatigueTransition {
+     |            ^^^^^^^^^^^^^^^^^^
+...
+1170 |     pub fn reset_fatigue(&mut self) -> FatigueTransition {
+     |            ^^^^^^^^^^^^^
+...
+1196 |     pub fn tick_tags(&mut self) -> Vec<CombatTagTransition> {
+     |            ^^^^^^^^^
+
+warning: struct `BatteryLoopSnapshot` is never constructed
+  --> src/combat/observability.rs:57:12
+   |
+57 | pub struct BatteryLoopSnapshot {
+   |            ^^^^^^^^^^^^^^^^^^^
+
+warning: function `format_battery_loop_snapshot` is never used
+   --> src/combat/observability.rs:537:8
+    |
+537 | pub fn format_battery_loop_snapshot(snapshot: &BatteryLoopSnapshot) -> String {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `format_battery_loop_transition` is never used
+   --> src/combat/observability.rs:557:4
+    |
+557 | fn format_battery_loop_transition(transition: BatteryLoopTransition) -> String {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `format_battery_loop_step` is never used
+   --> src/combat/observability.rs:599:4
+    |
+599 | fn format_battery_loop_step(step: super::kernel::BatteryLoopStep) -> String {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `format_battery_loop_blocked_reason` is never used
+   --> src/combat/observability.rs:619:4
+    |
+619 | fn format_battery_loop_blocked_reason(reason: BatteryLoopBlockedReason) -> String {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: methods `is_window_open` and `snapshot` are never used
+  --> src/combat/precision_mind_game.rs:62:12
+   |
+61 | impl PrecisionMindGameState {
+   | --------------------------- methods in this implementation
+62 |     pub fn is_window_open(&self) -> bool {
+   |            ^^^^^^^^^^^^^^
+...
+66 |     pub fn snapshot(&self) -> PrecisionMindGameSnapshot {
+   |            ^^^^^^^^
+
+warning: struct `PrecisionMindGameHook` is never constructed
+  --> src/combat/precision_mind_game.rs:71:12
+   |
+71 | pub struct PrecisionMindGameHook;
+   |            ^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `register_precision_mind_game_runtime` is never used
+  --> src/combat/precision_mind_game.rs:88:8
+   |
+88 | pub fn register_precision_mind_game_runtime(app: &mut App) {
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `apply_precision_mind_game_transitions_system` is never used
+  --> src/combat/precision_mind_game.rs:93:8
+   |
+93 | pub fn apply_precision_mind_game_transitions_system(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `apply_precision_mind_game_transition` is never used
+   --> src/combat/precision_mind_game.rs:110:4
+    |
+110 | fn apply_precision_mind_game_transition(
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `TAG_HEATED` is never used
+  --> src/combat/twin_core.rs:12:11
+   |
+12 | pub const TAG_HEATED: &str = "Heated";
+   |           ^^^^^^^^^^
+
+warning: constant `TAG_CHILLED` is never used
+  --> src/combat/twin_core.rs:13:11
+   |
+13 | pub const TAG_CHILLED: &str = "Chilled";
+   |           ^^^^^^^^^^^
+
+warning: constant `TAG_THERMAL_SPARK` is never used
+  --> src/combat/twin_core.rs:14:11
+   |
+14 | pub const TAG_THERMAL_SPARK: &str = "Thermal Spark";
+   |           ^^^^^^^^^^^^^^^^^
+
+warning: constant `TAG_PRIMED` is never used
+  --> src/combat/twin_core.rs:15:11
+   |
+15 | pub const TAG_PRIMED: &str = "Primed";
+   |           ^^^^^^^^^^
+
+warning: constant `TAG_MELTDOWN_CRACK` is never used
+  --> src/combat/twin_core.rs:16:11
+   |
+16 | pub const TAG_MELTDOWN_CRACK: &str = "Meltdown Crack";
+   |           ^^^^^^^^^^^^^^^^^^
+
+warning: constant `TAG_DEEP_CRACK` is never used
+  --> src/combat/twin_core.rs:17:11
+   |
+17 | pub const TAG_DEEP_CRACK: &str = "Deep Crack";
+   |           ^^^^^^^^^^^^^^
+
+warning: enum `TwinCoreDesignTag` is never used
+  --> src/combat/twin_core.rs:20:10
+   |
+20 | pub enum TwinCoreDesignTag {
+   |          ^^^^^^^^^^^^^^^^^
+
+warning: function `twin_core_design_tag_name` is never used
+  --> src/combat/twin_core.rs:29:8
+   |
+29 | pub fn twin_core_design_tag_name(tag: TwinCoreDesignTag) -> &'static str {
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `twin_core_design_tag` is never used
+  --> src/combat/twin_core.rs:40:8
+   |
+40 | pub fn twin_core_design_tag(tag: TwinCoreDesignTag) -> CombatTagId {
+   |        ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `classify_twin_core_tag` is never used
+  --> src/combat/twin_core.rs:44:8
+   |
+44 | pub fn classify_twin_core_tag(tag: &CombatTagId) -> Option<TwinCoreDesignTag> {
+   |        ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `twin_core_added_tag_transition` is never used
+  --> src/combat/twin_core.rs:56:8
+   |
+56 | pub fn twin_core_added_tag_transition(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `TwinCoreHook` is never constructed
+  --> src/combat/twin_core.rs:95:12
+   |
+95 | pub struct TwinCoreHook;
+   |            ^^^^^^^^^^^^
+
+warning: function `apply_twin_core_transitions_system` is never used
+   --> src/combat/twin_core.rs:163:8
+    |
+163 | pub fn apply_twin_core_transitions_system(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `apply_twin_core_transition` is never used
+   --> src/combat/twin_core.rs:180:4
+    |
+180 | fn apply_twin_core_transition(
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: associated items `new`, `delay`, and `self_advance` are never used
+  --> src/combat/av.rs:19:12
+   |
+17 | impl ActionValue {
+   | ---------------- associated items in this implementation
+18 |     /// Creates a new ActionValue, ensuring it does not exceed MAX_AV.
+19 |     pub fn new(value: i32) -> Self {
+   |            ^^^
+...
+31 |     pub fn delay(&mut self, amount: i32) {
+   |            ^^^^^
+...
+38 |     pub fn self_advance(&mut self, amount: i32) {
+   |            ^^^^^^^^^^^^
+
+warning: fields `future_preview` and `queue` are never read
+  --> src/combat/turn_order.rs:13:9
+   |
+ 9 | pub struct TurnOrder {
+   |            --------- fields in this struct
+...
+13 |     pub future_preview: Vec<UnitId>,
+   |         ^^^^^^^^^^^^^^
+14 |     /// Compat shim for pre-AV tests: always empty in the AV system.
+15 |     pub queue: VecDeque<UnitId>,
+   |         ^^^^^
+   |
+   = note: `TurnOrder` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: method `insert_out_of_queue` is never used
+  --> src/combat/turn_order.rs:23:12
+   |
+18 | impl TurnOrder {
+   | -------------- method in this implementation
+...
+23 |     pub fn insert_out_of_queue(&mut self, _unit_id: UnitId) {}
+   |            ^^^^^^^^^^^^^^^^^^^
+
+warning: constant `TICK_AV_AMOUNT` is never used
+  --> src/combat/turn_system/mod.rs:30:11
+   |
+30 | pub const TICK_AV_AMOUNT: i32 = 1000; // Arbitrary tick amount for AV accumulation. For deterministic turns
+   |           ^^^^^^^^^^^^^^
+
+warning: `bevyrogue` (bin "bevyrogue" test) generated 138 warnings (19 duplicates) (run `cargo fix --bin "bevyrogue" -p bevyrogue --tests` to apply 7 suggestions)

@@ -1,0 +1,18 @@
+{
+  "id": "ff3bc8ce-af61-41e6-b870-b1f493a63173",
+  "runtime": "bash",
+  "purpose": "red check patamon custom signal seam before implementation",
+  "script_chars": 54,
+  "started_at": "2026-05-08T15:58:54.248Z",
+  "finished_at": "2026-05-08T15:58:54.484Z",
+  "exit_code": 101,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 236,
+  "stdout_bytes": 0,
+  "stderr_bytes": 33886,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/ff3bc8ce-af61-41e6-b870-b1f493a63173.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/ff3bc8ce-af61-41e6-b870-b1f493a63173.stderr"
+}

@@ -1,0 +1,131 @@
+-- 328: error: couldn't read `tests/../docs/combat_ui_readiness_gap_matrix.md`: No such file or directory (os error 2)
+error: couldn't read `tests/../docs/combat_ui_readiness_gap_matrix.md`: No such file or directory (os error 2)
+ --> tests/ui_readiness_gap_matrix_docs.rs:1:19
+  |
+1 | const DOC: &str = include_str!("../docs/combat_ui_readiness_gap_matrix.md");
+  |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `LegalityReasonCode`
+  --> tests/event_stream.rs:18:124
+   |
+18 | ...killTargeting, TargetLife, TargetSide, SelfTargetRule, LegalityReasonCode, TargetShape},
+   |                                                           ^^^^^^^^^^^^^^^^^^
+   |
+-- 366: error: could not compile `bevyrogue` (test "ui_readiness_gap_matrix_docs") due to 1 previous error
+error: could not compile `bevyrogue` (test "ui_readiness_gap_matrix_docs") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error[E0063]: missing fields `animation_sequence` and `qte` in initializer of `SkillDef`
+  --> tests/status_effect_apply.rs:53:5
+   |
+53 |     SkillDef {
+   |     ^^^^^^^^ missing `animation_sequence` and `qte`
+
+error[E0063]: missing fields `animation_sequence` and `qte` in initializer of `SkillDef`
+  --> tests/toughness_categories.rs:29:20
+   |
+29 |     SkillBook(vec![SkillDef {
+-- 368: error[E0063]: missing fields `animation_sequence` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence` and `qte` in initializer of `SkillDef`
+  --> tests/status_effect_apply.rs:53:5
+   |
+53 |     SkillDef {
+   |     ^^^^^^^^ missing `animation_sequence` and `qte`
+
+error[E0063]: missing fields `animation_sequence` and `qte` in initializer of `SkillDef`
+  --> tests/toughness_categories.rs:29:20
+   |
+29 |     SkillBook(vec![SkillDef {
+   |                    ^^^^^^^^ missing `animation_sequence` and `qte`
+
+-- 374: error[E0063]: missing fields `animation_sequence` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence` and `qte` in initializer of `SkillDef`
+  --> tests/toughness_categories.rs:29:20
+   |
+29 |     SkillBook(vec![SkillDef {
+   |                    ^^^^^^^^ missing `animation_sequence` and `qte`
+
+error[E0063]: missing fields `animation_sequence` and `qte` in initializer of `SkillDef`
+  --> tests/event_stream.rs:58:9
+   |
+58 |         SkillDef {
+   |         ^^^^^^^^ missing `animation_sequence` and `qte`
+
+-- 380: error[E0063]: missing fields `animation_sequence` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence` and `qte` in initializer of `SkillDef`
+  --> tests/event_stream.rs:58:9
+   |
+58 |         SkillDef {
+   |         ^^^^^^^^ missing `animation_sequence` and `qte`
+
+error[E0063]: missing fields `animation_sequence` and `qte` in initializer of `SkillDef`
+  --> tests/event_stream.rs:79:9
+   |
+79 |         SkillDef {
+   |         ^^^^^^^^ missing `animation_sequence` and `qte`
+
+-- 386: error[E0063]: missing fields `animation_sequence` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence` and `qte` in initializer of `SkillDef`
+  --> tests/event_stream.rs:79:9
+   |
+79 |         SkillDef {
+   |         ^^^^^^^^ missing `animation_sequence` and `qte`
+
+error[E0063]: missing fields `animation_sequence` and `qte` in initializer of `SkillDef`
+   --> tests/event_stream.rs:100:9
+    |
+100 |         SkillDef {
+    |         ^^^^^^^^ missing `animation_sequence` and `qte`
+
+-- 392: error[E0063]: missing fields `animation_sequence` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence` and `qte` in initializer of `SkillDef`
+   --> tests/event_stream.rs:100:9
+    |
+100 |         SkillDef {
+    |         ^^^^^^^^ missing `animation_sequence` and `qte`
+
+For more information about this error, try `rustc --explain E0063`.
+warning: `bevyrogue` (test "event_stream") generated 1 warning
+error: could not compile `bevyrogue` (test "event_stream") due to 3 previous errors; 1 warning emitted
+warning: `bevyrogue` (test "status_effect_apply") generated 1 warning
+error: could not compile `bevyrogue` (test "status_effect_apply") due to 1 previous error; 1 warning emitted
+warning: `bevyrogue` (test "toughness_categories") generated 1 warning
+-- 400: error: could not compile `bevyrogue` (test "event_stream") due to 3 previous errors; 1 warning emitted
+error: could not compile `bevyrogue` (test "event_stream") due to 3 previous errors; 1 warning emitted
+warning: `bevyrogue` (test "status_effect_apply") generated 1 warning
+error: could not compile `bevyrogue` (test "status_effect_apply") due to 1 previous error; 1 warning emitted
+warning: `bevyrogue` (test "toughness_categories") generated 1 warning
+error: could not compile `bevyrogue` (test "toughness_categories") due to 1 previous error; 1 warning emitted
+warning: variable does not need to be mutable
+  --> src/bin/combat_cli.rs:95:5
+   |
+95 |     mut turn_advanced: MessageWriter<TurnAdvanced>,
+   |     ----^^^^^^^^^^^^^
+   |     |
+   |     help: remove this `mut`
+-- 402: error: could not compile `bevyrogue` (test "status_effect_apply") due to 1 previous error; 1 warning emitted
+error: could not compile `bevyrogue` (test "status_effect_apply") due to 1 previous error; 1 warning emitted
+warning: `bevyrogue` (test "toughness_categories") generated 1 warning
+error: could not compile `bevyrogue` (test "toughness_categories") due to 1 previous error; 1 warning emitted
+warning: variable does not need to be mutable
+  --> src/bin/combat_cli.rs:95:5
+   |
+95 |     mut turn_advanced: MessageWriter<TurnAdvanced>,
+   |     ----^^^^^^^^^^^^^
+   |     |
+   |     help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+-- 404: error: could not compile `bevyrogue` (test "toughness_categories") due to 1 previous error; 1 warning emitted
+error: could not compile `bevyrogue` (test "toughness_categories") due to 1 previous error; 1 warning emitted
+warning: variable does not need to be mutable
+  --> src/bin/combat_cli.rs:95:5
+   |
+95 |     mut turn_advanced: MessageWriter<TurnAdvanced>,
+   |     ----^^^^^^^^^^^^^
+   |     |
+   |     help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `turn_advanced`
+errors_seen 10

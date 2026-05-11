@@ -1,0 +1,122 @@
+src/combat/predator_loop.rs:8:    CombatKernelHook, CombatKernelHookDomain, CombatKernelState, CombatKernelTransition,
+src/combat/predator_loop.rs:236:        let CombatKernelTransition::PredatorLoop(predator_transition) = transition else {
+src/combat/predator_loop.rs:270:        transition: &CombatKernelTransition,
+src/combat/predator_loop.rs:271:        out: &mut Vec<CombatKernelTransition>,
+src/combat/predator_loop.rs:275:            CombatKernelTransition::TacticalCycle(TacticalCycleTransition {
+src/combat/predator_loop.rs:280:            out.push(CombatKernelTransition::PredatorLoop(
+src/combat/twin_core.rs:6:    CombatBeatId, CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition,
+src/combat/twin_core.rs:59:) -> CombatKernelTransition {
+src/combat/twin_core.rs:63:    CombatKernelTransition::Tag(CombatTagTransition {
+src/combat/twin_core.rs:104:        transition: &CombatKernelTransition,
+src/combat/twin_core.rs:105:        out: &mut Vec<CombatKernelTransition>,
+src/combat/twin_core.rs:108:            CombatKernelTransition::Tag(tag_transition)
+src/combat/twin_core.rs:115:                        | TwinCoreDesignTag::Primed => out.push(CombatKernelTransition::TwinCore(
+src/combat/twin_core.rs:119:                            CombatKernelTransition::TwinCore(TwinCoreTransition::thermal_spark(1)),
+src/combat/twin_core.rs:122:                            out.push(CombatKernelTransition::TwinCore(
+src/combat/twin_core.rs:126:                        TwinCoreDesignTag::DeepCrack => out.push(CombatKernelTransition::TwinCore(
+src/combat/twin_core.rs:132:            CombatKernelTransition::Tag(tag_transition)
+src/combat/twin_core.rs:140:                    out.push(CombatKernelTransition::TwinCore(
+src/combat/twin_core.rs:145:            CombatKernelTransition::Beat(CombatBeatId::Damage) => {
+src/combat/twin_core.rs:146:                out.push(CombatKernelTransition::TwinCore(
+src/combat/twin_core.rs:150:            CombatKernelTransition::TacticalCycle(TacticalCycleTransition {
+src/combat/twin_core.rs:154:                out.push(CombatKernelTransition::TwinCore(
+src/combat/twin_core.rs:172:        let CombatKernelTransition::TwinCore(twin_trans) = transition else {
+src/combat/holy_support.rs:10:    CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition, CombatTagChangeKind,
+src/combat/holy_support.rs:48:) -> CombatKernelTransition {
+src/combat/holy_support.rs:52:    CombatKernelTransition::Tag(CombatTagTransition {
+src/combat/holy_support.rs:114:        transition: &CombatKernelTransition,
+src/combat/holy_support.rs:115:        out: &mut Vec<CombatKernelTransition>,
+src/combat/holy_support.rs:118:            CombatKernelTransition::Tag(tag_transition)
+src/combat/holy_support.rs:124:                            out.push(CombatKernelTransition::HolySupport(
+src/combat/holy_support.rs:129:                            out.push(CombatKernelTransition::HolySupport(
+src/combat/holy_support.rs:136:            CombatKernelTransition::Tag(tag_transition)
+src/combat/holy_support.rs:143:                            out.push(CombatKernelTransition::HolySupport(
+src/combat/holy_support.rs:148:                            out.push(CombatKernelTransition::HolySupport(
+src/combat/holy_support.rs:155:            CombatKernelTransition::TacticalCycle(TacticalCycleTransition {
+src/combat/holy_support.rs:159:                out.push(CombatKernelTransition::HolySupport(
+src/combat/holy_support.rs:177:        let CombatKernelTransition::HolySupport(holy_transition) = transition else {
+src/combat/events.rs:10:pub use crate::combat::kernel::{BatteryLoopTransition, CombatBeatId, CombatKernelTransition, PredatorLoopTransition};
+src/combat/events.rs:108:        transition: CombatKernelTransition,
+src/combat/kernel.rs:6:// CombatKernelRegistry must be Resource so it can be accessed via Bevy ECS Res<>.
+src/combat/kernel.rs:893:pub enum CombatKernelTransition {
+src/combat/kernel.rs:1045:pub struct CombatKernelRegistry {
+src/combat/kernel.rs:1049:impl CombatKernelRegistry {
+src/combat/kernel.rs:1061:    pub fn dispatch(&self, transition: CombatKernelTransition) -> Vec<CombatKernelTransition> {
+src/combat/kernel.rs:1070:pub fn register_combat_kernel_runtime(app: &mut App) {
+src/combat/kernel.rs:1071:    let mut registry = CombatKernelRegistry::new();
+src/combat/kernel.rs:1100:        _transition: &CombatKernelTransition,
+src/combat/kernel.rs:1101:        _out: &mut Vec<CombatKernelTransition>,
+src/combat/kernel.rs:1327:            transition: &CombatKernelTransition,
+src/combat/kernel.rs:1328:            out: &mut Vec<CombatKernelTransition>,
+src/combat/kernel.rs:1332:                CombatKernelTransition::Flow(FlowTransition {
+src/combat/kernel.rs:1337:                out.push(CombatKernelTransition::Beat(CombatBeatId::Impact));
+src/combat/kernel.rs:1344:        let mut registry = CombatKernelRegistry::new();
+src/combat/kernel.rs:1347:        let transitions = registry.dispatch(CombatKernelTransition::Flow(FlowTransition {
+src/combat/kernel.rs:1354:        assert!(matches!(transitions[0], CombatKernelTransition::Flow(_)));
+src/combat/kernel.rs:1357:            CombatKernelTransition::Beat(CombatBeatId::Impact)
+src/combat/precision_mind_game.rs:6:    CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition, PrecisionCommitment,
+src/combat/precision_mind_game.rs:80:        _transition: &CombatKernelTransition,
+src/combat/precision_mind_game.rs:81:        _out: &mut Vec<CombatKernelTransition>,
+src/combat/precision_mind_game.rs:102:        let CombatKernelTransition::PrecisionMindGame(precision_transition) = transition else {
+tests/twin_core_integration.rs:5:    CombatBeatId, CombatKernelRegistry, CombatKernelTransition, CombatTagChangeKind,
+tests/twin_core_integration.rs:74:    let mut registry = CombatKernelRegistry::new();
+tests/twin_core_integration.rs:90:    transition: CombatKernelTransition,
+tests/twin_core_integration.rs:95:        let registry = app.world().resource::<CombatKernelRegistry>();
+tests/twin_core_integration.rs:96:        registry.dispatch(transition)
+tests/twin_core_integration.rs:144:        CombatKernelTransition::Tag(CombatTagTransition {
+tests/twin_core_integration.rs:158:        CombatKernelTransition::Tag(CombatTagTransition {
+tests/twin_core_integration.rs:172:        CombatKernelTransition::Beat(CombatBeatId::Damage),
+tests/holy_support_affordance.rs:10:use bevyrogue::combat::kernel::CombatKernelTransition;
+tests/holy_support_affordance.rs:33:            transition: CombatKernelTransition::HolySupport(transition),
+src/combat/battery_loop.rs:7:    BatteryLoopTransition, CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition,
+src/combat/battery_loop.rs:137:        let CombatKernelTransition::BatteryLoop(battery_transition) = transition else {
+src/combat/battery_loop.rs:154:        transition: &CombatKernelTransition,
+src/combat/battery_loop.rs:155:        out: &mut Vec<CombatKernelTransition>,
+src/combat/battery_loop.rs:159:            CombatKernelTransition::TacticalCycle(TacticalCycleTransition {
+src/combat/battery_loop.rs:164:            out.push(CombatKernelTransition::BatteryLoop(
+tests/twin_core_mechanics.rs:5:    CombatBeatId, CombatKernelRegistry, CombatKernelTransition, CombatTagChangeKind,
+tests/twin_core_mechanics.rs:11:fn route_transition(app: &mut App, transition: CombatKernelTransition, source: UnitId, target: UnitId) {
+tests/twin_core_mechanics.rs:13:        let registry = app.world().resource::<CombatKernelRegistry>();
+tests/twin_core_mechanics.rs:14:        registry.dispatch(transition)
+tests/twin_core_mechanics.rs:33:    let mut registry = CombatKernelRegistry::new();
+tests/twin_core_mechanics.rs:46:        CombatKernelTransition::Beat(CombatBeatId::Damage),
+tests/twin_core_mechanics.rs:58:        CombatKernelTransition::Tag(CombatTagTransition {
+tests/twin_core_mechanics.rs:74:        CombatKernelTransition::Tag(CombatTagTransition {
+tests/holy_support_mechanics.rs:10:    CombatKernelConfig, CombatKernelRegistry, CombatKernelTransition, CombatTagChangeKind,
+tests/holy_support_mechanics.rs:25:    bevyrogue::combat::kernel::register_combat_kernel_runtime(&mut app);
+tests/holy_support_mechanics.rs:30:fn queue_kernel_transition(app: &mut App, transition: CombatKernelTransition) {
+tests/holy_support_mechanics.rs:32:        let registry = app.world().resource::<CombatKernelRegistry>();
+tests/holy_support_mechanics.rs:33:        registry.dispatch(transition)
+tests/holy_support_mechanics.rs:46:fn emit_kernel_transition(app: &mut App, transition: CombatKernelTransition) {
+tests/holy_support_mechanics.rs:53:    let mut registry = CombatKernelRegistry::new();
+tests/holy_support_mechanics.rs:65:    let grace = CombatKernelTransition::Tag(CombatTagTransition {
+tests/holy_support_mechanics.rs:70:    let outputs = registry.dispatch(grace);
+tests/holy_support_mechanics.rs:74:        CombatKernelTransition::HolySupport(HolySupportTransition::build_grace(1))
+tests/holy_support_mechanics.rs:77:    let martyr = CombatKernelTransition::Tag(CombatTagTransition {
+tests/holy_support_mechanics.rs:82:    let martyr_outputs = registry.dispatch(martyr);
+tests/holy_support_mechanics.rs:85:        CombatKernelTransition::HolySupport(HolySupportTransition::mark_martyr_light())
+tests/holy_support_mechanics.rs:88:    let unrelated = CombatKernelTransition::Tag(CombatTagTransition {
+tests/holy_support_mechanics.rs:93:    assert_eq!(registry.dispatch(unrelated).len(), 1);
+tests/holy_support_mechanics.rs:102:        CombatKernelTransition::HolySupport(HolySupportTransition::build_grace(
+tests/holy_support_mechanics.rs:130:        CombatKernelTransition::HolySupport(HolySupportTransition::spend_grace(1)),
+tests/holy_support_mechanics.rs:150:        CombatKernelTransition::HolySupport(HolySupportTransition::mark_martyr_light()),
+tests/holy_support_mechanics.rs:161:        CombatKernelTransition::HolySupport(HolySupportTransition::mark_martyr_light()),
+tests/holy_support_mechanics.rs:177:        CombatKernelTransition::HolySupport(HolySupportTransition::consume_martyr_light()),
+tests/holy_support_mechanics.rs:188:        CombatKernelTransition::HolySupport(HolySupportTransition::consume_martyr_light()),
+tests/holy_support_mechanics.rs:209:        CombatKernelTransition::HolySupport(HolySupportTransition::mark_martyr_light()),
+tests/holy_support_mechanics.rs:213:        CombatKernelTransition::HolySupport(HolySupportTransition::consume_martyr_light()),
+tests/holy_support_mechanics.rs:216:    let wrapped_cycle = CombatKernelTransition::TacticalCycle(TacticalCycleTransition {
+tests/battery_loop_kernel.rs:10:    BatteryLoopTransition, CombatKernelTransition,
+tests/battery_loop_kernel.rs:23:fn emit_kernel_transition(app: &mut App, transition: CombatKernelTransition) {
+tests/battery_loop_kernel.rs:140:        CombatKernelTransition::BatteryLoop(BatteryLoopTransition::cycle_reset()),
+tests/holy_support_resolution.rs:7:use bevyrogue::combat::kernel::{CombatKernelRegistry, CombatKernelTransition};
+tests/holy_support_resolution.rs:63:    bevyrogue::combat::kernel::register_combat_kernel_runtime(&mut app);
+tests/holy_support_resolution.rs:76:) -> Vec<CombatKernelTransition> {
+tests/holy_support_resolution.rs:83:                    let registry = app.world().resource::<CombatKernelRegistry>();
+tests/holy_support_resolution.rs:84:                    registry.dispatch(transition)
+tests/holy_support_resolution.rs:147:            transition: CombatKernelTransition::Tag(_)
+tests/holy_support_resolution.rs:157:            CombatKernelTransition::Tag(_),
+tests/holy_support_resolution.rs:158:            CombatKernelTransition::HolySupport(holy)
+tests/holy_support_resolution.rs:216:            CombatKernelTransition::Tag(_),
+tests/holy_support_resolution.rs:217:            CombatKernelTransition::HolySupport(holy_mark),
+tests/holy_support_resolution.rs:218:            CombatKernelTransition::HolySupport(holy_consume)

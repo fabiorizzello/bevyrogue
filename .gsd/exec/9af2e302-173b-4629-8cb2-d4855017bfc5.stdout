@@ -1,0 +1,57 @@
+258:pub fn query_target_affordance(
+281:pub fn query_all_target_affordances(
+391:pub fn query_energy_cap_affordance(
+411:pub fn query_tamer_gauge_affordance() -> ResourceAffordanceDetail {
+415:pub fn query_tamer_command_affordances() -> Vec<ResourceAffordanceDetail> {
+628:pub fn query_action_affordance<'a>(
+pub enum LegalityReasonCode {
+    UnimplementedTargetShape,
+    UnimplementedEffect,
+    WrongSide,
+    TargetKo,
+    TargetNotKo,
+    TargetFullHp,
+    TargetNotDamaged,
+    TargetIsSelf,
+    TargetIsCommander,
+    NoValidTargets,
+    ToughnessEnemyOnly,
+    NotActiveUnit,
+    WrongPhase,
+    AttackerKo,
+    AttackerStunned,
+    MissingSkill,
+    SpShortfall,
+    UltimateNotReady,
+    TargetNotFound,
+    TamerGaugeDeferred,
+    TamerCommandDeferred,
+    ChargedTelegraphDeferred,
+    EnemyTraitDeferred,
+    EnergyCapReached,
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SkillImplementation {
+    Implemented,
+    Deferred { reason: LegalityReasonCode },
+    Hidden { reason: LegalityReasonCode },
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub enum Effect {
+    Damage { amount: i32, target: TargetShape },
+    ToughnessHit(i32),
+    GainSP(i32),
+    UltGain(i32),
+    Stun,
+    Revive(i32),
+    GrantFreeSkill { count: usize },
+    ApplyStatus { kind: StatusEffectKind, duration: u32 },
+    TurnAdvance(i32),
+    /// Grant the attacker N energy (once-per-round gated by RoundFlags.form_identity_used).
+    GrantEnergy(i32),
+    /// Advance the attacker's own AV by N percent (self-tempo boost; distinct from TurnAdvance which targets defender).

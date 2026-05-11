@@ -1,0 +1,54 @@
+--- src/bin/combat_cli.rs ---
+74: mut exit: MessageWriter<AppExit>,
+92: mut combat_events: MessageWriter<CombatEvent>,
+93: mut turn_advanced: MessageWriter<TurnAdvanced>,
+95: mut exit: MessageWriter<AppExit>,
+141: fn event_logger_system(mut events: MessageReader<CombatEvent>) {
+151: mut turn_advanced: MessageReader<TurnAdvanced>,
+152: mut combat_events: MessageReader<CombatEvent>,
+442: mut intent_writer: MessageWriter<ActionIntent>,
+460: mut exit: MessageWriter<AppExit>,
+828: .add_message::<TurnAdvanced>()
+829: .add_message::<ActionIntent>()
+830: .add_message::<FollowUpIntent>()
+831: .add_message::<FollowUpTrace>()
+832: .add_message::<CombatEvent>();
+--- src/combat/turn_system/mod.rs ---
+90: event_writer: &mut MessageWriter<CombatEvent>,
+113: event_writer: &mut MessageWriter<CombatEvent>,
+136: event_writer: &mut MessageWriter<CombatEvent>,
+162: mut intents: MessageReader<ActionIntent>,
+170: mut event_writer: MessageWriter<CombatEvent>,
+381: mut turn_flow: ParamSet<(MessageReader<TurnAdvanced>, MessageWriter<TurnAdvanced>)>,
+382: mut event_writer: MessageWriter<CombatEvent>,
+383: mut intents_out: MessageWriter<ActionIntent>,
+384: mut av_event_writer: MessageWriter<ActionValueUpdated>,
+634: mut events: MessageReader<crate::combat::events::CombatEvent>,
+--- src/combat/turn_system/pipeline.rs ---
+46: event_writer: &mut MessageWriter<CombatEvent>,
+108: event_writer: &mut MessageWriter<CombatEvent>,
+132: event_writer: &mut MessageWriter<CombatEvent>,
+--- src/combat/follow_up.rs ---
+200: trace_writer: &mut MessageWriter<FollowUpTrace>,
+220: mut events: MessageReader<CombatEvent>,
+221: mut follow_up_writer: MessageWriter<FollowUpIntent>,
+222: mut trace_writer: MessageWriter<FollowUpTrace>,
+365: mut events: MessageReader<CombatEvent>,
+366: mut follow_up_writer: MessageWriter<FollowUpIntent>,
+463: mut intents: MessageReader<FollowUpIntent>,
+471: mut event_writer: MessageWriter<CombatEvent>,
+--- src/combat/ultimate.rs ---
+107: mut events: MessageReader<CombatEvent>,
+149: mut writer: MessageWriter<CombatEvent>,
+--- src/combat/battery_loop.rs ---
+129: mut events: MessageReader<CombatEvent>,
+--- src/combat/predator_loop.rs ---
+225: mut messages: ParamSet<(MessageReader<CombatEvent>, MessageWriter<CombatEvent>)>,
+--- src/combat/twin_core.rs ---
+164: mut events: MessageReader<CombatEvent>,
+--- src/combat/holy_support.rs ---
+169: mut events: MessageReader<CombatEvent>,
+--- src/combat/precision_mind_game.rs ---
+94: mut events: MessageReader<CombatEvent>,
+--- src/combat/jsonl_logger.rs ---
+7: pub fn jsonl_logger_system(mut events: MessageReader<CombatEvent>) {

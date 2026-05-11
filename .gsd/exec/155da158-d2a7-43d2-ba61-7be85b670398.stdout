@@ -1,0 +1,19 @@
+error: couldn't read `tests/../docs/combat_ui_readiness_gap_matrix.md`: No such file or directory (os error 2)
+error: could not compile `bevyrogue` (test "ui_readiness_gap_matrix_docs") due to 1 previous error
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error: could not compile `bevyrogue` (test "patamon_revive") due to 2 previous errors; 1 warning emitted
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error[E0063]: missing fields `animation_sequence`, `custom_signals` and `qte` in initializer of `SkillDef`
+error: could not compile `bevyrogue` (test "sp_economy") due to 5 previous errors; 3 warnings emitted
+error: could not compile `bevyrogue` (test "follow_up_chains") due to 4 previous errors
+error: could not compile `bevyrogue` (test "ultimate_meter") due to 2 previous errors; 1 warning emitted
+error: could not compile `bevyrogue` (test "engine_legality_integration") due to 2 previous errors
+ERROR_LINES=18

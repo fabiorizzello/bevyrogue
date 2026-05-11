@@ -1,0 +1,71 @@
+== cargo_test_targeted ==
+test custom_signal_missing_field_defaults_to_empty ... ok
+test custom_signal_rejects_unknown_patamon_variant ... ok
+test custom_signal_resolved_action_carries_metadata_without_interpreting_it ... ok
+test custom_signal_parses_from_tracked_patamon_skill ... ok
+test patamon_signal_maps_to_expected_holy_support_transition ... ok
+test no_signal_action_produces_no_patamon_blueprint_transitions ... ok
+test patamon_ultimate_dispatches_blueprint_transition_into_holy_support_state_and_snapshot ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/presentation_metadata_boundary.rs (target/debug/deps/presentation_metadata_boundary-c95ba7bfbabd8599)
+
+running 4 tests
+test malformed_presentation_strings_are_inert_without_custom_signals ... ok
+test presentation_metadata_does_not_change_action_query_or_resolved_action ... ok
+test tracked_ron_exposes_custom_signals_separately_from_presentation_metadata ... ok
+test runtime_events_and_snapshots_ignore_misleading_presentation_metadata ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+RESULT|cargo_test_targeted|exit=0|dur=547ms
+== verify_authority_audit ==
+Combat authority audit verification passed.
+RESULT|verify_authority_audit|exit=0|dur=19ms
+== verify_failure_ledger ==
+M015 failure ledger verification passed.
+RESULT|verify_failure_ledger|exit=0|dur=16ms
+== cargo_test_norun ==
+  Executable tests/scenario_minion_ttk.rs (target/debug/deps/scenario_minion_ttk-94d834b3c9422bcb)
+  Executable tests/skill_legality_contract_docs.rs (target/debug/deps/skill_legality_contract_docs-0267fbb1f6dec83a)
+  Executable tests/sp_economy.rs (target/debug/deps/sp_economy-2693bcb221b143bf)
+  Executable tests/status_accuracy.rs (target/debug/deps/status_accuracy-63391aa9b8f25a9b)
+  Executable tests/status_effect_apply.rs (target/debug/deps/status_effect_apply-3563398f46a85d5d)
+  Executable tests/status_effect_integration.rs (target/debug/deps/status_effect_integration-2ceb339dc722bfc4)
+  Executable tests/status_effect_turn_tick.rs (target/debug/deps/status_effect_turn_tick-b236d85cb8923552)
+  Executable tests/target_shape_truthfulness.rs (target/debug/deps/target_shape_truthfulness-0f5ddef2b0218c0c)
+  Executable tests/tempo_resistance.rs (target/debug/deps/tempo_resistance-516a2c4921379eee)
+  Executable tests/toughness_categories.rs (target/debug/deps/toughness_categories-c5f4a47b273459cf)
+  Executable tests/toughness_enemy_only.rs (target/debug/deps/toughness_enemy_only-a68c5c24a3b87906)
+  Executable tests/triangle_matchup.rs (target/debug/deps/triangle_matchup-4e948f4ac2d3fb56)
+  Executable tests/turn_system_av.rs (target/debug/deps/turn_system_av-eac92c67d3b6e97c)
+  Executable tests/twin_core_integration.rs (target/debug/deps/twin_core_integration-233f2a7f0df63461)
+  Executable tests/twin_core_mechanics.rs (target/debug/deps/twin_core_mechanics-c1460894b7027596)
+  Executable tests/twin_core_resolution.rs (target/debug/deps/twin_core_resolution-d0ffb0ff61e75ddb)
+  Executable tests/twin_core_roster_contract.rs (target/debug/deps/twin_core_roster_contract-20bcec90e7c9f334)
+  Executable tests/ui_readiness_gap_matrix_docs.rs (target/debug/deps/ui_readiness_gap_matrix_docs-f08d5560a07aabbb)
+  Executable tests/ultimate_meter.rs (target/debug/deps/ultimate_meter-e3919594f7287b6b)
+  Executable tests/validation_snapshot.rs (target/debug/deps/validation_snapshot-b7eb50fe19e5a8ae)
+RESULT|cargo_test_norun|exit=0|dur=155ms
+  [EVENT] OnActionPreApp (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnCombatBeat { beat: PreApp } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnKernelTransition { transition: Beat(PreApp) } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnCombatBeat { beat: Impact } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnKernelTransition { transition: Beat(Impact) } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnDamageDealt { amount: 13, kind: Weak, tag_mod_pct: 125, triangle_mod_pct: 100, damage_tag: Light } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnHitTaken { amount: 13 } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnCombatBeat { beat: Damage } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnKernelTransition { transition: Beat(Damage) } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnKernelTransition { transition: TwinCore(TwinCoreTransition { signal: TwinBurst, amount: 1 }) } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnSkillCast { skill_id: SkillId("rally") } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] UltGain { unit_id: UnitId(0), amount: 10 } (source: UnitId(0), target: UnitId(0), depth: 0)
+  [EVENT] OnActionApplied (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnCombatBeat { beat: Applied } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnKernelTransition { transition: Beat(Applied) } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnActionResolved (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnCombatBeat { beat: Resolved } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnKernelTransition { transition: Beat(Resolved) } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] UltGain { unit_id: UnitId(0), amount: 10 } (source: UnitId(0), target: UnitId(0), depth: 0)
+[CLI_PROOF] validation_snapshot: phase=WaitingAction winner=none sp=4/5 twin_core=cr=0 spark_targets=[] fire=0 ice=0 burst_guard=false shatter_guard=false last=none holy_support=grace=0/3 martyr_marked=false martyr_consumed=false last=none predator_loop=exploit_cap=3 prey_lock_duration=2 berserk_threshold=50 targets=[] last=none blocked=none precision=phase=Dormant,window_index=0,window=none,commitment=none,reveal=none,outcome=none,last=none turn_preview=[1,7,2,5,101,0] action_log_tail=[hit(attacker=0,target=101,amount=13,kind=Weak)] floating_live=1 units=[id=0,team=Ally,hp=1/1,tough=N/A,ult=20/100/100,ko=false,stun=0;id=1,team=Ally,hp=100/100,tough=N/A,ult=0/100/150,ko=false,stun=0;id=2,team=Ally,hp=95/95,tough=N/A,ult=0/100/150,ko=false,stun=0;id=5,team=Ally,hp=90/90,tough=N/A,ult=0/100/150,ko=false,stun=0;id=7,team=Ally,hp=90/90,tough=N/A,ult=0/100/150,ko=false,stun=0;id=101,team=Enemy,hp=287/300,tough=35/35,weaknesses=[Fire,Light],broken=false,ult=0/100/150,ko=false,stun=0]
+RESULT|cargo_run_combat_cli|exit=0|dur=487ms

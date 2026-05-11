@@ -1,0 +1,1746 @@
+== no_run ==
+EXIT:no_run:0
+== no_fail_fast ==
+
+running 140 tests
+test combat::damage::damage_tests::base_damage_zero_yields_zero ... ok
+test combat::damage::damage_tests::matrix_neutral_lose_break ... ok
+test combat::damage::damage_tests::matrix_neutral_lose_no_break ... ok
+test combat::damage::damage_tests::free_attacker_is_neutral_vs_all ... ok
+test combat::damage::damage_tests::matrix_neutral_tie_break ... ok
+test combat::damage::damage_tests::matrix_neutral_win_no_break ... ok
+test combat::damage::damage_tests::matrix_resist_lose_break ... ok
+test combat::damage::damage_tests::matrix_resist_lose_no_break ... ok
+test combat::damage::damage_tests::matrix_resist_tie_no_break ... ok
+test combat::damage::damage_tests::matrix_neutral_win_break ... ok
+test combat::damage::damage_tests::matrix_resist_tie_break ... ok
+test combat::damage::damage_tests::matrix_resist_win_break ... ok
+test combat::damage::damage_tests::matrix_resist_win_no_break ... ok
+test combat::damage::damage_tests::matrix_neutral_tie_no_break ... ok
+test combat::damage::damage_tests::matrix_weak_lose_break ... ok
+test combat::damage::damage_tests::matrix_weak_lose_no_break ... ok
+test combat::damage::damage_tests::matrix_weak_tie_break ... ok
+test combat::bootstrap::tests::test_spawn_non_commander ... ok
+test combat::bootstrap::tests::test_spawn_commander ... ok
+test combat::damage::damage_tests::physical_tag_always_neutral_tag_mod ... ok
+test combat::damage::damage_tests::resist_and_triangle_lose_stack_multiplicatively ... ok
+test combat::damage::damage_tests::matrix_weak_win_no_break ... ok
+test combat::enemy_ai::tests::pick_action_targets_lowest_toughness_ratio ... ok
+test combat::enemy_ai::tests::pick_action_uses_skill_when_ult_not_ready ... ok
+test combat::damage::damage_tests::matrix_weak_tie_no_break ... ok
+test combat::enemy_ai::tests::pick_action_uses_ultimate_when_ready ... ok
+test combat::enemy_ai::tests::pick_action_breaks_tie_by_unit_id ... ok
+test combat::energy::tests::caps_are_independent ... ok
+test combat::damage::damage_tests::matrix_weak_win_break ... ok
+test combat::energy::tests::reset_restores_full_budget ... ok
+test combat::energy::tests::energy_gain_clamps_at_max ... ok
+test combat::enemy_ai::tests::pick_action_falls_back_to_basic_when_no_skills ... ok
+test combat::energy::tests::secondary_cap_at_10 ... ok
+test combat::follow_up::follow_up_tests::follow_up_reports_ineligible_reasons ... ok
+test combat::kernel::tests::canonical_beat_ids_are_stable_and_ordered ... ok
+test combat::energy::tests::external_cap_at_30 ... ok
+test combat::kernel::tests::fatigue_carryover_and_reset_are_deterministic ... ok
+test combat::kernel::tests::flow_enters_decays_and_exits ... ok
+test combat::kernel::tests::registry_can_attach_extension_behavior_without_core_match_ladders ... ok
+test combat::kernel::tests::state_delegates_to_kernel_primitives ... ok
+test combat::kernel::tests::strain_clamps_gain_and_spend ... ok
+test combat::kernel::tests::tactical_cycle_advances_through_phases_and_wraps_cycle ... ok
+test combat::kernel::tests::tag_lifetime_ticks_and_consumes ... ok
+test combat::log::tests::action_log_caps_at_5 ... ok
+test combat::follow_up::follow_up_tests::follow_up_low_hp_event_targets_alive_enemy ... ok
+test combat::resolution::resolution_tests::adult_5_consecutive_basics_no_discount ... ok
+test combat::follow_up::follow_up_tests::follow_up_break_event_resolves_same_update ... ok
+test combat::resolution::resolution_tests::adult_gets_no_discount_after_consecutive_basics ... ok
+test combat::resolution::resolution_tests::child_1_basic_not_enough_for_discount ... ok
+test combat::resolution::resolution_tests::child_discount_resets_streak_needs_2_more_basics ... ok
+test combat::resolution::resolution_tests::child_gets_minus1_sp_after_2_consecutive_basics ... ok
+test combat::resolution::resolution_tests::grant_free_skill_events_caps_at_available_allies ... ok
+test combat::resolution::resolution_tests::grant_free_skill_events_emits_four_on_skill_cast ... ok
+test combat::resolution::resolution_tests::grant_free_skill_resolve_sets_grant_count ... ok
+test combat::resolution::resolution_tests::resolve_action_uses_explicit_targeting_shape_for_revive_skills ... ok
+test combat::resolution::resolution_tests::resolve_action_uses_targeting_shape_over_damage_effect_shape ... ok
+test combat::resolution::resolution_tests::resolve_apply_basic_adds_sp_and_not_on_skill_cast ... ok
+test combat::resolution::resolution_tests::resolve_apply_break_sets_broke_flag_and_on_break_event ... ok
+test combat::resolution::resolution_tests::resolve_apply_ko_flag_when_hp_drops_below_zero_and_emits_on_ko ... ok
+test combat::resolution::resolution_tests::resolve_apply_no_break_no_on_break_event ... ok
+test combat::resolution::resolution_tests::resolve_apply_no_ko_no_on_ko_event ... ok
+test combat::resolution::resolution_tests::resolve_apply_skill_fails_when_pool_too_low ... ok
+test combat::resolution::resolution_tests::resolve_apply_skill_spends_sp_and_emits_on_skill_cast ... ok
+test combat::resolution::resolution_tests::resolve_apply_ultimate_resets_charge_and_emits_on_skill_cast ... ok
+test combat::resolution::resolution_tests::test_apply_revive_fails_on_active ... ok
+test combat::resolution::resolution_tests::test_apply_revive_success ... ok
+test combat::sp::tests::round_sp_tracker_caps_non_basic_at_2 ... ok
+test combat::sp::tests::round_sp_tracker_partial_gain_then_remainder ... ok
+test combat::sp::tests::round_sp_tracker_reset_restores_full_budget ... ok
+test combat::sp::tests::sp_pool_default_max_is_5 ... ok
+test combat::state::tests::default_starts_waiting_without_winner ... ok
+test combat::state::tests::defeat_on_all_allies_ko ... ok
+test combat::state::tests::reset_clears_winner ... ok
+test combat::state::tests::victory_on_all_enemies_ko ... ok
+test combat::status_effect::tests::negative_damage_per_turn_accepted_at_parse_time ... ok
+test combat::status_effect::tests::ron_roundtrip_burn ... ok
+test combat::status_effect::tests::ron_roundtrip_freeze ... ok
+test combat::status_effect::tests::ron_roundtrip_shock ... ok
+test combat::status_effect::tests::tick_down_to_zero ... ok
+test combat::status_effect::tests::tick_keeps_component_while_turns_remain ... ok
+test combat::status_effect::tests::tick_no_op_at_zero ... ok
+test combat::stun::tests::tick_down_to_zero ... ok
+test combat::stun::tests::tick_keeps_component_while_turns_remain ... ok
+test combat::stun::tests::tick_no_op_at_zero ... ok
+test combat::toughness::tests::apply_hit_is_noop_when_break_sealed ... ok
+test combat::toughness::tests::apply_hit_non_weak_no_break ... ok
+test combat::toughness::tests::apply_hit_weak_drains_and_breaks ... ok
+test combat::toughness::tests::armored_requires_double_damage_to_break ... ok
+test combat::toughness::tests::can_apply_matches_affordance_rule ... ok
+test combat::toughness::tests::classify_normal_default ... ok
+test combat::toughness::tests::classify_prefers_break_over_weak ... ok
+test combat::toughness::tests::classify_resist ... ok
+test combat::toughness::tests::classify_weak_over_resist ... ok
+test combat::toughness::tests::exposes_affordance_only_for_enemies_with_positive_bars ... ok
+test combat::toughness::tests::shielded_never_breaks_from_toughness_hit ... ok
+test combat::ultimate::tests::ally_vs_ally_semantics_taichi_and_hackmon ... ok
+test combat::turn_system::tests::check_victory_system_sets_winner_once ... ok
+test combat::ultimate::tests::trigger_on_ally_follow_up_matches_depth_and_team ... ok
+test combat::ultimate::tests::trigger_on_basic_attack_never_matches ... ok
+test combat::turn_system::tests::resolve_action_system_rejects_ko_target ... ok
+test combat::ultimate::tests::trigger_on_hit_taken_matches_correct_target ... ok
+test combat::ultimate::tests::trigger_on_kill_matches_source_unit_only ... ok
+test combat::turn_system::tests::resolve_action_system_rejects_revive_on_healthy_target ... ok
+test combat::turn_system::tests::resolve_action_system_rejects_stunned_attacker ... ok
+test combat::ultimate::tests::trigger_on_offensive_party_event_matches_ally_source_only ... ok
+test combat::ultimate::tests::try_add_already_ready_no_new_cross ... ok
+test combat::ultimate::tests::try_add_caps_at_cap ... ok
+test combat::ultimate::tests::try_add_crosses_trigger_returns_true ... ok
+test combat::ultimate::tests::ult_gain_delta_clamps_at_cap ... ok
+test combat::ultimate::tests::ult_gain_delta_is_actual_increase ... ok
+test combat::ultimate::tests::ult_gain_delta_zero_when_already_at_cap ... ok
+test data::skills_ron::tests::apply_status_negative_damage_per_turn_accepted_at_parse_time ... ok
+test data::skills_ron::tests::apply_status_negative_duration_rejected_at_parse_time ... ok
+test data::skills_ron::tests::effect_parse_error_bad_type ... ok
+test data::skills_ron::tests::effect_roundtrip_apply_status_burn ... ok
+test data::skills_ron::tests::effect_roundtrip_apply_status_freeze ... ok
+test data::skills_ron::tests::effect_roundtrip_apply_status_shock ... ok
+test data::skills_ron::tests::effect_roundtrip_damage_struct_variant ... ok
+test data::skills_ron::tests::effect_roundtrip_grant_energy ... ok
+test data::skills_ron::tests::effect_roundtrip_revive ... ok
+test data::skills_ron::tests::effect_roundtrip_self_advance ... ok
+test data::skills_ron::tests::effect_roundtrip_stun_unit ... ok
+test data::skills_ron::tests::effect_roundtrip_toughness_tuple ... ok
+test data::skills_ron::tests::effect_roundtrip_turn_advance ... ok
+test data::skills_ron::tests::missing_targeting_metadata_fails_parse ... ok
+test data::skills_ron::tests::round_trip_skill_def ... ok
+test data::skills_ron::tests::targeting_roundtrip_and_reason_codes ... ok
+test data::skills_ron::tests::unknown_targeting_field_fails_parse ... ok
+test data::skills_ron::tests::validate_allows_canonical_mixed_effect_deferral ... ok
+test data::skills_ron::tests::validate_rejects_implemented_non_single_shape ... ok
+test data::skills_ron::tests::validate_rejects_revive_with_non_ko_targeting ... ok
+test data::skills_ron::tests::validate_rejects_row_damage_against_single_targeting ... ok
+test data::skills_ron::tests::parse_canonical_skills_ron ... ok
+test data::units_ron::tests::missing_enemy_counterplay_fields_default_on_parse ... ok
+test data::units_ron::tests::missing_evo_stage_fails_to_parse ... ok
+test data::units_ron::tests::missing_identity_metadata_fails_to_parse ... ok
+test data::units_ron::tests::parsing_units_with_invalid_follow_up_trigger_fails ... ok
+test data::units_ron::tests::parse_canonical_units_ron ... ok
+test data::units_ron::tests::round_trip_unit_def ... ok
+test data::units_ron::tests::rookie_skill_references_resolve_in_skill_book ... ok
+
+test result: ok. 140 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 141 tests
+test combat::damage::damage_tests::base_damage_zero_yields_zero ... ok
+test combat::damage::damage_tests::free_attacker_is_neutral_vs_all ... ok
+test combat::damage::damage_tests::matrix_neutral_lose_break ... ok
+test combat::damage::damage_tests::matrix_neutral_tie_break ... ok
+test combat::damage::damage_tests::matrix_neutral_lose_no_break ... ok
+test combat::damage::damage_tests::matrix_neutral_win_break ... ok
+test combat::damage::damage_tests::matrix_neutral_tie_no_break ... ok
+test combat::damage::damage_tests::matrix_resist_lose_no_break ... ok
+test combat::damage::damage_tests::matrix_neutral_win_no_break ... ok
+test combat::damage::damage_tests::matrix_resist_tie_no_break ... ok
+test combat::damage::damage_tests::matrix_resist_lose_break ... ok
+test combat::damage::damage_tests::matrix_resist_win_break ... ok
+test combat::damage::damage_tests::matrix_resist_tie_break ... ok
+test combat::damage::damage_tests::matrix_weak_lose_break ... ok
+test combat::damage::damage_tests::matrix_weak_tie_break ... ok
+test combat::damage::damage_tests::matrix_resist_win_no_break ... ok
+test combat::damage::damage_tests::matrix_weak_tie_no_break ... ok
+test combat::damage::damage_tests::matrix_weak_win_no_break ... ok
+test combat::damage::damage_tests::matrix_weak_lose_no_break ... ok
+test combat::damage::damage_tests::physical_tag_always_neutral_tag_mod ... ok
+test combat::damage::damage_tests::resist_and_triangle_lose_stack_multiplicatively ... ok
+test combat::bootstrap::tests::test_spawn_commander ... ok
+test combat::bootstrap::tests::test_spawn_non_commander ... ok
+test combat::enemy_ai::tests::pick_action_falls_back_to_basic_when_no_skills ... ok
+test combat::enemy_ai::tests::pick_action_targets_lowest_toughness_ratio ... ok
+test combat::enemy_ai::tests::pick_action_breaks_tie_by_unit_id ... ok
+test combat::enemy_ai::tests::pick_action_uses_skill_when_ult_not_ready ... ok
+test combat::enemy_ai::tests::pick_action_uses_ultimate_when_ready ... ok
+test combat::damage::damage_tests::matrix_weak_win_break ... ok
+test combat::energy::tests::reset_restores_full_budget ... ok
+test combat::energy::tests::energy_gain_clamps_at_max ... ok
+test combat::energy::tests::secondary_cap_at_10 ... ok
+test combat::energy::tests::external_cap_at_30 ... ok
+test combat::energy::tests::caps_are_independent ... ok
+test combat::follow_up::follow_up_tests::follow_up_reports_ineligible_reasons ... ok
+test combat::kernel::tests::canonical_beat_ids_are_stable_and_ordered ... ok
+test combat::kernel::tests::fatigue_carryover_and_reset_are_deterministic ... ok
+test combat::kernel::tests::flow_enters_decays_and_exits ... ok
+test combat::kernel::tests::registry_can_attach_extension_behavior_without_core_match_ladders ... ok
+test combat::kernel::tests::state_delegates_to_kernel_primitives ... ok
+test combat::kernel::tests::strain_clamps_gain_and_spend ... ok
+test combat::kernel::tests::tactical_cycle_advances_through_phases_and_wraps_cycle ... ok
+test combat::kernel::tests::tag_lifetime_ticks_and_consumes ... ok
+test combat::log::tests::action_log_caps_at_5 ... ok
+test combat::resolution::resolution_tests::adult_5_consecutive_basics_no_discount ... ok
+test combat::follow_up::follow_up_tests::follow_up_low_hp_event_targets_alive_enemy ... ok
+test combat::follow_up::follow_up_tests::follow_up_break_event_resolves_same_update ... ok
+test combat::resolution::resolution_tests::child_1_basic_not_enough_for_discount ... ok
+test combat::resolution::resolution_tests::adult_gets_no_discount_after_consecutive_basics ... ok
+test combat::resolution::resolution_tests::child_discount_resets_streak_needs_2_more_basics ... ok
+test combat::resolution::resolution_tests::child_gets_minus1_sp_after_2_consecutive_basics ... ok
+test combat::resolution::resolution_tests::grant_free_skill_events_caps_at_available_allies ... ok
+test combat::resolution::resolution_tests::grant_free_skill_events_emits_four_on_skill_cast ... ok
+test combat::resolution::resolution_tests::grant_free_skill_resolve_sets_grant_count ... ok
+test combat::resolution::resolution_tests::resolve_action_uses_explicit_targeting_shape_for_revive_skills ... ok
+test combat::resolution::resolution_tests::resolve_action_uses_targeting_shape_over_damage_effect_shape ... ok
+test combat::resolution::resolution_tests::resolve_apply_basic_adds_sp_and_not_on_skill_cast ... ok
+test combat::resolution::resolution_tests::resolve_apply_break_sets_broke_flag_and_on_break_event ... ok
+test combat::resolution::resolution_tests::resolve_apply_ko_flag_when_hp_drops_below_zero_and_emits_on_ko ... ok
+test combat::resolution::resolution_tests::resolve_apply_no_break_no_on_break_event ... ok
+test combat::resolution::resolution_tests::resolve_apply_no_ko_no_on_ko_event ... ok
+test combat::resolution::resolution_tests::resolve_apply_skill_fails_when_pool_too_low ... ok
+test combat::resolution::resolution_tests::resolve_apply_skill_spends_sp_and_emits_on_skill_cast ... ok
+test combat::resolution::resolution_tests::resolve_apply_ultimate_resets_charge_and_emits_on_skill_cast ... ok
+test combat::resolution::resolution_tests::test_apply_revive_fails_on_active ... ok
+test combat::resolution::resolution_tests::test_apply_revive_success ... ok
+test combat::sp::tests::round_sp_tracker_caps_non_basic_at_2 ... ok
+test combat::sp::tests::round_sp_tracker_partial_gain_then_remainder ... ok
+test combat::sp::tests::round_sp_tracker_reset_restores_full_budget ... ok
+test combat::sp::tests::sp_pool_default_max_is_5 ... ok
+test combat::state::tests::default_starts_waiting_without_winner ... ok
+test combat::state::tests::defeat_on_all_allies_ko ... ok
+test combat::state::tests::reset_clears_winner ... ok
+test combat::state::tests::victory_on_all_enemies_ko ... ok
+test combat::status_effect::tests::negative_damage_per_turn_accepted_at_parse_time ... ok
+test combat::status_effect::tests::ron_roundtrip_shock ... ok
+test combat::status_effect::tests::ron_roundtrip_burn ... ok
+test combat::status_effect::tests::ron_roundtrip_freeze ... ok
+test combat::status_effect::tests::tick_down_to_zero ... ok
+test combat::status_effect::tests::tick_keeps_component_while_turns_remain ... ok
+test combat::status_effect::tests::tick_no_op_at_zero ... ok
+test combat::stun::tests::tick_down_to_zero ... ok
+test combat::stun::tests::tick_keeps_component_while_turns_remain ... ok
+test combat::stun::tests::tick_no_op_at_zero ... ok
+test combat::toughness::tests::apply_hit_is_noop_when_break_sealed ... ok
+test combat::toughness::tests::apply_hit_non_weak_no_break ... ok
+test combat::toughness::tests::apply_hit_weak_drains_and_breaks ... ok
+test combat::toughness::tests::armored_requires_double_damage_to_break ... ok
+test combat::toughness::tests::can_apply_matches_affordance_rule ... ok
+test combat::toughness::tests::classify_normal_default ... ok
+test combat::toughness::tests::classify_prefers_break_over_weak ... ok
+test combat::toughness::tests::classify_resist ... ok
+test combat::toughness::tests::classify_weak_over_resist ... ok
+test combat::toughness::tests::exposes_affordance_only_for_enemies_with_positive_bars ... ok
+test combat::toughness::tests::shielded_never_breaks_from_toughness_hit ... ok
+test combat::turn_system::tests::check_victory_system_sets_winner_once ... ok
+test combat::ultimate::tests::ally_vs_ally_semantics_taichi_and_hackmon ... ok
+test combat::ultimate::tests::trigger_on_ally_follow_up_matches_depth_and_team ... ok
+test combat::ultimate::tests::trigger_on_basic_attack_never_matches ... ok
+test combat::turn_system::tests::resolve_action_system_rejects_ko_target ... ok
+test combat::ultimate::tests::trigger_on_hit_taken_matches_correct_target ... ok
+test combat::turn_system::tests::resolve_action_system_rejects_revive_on_healthy_target ... ok
+test combat::ultimate::tests::trigger_on_kill_matches_source_unit_only ... ok
+test combat::ultimate::tests::trigger_on_offensive_party_event_matches_ally_source_only ... ok
+test combat::turn_system::tests::resolve_action_system_rejects_stunned_attacker ... ok
+test combat::ultimate::tests::try_add_already_ready_no_new_cross ... ok
+test combat::ultimate::tests::try_add_caps_at_cap ... ok
+test combat::ultimate::tests::try_add_crosses_trigger_returns_true ... ok
+test combat::ultimate::tests::ult_gain_delta_clamps_at_cap ... ok
+test combat::ultimate::tests::ult_gain_delta_is_actual_increase ... ok
+test combat::ultimate::tests::ult_gain_delta_zero_when_already_at_cap ... ok
+test data::skills_ron::tests::apply_status_negative_damage_per_turn_accepted_at_parse_time ... ok
+test data::skills_ron::tests::apply_status_negative_duration_rejected_at_parse_time ... ok
+test data::skills_ron::tests::effect_parse_error_bad_type ... ok
+test data::skills_ron::tests::effect_roundtrip_apply_status_burn ... ok
+test data::skills_ron::tests::effect_roundtrip_apply_status_freeze ... ok
+test data::skills_ron::tests::effect_roundtrip_apply_status_shock ... ok
+test data::skills_ron::tests::effect_roundtrip_damage_struct_variant ... ok
+test data::skills_ron::tests::effect_roundtrip_grant_energy ... ok
+test data::skills_ron::tests::effect_roundtrip_revive ... ok
+test data::skills_ron::tests::effect_roundtrip_self_advance ... ok
+test data::skills_ron::tests::effect_roundtrip_stun_unit ... ok
+test data::skills_ron::tests::effect_roundtrip_toughness_tuple ... ok
+test data::skills_ron::tests::effect_roundtrip_turn_advance ... ok
+test data::skills_ron::tests::missing_targeting_metadata_fails_parse ... ok
+test data::skills_ron::tests::round_trip_skill_def ... ok
+test data::skills_ron::tests::unknown_targeting_field_fails_parse ... ok
+test data::skills_ron::tests::targeting_roundtrip_and_reason_codes ... ok
+test data::skills_ron::tests::validate_allows_canonical_mixed_effect_deferral ... ok
+test data::skills_ron::tests::validate_rejects_implemented_non_single_shape ... ok
+test data::skills_ron::tests::validate_rejects_revive_with_non_ko_targeting ... ok
+test data::skills_ron::tests::validate_rejects_row_damage_against_single_targeting ... ok
+test data::skills_ron::tests::parse_canonical_skills_ron ... ok
+test data::units_ron::tests::missing_enemy_counterplay_fields_default_on_parse ... ok
+test data::units_ron::tests::missing_evo_stage_fails_to_parse ... ok
+test data::units_ron::tests::missing_identity_metadata_fails_to_parse ... ok
+test data::units_ron::tests::parsing_units_with_invalid_follow_up_trigger_fails ... ok
+test data::units_ron::tests::parse_canonical_units_ron ... ok
+test headless::tests::combat_script_advance_yields_steps_in_order ... ok
+test data::units_ron::tests::round_trip_unit_def ... ok
+test data::units_ron::tests::rookie_skill_references_resolve_in_skill_book ... ok
+
+test result: ok. 141 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 2 tests
+test tests::proof_tick_limit_accepts_positive_integer ... ok
+test tests::proof_tick_limit_falls_back_for_missing_zero_or_invalid_values ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 13 tests
+test counterplay_deferred_reason_codes_remain_visible_in_resource_status ... ok
+test combat_cli_source_does_not_reintroduce_ko_or_skill_id_hardcoding ... ok
+test counterplay_snapshot_exposes_deferred_trait ... ok
+test combat_cli_source_does_not_hardcode_counterplay_names ... ok
+test counterplay_snapshot_exposes_implemented_trait ... ok
+test counterplay_snapshot_exposes_hidden_charged_telegraph ... ok
+test deferred_actions_are_excluded_from_enabled_selection ... ok
+test disabled_resource_keeps_target_reason_codes_for_ko_live_and_enemy_targets ... ok
+test empty_enemy_returns_no_counterplay_affordances ... ok
+test combat_windowed_source_does_not_reintroduce_ko_or_skill_id_hardcoding ... ok
+test enabled_basic_target_is_chosen_from_query_output_not_local_team_assumptions ... ok
+test explicit_sp_snapshot_blocks_revive_but_bypass_snapshot_remains_separate ... ok
+test snapshot_carries_commander_energy_tracker_and_real_sp ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 23 tests
+test attacker_ko_blocks_action_before_targets ... ok
+test attacker_stunned_blocks_action_before_targets ... ok
+test child_tamer_gauge_boost_remains_queryable_as_the_shared_tamer_gauge_declaration ... ok
+test damaged_target_affordance_requires_missing_hp_for_ally_targets ... ok
+test deferred_implementation_returns_deferred_action_and_targets ... ok
+test deferred_row_shape_returns_deferred_for_every_target_in_snapshot ... ok
+test enabled_offensive_action_reports_target_and_resource_details ... ok
+test energy_cap_affordance_disables_when_requested_exceeds_remaining_or_budget_is_exhausted ... ok
+test energy_cap_affordance_reports_remaining_budget_and_true_cap_reason ... ok
+test hidden_implementation_returns_hidden_action_and_targets ... ok
+test implemented_enemy_toughness_is_visible_while_ally_and_zero_bars_stay_hidden ... ok
+test intent_legality_respects_priority_and_specific_target_reasons ... ok
+test legality_reason_codes_include_contract_values ... ok
+test missing_skill_book_entry_returns_missing_skill ... ok
+test no_valid_targets_disables_action_after_state_and_resource_checks ... ok
+test non_active_actor_reports_not_active_without_losing_target_affordances ... ok
+test revive_affordance_requires_ko_ally_and_rejects_live_and_enemy_targets ... ok
+test sp_shortfall_disables_action_and_reports_current_and_required_sp ... ok
+test tamer_resource_declarations_are_deferred_and_keep_known_command_costs ... ok
+test target_affordance_surface_still_handles_enemy_ally_ko_commander_and_self ... ok
+test target_hp_rule_distinguishes_any_and_damaged ... ok
+test ultimate_not_ready_disables_action_and_reports_current_and_required_ult_charge ... ok
+test wrong_phase_reports_wrong_phase_and_keeps_target_affordances ... ok
+
+test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 5 tests
+test circuit_spend_cannot_underflow_and_records_a_blocked_reason ... ok
+test static_charge_caps_and_reports_a_stable_blocked_reason_on_the_fourth_hit ... ok
+test static_charge_starts_clean_and_grants_energy_on_the_third_hit ... ok
+test tactical_cycle_reset_is_visible_after_message_flush ... ok
+test runtime_registration_applies_battery_transition_once ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test test_bootstrap_spawn_composition ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+test s08_boundary_turn_advance_and_action_intent ... ok
+test s08_ultimate_interrupt_flow ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+test combat_cli_source_stays_on_shared_surfaces_not_presentation_metadata ... ok
+test combat_cli_binary_emits_shared_combat_surfaces_from_non_root_cwd ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.32s
+
+
+running 3 tests
+test s_m008_s06_shared_sp_history_blocks_and_then_unlocks_a_revive ... ok
+test s_m008_s06_status_pressure_turns_low_hp_into_a_failed_action_and_a_follow_up_window ... ok
+test s_m008_s06_break_follow_up_and_ult_timing_trace ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 4 tests
+test ally_offensive_event_charges_commander_ultimate ... ok
+test enemy_offensive_event_does_not_charge_commander_ultimate ... ok
+test enemy_emits_no_intent_when_only_commander_is_alive ... ok
+test enemy_does_not_target_commander ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+test greymon_vs_devimon_resist_fire_breakdown ... ok
+test greymon_vs_devimon_weak_fire_breakdown ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test s06_encounter_e2e_2v2_victory ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 3 tests
+test enemy_targets_lowest_toughness_ratio ... ok
+test enemy_uses_skill_when_ult_not_ready ... ok
+test enemy_uses_ultimate_when_charge_ready ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 3 tests
+test shielded_break_seal_is_implemented_while_armored_reactive_armor_stays_deferred ... ok
+test empty_minion_declarations_stay_empty_and_hidden_telegraphs_stay_hidden ... ok
+test canonical_devimon_projection_surfaces_implemented_and_deferred_states ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 7 tests
+test commander_target_matches_target_is_commander ... ok
+test offensive_ko_enemy_matches_target_ko ... ok
+test ko_attacker_matches_attacker_ko ... ok
+test stunned_attacker_matches_attacker_stunned ... ok
+test revive_live_ally_matches_target_not_ko ... ok
+test non_active_actor_matches_not_active_unit ... ok
+test offensive_ally_matches_wrong_side ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test s09_event_stream_observes_all_variants ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+test chain_terminates_when_follow_up_cannot_retrigger ... ok
+test depth_chain_progresses_to_depth_two ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 6 tests
+test s10_control_scenario_without_matching_trigger_has_no_follow_up_action ... ok
+test gabumon_triggers_follow_up_on_ally_low_hp ... ok
+test s10_agumon_break_follow_up_uses_real_pilot_config ... ok
+test patamon_triggers_follow_up_on_ally_low_hp ... ok
+test s10_renamon_low_hp_follow_up_targets_the_attacker ... ok
+test dorumon_triggers_follow_up_on_enemy_kill ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 10 tests
+test angemon_attack_vs_data_no_bonus ... ok
+test kabuterimon_first_electric_hit_grants_energy ... ok
+test garurumon_first_ice_hit_grants_energy ... ok
+test greymon_fire_trigger_does_not_fire_on_garurumon_ice_hit ... ok
+test greymon_first_fire_hit_grants_energy ... ok
+test angemon_attack_vs_virus_grants_bonus ... ok
+test kyubimon_freeze_application_self_advances ... ok
+test greymon_second_fire_hit_blocked ... ok
+test dorugamon_first_dark_skill_grants_bonus_toughness ... ok
+test greymon_resets_next_turn ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 4 tests
+test holy_support_snapshot_surfaces_grace_capacity_and_martyr_state ... ok
+test holy_support_missing_resource_is_absent_from_validation_snapshot ... ok
+test holy_support_invalid_spend_is_visible_as_rejected_snapshot_state ... ok
+test holy_support_transition_system_updates_snapshot_without_affordance_api ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 6 tests
+test hook_translates_holy_tags_and_ignores_unknown_tags ... ok
+test validation_snapshot_includes_holy_support_fields ... ok
+test grace_builds_saturate_at_cap_after_bevy_flush ... ok
+test spending_grace_underflow_is_rejected_without_underflowing ... ok
+test wrapped_tactical_cycle_resets_holy_support_guards ... ok
+test martyr_light_is_only_marked_and_consumed_once_per_cycle ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+test plain_patamon_skill_has_no_holy_support_blueprint_dispatch ... ok
+test patamon_ult_builds_grace_through_the_blueprint_kernel_path ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 4 tests
+test holy_support_metadata_remains_optional_for_backward_compatibility ... ok
+test patamon_angemon_keep_hope_line_roster_relationship ... ok
+test patamon_seeded_skill_declares_custom_signal_not_removed_direct_effects ... ok
+test patamon_roster_references_the_seeded_blueprint_skill ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 5 tests
+test party_config_deserializes_and_validates ... ok
+test wrong_tamer_is_rejected ... ok
+test happy_path_bootstrap_succeeds ... ok
+test unknown_rookie_is_rejected ... ok
+test wrong_pick_count_is_rejected ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 6 tests
+test cannot_manually_select_taichi ... ok
+test bootstrap_is_deterministic ... ok
+test fail_on_duplicates ... ok
+test fail_on_unknown_rookie ... ok
+test fail_on_wrong_count ... ok
+test happy_path_select_four_rookies ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 7 tests
+test custom_signal_missing_field_defaults_to_empty ... ok
+test custom_signal_resolved_action_carries_metadata_without_interpreting_it ... ok
+test custom_signal_rejects_unknown_patamon_variant ... ok
+test patamon_signal_maps_to_expected_holy_support_transition ... ok
+test custom_signal_parses_from_tracked_patamon_skill ... ok
+test no_signal_action_produces_no_patamon_blueprint_transitions ... ok
+test patamon_ultimate_dispatches_blueprint_transition_into_holy_support_state_and_snapshot ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test s14_patamon_revive_e2e ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 3 tests
+test lifecycle_emitted_even_when_action_fails_for_sp_shortfall ... ok
+test lifecycle_root_action_emits_4_events_in_order ... ok
+test lifecycle_follow_up_action_emits_second_cycle_with_depth_1 ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 7 tests
+test predator_loop_blocks_berserk_when_strain_is_at_threshold ... ok
+test predator_loop_builds_exploit_applies_prey_lock_and_consumes_payoff ... ok
+test predator_loop_event_and_snapshot_surfaces_are_serializable_and_readable ... ok
+test predator_loop_rejects_cap_overflow_and_records_blocked_reason ... ok
+test predator_loop_rejects_invalid_target_and_malformed_builds ... ok
+test predator_loop_requires_exploit_before_prey_lock ... ok
+test predator_loop_ticking_expires_prey_lock_and_blocks_consumption_after_expiry ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 4 tests
+test malformed_presentation_strings_are_inert_without_custom_signals ... ok
+test presentation_metadata_does_not_change_action_query_or_resolved_action ... ok
+test tracked_ron_exposes_custom_signals_separately_from_presentation_metadata ... ok
+test runtime_events_and_snapshots_ignore_misleading_presentation_metadata ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 6 tests
+test sp_non_basic_cap_enforced ... ok
+test round_energy_tracker_resets_on_turn_start ... ok
+test energy_grant_truthfully_clips_at_energy_max ... ok
+test energy_grant_caps_at_round_budget_and_emits_truthful_amounts ... ok
+test child_discount_after_two_basics ... ok
+test canonical_form_identity_energy_respects_round_tracker_caps ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test s12_revive_semantics ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+test s11_roster_catalog_is_the_canonical_roster ... ok
+test s11_rookie_skill_refs_resolve_against_the_skill_book ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test s_m006_roster_smoke_deterministic ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 1 test
+test boss_encounter_ttk_target_4_to_7_turns ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+
+running 1 test
+test miniboss_encounter_ttk_target_3_to_5_turns ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+
+running 1 test
+test minion_wave_ttk_target_2_to_3_turns ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+running 10 tests
+test legality_contract_contains_no_placeholder_text ... ok
+test legality_contract_covers_action_target_resource_and_implementation_reason_families ... ok
+test legality_contract_defines_required_status_shapes ... ok
+test legality_contract_links_requirement_and_decision ... ok
+test legality_contract_includes_target_resource_and_implementation_semantics ... ok
+test legality_contract_requires_engine_preflight_parity ... ok
+test legality_contract_requires_skill_data_plus_world_snapshot_query_source ... ok
+test legality_contract_separates_reason_codes_from_display_strings ... ok
+test legality_contract_states_no_skill_id_specific_ui_rule_boundary ... ok
+test legality_contract_names_all_required_reason_codes ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test s_m008_s05_sp_economy_20_turn_regression ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 3 tests
+test vaccine_vs_data_status_miss_emits_on_status_resisted ... ok
+test vaccine_vs_data_status_hit_emits_on_status_applied ... ok
+test vaccine_vs_vaccine_neutral_status_always_applies ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 4 tests
+test action_that_kos_target_produces_no_status ... ok
+test action_on_ko_target_produces_no_status ... ok
+test reapply_status_overwrites_existing_component ... ok
+test apply_status_inserts_component_and_emits_event ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 5 tests
+test stunned_unit_does_not_tick_status ... ok
+test shock_cancels_action_at_100pct ... ok
+test freeze_reduces_effective_speed_and_expires ... ok
+test shock_never_cancels_at_0pct ... ok
+test burn_ticks_hp_and_expires ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 5 tests
+test freeze_sets_and_clears_speed_modifier ... ok
+test shock_full_cancel_emits_action_failed ... ok
+test shock_zero_percent_does_not_cancel ... ok
+test burn_clamps_hp_and_expires ... ok
+test stunned_unit_skips_status_tick ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 3 tests
+test row_skill_is_rejected_before_mutation_or_lifecycle ... ok
+test all_enemies_skill_is_rejected_before_mutation_or_lifecycle ... ok
+test single_target_skill_still_executes_normally ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 14 tests
+test apply_av_change_advance_does_not_exceed_max_av ... ok
+test apply_av_change_clamps_to_min_action_threshold ... ok
+test apply_av_change_clamps_without_resistance_too ... ok
+test apply_av_change_records_hit_and_updates_av ... ok
+test compute_av_change_no_resistance_component ... ok
+test canonical_units_ron_contains_tempo_resistant_boss ... ok
+test tempo_resistance_multiplier_curve ... ok
+test compute_av_change_advance_bypasses_resistance ... ok
+test three_consecutive_delays_show_diminishing_returns ... ok
+test ally_spawn_has_no_tempo_resistance_component ... ok
+test boss_spawn_gets_tempo_resistance_component ... ok
+test system_applies_advance_without_touching_resistance_stack ... ok
+test system_applies_delay_with_resistance_via_combat_event ... ok
+test boss_scenario_three_slow_hits_show_resistance_curve ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 4 tests
+test standard_breaks_in_one_full_hit ... ok
+test armored_requires_two_full_hits ... ok
+test shielded_never_breaks ... ok
+test break_seal_blocks_repeat_break_in_same_round_then_lifts_on_next_turn ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+test enemy_attack_damages_ally_without_breaking_or_stunning ... ok
+test ally_attack_still_breaks_enemy_toughness_when_weak ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test triangle_all_16_pairs ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 4 tests
+test av_ko_unit_does_not_advance ... ok
+test av_tie_breaking_by_unit_id ... ok
+test av_stunned_unit_does_not_advance ... ok
+test av_basic_advancement_and_turn ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test canonical_fire_ice_twin_core_loop_is_visible_through_validation_snapshots ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test twin_core_kernel_hooks_apply_current_state_fields ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test twin_core_resolution_placeholder ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test twin_core_roster_contract_placeholder ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 7 tests
+test gap_matrix_contains_no_placeholder_text ... ok
+test gap_matrix_defines_required_classification_vocabulary ... ok
+test gap_matrix_links_requirement_and_decisions ... ok
+test gap_matrix_states_the_no_skill_id_specific_ui_boundary ... ok
+test gap_matrix_names_all_required_mechanics_and_areas ... ok
+test gap_matrix_uses_each_required_status_family ... ok
+test gap_matrix_names_downstream_contract_reason_examples ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 5 tests
+test taichi_still_charges_on_offensive_party_events ... ok
+test ult_not_ready_does_not_front_insert ... ok
+test commander_defender_does_not_front_insert ... ok
+test two_units_with_different_triggers_reach_ready_independently ... ok
+test ultimate_fire_injects_attacker_front_of_queue ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 5 tests
+test snapshot_defaults_empty_optional_surfaces ... ok
+test snapshot_contract_covers_promised_fields_and_shape ... ok
+test runtime_registration_populates_snapshot_kernel_resources ... ok
+test snapshot_hides_ally_missing_toughness_and_zero_max_enemy_bars ... ok
+test runtime_registration_applies_all_kernel_transition_domains ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+EXIT:no_fail_fast:0
+== full ==
+
+running 140 tests
+test combat::damage::damage_tests::base_damage_zero_yields_zero ... ok
+test combat::damage::damage_tests::matrix_neutral_lose_no_break ... ok
+test combat::damage::damage_tests::matrix_neutral_tie_break ... ok
+test combat::damage::damage_tests::matrix_neutral_lose_break ... ok
+test combat::damage::damage_tests::free_attacker_is_neutral_vs_all ... ok
+test combat::damage::damage_tests::matrix_neutral_tie_no_break ... ok
+test combat::damage::damage_tests::matrix_neutral_win_break ... ok
+test combat::damage::damage_tests::matrix_resist_lose_break ... ok
+test combat::damage::damage_tests::matrix_neutral_win_no_break ... ok
+test combat::damage::damage_tests::matrix_resist_lose_no_break ... ok
+test combat::damage::damage_tests::matrix_resist_tie_break ... ok
+test combat::damage::damage_tests::matrix_resist_win_no_break ... ok
+test combat::damage::damage_tests::matrix_weak_lose_no_break ... ok
+test combat::damage::damage_tests::matrix_weak_tie_break ... ok
+test combat::damage::damage_tests::matrix_resist_win_break ... ok
+test combat::damage::damage_tests::matrix_weak_tie_no_break ... ok
+test combat::damage::damage_tests::matrix_weak_win_break ... ok
+test combat::damage::damage_tests::matrix_resist_tie_no_break ... ok
+test combat::damage::damage_tests::resist_and_triangle_lose_stack_multiplicatively ... ok
+test combat::bootstrap::tests::test_spawn_commander ... ok
+test combat::bootstrap::tests::test_spawn_non_commander ... ok
+test combat::enemy_ai::tests::pick_action_breaks_tie_by_unit_id ... ok
+test combat::damage::damage_tests::matrix_weak_lose_break ... ok
+test combat::damage::damage_tests::physical_tag_always_neutral_tag_mod ... ok
+test combat::enemy_ai::tests::pick_action_falls_back_to_basic_when_no_skills ... ok
+test combat::enemy_ai::tests::pick_action_targets_lowest_toughness_ratio ... ok
+test combat::enemy_ai::tests::pick_action_uses_skill_when_ult_not_ready ... ok
+test combat::damage::damage_tests::matrix_weak_win_no_break ... ok
+test combat::energy::tests::caps_are_independent ... ok
+test combat::energy::tests::external_cap_at_30 ... ok
+test combat::enemy_ai::tests::pick_action_uses_ultimate_when_ready ... ok
+test combat::energy::tests::reset_restores_full_budget ... ok
+test combat::energy::tests::secondary_cap_at_10 ... ok
+test combat::energy::tests::energy_gain_clamps_at_max ... ok
+test combat::follow_up::follow_up_tests::follow_up_reports_ineligible_reasons ... ok
+test combat::kernel::tests::canonical_beat_ids_are_stable_and_ordered ... ok
+test combat::kernel::tests::fatigue_carryover_and_reset_are_deterministic ... ok
+test combat::kernel::tests::flow_enters_decays_and_exits ... ok
+test combat::kernel::tests::registry_can_attach_extension_behavior_without_core_match_ladders ... ok
+test combat::kernel::tests::state_delegates_to_kernel_primitives ... ok
+test combat::kernel::tests::strain_clamps_gain_and_spend ... ok
+test combat::kernel::tests::tactical_cycle_advances_through_phases_and_wraps_cycle ... ok
+test combat::kernel::tests::tag_lifetime_ticks_and_consumes ... ok
+test combat::log::tests::action_log_caps_at_5 ... ok
+test combat::follow_up::follow_up_tests::follow_up_low_hp_event_targets_alive_enemy ... ok
+test combat::resolution::resolution_tests::adult_5_consecutive_basics_no_discount ... ok
+test combat::follow_up::follow_up_tests::follow_up_break_event_resolves_same_update ... ok
+test combat::resolution::resolution_tests::adult_gets_no_discount_after_consecutive_basics ... ok
+test combat::resolution::resolution_tests::child_1_basic_not_enough_for_discount ... ok
+test combat::resolution::resolution_tests::child_discount_resets_streak_needs_2_more_basics ... ok
+test combat::resolution::resolution_tests::child_gets_minus1_sp_after_2_consecutive_basics ... ok
+test combat::resolution::resolution_tests::grant_free_skill_events_caps_at_available_allies ... ok
+test combat::resolution::resolution_tests::grant_free_skill_events_emits_four_on_skill_cast ... ok
+test combat::resolution::resolution_tests::grant_free_skill_resolve_sets_grant_count ... ok
+test combat::resolution::resolution_tests::resolve_action_uses_explicit_targeting_shape_for_revive_skills ... ok
+test combat::resolution::resolution_tests::resolve_action_uses_targeting_shape_over_damage_effect_shape ... ok
+test combat::resolution::resolution_tests::resolve_apply_basic_adds_sp_and_not_on_skill_cast ... ok
+test combat::resolution::resolution_tests::resolve_apply_break_sets_broke_flag_and_on_break_event ... ok
+test combat::resolution::resolution_tests::resolve_apply_ko_flag_when_hp_drops_below_zero_and_emits_on_ko ... ok
+test combat::resolution::resolution_tests::resolve_apply_no_break_no_on_break_event ... ok
+test combat::resolution::resolution_tests::resolve_apply_no_ko_no_on_ko_event ... ok
+test combat::resolution::resolution_tests::resolve_apply_skill_fails_when_pool_too_low ... ok
+test combat::resolution::resolution_tests::resolve_apply_skill_spends_sp_and_emits_on_skill_cast ... ok
+test combat::resolution::resolution_tests::resolve_apply_ultimate_resets_charge_and_emits_on_skill_cast ... ok
+test combat::resolution::resolution_tests::test_apply_revive_fails_on_active ... ok
+test combat::resolution::resolution_tests::test_apply_revive_success ... ok
+test combat::sp::tests::round_sp_tracker_caps_non_basic_at_2 ... ok
+test combat::sp::tests::round_sp_tracker_partial_gain_then_remainder ... ok
+test combat::sp::tests::round_sp_tracker_reset_restores_full_budget ... ok
+test combat::sp::tests::sp_pool_default_max_is_5 ... ok
+test combat::state::tests::default_starts_waiting_without_winner ... ok
+test combat::state::tests::defeat_on_all_allies_ko ... ok
+test combat::state::tests::reset_clears_winner ... ok
+test combat::state::tests::victory_on_all_enemies_ko ... ok
+test combat::status_effect::tests::negative_damage_per_turn_accepted_at_parse_time ... ok
+test combat::status_effect::tests::ron_roundtrip_burn ... ok
+test combat::status_effect::tests::ron_roundtrip_freeze ... ok
+test combat::status_effect::tests::ron_roundtrip_shock ... ok
+test combat::status_effect::tests::tick_down_to_zero ... ok
+test combat::status_effect::tests::tick_keeps_component_while_turns_remain ... ok
+test combat::status_effect::tests::tick_no_op_at_zero ... ok
+test combat::stun::tests::tick_down_to_zero ... ok
+test combat::stun::tests::tick_keeps_component_while_turns_remain ... ok
+test combat::stun::tests::tick_no_op_at_zero ... ok
+test combat::toughness::tests::apply_hit_is_noop_when_break_sealed ... ok
+test combat::toughness::tests::apply_hit_non_weak_no_break ... ok
+test combat::toughness::tests::apply_hit_weak_drains_and_breaks ... ok
+test combat::toughness::tests::armored_requires_double_damage_to_break ... ok
+test combat::toughness::tests::can_apply_matches_affordance_rule ... ok
+test combat::toughness::tests::classify_normal_default ... ok
+test combat::toughness::tests::classify_prefers_break_over_weak ... ok
+test combat::toughness::tests::classify_resist ... ok
+test combat::toughness::tests::classify_weak_over_resist ... ok
+test combat::toughness::tests::exposes_affordance_only_for_enemies_with_positive_bars ... ok
+test combat::toughness::tests::shielded_never_breaks_from_toughness_hit ... ok
+test combat::ultimate::tests::ally_vs_ally_semantics_taichi_and_hackmon ... ok
+test combat::turn_system::tests::check_victory_system_sets_winner_once ... ok
+test combat::ultimate::tests::trigger_on_ally_follow_up_matches_depth_and_team ... ok
+test combat::ultimate::tests::trigger_on_basic_attack_never_matches ... ok
+test combat::turn_system::tests::resolve_action_system_rejects_ko_target ... ok
+test combat::ultimate::tests::trigger_on_hit_taken_matches_correct_target ... ok
+test combat::turn_system::tests::resolve_action_system_rejects_revive_on_healthy_target ... ok
+test combat::turn_system::tests::resolve_action_system_rejects_stunned_attacker ... ok
+test combat::ultimate::tests::trigger_on_kill_matches_source_unit_only ... ok
+test combat::ultimate::tests::trigger_on_offensive_party_event_matches_ally_source_only ... ok
+test combat::ultimate::tests::try_add_already_ready_no_new_cross ... ok
+test combat::ultimate::tests::try_add_caps_at_cap ... ok
+test combat::ultimate::tests::try_add_crosses_trigger_returns_true ... ok
+test combat::ultimate::tests::ult_gain_delta_clamps_at_cap ... ok
+test combat::ultimate::tests::ult_gain_delta_is_actual_increase ... ok
+test combat::ultimate::tests::ult_gain_delta_zero_when_already_at_cap ... ok
+test data::skills_ron::tests::apply_status_negative_damage_per_turn_accepted_at_parse_time ... ok
+test data::skills_ron::tests::apply_status_negative_duration_rejected_at_parse_time ... ok
+test data::skills_ron::tests::effect_parse_error_bad_type ... ok
+test data::skills_ron::tests::effect_roundtrip_apply_status_burn ... ok
+test data::skills_ron::tests::effect_roundtrip_apply_status_freeze ... ok
+test data::skills_ron::tests::effect_roundtrip_apply_status_shock ... ok
+test data::skills_ron::tests::effect_roundtrip_damage_struct_variant ... ok
+test data::skills_ron::tests::effect_roundtrip_grant_energy ... ok
+test data::skills_ron::tests::effect_roundtrip_revive ... ok
+test data::skills_ron::tests::effect_roundtrip_self_advance ... ok
+test data::skills_ron::tests::effect_roundtrip_stun_unit ... ok
+test data::skills_ron::tests::effect_roundtrip_toughness_tuple ... ok
+test data::skills_ron::tests::effect_roundtrip_turn_advance ... ok
+test data::skills_ron::tests::missing_targeting_metadata_fails_parse ... ok
+test data::skills_ron::tests::round_trip_skill_def ... ok
+test data::skills_ron::tests::targeting_roundtrip_and_reason_codes ... ok
+test data::skills_ron::tests::unknown_targeting_field_fails_parse ... ok
+test data::skills_ron::tests::validate_allows_canonical_mixed_effect_deferral ... ok
+test data::skills_ron::tests::validate_rejects_implemented_non_single_shape ... ok
+test data::skills_ron::tests::validate_rejects_revive_with_non_ko_targeting ... ok
+test data::skills_ron::tests::validate_rejects_row_damage_against_single_targeting ... ok
+test data::skills_ron::tests::parse_canonical_skills_ron ... ok
+test data::units_ron::tests::missing_enemy_counterplay_fields_default_on_parse ... ok
+test data::units_ron::tests::missing_evo_stage_fails_to_parse ... ok
+test data::units_ron::tests::missing_identity_metadata_fails_to_parse ... ok
+test data::units_ron::tests::parsing_units_with_invalid_follow_up_trigger_fails ... ok
+test data::units_ron::tests::parse_canonical_units_ron ... ok
+test data::units_ron::tests::round_trip_unit_def ... ok
+test data::units_ron::tests::rookie_skill_references_resolve_in_skill_book ... ok
+
+test result: ok. 140 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 141 tests
+test combat::damage::damage_tests::base_damage_zero_yields_zero ... ok
+test combat::damage::damage_tests::matrix_neutral_lose_break ... ok
+test combat::damage::damage_tests::free_attacker_is_neutral_vs_all ... ok
+test combat::damage::damage_tests::matrix_neutral_lose_no_break ... ok
+test combat::damage::damage_tests::matrix_neutral_tie_break ... ok
+test combat::damage::damage_tests::matrix_neutral_win_break ... ok
+test combat::damage::damage_tests::matrix_neutral_tie_no_break ... ok
+test combat::damage::damage_tests::matrix_resist_lose_break ... ok
+test combat::damage::damage_tests::matrix_neutral_win_no_break ... ok
+test combat::damage::damage_tests::matrix_resist_tie_break ... ok
+test combat::damage::damage_tests::matrix_resist_lose_no_break ... ok
+test combat::damage::damage_tests::matrix_resist_tie_no_break ... ok
+test combat::damage::damage_tests::matrix_weak_lose_no_break ... ok
+test combat::damage::damage_tests::matrix_weak_tie_break ... ok
+test combat::damage::damage_tests::matrix_weak_tie_no_break ... ok
+test combat::damage::damage_tests::matrix_resist_win_break ... ok
+test combat::damage::damage_tests::matrix_weak_win_break ... ok
+test combat::damage::damage_tests::matrix_resist_win_no_break ... ok
+test combat::damage::damage_tests::matrix_weak_lose_break ... ok
+test combat::damage::damage_tests::matrix_weak_win_no_break ... ok
+test combat::damage::damage_tests::physical_tag_always_neutral_tag_mod ... ok
+test combat::bootstrap::tests::test_spawn_commander ... ok
+test combat::bootstrap::tests::test_spawn_non_commander ... ok
+test combat::damage::damage_tests::resist_and_triangle_lose_stack_multiplicatively ... ok
+test combat::enemy_ai::tests::pick_action_breaks_tie_by_unit_id ... ok
+test combat::enemy_ai::tests::pick_action_falls_back_to_basic_when_no_skills ... ok
+test combat::enemy_ai::tests::pick_action_targets_lowest_toughness_ratio ... ok
+test combat::enemy_ai::tests::pick_action_uses_skill_when_ult_not_ready ... ok
+test combat::enemy_ai::tests::pick_action_uses_ultimate_when_ready ... ok
+test combat::energy::tests::caps_are_independent ... ok
+test combat::energy::tests::energy_gain_clamps_at_max ... ok
+test combat::energy::tests::external_cap_at_30 ... ok
+test combat::energy::tests::reset_restores_full_budget ... ok
+test combat::energy::tests::secondary_cap_at_10 ... ok
+test combat::follow_up::follow_up_tests::follow_up_reports_ineligible_reasons ... ok
+test combat::kernel::tests::canonical_beat_ids_are_stable_and_ordered ... ok
+test combat::kernel::tests::fatigue_carryover_and_reset_are_deterministic ... ok
+test combat::kernel::tests::flow_enters_decays_and_exits ... ok
+test combat::kernel::tests::registry_can_attach_extension_behavior_without_core_match_ladders ... ok
+test combat::kernel::tests::state_delegates_to_kernel_primitives ... ok
+test combat::kernel::tests::strain_clamps_gain_and_spend ... ok
+test combat::kernel::tests::tactical_cycle_advances_through_phases_and_wraps_cycle ... ok
+test combat::kernel::tests::tag_lifetime_ticks_and_consumes ... ok
+test combat::log::tests::action_log_caps_at_5 ... ok
+test combat::resolution::resolution_tests::adult_5_consecutive_basics_no_discount ... ok
+test combat::resolution::resolution_tests::adult_gets_no_discount_after_consecutive_basics ... ok
+test combat::follow_up::follow_up_tests::follow_up_break_event_resolves_same_update ... ok
+test combat::resolution::resolution_tests::child_1_basic_not_enough_for_discount ... ok
+test combat::follow_up::follow_up_tests::follow_up_low_hp_event_targets_alive_enemy ... ok
+test combat::resolution::resolution_tests::child_gets_minus1_sp_after_2_consecutive_basics ... ok
+test combat::resolution::resolution_tests::child_discount_resets_streak_needs_2_more_basics ... ok
+test combat::resolution::resolution_tests::grant_free_skill_events_caps_at_available_allies ... ok
+test combat::resolution::resolution_tests::grant_free_skill_events_emits_four_on_skill_cast ... ok
+test combat::resolution::resolution_tests::grant_free_skill_resolve_sets_grant_count ... ok
+test combat::resolution::resolution_tests::resolve_action_uses_explicit_targeting_shape_for_revive_skills ... ok
+test combat::resolution::resolution_tests::resolve_action_uses_targeting_shape_over_damage_effect_shape ... ok
+test combat::resolution::resolution_tests::resolve_apply_basic_adds_sp_and_not_on_skill_cast ... ok
+test combat::resolution::resolution_tests::resolve_apply_break_sets_broke_flag_and_on_break_event ... ok
+test combat::resolution::resolution_tests::resolve_apply_ko_flag_when_hp_drops_below_zero_and_emits_on_ko ... ok
+test combat::resolution::resolution_tests::resolve_apply_no_break_no_on_break_event ... ok
+test combat::resolution::resolution_tests::resolve_apply_no_ko_no_on_ko_event ... ok
+test combat::resolution::resolution_tests::resolve_apply_skill_fails_when_pool_too_low ... ok
+test combat::resolution::resolution_tests::resolve_apply_skill_spends_sp_and_emits_on_skill_cast ... ok
+test combat::resolution::resolution_tests::resolve_apply_ultimate_resets_charge_and_emits_on_skill_cast ... ok
+test combat::resolution::resolution_tests::test_apply_revive_fails_on_active ... ok
+test combat::resolution::resolution_tests::test_apply_revive_success ... ok
+test combat::sp::tests::round_sp_tracker_caps_non_basic_at_2 ... ok
+test combat::sp::tests::round_sp_tracker_partial_gain_then_remainder ... ok
+test combat::sp::tests::round_sp_tracker_reset_restores_full_budget ... ok
+test combat::sp::tests::sp_pool_default_max_is_5 ... ok
+test combat::state::tests::default_starts_waiting_without_winner ... ok
+test combat::state::tests::defeat_on_all_allies_ko ... ok
+test combat::state::tests::reset_clears_winner ... ok
+test combat::state::tests::victory_on_all_enemies_ko ... ok
+test combat::status_effect::tests::negative_damage_per_turn_accepted_at_parse_time ... ok
+test combat::status_effect::tests::ron_roundtrip_burn ... ok
+test combat::status_effect::tests::ron_roundtrip_freeze ... ok
+test combat::status_effect::tests::ron_roundtrip_shock ... ok
+test combat::status_effect::tests::tick_down_to_zero ... ok
+test combat::status_effect::tests::tick_keeps_component_while_turns_remain ... ok
+test combat::status_effect::tests::tick_no_op_at_zero ... ok
+test combat::stun::tests::tick_down_to_zero ... ok
+test combat::stun::tests::tick_keeps_component_while_turns_remain ... ok
+test combat::stun::tests::tick_no_op_at_zero ... ok
+test combat::toughness::tests::apply_hit_is_noop_when_break_sealed ... ok
+test combat::toughness::tests::apply_hit_non_weak_no_break ... ok
+test combat::toughness::tests::apply_hit_weak_drains_and_breaks ... ok
+test combat::toughness::tests::armored_requires_double_damage_to_break ... ok
+test combat::toughness::tests::can_apply_matches_affordance_rule ... ok
+test combat::toughness::tests::classify_normal_default ... ok
+test combat::toughness::tests::classify_prefers_break_over_weak ... ok
+test combat::toughness::tests::classify_resist ... ok
+test combat::toughness::tests::classify_weak_over_resist ... ok
+test combat::toughness::tests::exposes_affordance_only_for_enemies_with_positive_bars ... ok
+test combat::toughness::tests::shielded_never_breaks_from_toughness_hit ... ok
+test combat::turn_system::tests::check_victory_system_sets_winner_once ... ok
+test combat::ultimate::tests::ally_vs_ally_semantics_taichi_and_hackmon ... ok
+test combat::ultimate::tests::trigger_on_ally_follow_up_matches_depth_and_team ... ok
+test combat::ultimate::tests::trigger_on_basic_attack_never_matches ... ok
+test combat::ultimate::tests::trigger_on_hit_taken_matches_correct_target ... ok
+test combat::ultimate::tests::trigger_on_kill_matches_source_unit_only ... ok
+test combat::turn_system::tests::resolve_action_system_rejects_revive_on_healthy_target ... ok
+test combat::turn_system::tests::resolve_action_system_rejects_ko_target ... ok
+test combat::ultimate::tests::trigger_on_offensive_party_event_matches_ally_source_only ... ok
+test combat::ultimate::tests::try_add_already_ready_no_new_cross ... ok
+test combat::turn_system::tests::resolve_action_system_rejects_stunned_attacker ... ok
+test combat::ultimate::tests::try_add_caps_at_cap ... ok
+test combat::ultimate::tests::try_add_crosses_trigger_returns_true ... ok
+test combat::ultimate::tests::ult_gain_delta_clamps_at_cap ... ok
+test combat::ultimate::tests::ult_gain_delta_is_actual_increase ... ok
+test combat::ultimate::tests::ult_gain_delta_zero_when_already_at_cap ... ok
+test data::skills_ron::tests::apply_status_negative_damage_per_turn_accepted_at_parse_time ... ok
+test data::skills_ron::tests::apply_status_negative_duration_rejected_at_parse_time ... ok
+test data::skills_ron::tests::effect_parse_error_bad_type ... ok
+test data::skills_ron::tests::effect_roundtrip_apply_status_burn ... ok
+test data::skills_ron::tests::effect_roundtrip_apply_status_freeze ... ok
+test data::skills_ron::tests::effect_roundtrip_apply_status_shock ... ok
+test data::skills_ron::tests::effect_roundtrip_damage_struct_variant ... ok
+test data::skills_ron::tests::effect_roundtrip_grant_energy ... ok
+test data::skills_ron::tests::effect_roundtrip_revive ... ok
+test data::skills_ron::tests::effect_roundtrip_self_advance ... ok
+test data::skills_ron::tests::effect_roundtrip_stun_unit ... ok
+test data::skills_ron::tests::effect_roundtrip_toughness_tuple ... ok
+test data::skills_ron::tests::effect_roundtrip_turn_advance ... ok
+test data::skills_ron::tests::missing_targeting_metadata_fails_parse ... ok
+test data::skills_ron::tests::round_trip_skill_def ... ok
+test data::skills_ron::tests::targeting_roundtrip_and_reason_codes ... ok
+test data::skills_ron::tests::unknown_targeting_field_fails_parse ... ok
+test data::skills_ron::tests::validate_allows_canonical_mixed_effect_deferral ... ok
+test data::skills_ron::tests::validate_rejects_implemented_non_single_shape ... ok
+test data::skills_ron::tests::validate_rejects_revive_with_non_ko_targeting ... ok
+test data::skills_ron::tests::parse_canonical_skills_ron ... ok
+test data::skills_ron::tests::validate_rejects_row_damage_against_single_targeting ... ok
+test data::units_ron::tests::missing_enemy_counterplay_fields_default_on_parse ... ok
+test data::units_ron::tests::missing_evo_stage_fails_to_parse ... ok
+test data::units_ron::tests::missing_identity_metadata_fails_to_parse ... ok
+test data::units_ron::tests::parsing_units_with_invalid_follow_up_trigger_fails ... ok
+test headless::tests::combat_script_advance_yields_steps_in_order ... ok
+test data::units_ron::tests::round_trip_unit_def ... ok
+test data::units_ron::tests::parse_canonical_units_ron ... ok
+test data::units_ron::tests::rookie_skill_references_resolve_in_skill_book ... ok
+
+test result: ok. 141 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 2 tests
+test tests::proof_tick_limit_accepts_positive_integer ... ok
+test tests::proof_tick_limit_falls_back_for_missing_zero_or_invalid_values ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 13 tests
+test counterplay_deferred_reason_codes_remain_visible_in_resource_status ... ok
+test counterplay_snapshot_exposes_deferred_trait ... ok
+test combat_cli_source_does_not_reintroduce_ko_or_skill_id_hardcoding ... ok
+test counterplay_snapshot_exposes_hidden_charged_telegraph ... ok
+test counterplay_snapshot_exposes_implemented_trait ... ok
+test combat_cli_source_does_not_hardcode_counterplay_names ... ok
+test deferred_actions_are_excluded_from_enabled_selection ... ok
+test disabled_resource_keeps_target_reason_codes_for_ko_live_and_enemy_targets ... ok
+test empty_enemy_returns_no_counterplay_affordances ... ok
+test enabled_basic_target_is_chosen_from_query_output_not_local_team_assumptions ... ok
+test explicit_sp_snapshot_blocks_revive_but_bypass_snapshot_remains_separate ... ok
+test snapshot_carries_commander_energy_tracker_and_real_sp ... ok
+test combat_windowed_source_does_not_reintroduce_ko_or_skill_id_hardcoding ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 23 tests
+test attacker_ko_blocks_action_before_targets ... ok
+test attacker_stunned_blocks_action_before_targets ... ok
+test child_tamer_gauge_boost_remains_queryable_as_the_shared_tamer_gauge_declaration ... ok
+test damaged_target_affordance_requires_missing_hp_for_ally_targets ... ok
+test deferred_implementation_returns_deferred_action_and_targets ... ok
+test deferred_row_shape_returns_deferred_for_every_target_in_snapshot ... ok
+test enabled_offensive_action_reports_target_and_resource_details ... ok
+test energy_cap_affordance_disables_when_requested_exceeds_remaining_or_budget_is_exhausted ... ok
+test energy_cap_affordance_reports_remaining_budget_and_true_cap_reason ... ok
+test hidden_implementation_returns_hidden_action_and_targets ... ok
+test implemented_enemy_toughness_is_visible_while_ally_and_zero_bars_stay_hidden ... ok
+test intent_legality_respects_priority_and_specific_target_reasons ... ok
+test legality_reason_codes_include_contract_values ... ok
+test missing_skill_book_entry_returns_missing_skill ... ok
+test no_valid_targets_disables_action_after_state_and_resource_checks ... ok
+test non_active_actor_reports_not_active_without_losing_target_affordances ... ok
+test revive_affordance_requires_ko_ally_and_rejects_live_and_enemy_targets ... ok
+test sp_shortfall_disables_action_and_reports_current_and_required_sp ... ok
+test tamer_resource_declarations_are_deferred_and_keep_known_command_costs ... ok
+test target_affordance_surface_still_handles_enemy_ally_ko_commander_and_self ... ok
+test target_hp_rule_distinguishes_any_and_damaged ... ok
+test ultimate_not_ready_disables_action_and_reports_current_and_required_ult_charge ... ok
+test wrong_phase_reports_wrong_phase_and_keeps_target_affordances ... ok
+
+test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 5 tests
+test circuit_spend_cannot_underflow_and_records_a_blocked_reason ... ok
+test static_charge_caps_and_reports_a_stable_blocked_reason_on_the_fourth_hit ... ok
+test static_charge_starts_clean_and_grants_energy_on_the_third_hit ... ok
+test tactical_cycle_reset_is_visible_after_message_flush ... ok
+test runtime_registration_applies_battery_transition_once ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test test_bootstrap_spawn_composition ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+test s08_boundary_turn_advance_and_action_intent ... ok
+test s08_ultimate_interrupt_flow ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+test combat_cli_source_stays_on_shared_surfaces_not_presentation_metadata ... ok
+test combat_cli_binary_emits_shared_combat_surfaces_from_non_root_cwd ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.34s
+
+
+running 3 tests
+test s_m008_s06_shared_sp_history_blocks_and_then_unlocks_a_revive ... ok
+test s_m008_s06_status_pressure_turns_low_hp_into_a_failed_action_and_a_follow_up_window ... ok
+test s_m008_s06_break_follow_up_and_ult_timing_trace ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 4 tests
+test enemy_offensive_event_does_not_charge_commander_ultimate ... ok
+test ally_offensive_event_charges_commander_ultimate ... ok
+test enemy_emits_no_intent_when_only_commander_is_alive ... ok
+test enemy_does_not_target_commander ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+test greymon_vs_devimon_weak_fire_breakdown ... ok
+test greymon_vs_devimon_resist_fire_breakdown ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test s06_encounter_e2e_2v2_victory ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 3 tests
+test enemy_uses_skill_when_ult_not_ready ... ok
+test enemy_uses_ultimate_when_charge_ready ... ok
+test enemy_targets_lowest_toughness_ratio ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 3 tests
+test empty_minion_declarations_stay_empty_and_hidden_telegraphs_stay_hidden ... ok
+test shielded_break_seal_is_implemented_while_armored_reactive_armor_stays_deferred ... ok
+test canonical_devimon_projection_surfaces_implemented_and_deferred_states ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 7 tests
+test non_active_actor_matches_not_active_unit ... ok
+test commander_target_matches_target_is_commander ... ok
+test offensive_ko_enemy_matches_target_ko ... ok
+test ko_attacker_matches_attacker_ko ... ok
+test offensive_ally_matches_wrong_side ... ok
+test revive_live_ally_matches_target_not_ko ... ok
+test stunned_attacker_matches_attacker_stunned ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test s09_event_stream_observes_all_variants ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+test chain_terminates_when_follow_up_cannot_retrigger ... ok
+test depth_chain_progresses_to_depth_two ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 6 tests
+test s10_control_scenario_without_matching_trigger_has_no_follow_up_action ... ok
+test patamon_triggers_follow_up_on_ally_low_hp ... ok
+test s10_renamon_low_hp_follow_up_targets_the_attacker ... ok
+test gabumon_triggers_follow_up_on_ally_low_hp ... ok
+test s10_agumon_break_follow_up_uses_real_pilot_config ... ok
+test dorumon_triggers_follow_up_on_enemy_kill ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 10 tests
+test kabuterimon_first_electric_hit_grants_energy ... ok
+test angemon_attack_vs_data_no_bonus ... ok
+test greymon_first_fire_hit_grants_energy ... ok
+test garurumon_first_ice_hit_grants_energy ... ok
+test angemon_attack_vs_virus_grants_bonus ... ok
+test greymon_fire_trigger_does_not_fire_on_garurumon_ice_hit ... ok
+test dorugamon_first_dark_skill_grants_bonus_toughness ... ok
+test greymon_second_fire_hit_blocked ... ok
+test kyubimon_freeze_application_self_advances ... ok
+test greymon_resets_next_turn ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 4 tests
+test holy_support_snapshot_surfaces_grace_capacity_and_martyr_state ... ok
+test holy_support_missing_resource_is_absent_from_validation_snapshot ... ok
+test holy_support_invalid_spend_is_visible_as_rejected_snapshot_state ... ok
+test holy_support_transition_system_updates_snapshot_without_affordance_api ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 6 tests
+test hook_translates_holy_tags_and_ignores_unknown_tags ... ok
+test validation_snapshot_includes_holy_support_fields ... ok
+test grace_builds_saturate_at_cap_after_bevy_flush ... ok
+test spending_grace_underflow_is_rejected_without_underflowing ... ok
+test wrapped_tactical_cycle_resets_holy_support_guards ... ok
+test martyr_light_is_only_marked_and_consumed_once_per_cycle ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+test plain_patamon_skill_has_no_holy_support_blueprint_dispatch ... ok
+test patamon_ult_builds_grace_through_the_blueprint_kernel_path ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 4 tests
+test patamon_angemon_keep_hope_line_roster_relationship ... ok
+test holy_support_metadata_remains_optional_for_backward_compatibility ... ok
+test patamon_seeded_skill_declares_custom_signal_not_removed_direct_effects ... ok
+test patamon_roster_references_the_seeded_blueprint_skill ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 5 tests
+test party_config_deserializes_and_validates ... ok
+test wrong_tamer_is_rejected ... ok
+test happy_path_bootstrap_succeeds ... ok
+test wrong_pick_count_is_rejected ... ok
+test unknown_rookie_is_rejected ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 6 tests
+test cannot_manually_select_taichi ... ok
+test bootstrap_is_deterministic ... ok
+test fail_on_duplicates ... ok
+test fail_on_unknown_rookie ... ok
+test fail_on_wrong_count ... ok
+test happy_path_select_four_rookies ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 7 tests
+test custom_signal_missing_field_defaults_to_empty ... ok
+test custom_signal_rejects_unknown_patamon_variant ... ok
+test custom_signal_resolved_action_carries_metadata_without_interpreting_it ... ok
+test custom_signal_parses_from_tracked_patamon_skill ... ok
+test patamon_signal_maps_to_expected_holy_support_transition ... ok
+test no_signal_action_produces_no_patamon_blueprint_transitions ... ok
+test patamon_ultimate_dispatches_blueprint_transition_into_holy_support_state_and_snapshot ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test s14_patamon_revive_e2e ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 3 tests
+test lifecycle_emitted_even_when_action_fails_for_sp_shortfall ... ok
+test lifecycle_root_action_emits_4_events_in_order ... ok
+test lifecycle_follow_up_action_emits_second_cycle_with_depth_1 ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 7 tests
+test predator_loop_blocks_berserk_when_strain_is_at_threshold ... ok
+test predator_loop_builds_exploit_applies_prey_lock_and_consumes_payoff ... ok
+test predator_loop_rejects_cap_overflow_and_records_blocked_reason ... ok
+test predator_loop_event_and_snapshot_surfaces_are_serializable_and_readable ... ok
+test predator_loop_rejects_invalid_target_and_malformed_builds ... ok
+test predator_loop_requires_exploit_before_prey_lock ... ok
+test predator_loop_ticking_expires_prey_lock_and_blocks_consumption_after_expiry ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 4 tests
+test malformed_presentation_strings_are_inert_without_custom_signals ... ok
+test presentation_metadata_does_not_change_action_query_or_resolved_action ... ok
+test tracked_ron_exposes_custom_signals_separately_from_presentation_metadata ... ok
+test runtime_events_and_snapshots_ignore_misleading_presentation_metadata ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 6 tests
+test sp_non_basic_cap_enforced ... ok
+test round_energy_tracker_resets_on_turn_start ... ok
+test energy_grant_truthfully_clips_at_energy_max ... ok
+test energy_grant_caps_at_round_budget_and_emits_truthful_amounts ... ok
+test child_discount_after_two_basics ... ok
+test canonical_form_identity_energy_respects_round_tracker_caps ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test s12_revive_semantics ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+test s11_roster_catalog_is_the_canonical_roster ... ok
+test s11_rookie_skill_refs_resolve_against_the_skill_book ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test s_m006_roster_smoke_deterministic ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 1 test
+test boss_encounter_ttk_target_4_to_7_turns ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+
+running 1 test
+test miniboss_encounter_ttk_target_3_to_5_turns ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+
+running 1 test
+test minion_wave_ttk_target_2_to_3_turns ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+running 10 tests
+test legality_contract_contains_no_placeholder_text ... ok
+test legality_contract_defines_required_status_shapes ... ok
+test legality_contract_covers_action_target_resource_and_implementation_reason_families ... ok
+test legality_contract_links_requirement_and_decision ... ok
+test legality_contract_requires_engine_preflight_parity ... ok
+test legality_contract_requires_skill_data_plus_world_snapshot_query_source ... ok
+test legality_contract_includes_target_resource_and_implementation_semantics ... ok
+test legality_contract_states_no_skill_id_specific_ui_rule_boundary ... ok
+test legality_contract_separates_reason_codes_from_display_strings ... ok
+test legality_contract_names_all_required_reason_codes ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test s_m008_s05_sp_economy_20_turn_regression ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 3 tests
+test vaccine_vs_data_status_miss_emits_on_status_resisted ... ok
+test vaccine_vs_data_status_hit_emits_on_status_applied ... ok
+test vaccine_vs_vaccine_neutral_status_always_applies ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 4 tests
+test action_on_ko_target_produces_no_status ... ok
+test action_that_kos_target_produces_no_status ... ok
+test apply_status_inserts_component_and_emits_event ... ok
+test reapply_status_overwrites_existing_component ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 5 tests
+test stunned_unit_does_not_tick_status ... ok
+test freeze_reduces_effective_speed_and_expires ... ok
+test shock_cancels_action_at_100pct ... ok
+test burn_ticks_hp_and_expires ... ok
+test shock_never_cancels_at_0pct ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 5 tests
+test stunned_unit_skips_status_tick ... ok
+test shock_full_cancel_emits_action_failed ... ok
+test freeze_sets_and_clears_speed_modifier ... ok
+test shock_zero_percent_does_not_cancel ... ok
+test burn_clamps_hp_and_expires ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 3 tests
+test all_enemies_skill_is_rejected_before_mutation_or_lifecycle ... ok
+test row_skill_is_rejected_before_mutation_or_lifecycle ... ok
+test single_target_skill_still_executes_normally ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 14 tests
+test apply_av_change_advance_does_not_exceed_max_av ... ok
+test apply_av_change_clamps_to_min_action_threshold ... ok
+test apply_av_change_clamps_without_resistance_too ... ok
+test apply_av_change_records_hit_and_updates_av ... ok
+test compute_av_change_advance_bypasses_resistance ... ok
+test canonical_units_ron_contains_tempo_resistant_boss ... ok
+test compute_av_change_no_resistance_component ... ok
+test tempo_resistance_multiplier_curve ... ok
+test three_consecutive_delays_show_diminishing_returns ... ok
+test boss_spawn_gets_tempo_resistance_component ... ok
+test ally_spawn_has_no_tempo_resistance_component ... ok
+test system_applies_advance_without_touching_resistance_stack ... ok
+test system_applies_delay_with_resistance_via_combat_event ... ok
+test boss_scenario_three_slow_hits_show_resistance_curve ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 4 tests
+test standard_breaks_in_one_full_hit ... ok
+test armored_requires_two_full_hits ... ok
+test shielded_never_breaks ... ok
+test break_seal_blocks_repeat_break_in_same_round_then_lifts_on_next_turn ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+test enemy_attack_damages_ally_without_breaking_or_stunning ... ok
+test ally_attack_still_breaks_enemy_toughness_when_weak ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test triangle_all_16_pairs ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 4 tests
+test av_tie_breaking_by_unit_id ... ok
+test av_ko_unit_does_not_advance ... ok
+test av_stunned_unit_does_not_advance ... ok
+test av_basic_advancement_and_turn ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test canonical_fire_ice_twin_core_loop_is_visible_through_validation_snapshots ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test twin_core_kernel_hooks_apply_current_state_fields ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test twin_core_resolution_placeholder ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test twin_core_roster_contract_placeholder ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 7 tests
+test gap_matrix_defines_required_classification_vocabulary ... ok
+test gap_matrix_contains_no_placeholder_text ... ok
+test gap_matrix_links_requirement_and_decisions ... ok
+test gap_matrix_states_the_no_skill_id_specific_ui_boundary ... ok
+test gap_matrix_uses_each_required_status_family ... ok
+test gap_matrix_names_downstream_contract_reason_examples ... ok
+test gap_matrix_names_all_required_mechanics_and_areas ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 5 tests
+test two_units_with_different_triggers_reach_ready_independently ... ok
+test taichi_still_charges_on_offensive_party_events ... ok
+test commander_defender_does_not_front_insert ... ok
+test ult_not_ready_does_not_front_insert ... ok
+test ultimate_fire_injects_attacker_front_of_queue ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 5 tests
+test snapshot_defaults_empty_optional_surfaces ... ok
+test snapshot_hides_ally_missing_toughness_and_zero_max_enemy_bars ... ok
+test runtime_registration_populates_snapshot_kernel_resources ... ok
+test snapshot_contract_covers_promised_fields_and_shape ... ok
+test runtime_registration_applies_all_kernel_transition_domains ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+EXIT:full:0
+== targeted ==
+
+running 2 tests
+test combat_cli_source_stays_on_shared_surfaces_not_presentation_metadata ... ok
+test combat_cli_binary_emits_shared_combat_surfaces_from_non_root_cwd ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.34s
+
+
+running 1 test
+test s09_event_stream_observes_all_variants ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 7 tests
+test custom_signal_missing_field_defaults_to_empty ... ok
+test custom_signal_rejects_unknown_patamon_variant ... ok
+test custom_signal_resolved_action_carries_metadata_without_interpreting_it ... ok
+test custom_signal_parses_from_tracked_patamon_skill ... ok
+test patamon_signal_maps_to_expected_holy_support_transition ... ok
+test no_signal_action_produces_no_patamon_blueprint_transitions ... ok
+test patamon_ultimate_dispatches_blueprint_transition_into_holy_support_state_and_snapshot ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 4 tests
+test malformed_presentation_strings_are_inert_without_custom_signals ... ok
+test presentation_metadata_does_not_change_action_query_or_resolved_action ... ok
+test tracked_ron_exposes_custom_signals_separately_from_presentation_metadata ... ok
+test runtime_events_and_snapshots_ignore_misleading_presentation_metadata ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+EXIT:targeted:0
+== audit ==
+Combat authority audit verification passed.
+EXIT:audit:0
+== ledger ==
+M015 failure ledger verification passed.
+EXIT:ledger:0
+== cli ==
+=== BevyRogue Combat CLI Harness ===
+Non-interactive mode — using default party: [UnitId(1), UnitId(2), UnitId(5), UnitId(7)]
+Non-interactive mode — using default encounter: Boss Encounter (Devimon)
+Encounter preset: Boss Encounter (Devimon)
+Bootstrap successful. Party: [UnitId(1), UnitId(2), UnitId(5), UnitId(7)]
+
+  Action affordances:
+    - Basic Attack [enabled] SP 3/0 enabled | ULT 0/100 disabled(UltimateNotReady)
+    - Skill: rally [enabled] SP 3/0 enabled | ULT 0/100 disabled(UltimateNotReady)
+    - Skill: first_aid [disabled(NoValidTargets)] SP 3/0 enabled | ULT 0/100 disabled(UltimateNotReady)
+    - Skill: taunt [enabled] SP 3/0 enabled | ULT 0/100 disabled(UltimateNotReady)
+    - Ultimate [disabled(UltimateNotReady)] SP 3/0 enabled | ULT 0/100 disabled(UltimateNotReady)
+
+  Enemy declarations:
+    [ID:UnitId(101)]
+      trait TempoAnchor [implemented]
+      trait TypeTrap [deferred]
+      trait ReactiveArmor [deferred]
+      charged enemy_ult_fire T-2 [deferred]
+
+============================================================
+ COMBAT DASHBOARD | SP: 3/5
+------------------------------------------------------------
+ TURN ORDER: Taichi
+------------------------------------------------------------
+[ALLY] Taichi       | HP:    1/1    | ULT: 0/100 | TGH: 1/1
+[ALLY] Agumon       | HP:  100/100  | ULT: 0/100 | TGH: 50/50
+[ALLY] Gabumon      | HP:   95/95   | ULT: 0/100 | TGH: 48/48
+[ALLY] Dorumon      | HP:   90/90   | ULT: 0/100 | TGH: 47/47
+[ALLY] Renamon      | HP:   90/90   | ULT: 0/100 | TGH: 45/45
+[ENEM] Devimon      | HP:  300/300  | ULT: 0/100 | TGH: 35/35
+============================================================
+
+{"kind":{"PartySelected":{"ally_ids":[1,2,5,7],"tamer_id":0}},"source":0,"target":0,"follow_up_depth":0}
+{"kind":{"TurnOrderSeeded":{"unit_ids":[]}},"source":0,"target":0,"follow_up_depth":0}
+  [EVENT] PartySelected { ally_ids: [UnitId(1), UnitId(2), UnitId(5), UnitId(7)], tamer_id: UnitId(0) } (source: UnitId(0), target: UnitId(0), depth: 0)
+  [EVENT] TurnOrderSeeded { unit_ids: [] } (source: UnitId(0), target: UnitId(0), depth: 0)
+
+============================================================
+ COMBAT DASHBOARD | SP: 4/5
+------------------------------------------------------------
+ TURN ORDER: 
+------------------------------------------------------------
+[ALLY] Taichi       | HP:    1/1    | ULT: 20/100 | TGH: 1/1
+[ALLY] Agumon       | HP:  100/100  | ULT: 0/100 | TGH: 50/50
+[ALLY] Gabumon      | HP:   95/95   | ULT: 0/100 | TGH: 48/48
+[ALLY] Dorumon      | HP:   90/90   | ULT: 0/100 | TGH: 47/47
+[ALLY] Renamon      | HP:   90/90   | ULT: 0/100 | TGH: 45/45
+[ENEM] Devimon      | HP:  287/300  | ULT: 0/100 | TGH: 35/35
+============================================================
+
+{"kind":{"OnActionDeclared":{"intent_kind":"Basic"}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnCombatBeat":{"beat":"Declared"}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnKernelTransition":{"transition":{"Beat":"Declared"}}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":"OnActionPreApp","source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnCombatBeat":{"beat":"PreApp"}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnKernelTransition":{"transition":{"Beat":"PreApp"}}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnCombatBeat":{"beat":"Impact"}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnKernelTransition":{"transition":{"Beat":"Impact"}}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnDamageDealt":{"amount":13,"kind":"Weak","tag_mod_pct":125,"triangle_mod_pct":100,"damage_tag":"Light"}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnHitTaken":{"amount":13}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnCombatBeat":{"beat":"Damage"}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnKernelTransition":{"transition":{"Beat":"Damage"}}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnKernelTransition":{"transition":{"TwinCore":{"signal":"TwinBurst","amount":1}}}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnSkillCast":{"skill_id":"rally"}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"UltGain":{"unit_id":0,"amount":10}},"source":0,"target":0,"follow_up_depth":0}
+{"kind":"OnActionApplied","source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnCombatBeat":{"beat":"Applied"}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnKernelTransition":{"transition":{"Beat":"Applied"}}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":"OnActionResolved","source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnCombatBeat":{"beat":"Resolved"}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"OnKernelTransition":{"transition":{"Beat":"Resolved"}}},"source":0,"target":101,"follow_up_depth":0}
+{"kind":{"UltGain":{"unit_id":0,"amount":10}},"source":0,"target":0,"follow_up_depth":0}
+  [EVENT] OnActionDeclared { intent_kind: Basic } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnCombatBeat { beat: Declared } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnKernelTransition { transition: Beat(Declared) } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnActionPreApp (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnCombatBeat { beat: PreApp } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnKernelTransition { transition: Beat(PreApp) } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnCombatBeat { beat: Impact } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnKernelTransition { transition: Beat(Impact) } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnDamageDealt { amount: 13, kind: Weak, tag_mod_pct: 125, triangle_mod_pct: 100, damage_tag: Light } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnHitTaken { amount: 13 } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnCombatBeat { beat: Damage } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnKernelTransition { transition: Beat(Damage) } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnKernelTransition { transition: TwinCore(TwinCoreTransition { signal: TwinBurst, amount: 1 }) } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnSkillCast { skill_id: SkillId("rally") } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] UltGain { unit_id: UnitId(0), amount: 10 } (source: UnitId(0), target: UnitId(0), depth: 0)
+  [EVENT] OnActionApplied (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnCombatBeat { beat: Applied } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnKernelTransition { transition: Beat(Applied) } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnActionResolved (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnCombatBeat { beat: Resolved } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] OnKernelTransition { transition: Beat(Resolved) } (source: UnitId(0), target: UnitId(101), depth: 0)
+  [EVENT] UltGain { unit_id: UnitId(0), amount: 10 } (source: UnitId(0), target: UnitId(0), depth: 0)
+[CLI_PROOF] validation_snapshot: phase=WaitingAction winner=none sp=4/5 twin_core=cr=0 spark_targets=[] fire=0 ice=0 burst_guard=false shatter_guard=false last=none holy_support=grace=0/3 martyr_marked=false martyr_consumed=false last=none predator_loop=exploit_cap=3 prey_lock_duration=2 berserk_threshold=50 targets=[] last=none blocked=none precision=phase=Dormant,window_index=0,window=none,commitment=none,reveal=none,outcome=none,last=none turn_preview=[1,7,2,5,101,0] action_log_tail=[hit(attacker=0,target=101,amount=13,kind=Weak)] floating_live=1 units=[id=0,team=Ally,hp=1/1,tough=N/A,ult=20/100/100,ko=false,stun=0;id=1,team=Ally,hp=100/100,tough=N/A,ult=0/100/150,ko=false,stun=0;id=2,team=Ally,hp=95/95,tough=N/A,ult=0/100/150,ko=false,stun=0;id=5,team=Ally,hp=90/90,tough=N/A,ult=0/100/150,ko=false,stun=0;id=7,team=Ally,hp=90/90,tough=N/A,ult=0/100/150,ko=false,stun=0;id=101,team=Enemy,hp=287/300,tough=35/35,weaknesses=[Fire,Light],broken=false,ult=0/100/150,ko=false,stun=0]
+EXIT:cli:0

@@ -1,0 +1,19 @@
+GIMP Palette
+Name: gabumon
+#
+ 31  25  44	shadow-deep
+113  45  70	shadow-mid
+ 63  67 139	shadow-mid
+126 105  84	mid-tone
+213 103 144	mid-tone
+136 138 163	mid-tone
+174 144  91	highlight
+184 158  99	highlight
+144 170 193	highlight
+202 180 112	highlight
+187 188 212	highlight
+190 193 220	highlight
+220 201 124	highlight
+198 199 222	highlight-bright
+229 212 134	highlight-bright
+217 220 232	highlight-bright

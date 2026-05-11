@@ -1,0 +1,54 @@
+use bevy::prelude::Component;
+
+use super::types::{Attribute, DamageTag, EvoStage, UnitId};
+
+#[derive(Component, Debug, Clone)]
+pub struct Unit {
+    #[allow(dead_code)]
+    pub id: UnitId,
+    pub name: String,
+    pub hp_max: i32,
+    pub hp_current: i32,
+    pub attribute: Attribute,
+    pub resists: Vec<DamageTag>,
+    pub evo_stage: EvoStage,
+}
+
+#[derive(Component, Debug, Clone, Default)]
+pub struct BasicStreak {
+    pub count: u32,
+}
+
+impl BasicStreak {
+    pub fn increment(&mut self) {
+        self.count += 1;
+    }
+
+    pub fn reset(&mut self) {
+        self.count = 0;
+    }
+
+    pub fn qualifies_for_discount(&self) -> bool {
+        self.count >= 2
+    }
+}
+
+impl Unit {
+    pub fn is_ko(&self) -> bool {
+        self.hp_current <= 0
+    }
+
+    pub fn revive(&mut self, pct: i32) {
+        if self.is_ko() {
+            self.hp_current = (self.hp_max * pct) / 100;
+        }
+    }
+}
+
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Commander;
+
+// Used by S06/T02.
+#[allow(dead_code)]
+#[derive(Component, Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct Ko;

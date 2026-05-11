@@ -1,0 +1,18 @@
+{
+  "id": "df2b601b-53b2-45f6-acc2-45c5329bc804",
+  "runtime": "bash",
+  "purpose": "S04 inventory relevant tests and docs",
+  "script_chars": 336,
+  "started_at": "2026-05-08T16:34:23.482Z",
+  "finished_at": "2026-05-08T16:34:23.488Z",
+  "exit_code": 0,
+  "signal": null,
+  "timed_out": false,
+  "duration_ms": 6,
+  "stdout_bytes": 578,
+  "stderr_bytes": 0,
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "stdout_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/df2b601b-53b2-45f6-acc2-45c5329bc804.stdout",
+  "stderr_path": "/home/fabio/dev/bevyrogue/.gsd/worktrees/M015/.gsd/exec/df2b601b-53b2-45f6-acc2-45c5329bc804.stderr"
+}
