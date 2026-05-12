@@ -261,7 +261,28 @@ fn skill_has_effect(skill: &SkillDef, predicate: impl Fn(&Effect) -> bool) -> bo
     skill.effects.iter().any(predicate)
 }
 
+const CANON_STATUS_IDS: &[&str] = &["heated", "chilled", "paralyzed", "slowed", "blessed"];
+
 fn validate_skill_def(skill: &SkillDef) -> Result<(), SkillBookValidationError> {
+    use crate::combat::status_effect::StatusEffectKind;
+
+    for effect in &skill.effects {
+        if let Effect::ApplyStatus { kind, .. } = effect {
+            if matches!(kind, StatusEffectKind::Burn | StatusEffectKind::Shock) {
+                return Err(validation_error(
+                    skill,
+                    SkillBookValidationCategory::Semantic,
+                    LegalityReasonCode::UnimplementedEffect,
+                    format!(
+                        "ApplyStatus uses reserved status kind {:?}; valid ids are: {}",
+                        kind,
+                        CANON_STATUS_IDS.join(", ")
+                    ),
+                ));
+            }
+        }
+    }
+
     let has_damage = skill_has_effect(skill, |effect| matches!(effect, Effect::Damage { .. }));
     let has_revive = skill_has_effect(skill, |effect| matches!(effect, Effect::Revive(_)));
 
