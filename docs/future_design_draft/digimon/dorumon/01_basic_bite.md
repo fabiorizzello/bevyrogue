@@ -4,6 +4,8 @@
 >
 > **Gap §2.2b condivisi:** params G1, ordering G4, ult charge G11. Qui nuovi.
 
+> **VFX positioning:** `SpawnParticle` usa `origin: VfxLocus + motion: VfxMotion` per `§2.2d` (`02-02d_vfx_positioning.md`).
+
 ## §1 — Intent
 
 - **Cost:** 0 SP — **Gen:** +1 SP, +25 Ult
@@ -19,7 +21,8 @@ commit → Lunge(2f) → Bite(4f) → Recovery(3f) → exit
                       │
                       │ on_enter:
                       │   EmitDamage { hits:1, mul_param:"basic_mul" }
-                      │   SpawnParticle("fang_glint","mouth")
+                      │   SpawnParticle("fang_glint",  origin: SelfCenter,            motion: Static)
+                      │   SpawnParticle("bite_impact", origin: EntityCenter(Primary), motion: Static)  # NEW — impact flash su target
                       │   Shake { intensity:1, duration_ms:70 }
 ```
 
@@ -27,8 +30,8 @@ commit → Lunge(2f) → Bite(4f) → Recovery(3f) → exit
 
 | Node | frames | atlas | on_enter |
 |---|---|---|---|
-| `Lunge` | 2 | 0–1 | `SpawnParticle("dash_dust","feet")` |
-| `Bite` | 4 | 2–5 | damage + particle + shake |
+| `Lunge` | 2 | 0–1 | `SpawnParticle("dash_dust", origin: SelfCenter, motion: Static)` |
+| `Bite` | 4 | 2–5 | `EmitDamage(primary)` + `SpawnParticle("fang_glint", origin: SelfCenter, motion: Static)` + `SpawnParticle("bite_impact", origin: EntityCenter(Primary), motion: Static)` + shake |
 | `Recovery` | 3 | 6–8 | — |
 
 Frame budget: 9 = atlas. ✅
@@ -49,4 +52,4 @@ Frame budget: 9 = atlas. ✅
 
 ## §6 — Verdetto
 
-Basic minimale. **Nessun gap nuovo.** Mirror di agumon/claw_strike senza Heated apply.
+Basic minimale. **Nessun gap nuovo.** Mirror di agumon/sharp_claws senza Heated apply.

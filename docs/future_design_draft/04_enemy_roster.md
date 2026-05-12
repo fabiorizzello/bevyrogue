@@ -6,7 +6,7 @@
 
 **Naming convention:** il roster del player usa **nomi JP canonici** (V-mon, Plotmon, Tentomon, Patamon, Gabumon, Agumon). I dati skill di partenza vengono dalla skill `digimon` (K001), via `python3 .claude/skills/digimon/scripts/query.py skills NAME` per estrarre il kit franchise come base di design (non copia 1:1 — i numeri sono originali, ma i nomi e i temi delle skill seguono il canon JP).
 
-**Audit roster da fare in S01 cleanup-task:** verificare i 6 OWNER attuali (`agumon`, `gabumon`, `patamon`, `tentomon`, `dorumon`, `renamon`) — quali devono passare a JP. `Dorumon` e `Renamon` sono già JP canon. `Agumon`, `Gabumon`, `Patamon`, `Tentomon` sono già JP. Quindi nessun rinome immediato sui 6 — la regola JP vale soprattutto per evoluzioni future (Champion: Greymon, Devimon, …) e per le skill (es. `pepper_breath` → forma JP se diverge).
+**Audit roster da fare in S01 cleanup-task:** verificare i 6 OWNER attuali (`agumon`, `gabumon`, `patamon`, `tentomon`, `dorumon`, `renamon`) — quali devono passare a JP. `Dorumon` e `Renamon` sono già JP canon. `Agumon`, `Gabumon`, `Patamon`, `Tentomon` sono già JP. Quindi nessun rinome immediato sui 6 — la regola JP vale soprattutto per evoluzioni future (Champion: Greymon, Devimon, …) e per le skill (es. `baby_flame` → forma JP se diverge).
 
 ## 4.2 Alleati come template di nemici nerfed
 

@@ -64,20 +64,19 @@ Patamon muore
 - **Stack rules:** additivo con `fur_cloak` (Gabumon DR 20%) → −30% se entrambe attive, **non moltiplicativo** (identity §4 lo specifica esplicitamente).
 - **Cap totale DR:** 50% suggerito (evita "muri").
 
-## §6 — Open questions (nuovi)
+## §6 — Open questions
 
-1. **A1 — Buff "Permanent" semantica.** Vocabolario buff `dur` ha `Turns(n) | RoundEnd | Permanent | UntilCondition`?
-   - **Decisione:** `Permanent` ammesso come variante; cleanup esplicito via `remove_buff` su death event.
-   - Cleanse Patamon (`holy_breeze`) **non rimuove** holy_aegis (è buff alleato, non debuff).
-2. **A2 — Patamon revive (futuro fuori scope).** Se in futuro arriva revive, listener deve riapplicare aura. Hook `UnitRevived`. **Skip M017.**
-3. **A3 — Stack additivo con `fur_cloak`.** Implementazione: damage pipeline somma valori DR di buff `kind:DR` attivi, clamp 0.5. **Action item §2.8 (effect cascade):** definire stacking rules per `kind` di buff.
-4. **A4 — `CombatStarted` event esiste?** Verificare `src/combat/events.rs::CombatEvent`. Se no, **action item:** aggiungerlo (utile anche per ogni init-time listener).
+1. **A1 — Buff "Permanent" semantica.** ✅ **Chiuso (round-3, 2026-05-12):** `BuffDur::Permanent` ammesso come variante **solo per `kind: Aura`** (buff team-wide state-bound, no tick-down) — formalizzato in `02-08 §H.2` (BuffDur taxonomy). Cleanup esplicito via `remove_buff` su death event. Cleanse Patamon (`patapata_hover`) **non rimuove** holy_aegis (è buff alleato `kind:Aura`, cleanse filtra `kind:Debuff`).
+2. **A2 — Patamon revive (futuro fuori scope).** Se in futuro arriva revive, listener deve riapplicare aura via hook `UnitRevived`. **Deferred M017+.**
+3. **A3 — Stack additivo con `fur_cloak`.** ✅ **Chiuso (round-3, 2026-05-12):** formalizzato in `02-08 §H.3` (stacking rules): **cross-unit additivo con clamp 0.5** (es. `holy_aegis` 10% + `fur_cloak` 20% = 30% effettivo, sotto cap). Intra-unit invece replace-max (vedi gabumon/03 §5.3 ult `dr_self` vs `fur_cloak`). La damage pipeline somma valori DR di buff `kind:DR` attivi su una entity (cross-unit additive), clamp finale 0.5.
+4. **A4 — `CombatStarted` kernel event.** **Open (deferred):** event bus formalization non ancora chiusa in `events.rs`. Workaround corrente: listener inizializza aura su prima `TurnAdvanced` (turn 0) check, idempotent. Action item permanente: aggiungere `CombatStarted` come kernel event utile a ogni init-time listener (anche revive futuro). **Non blocca M017** — workaround `TurnAdvanced` regge.
 
 ## §7 — Verdetto
 
-`holy_aegis` è il **caso degenere passive**: nessun edge predicate, solo state-applied/state-removed. Espone il bisogno di:
-- `dur: Permanent` come variante di durata buff.
-- DR stacking rules formalizzati (A3).
-- `CombatStarted` come kernel event (A4).
+`holy_aegis` è il **caso degenere passive**: nessun edge predicate, solo state-applied/state-removed. Status post round-3:
+- A1 ✅ chiuso (`BuffDur::Permanent` per `kind:Aura`, `02-08 §H.2`).
+- A3 ✅ chiuso (DR stacking cross-unit additivo clamp 0.5, `02-08 §H.3`).
+- A4 deferred (event bus formalization).
+- A2 deferred M017+ (revive out-of-scope).
 
-**Nessun gap architetturale duro** — sono estensioni minor del vocabolario buff e dell'event set.
+**Nessun gap architetturale duro** rimasto — A4 è estensione minor del kernel event set, workaround regge fino a formalizzazione.

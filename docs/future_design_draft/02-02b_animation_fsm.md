@@ -56,7 +56,7 @@ La FSM emette **Commands** in `on_enter` del nodo. Il blueprint del Digimon prop
 |---|---|---|---|
 | `EmitDamage { hits, mul_param, status?, chance_pct?, dur? }` | gameplay | applica N danni al target con scaling da params | `KernelEffect::Damage` × N (+ opzionale `ApplyStatus`) |
 | `EmitStatus { id, dur_param, chance_param, target }` | gameplay | applica status a target | `KernelEffect::ApplyStatus` |
-| `SpawnParticle { name, anchor }` | cosmetic | crea VFX al frame corrente | notify presentation bus (`NotifyParticle`) |
+| `SpawnParticle { name, origin: VfxLocus, motion: VfxMotion }` | cosmetic | crea VFX al frame corrente, posizionato via Locus + animato via Motion (vedi §2.2d) | notify presentation bus (`NotifyParticle`) |
 | `Shake { intensity, duration_ms }` | cosmetic | screen shake | notify presentation bus (`NotifyShake`) |
 | `Hold { extra_frames }` | playhead | pausa playhead nel nodo corrente | modifier playhead UI animator |
 | `StartQTE { kind, window_param, headless_default_param }` | suspend | apre QTE, sospende kernel (§2.6) | `Suspend(YieldReason::QuickTimeEvent)` |
@@ -68,6 +68,32 @@ La FSM emette **Commands** in `on_enter` del nodo. Il blueprint del Digimon prop
 3. **Cosmetic ≠ gameplay**: `SpawnParticle` non emette mai `KernelEffect`. `EmitDamage` non spawna mai particelle direttamente — i particle reattivi al damage vengono da `OnKernelEvent(DamageDealt)` (vedi §D edge predicates).
 
 **Espansioni candidate (non in M017):** `KnockBack`, `Move`, `Teleport`, `SummonMinion`, `Mark` (per setup→payoff). Aggiungere solo quando una skill concreta li richiede.
+
+---
+
+## C2 — Vocabolario Commands esteso (M017+ kernel-known)
+
+Round di review-3 del roster (Agumon/Dorumon/Gabumon/Tentomon/Renamon/Patamon) ha promosso **7 verbi candidati a approved kernel-known**. Skill concrete del roster M017 li richiedono. Tutti rispettano le tre regole §C (chiuso / numeri via reference / cosmetic ≠ gameplay) e tutti vivono kernel-side perché toccano state condiviso oltre la singola entity blueprint (TurnOrder, status registry, SP pool, hp altrui).
+
+| Command | Tipo | Esegue | Traduzione blueprint | Skill source roster |
+|---|---|---|---|---|
+| `EmitHeal { amount_param, amount_kind: (HpPctMax\|HpPctMissing\|Flat), target }` | gameplay | applica heal a target; emette `Healed` event sul bus (alimenta Patamon ult charge `+25/heal event`) | `KernelEffect::Heal` | Patamon `patapata_hover` / `sparking_air_shot` |
+| `EmitCleanse { count_param, selector: (FIFO\|LIFO\|Random), target }` | gameplay | rimuove fino a `count` status `kind:Debuff` da target via selector; emette `StatusRemoved` per ognuno | `KernelEffect::RemoveStatus` × N | Patamon `patapata_hover` / `sparking_air_shot` |
+| `AdvanceTurn { actor, pct_param }` | gameplay | avanza gauge `TurnOrder` di `actor` di `pct%` del valore turn full | `KernelEffect::AdvanceTurnGauge` (kernel-owned `TurnOrder`) | Renamon `koyosetsu`, `kitsune_grace` |
+| `DelayTurn { target, pct_param }` | gameplay | ritarda gauge `TurnOrder` di `target` di `pct%` | `KernelEffect::DelayTurnGauge` | Renamon `tohakken` |
+| `ApplyBuff { id, dur_param, kind: (Buff\|Debuff\|DR\|Aura\|Mark), target }` | gameplay | unifica `EmitStatus` con flag `kind` esplicita; status registry applica regole cleanse-eligibility per `kind:Buff` ∉ cleansable (vedi §2.8 §H) | `KernelEffect::ApplyStatus` con `BuffKind` field | Renamon `tohakken` (Blessed), Patamon `holy_aegis` (Aura), Gabumon `fur_cloak` (DR) |
+| `EmitSpGrant { amount_param, target }` | gameplay | aggiunge SP a SP pool del team di `target`; emette `SpGranted` event; **cap-aware sul lato ricevente** (`SpPool.add` clamp al cap, vedi `src/combat/sp.rs`), **non passa** dal contatore `RoundSpTracker.max_non_basic_per_round` (grant ≠ spend) | `KernelEffect::GrantSp` | Gabumon `blue_cyclone` (ult, team +1), Tentomon `electrical_discharge` (ult, team +1), override `+2 SP` Tentomon basic data-side via `units.ron.sp_gen_per_basic` |
+| `Reposition { anchor, target }` | gameplay | sposta `target` a posizione `anchor` sulla combat line (riusa §02-02c §D dematerialize pattern, ora promosso) | `KernelEffect::Reposition` | Dorumon `dash_metal` follow-up (chiude §02-02c §D dangling) |
+
+**Sugar form, NO command separato:** `ApplySelfBuff { id, dur_param, kind }` è alias di `ApplyBuff { target: EntityRef::Self_ }`. Vocabolario kernel resta minimal — il blueprint può scrivere la forma corta come zucchero sintattico nel proprio executor, ma `tick_fsm` emette solo `ApplyBuff`. Stesso pattern di `TargetCenter ↔ EntityCenter(Primary)` in §2.2d §B.
+
+**Relazione `EmitStatus` ↔ `ApplyBuff`:** `ApplyBuff` è **strict superset** di `EmitStatus` (§C base) — aggiunge il campo `kind`. M017+ usa `ApplyBuff` ovunque; `EmitStatus` resta nel vocabolario §C base come **forma degenerate** (`kind` defaulta a `Debuff`) per compat lazy delle skill già scritte. Nessuna doppia logica kernel-side: `EmitStatus { ... }` → `ApplyBuff { ..., kind: Debuff }` a parse-time del RON.
+
+**Tutti i 7 verbi sono kernel-known per design.** Test discriminante: il Command tocca state condiviso oltre la singola entity blueprint (TurnOrder resource, status registry con cleanse-eligibility, SP pool, hp altrui). Tenerli come custom blueprint code drifterebbe la semantica tra digimon (es. `heal` Patamon vs `heal` futuro Vaccine-healer si scollerebbe; cleanse FIFO/LIFO/Random si bifurcherebbe). Il prezzo "tocchi kernel per aggiungere verbo" si paga **una volta in M017**, poi è costante.
+
+**Blueprint-local resta:** trigger predicates e state reads dentro Forma C FSM passive (es. Dorumon `predator_loop` `hp_pct < 0.5`, Agumon `twin_core_fire` `partner.has_status(Chilled)`). Blueprint legge stato → emette Commands kernel-known sugli eventi. Boundary chiara: **blueprint sa leggere, kernel sa scrivere.**
+
+**Espansioni candidate aggiornate (post-C2, non in M017):** `KnockBack`, `Move`, `Teleport`, `SummonMinion`, `Mark` restano candidati come §C base; rivalutazione round-4+.
 
 ---
 
@@ -289,7 +315,7 @@ Lo skill-tree è il **gemello gameplay** di clipmontage: stessa logica condizion
                 cost: 1,
                 requires: [],
                 patches: [
-                    PatchParams(skill: "agumon_pepper_breath",
+                    PatchParams(skill: "agumon_baby_flame",
                                 params: { "hits": 3, "atk_mul": 0.7 }),
                 ],
             ),
@@ -297,7 +323,7 @@ Lo skill-tree è il **gemello gameplay** di clipmontage: stessa logica condizion
                 cost: 2,
                 requires: ["triple_hit"],
                 patches: [
-                    PatchParams(skill: "agumon_pepper_breath",
+                    PatchParams(skill: "agumon_baby_flame",
                                 params: { "atk_mul": 2.4, "sp_cost": 2 }),
                 ],
             ),
@@ -336,7 +362,7 @@ Concordato durante il design pass. Sostituzione del modello attuale "campo `sp_c
 
 **Prima (oggi):**
 ```ron
-"agumon_pepper_breath": SkillRon(
+"agumon_baby_flame": SkillRon(
     params: { "sp_cost": 1, ... },
 ),
 // kernel: if caster.sp < params["sp_cost"] → IllegalReason::NotEnoughSp
@@ -345,7 +371,7 @@ Concordato durante il design pass. Sostituzione del modello attuale "campo `sp_c
 **Dopo (§2.2b):**
 ```ron
 // skills.ron — il costo è un effect riferito per id
-"agumon_pepper_breath": SkillRon(
+"agumon_baby_flame": SkillRon(
     cost_effect: "cost.sp_basic",   // riferimento all'effect catalog
     cooldown_effect: None,           // opzionale, default = nessun cd
     params: { "atk_mul": 1.6, "hits": 1, ... },
@@ -366,7 +392,7 @@ Concordato durante il design pass. Sostituzione del modello attuale "campo `sp_c
 // skill_tree.ron
 "free_first_cast": Node(
     patches: [
-        PatchCostEffect(skill: "agumon_pepper_breath",
+        PatchCostEffect(skill: "agumon_baby_flame",
                         cost_override: "cost.sp_zero_once_per_turn"),
     ],
 ),
@@ -422,12 +448,12 @@ Se i grafi vengono generati da un agent, servono validatori statici che fallisca
 
 ---
 
-## M — Esempio shape (Pepper Breath senza unlock — minimale)
+## M — Esempio shape (Baby Flame senza unlock — minimale)
 
 Sketch sintetico per orientamento — il **worked example full-featured** (con super_charge + triple_hit + counter_window + QTE amplify) è in §2.9.
 
 ```ron
-"agumon_pepper_breath": AnimGraph(
+"agumon_baby_flame": AnimGraph(
     clip: "skill",   // ref a clip.ron range
     entry: "windup",
 
@@ -443,7 +469,8 @@ Sketch sintetico per orientamento — il **worked example full-featured** (con s
                                                   dur_param: "burn_duration" }]),
         "particles": Node(frames: (14, 17),
                           on_enter: [SpawnParticle { name: "fireball_explode",
-                                                     anchor: "target" }]),
+                                                     origin: TargetCenter,
+                                                     motion: Static }]),
         "recovery": Node(frames: (14, 17), reverse: true),
     },
 
@@ -466,7 +493,7 @@ Note:
 // alternativa: particle pinnato all'evento kernel (1 particle per damage)
 // in §2.7 reactive hook, NON in AnimGraph
 on_event: |ev| if matches!(ev, CombatEvent::DamageDealt { source: this_action, .. }) {
-    ctx.notify(NotifyParticle { name: "fireball_explode", anchor: "target" });
+    ctx.notify(NotifyParticle { name: "fireball_explode", origin: TargetCenter, motion: Static });
 }
 ```
 
@@ -489,7 +516,7 @@ La lista piatta attuale è il **degenerate case** del grafo: 1 nodo che copre l'
 )
 ```
 
-**Per i 5 Digimon con clipmontage vuoto:** trasformazione meccanica, 1 file per Digimon, niente perdita di info. Per Agumon (Pepper Breath con clipmontage popolato) la migrazione è la conversione esplicita degli 8 notify attuali in nodi+edges (vedi §M sketch).
+**Per i 5 Digimon con clipmontage vuoto:** trasformazione meccanica, 1 file per Digimon, niente perdita di info. Per Agumon (Baby Flame con clipmontage popolato) la migrazione è la conversione esplicita degli 8 notify attuali in nodi+edges (vedi §M sketch).
 
 Tooling proposto: script `tools/migrate_clipmontage_to_fsm.py` che converte file-per-file. Decisione su quando eseguirlo (M017 vs M018) lascia al planning.
 
@@ -516,7 +543,7 @@ Impatto su §5 slicing (delta vs §2.2 flat):
 - **S03b** "SkillBehavior trait + registry + reactive hook dispatcher" — invariato.
 - **NUOVA: S03f "AnimGraph FSM parser + interprete + validator"** — schema RON, parser, validator contract test, `tick_fsm` puro, golden test `(graph, unlocks, events) → commands`. Headless-only, niente UI.
 - **NUOVA: S03g "AnimGraph integration con SkillBehavior"** — `SkillExecCtx::kernel_events_since_resume()`, `Command::translate_into_kernel_effect()`, blueprint executor per il vocabolario base (6 verbi).
-- **S03c** "skill RON v2 + behavior porting" — aggiornato: Pepper Breath usa AnimGraph come reference. Le altre 5 Rookie skills hanno AnimGraph degenerate (1 nodo all-clip) finché non emergono complessità.
+- **S03c** "skill RON v2 + behavior porting" — aggiornato: Baby Flame usa AnimGraph come reference. Le altre 5 Rookie skills hanno AnimGraph degenerate (1 nodo all-clip) finché non emergono complessità.
 
 Migration script (§N) è tooling, non slice gameplay.
 
@@ -538,4 +565,4 @@ Migration script (§N) è tooling, non slice gameplay.
 - §2.6 (suspend/resume): `StartQTE` Command usa il meccanismo esistente, nessuna estensione
 - §2.7 (SkillBehavior trait): la FSM vive `self.fsm_rt` nel behavior, `execute()` la tick-a
 - §2.8 (effect cascade): invariata, i `KernelEffect` emessi dal blueprint executor entrano nella cascade standard
-- §2.9 (worked example): sostituito con full-featured AnimGraph di Pepper Breath (4 unlock variant + counter reattivo + QTE amplify)
+- §2.9 (worked example): sostituito con full-featured AnimGraph di Baby Flame (4 unlock variant + counter reattivo + QTE amplify)

@@ -8,7 +8,7 @@
 - **Atlas:** `assets/digimon/agumon_atlas.json` v1, 84 frames, frame size 1024×1024
 - **§2.2b** Animation FSM (Commands vocabulary, Predicate enum, headless determinism §G)
 - **§8 roster minimal** § Agumon — Fire burst
-- **Dati legacy:** `assets/data/units.ron` UnitId(1), `assets/data/skills.ron` pepper_breath/agumon_ult
+- **Dati legacy:** `assets/data/units.ron` UnitId(1), `assets/data/skills.ron` baby_flame/agumon_ult
 
 ## §1 — Identità (canon §8)
 
@@ -26,9 +26,9 @@ Atlas Agumon v1 — 8 animazioni nominali. Mapping al kit:
 | Slot kit | Atlas clip | Frame range (source) | Count | Note |
 |---|---|---|---|---|
 | **Idle (loop)** | `idle` | 44–49 | 6 | loop perpetuo fuori skill |
-| **Basic** (`claw_strike`) | `attack` | 0–8 | 9 | swing veloce |
-| **Heavy Skill** (`pepper_breath`) | `heavy_attack` | 23–36 | 14 | windup-fire-recovery |
-| **Ultimate** (`nova_blast`) | `skill` | 50–66 | 17 | charge-blast-detonate |
+| **Basic** (`sharp_claws`) | `attack` | 0–8 | 9 | swing veloce |
+| **Heavy Skill** (`baby_flame`) | `heavy_attack` | 23–36 | 14 | windup-fire-recovery |
+| **Ultimate** (`baby_burner`) | `skill` | 50–66 | 17 | charge-blast-detonate |
 | **Hurt (reaction)** | `hurt` | 37–43 | 7 | non gestita dalla FSM skill (passive UI) |
 | **Block (reaction)** | `block` | 9–13 | 5 | reserved §3.3 §2.2b |
 | **Death** | `death` | 14–22 | 9 | terminale, owned dal kernel |
@@ -51,16 +51,19 @@ Per §2.2b §G (headless determinism): **frame counter logico è autoritativo**,
 
 | Slot | Skill ID | Target | Costo | Effetto base (intent) |
 |---|---|---|---|---|
-| Basic | `claw_strike` | Single (Enemy/Alive) | 0 SP, **+1 SP gen**, +25 Ult charge (OnBasicAttack) | Damage piatto Fire `≈8`; **+1 Heated stack** al primary |
-| Skill | `pepper_breath` | Single (Enemy/Alive) | **1 SP** | Damage medio Fire `18`; **+2 Heated stacks**; ToughnessHit(10) |
-| Ult | `nova_blast` | Single primary + splash adj (Blast) | 0 SP, drena ult bar (off-turn lanciabile anytime, HSR-style) | Damage alto `50` primary, splash 50% sui 2 adj; **modifier-firma `OnKill→Detonate(Heated)`** |
+| Basic | `sharp_claws` | Single (Enemy/Alive) | 0 SP, **+1 SP gen**, +25 Ult charge (OnBasicAttack) | Damage piatto Fire `≈8`; **+1 Heated stack** al primary |
+| Skill | `baby_flame` | Single (Enemy/Alive) | **1 SP** | Damage medio Fire `18`; **+2 Heated stacks**; ToughnessHit(10) |
+| Ult | `baby_burner` | Single primary + splash adj (Blast) | 0 SP, drena ult bar (off-turn lanciabile anytime, HSR-style) | Damage alto `50` primary, splash 50% sui 2 adj; **modifier-firma `OnKill→Detonate(Heated)`** |
 | Passive | `twin_core_fire` | — (listener) | — | +damage condizionale se Gabumon in team applica Chilled |
 | Follow-up | (TBD se mantenuto) | — | — | OnEnemyBreak (`agumon_follow_up`) — **da rivalutare**: M017 §8 non lo cita esplicitamente |
 
 **Drift legacy vs design:**
-- `skills.ron` ha `pepper_breath` `sp_cost: 4` — **rotto** rispetto a SP economy reale (§5b). Allineare a **1**.
-- `agumon_ult` legacy = "Nova Blast" `damage: 50, ToughnessHit(30)` — **OK**, ma manca il modifier `OnKill→Detonate(Heated)` (oggi è inert).
-- `units.ron` ha `basic_skill: pepper_breath` (= heavy) — **separare** in `claw_strike` distinto.
+- `skills.ron` ha `baby_flame` `sp_cost: 4` — **rotto** rispetto a SP economy reale (§5b). Allineare a **1**.
+- `agumon_ult` = "Baby Burner" (canon, ex "Nova Blast" — rinominato perché Nova Blast è di Greymon) `damage: 50, ToughnessHit(30)` — **OK**, ma manca il modifier `OnKill→Detonate(Heated)` (oggi è inert).
+- `baby_flame` (Heavy Skill, ex "Pepper Breath" — Pepper Breath era il dub EN, **Baby Flame** è il canon JP — ベビーフレイム): `name: "Baby Flame"`, anim `heavy_attack` = mouth fire spit ✓.
+- `sharp_claws` (Basic, ex "Claw Strike" generico): EN "Sharp Claws" / canon JP "Surudoi Tsume" (`鋭い爪`), anim `attack` = generic claw swing ✓. **Non ancora separato in `skills.ron`** (oggi `units.ron.basic_skill = baby_flame` per drift legacy).
+- `agumon_follow_up` display name = "Spitfire" (canon Agumon move, "Spits out fireballs" — fits il reactive fire shot).
+- `units.ron` ha `basic_skill: baby_flame` (= heavy) — **separare** in `sharp_claws` distinto.
 - `agumon_follow_up` esiste in skills.ron + `units.ron.follow_up = OnEnemyBreak`. §8 non lo cita ⇒ decidere se tenerlo (probabilmente sì come retain low-cost).
 
 ## §5b — SP Economy reality check (canon shared, vincola tutti i 6 Digimon)
@@ -95,8 +98,9 @@ Riferimento codice: `src/combat/sp.rs` → `SpPool { current: 3, max: 5 }`; `Rou
 Heated è uno **status fire** che Agumon stacca su target. Definizione minima per i 3 file successivi:
 
 - **Apply:** Basic +1, Heavy +2, Ult applica indirettamente via custom_signal `apply_thermal_spark`.
-- **Cap:** TBD (proposta: max 6 stacks)
-- **Effect on target:** TBD per M017 — proposta: +`X%` damage taken da Fire per stack, decay -1/turno o on-debuff-removed. **Non è oggetto di stress test FSM**, è oggetto del file `passive_twin_core_fire`.
+- **Cap:** **6 stacks per-target** (canon, fissato in 03 §8 G13). Apply oltre cap = no-op silente.
+- **Effect on target (canon, chiuso 2026-05-12):** **+8% Fire damage taken per stack** (additivo sul `apply_target_debuffs` step §2.8 cascade). Cap 6 ⇒ max **+48% Fire vulnerability**. Niente DoT, niente slow — è solo un amplifier Fire-tagged. Build-up reale 3-4 turni di pre-ult; Heated è leggibile mid-fight (HSR-pulito), non un placeholder cosmetic.
+- **Decay:** **-1 stack su `TurnEnded` del target** (target-side decay, non caster-side). 6 stack a turno T → 5 a T+1 → 0 a T+6 se nessun re-apply. Pulizia esplicita via `EmitCleanse(Heated)` rimuove tutti gli stack.
 - **Detonate (Ult OnKill):** se Ult uccide primary, gli `Heated` stack rimanenti vengono "esplosi" sugli adj come damage immediato (proporzionale stacks).
 
 Quesito design da risolvere fuori stress test:
@@ -105,9 +109,9 @@ Quesito design da risolvere fuori stress test:
 
 ## §6 — Prossimi file della serie
 
-1. `01_basic_claw_strike.md` — FSM stress base attack (1-2 nodi, low complexity, baseline)
-2. `02_skill_pepper_breath.md` — FSM stress heavy skill (3-4 nodi, status apply + tough hit)
-3. `03_ult_nova_blast.md` — FSM stress ult (4 nodi, edge reattivo `OnKill→ReactiveDetonate`, QTE Power Charge)
+1. `01_basic_sharp_claws.md` — FSM stress base attack (1-2 nodi, low complexity, baseline)
+2. `02_skill_baby_flame.md` — FSM stress heavy skill (3-4 nodi, status apply + tough hit)
+3. `03_ult_baby_burner.md` — FSM stress ult (4 nodi, edge reattivo `OnKill→ReactiveDetonate`, QTE HitCheck v1)
 4. `04_passive_twin_core_fire.md` — blueprint listener-only (no FSM), Twin Core con Gabumon
 
 Obiettivo per ogni file: **trovare almeno 1 contraddizione/buco** del design §2.2b prima di M017.

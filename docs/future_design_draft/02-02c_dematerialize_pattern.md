@@ -24,7 +24,7 @@ Costo alto, valore di gameplay basso (il combat è turn-based, non posizionale).
 
 ## B — Sequenza per skill (uniforme)
 
-Per ogni azione che richiederebbe movimento (basic attack incluso, salvo skill ranged pure tipo Pepper Breath):
+Per ogni azione che richiederebbe movimento (basic attack incluso, salvo skill ranged pure tipo Baby Flame):
 
 | Fase | Durata indicativa | Cosa succede |
 |---|---|---|
@@ -38,7 +38,7 @@ Per ogni azione che richiederebbe movimento (basic attack incluso, salvo skill r
 
 **Total overhead per skill:** ~700–1000 ms cumulato di shader transition, sopra il tempo della clip d'azione vera e propria. Accettabile per combat turn-based.
 
-**Eccezione (basic attack ranged):** se la skill non richiede prossimità (es. Pepper Breath, già ranged), si **salta** dematerialize: unit resta in idle position e spara il proiettile. Criterio: `requires_close_range: bool` in `skills.ron` (campo nuovo, default `true`). Vedi §E.
+**Eccezione (basic attack ranged):** se la skill non richiede prossimità (es. Baby Flame, già ranged), si **salta** dematerialize: unit resta in idle position e spara il proiettile. Criterio: `requires_close_range: bool` in `skills.ron` (campo nuovo, default `true`). Vedi §E.
 
 ---
 
@@ -72,13 +72,13 @@ Aggiungere campo opzionale al record skill:
 
 ```ron
 (
-    id: "agumon_claw_strike",
+    id: "agumon_sharp_claws",
     requires_close_range: true,   // default true se omesso
     // ... altri campi
 )
 ```
 
-Skill con `requires_close_range: false` saltano dematerialize/rematerialize → unit resta in idle position, esegue la clip d'attacco (es. Pepper Breath = ranged, animazione di spit dal posto).
+Skill con `requires_close_range: false` saltano dematerialize/rematerialize → unit resta in idle position, esegue la clip d'attacco (es. Baby Flame = ranged, animazione di spit dal posto).
 
 Decisione su quali skill del kit minimal sono ranged vs melee: **deferred a quando entriamo nel design dettagliato del kit per Digimon**.
 

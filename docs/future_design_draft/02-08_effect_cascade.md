@@ -198,3 +198,126 @@ Vedi §5 per dipendenze.
 ## G — Riserva di revisione esplicita
 
 Il modello `IdempotencyScope` a 4 varianti chiuse è **OK con riserva**: durante S03/S03b/S05 si rivedono i pattern reattivi delle skill che verranno definite per i 6 Rookie. Se emergono pattern non coperti dalle 4 varianti, si valuta `IdempotencyScope::Custom(name)` come 5ª variante. Decisione lazy: aggiungerla solo quando l'evidenza la richiede, non in anticipo.
+
+## H — Status & buff taxonomy (chiusura round-3 M017)
+
+Round-3 review del roster ha generato 5 status di skill (`Heated`/`Chilled`/`Paralyzed`/`Slowed`/`Blessed`) + 2 status gas-era riservati (`Burn`/`Shock`) + un buff `Aura` permanente (`holy_aegis`). Senza enum chiuso + semantica per-status + regole stacking, il status registry diventa drift point: ogni blueprint risolve cleanse/refresh/stack a modo suo, con risultati incoerenti tra digimon. Questa sezione li formalizza.
+
+### §H.1 — Status taxonomy (enum chiuso M017)
+
+```rust
+pub enum StatusKind {
+    // applicati da skill M017
+    Heated,     // Agumon fire skills, Patamon Holy damage cross-tag
+    Chilled,    // Gabumon ice skills
+    Paralyzed,  // Tentomon electric skills
+    Slowed,     // Gabumon Ult delay, generic delay
+    Blessed,    // Renamon Ult ally buff (kind:Buff, cleanse-immune)
+
+    // riservati per gas-era / espansioni
+    Burn,       // gas-era proto, oggi soppiantato da Heated (mantenuto come kind separato per palette estesa)
+    Shock,      // gas-era proto, oggi soppiantato da Paralyzed
+}
+```
+
+**Per-status semantic table:**
+
+| Status | Effect | Default dur (turns) | `BuffKind` (§H.2) | Cleansable | Sources |
+|---|---|---|---|---|---|
+| `Heated` | DoT 4 dmg/turn fire; target prende +15% dmg fuoco/Holy | 2 | `Debuff` | sì | Agumon `baby_flame`/`baby_burner`, Patamon Holy damage proc opzionale |
+| `Chilled` | speed −20% turno corrente; target prende +15% dmg ghiaccio | 2 | `Debuff` | sì | Gabumon `claw_attack`/`gabumon_shot`/`blue_cyclone`, Renamon Ult (no) |
+| `Paralyzed` | skip turno 30% pct; pulito al next-turn-start anche se non triggera | 1 | `Debuff` | sì | Tentomon `petit_thunder` per-Hop, `electrical_discharge` random |
+| `Slowed` | turn delay +30% gauge; non stacka (replace-max-dur) | 2 | `Debuff` | sì | Gabumon `blue_cyclone` AoE, Renamon `tohakken` DelayTurn (separato) |
+| `Blessed` | +15% dmg dealt; +1 Ult charge per action; **cleanse-immune** | 2 | `Buff` | **no** | Renamon `tohakken` allies |
+| `Burn` | (gas-era) DoT 3 dmg/turn; minor variant di Heated, può coesistere | 2 | `Debuff` | sì | n/a M017 |
+| `Shock` | (gas-era) target perde 1 SP/turno; minor variant di Paralyzed | 2 | `Debuff` | sì | n/a M017 |
+
+**Stack policy:** ogni status è single-instance per target (no stacking). Re-applicazione segue policy `refresh_max_dur` (durata massima tra existing e new). Eccezione `Blessed`: re-apply replace-max anche su pct ult-gain (per future buff con valori numerici).
+
+**Validator:** `EmitStatus` / `ApplyBuff` con `id` non in `StatusKind` enum → fail boot. Status sources elencati in colonna "Sources" sono **autoritative** — un nuovo skill che vuole emettere uno status già listato deve allinearsi alle regole, non variarle.
+
+### §H.2 — `BuffKind` taxonomy
+
+```rust
+pub enum BuffKind {
+    Buff,       // positivo, cleanse-immune
+    Debuff,     // negativo, cleanse-eligible (default per `EmitStatus` legacy)
+    DR,         // damage reduction, stacking rules dedicate (§H.3)
+    Aura,       // always-on while source alive, dur:Permanent
+    Mark,       // setup-payoff marker (es. predator_mark, target select-only)
+}
+
+pub enum BuffDur {
+    Turns(u8),
+    UntilRoundEnd,
+    Permanent,  // ammesso solo per kind:Aura
+}
+```
+
+**Regole:**
+
+1. **`EmitCleanse` (§2.2b §C2)** rimuove solo status con `kind:Debuff` (per default selector). Status con `kind:Buff` / `Aura` / `Mark` non sono cleansable da `EmitCleanse`; richiedono `RemoveBuff { id }` esplicito (es. `UnitDied` listener auto-rimuove `holy_aegis` Aura).
+2. **`BuffDur::Permanent`** ammesso solo per `kind:Aura` — applicato a entry combat e rimosso a exit combat o `UnitDied`. Validator fail se `Permanent` su `Buff`/`Debuff`/`DR`/`Mark`.
+3. **`Mark`** non ha effect numerico di per sé; è un targeting selector consultato da skill listener (es. Dorumon Ch2 Active legge `tracked_target` Mark per amplify). Cleanse semantics: `Mark` non rimossa da `EmitCleanse` standard; lifecycle gestito dal blueprint owner.
+4. **Status-registry uniqueness:** un target ha al massimo un'istanza per `(StatusKind, source_blueprint_id)`. Stesso source che ri-applica = refresh; source diverso che applica stesso `StatusKind` = single-instance (replace, no double-tick).
+
+### §H.3 — DR stacking rules
+
+Damage Reduction (DR) viene applicato da:
+- `fur_cloak` Gabumon self DR (intra-unit): `kind:DR`, dur 2 turn, value 20%
+- `blue_cyclone` Gabumon team DR (intra-unit di Gabumon vs world): post-Ult buff 30% 1 turn
+- `holy_aegis` Patamon team DR (cross-unit aura): `kind:Aura`, `BuffDur::Permanent`, value 10% team-wide
+- Renamon Ult `tohakken` self DR (intra-unit): nessuno (Renamon non ha DR)
+
+Due regole separate per intra-unit vs cross-unit. Distinzione viene dalla scelta game-design Gabumon §6 D1 (intra-unit replace-max) vs Patamon §4 (cross-unit additivo).
+
+**Intra-unit (stesso target, multipla istanze DR dallo **stesso** source):**
+- Policy: **replace-max** (Gabumon §6 D1).
+- Esempio: `fur_cloak` Ch2 (20%) attivo + Gabumon `blue_cyclone` post-Ult (30%) sullo stesso turno → max(20, 30) = **30%**. Le durate restano indipendenti (`fur_cloak` 2 turn, `blue_cyclone` 1 turn): dopo 1 turno il blue_cyclone scade, DR effettivo torna a max(20) = 20%.
+- Rationale: status taxonomy uniqueness §H.2 punto 4 — `(DR, gabumon)` ha singola instance; replace-max è la regola di refresh applicata al `value` numerico.
+
+**Cross-unit (stesso target, multipla istanze DR da **diversi** source):**
+- Policy: **additivo, clamp 0.5** (Patamon §4 esplicito).
+- Esempio: Patamon `holy_aegis` (10% team-wide) + Gabumon `fur_cloak` (20% Gabumon-side) su Gabumon stesso → 10 + 20 = 30%. Su Agumon (non porta `fur_cloak` self) → solo 10%.
+- Esempio limite: 5 source DR a 15% = 75%; clamp 0.5 → DR effettiva 50%.
+- Rationale: cross-unit additivo è il pattern HSR (Aventurine Aegis + Bronya self-DR), clamp evita unkillable team-stack.
+
+**Algoritmo applicazione (kernel-side):**
+
+```
+fn compute_dr_for_target(target: Entity, status_registry: &StatusRegistry) -> f32 {
+    let mut total = 0.0;
+    for source_blueprint_id in distinct_sources(target, kind = DR) {
+        let max_for_source = status_registry
+            .iter_for_target(target, kind = DR, source = source_blueprint_id)
+            .map(|s| s.value)
+            .fold(0.0, f32::max);  // intra-unit replace-max
+        total += max_for_source;  // cross-unit additive
+    }
+    total.min(0.5)  // clamp 0.5
+}
+```
+
+**Twin Core symmetric:** non è DR — è damage boost (+10%/status partner, Agumon `twin_core_fire` legge `Chilled` su Gabumon e viceversa). Stacka con DR del target ma è separato (legge `(StatusKind::Heated, source=*) > 0` sul partner, indipendente da chi ha applicato).
+
+### §H.4 — Cross-ref a skill-doc roster
+
+I 6 digimon close round-3 implementano questa taxonomy:
+
+| Digimon | Status emessi | DR sources | Mark sources | Aura |
+|---|---|---|---|---|
+| Agumon | `Heated` (skill/ult/passive twin core boost) | — | — | — |
+| Dorumon | — | — | `predator_mark` (tracked_target, Ch2 read) | — |
+| Gabumon | `Chilled` (skill/ult) | self DR 20% (`fur_cloak`), Ult DR 30% (`blue_cyclone`) | — | — |
+| Tentomon | `Paralyzed` (skill/ult) | — | — | — |
+| Renamon | `Blessed` (Ult ally, kind:Buff cleanse-immune) | — | — | — |
+| Patamon | — | team DR 10% (`holy_aegis`) | — | `holy_aegis` Aura Permanent |
+
+**Heal events (`EmitHeal` Patamon)** non sono in §H — non sono status. Sono `KernelEffect::Heal` puri, emettono `Healed` event (consumato da Patamon ult-charge listener `+25/heal event`). Lifecycle separato da status registry.
+
+### §H.5 — Open gaps (deferred post-M017)
+
+1. **`BuffKind::Mark` lifecycle formale.** M017 ha solo `predator_mark` (Dorumon Ch2). Pattern futuro (Mark consumato da follow-up payoff) richiederebbe `RemoveBuff { id, kind:Mark }` esplicito + lifecycle owner per Mark — defer al primo skill non-Dorumon che usa Mark.
+2. **Stack-aware status numerici.** Heated/Chilled per ora single-instance. Se M018 introduce skill che vuole `Heated × 3` (DoT scaling con count), serve `Status { kind, stacks: u8 }` extension + regole stack refresh. Defer.
+3. **Self-cast Aura source destruction.** Se Patamon muore, `holy_aegis` Aura va rimossa (listener `UnitDied { self }`). Cross-ref `KernelEvent::UnitDied` listener auto-clear pattern, da formalizzare in §2.2b §C2 listener templates.
+4. **DR `kind` vs `BuffKind::DR` ambiguità.** Il `kind:DR` qui è il `BuffKind`, separato dalle Command kind di §2.2b. Naming collision tollerata per ora (contesto distingue); rinominare se conflitti.

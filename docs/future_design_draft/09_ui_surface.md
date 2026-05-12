@@ -18,7 +18,7 @@
 - **Status badges** (icon list su target / caster, vedi §8.1 + §8.3):
   - `Heated`, `Chilled`, `Slowed`, `Confused`, `Paralyzed` — stack count + durata residua (es. `2t`) + tooltip.
   - Mark blueprint esistenti: `PreyLock(turns)` (Dorumon), `TwinCore` shared meter (Agumon/Gabumon), `StaticCharge` (Tentomon, esistente come passive Battery Loop).
-  - Tooltip on hover: nome status, effetto, fonte (chi l'ha applicato), interazione con modifier-firma se rilevante (es. "Heated: Nova Blast con kill spread Heated agli adiacenti").
+  - Tooltip on hover: nome status, effetto, fonte (chi l'ha applicato), interazione con modifier-firma se rilevante (es. "Heated: Baby Burner con kill spread Heated agli adiacenti").
 
 ### §9.2.2 — Caster identity panel (per ally selezionato)
 
@@ -37,7 +37,7 @@ Passive icon w/ tooltip se attiva:
 - "Twin Core: damage bonus quando il partner applica lo status complementare."
 - "Fur Cloak: +DR 20% per 1 turno dopo aver applicato Chilled."
 - "Holy Aegis: ally team prendono -10% damage finché Patamon vive."
-- "Predator Loop: in stato Predator, Draconic Edge usa `OnKill→Chain`."
+- "Predator Loop: in stato Predator, Dash Metal usa `OnKill→Chain`."
 - "Battery Loop: condizioni esistenti del blueprint."
 
 ### §9.2.3 — Turn order timeline (top bar)
@@ -77,7 +77,7 @@ Skill non legale → hover mostra reason:
 - `"Out of SP (need 3)."`
 - `"Target is KO."`
 - `"Ultimate not charged."`
-- `"Draconic Edge: target valido ma OnKill→Chain non si arma fuori Predator state."` (info, non block)
+- `"Dash Metal: target valido ma OnKill→Chain non si arma fuori Predator state."` (info, non block)
 
 Reason stringa esposta dal `legality()` del trait (in §8 deferred a slice S03b).
 
@@ -131,9 +131,9 @@ Una sola voce per modifier; arco visivo che parte dallo Strike target verso i ta
 
 | Modifier | Cue visiva | Banner |
 |---|---|---|
-| `OnKill→Detonate(Heated)` (Agumon Nova Blast) | Esplosione + spread heat sui 2 adj | `DETONATE: HEATED SPREAD` |
+| `OnKill→Detonate(Heated)` (Agumon Baby Burner) | Esplosione + spread heat sui 2 adj | `DETONATE: HEATED SPREAD` |
 | `OnStatusApplied→Echo(Chilled)` (Gabumon Bubble Blast) | Onda fredda verso adj lowest-HP | `ECHO: CHILLED` |
-| `OnKill→Chain` (Dorumon Draconic Edge in Predator) | Arrow dal target morto al nuovo target | `PREDATOR CHAIN` |
+| `OnKill→Chain` (Dorumon Dash Metal in Predator) | Arrow dal target morto al nuovo target | `PREDATOR CHAIN` |
 | `OnBreak→Detonate` (Renamon Fox Drive) | AoE secondaria sulla linea | `SHATTER: FOX DRIVE` |
 | `OnHitN(3)→Apply(Paralyzed)` (Tentomon Electro Shocker) | Lampo finale sul 3° hop | `PARALYZE` |
 
@@ -143,10 +143,10 @@ Patamon: nessuna cue di modifier-firma (kit puramente lineare).
 
 Headless-friendly, una linea per `CombatEvent`. Esempi allineati ai kit §8.3:
 
-- `"Agumon casts Pepper Breath → Goblimon takes 18 (Fire). Heated 3t applied."`
-- `"Agumon casts Nova Blast → Goblimon takes 42 (Fire). Goblimon DIES. DETONATE: Heated spreads to 2 adjacent."`
+- `"Agumon casts Baby Flame → Goblimon takes 18 (Fire). Heated 3t applied."`
+- `"Agumon casts Baby Burner → Goblimon takes 42 (Fire). Goblimon DIES. DETONATE: Heated spreads to 2 adjacent."`
 - `"Gabumon casts Bubble Blast → Wolfmon takes 14 (Ice). Chilled 2t applied. ECHO: Chilled applied to Slimon (lowest HP adj)."`
-- `"Dorumon casts Draconic Edge (Predator state) → Goblimon takes 50 (Dark). Goblimon DIES. CHAIN: Draconic Edge fires on Slimon, takes 38."`
+- `"Dorumon casts Dash Metal (Predator state) → Goblimon takes 50 (Dark). Goblimon DIES. CHAIN: Dash Metal fires on Slimon, takes 38."`
 - `"Patamon casts Holy Breeze on Renamon → +30 HP, Confused cleansed."`
 - `"Renamon casts Fox Drive → Goblimon takes 60 (status×3). Goblimon BREAKS. SHATTER: AoE 30 to all enemies."`
 - `"Tentomon casts Electro Shocker → 3 bounces. 3rd hit: Slimon PARALYZED 2t."`

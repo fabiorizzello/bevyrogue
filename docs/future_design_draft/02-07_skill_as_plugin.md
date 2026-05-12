@@ -38,18 +38,18 @@ pub trait SkillBehavior: Send + Sync + 'static {
 }
 ```
 
-I due metodi opt-in (`subscribes_to` + `on_event`) sono il **trait surface dei reactive hook** dei blueprint — formalizzati in §C2 sotto. Default vuoti: una skill semplice (Pepper Breath, Bubble Blast) li ignora.
+I due metodi opt-in (`subscribes_to` + `on_event`) sono il **trait surface dei reactive hook** dei blueprint — formalizzati in §C2 sotto. Default vuoti: una skill semplice (Baby Flame, Bubble Blast) li ignora.
 
 ## B — Cosa resta in RON
 
 Una skill in RON diventa **identità + parametri**, mai logica:
 
 ```ron
-"agumon_pepper_breath": SkillRon(
+"agumon_baby_flame": SkillRon(
     version: 2,
-    behavior: "agumon::pepper_breath",   // ID che resolva un SkillBehavior nel registry
+    behavior: "agumon::baby_flame",   // ID che resolva un SkillBehavior nel registry
     display: SkillDisplay(
-        name_loc: "skill.agumon.pepper_breath",
+        name_loc: "skill.agumon.baby_flame",
         icon: "skills/fire.png",
         animation_track: "agumon/skill_a",
     ),

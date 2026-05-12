@@ -59,12 +59,12 @@ Solo i modifier necessari ai 6 baseline. Vocabolario completo §2.2b deferred.
 
 | Slot | Skill ID | Target | Costo | Effetto |
 |---|---|---|---|---|
-| Basic | `claw_strike` | `Single` | 0 SP, +1 gen | Damage piatto, +1 Heated stack al primary |
-| Skill | `pepper_breath` | `Single` | 3 SP | Damage medio, +2 Heated, +1 toughness reduce |
-| Ultimate | `nova_blast` | `Blast` | UltCharge | Damage alto sul primary, splash adj. **Modifier-firma: `OnKill→Detonate(Heated)`** — se uccide il primary, Heated stacks rimanenti spread sui 2 adiacenti |
+| Basic | `sharp_claws` | `Single` | 0 SP, +1 gen | Damage piatto, +1 Heated stack al primary |
+| Skill | `baby_flame` | `Single` | 3 SP | Damage medio, +2 Heated, +1 toughness reduce |
+| Ultimate | `baby_burner` | `Blast` | UltCharge | Damage alto sul primary, splash adj. **Modifier-firma: `OnKill→Detonate(Heated)`** — se uccide il primary, Heated stacks rimanenti spread sui 2 adiacenti |
 | Passive | `twin_core_fire` | — | — | Esistente (vedi `combat_current.md`). +damage se Gabumon in team applica Chilled |
 
-**AnimGraph nota:** `nova_blast` ha 4 nodi (Windup → Strike → ReactiveDetonate → Recovery). Edge `Strike→ReactiveDetonate` su `KernelEvent::UnitDied(primary)`; fallback `TimeInNode→Recovery`.
+**AnimGraph nota:** `baby_burner` ha 4 nodi (Windup → Strike → ReactiveDetonate → Recovery). Edge `Strike→ReactiveDetonate` su `KernelEvent::UnitDied(primary)`; fallback `TimeInNode→Recovery`.
 
 ---
 
@@ -75,9 +75,9 @@ Solo i modifier necessari ai 6 baseline. Vocabolario completo §2.2b deferred.
 
 | Slot | Skill ID | Target | Costo | Effetto |
 |---|---|---|---|---|
-| Basic | `horn_strike` | `Single` | 0 SP, +1 gen | Damage piatto, +1 Chilled |
-| Skill | `bubble_blast` | `Single` | 3 SP | Damage medio, +2 Chilled (Slowed 1 turno se Chilled ≥3). **Modifier-firma: `OnStatusApplied→Echo(Chilled)`** — il `Chilled` applicato eco sull'adiacente lowest-HP |
-| Ultimate | `arctic_torrent` | `Single` | UltCharge | Damage massivo singolo, +Slowed 2 turni |
+| Basic | `claw_attack` | `Single` | 0 SP, +1 gen | Damage piatto, +1 Chilled |
+| Skill | `gabumon_shot` | `Single` | 3 SP | Damage medio, +2 Chilled (Slowed 1 turno se Chilled ≥3). **Modifier-firma: `OnStatusApplied→Echo(Chilled)`** — il `Chilled` applicato eco sull'adiacente lowest-HP |
+| Ultimate | `blue_cyclone` | `Single` | UltCharge | Damage massivo singolo, +Slowed 2 turni |
 | Passive | `fur_cloak` | — | — | Quando applica Chilled, +1 turno di DR 20% su sé stesso (mitigation tank-lite) |
 
 ---
@@ -90,27 +90,27 @@ Solo i modifier necessari ai 6 baseline. Vocabolario completo §2.2b deferred.
 | Slot | Skill ID | Target | Costo | Effetto |
 |---|---|---|---|---|
 | Basic | `bite` | `Single` | 0 SP, +1 gen | Damage piatto |
-| Skill | `draconic_edge` | `Single` | 3 SP | Damage alto se primary < 50% HP, normale altrimenti. **Modifier-firma in Predator state: `OnKill→Chain`** — se uccide, Strike ripete su nuovo target (max 1 chain) |
-| Ultimate | `heat_viper` | `Single` | UltCharge | Damage massivo executor (bonus se primary < 30%) |
+| Skill | `dash_metal` | `Single` | 3 SP | Damage alto se primary < 50% HP, normale altrimenti. **Modifier-firma in Predator state: `OnKill→Chain`** — se uccide, Strike ripete su nuovo target (max 1 chain) |
+| Ultimate | `metal_cannon` | `Single` | UltCharge | Damage massivo executor (bonus se primary < 30%) |
 | Passive | `predator_loop` | — | — | Esistente (vedi `combat_current.md`) |
 
-**AnimGraph nota:** `draconic_edge` ha edge `Strike→ChainStrike` gated su `Predicate::And(KernelEvent::UnitDied, PassiveActive::PredatorLoop)`. Fuori Predator state, `OnKill→Chain` non si arma.
+**AnimGraph nota:** `dash_metal` ha edge `Strike→ChainStrike` gated su `Predicate::And(KernelEvent::UnitDied, PassiveActive::PredatorLoop)`. Fuori Predator state, `OnKill→Chain` non si arma.
 
 ---
 
-### Patamon — Pure healer
+### Patamon — Support-healer con damage burst ult
 
-- **Identità:** manutentore. Heal + cleanse base + buff piccolo. Nessun modifier reattivo, è semplicità voluta.
-- **Sinergie:** universale (cura chi serve). Critico in team aggressivi.
+- **Identità:** manutentore. Heal + cleanse base + DR aura. Ult **hybrid damage+heal** AoE (rev2: canon Sparking Air Shot = "glittering powered-up Air Shot" giustifica dual-axis).
+- **Sinergie:** universale (cura chi serve). Critico in team aggressivi. Cross-roster: ult damage scala con `Blessed` Renamon.
 
-| Slot | Skill ID | Target | Costo | Effetto |
-|---|---|---|---|---|
-| Basic | `boom_bubble` | `Single` enemy | 0 SP, +1 gen | Damage piatto (basso) |
-| Skill | `holy_breeze` | `Single` ally | 3 SP | Heal alleato target, +Cleanse 1 status |
-| Ultimate | `celestial_light` | `AoE(All)` ally | UltCharge | Heal team intero (full row) |
-| Passive | `holy_aegis` | — | — | Tutti gli alleati: -10% damage taken finché Patamon vive |
+| Slot | Skill ID | Canon EN/JP | Target | Costo | Effetto |
+|---|---|---|---|---|---|
+| Basic | `tai_atari` (Body Blow) | Tai Atari | `Single` enemy | 0 SP, +1 gen | Damage piatto Holy ~6 |
+| Skill | `patapata_hover` (canon, reflavor heal) | Patapata Hover | `Single` ally | **1 SP** | Heal `~25% HP max` ally + Cleanse 1 debuff |
+| Ultimate | `sparking_air_shot` (canon, hybrid) | Sparking Air Shot | `AoE(All)` enemies + `AoE(All)` ally | UltCharge | **Damage Holy ~25 a tutti i nemici** + **Heal ~20% HP max team** + Cleanse 1/ally |
+| Passive | `holy_aegis` | flavor-only | — | — | Tutti gli alleati: -10% damage taken finché Patamon vive |
 
-**Note:** Patamon è l'unico digimon **senza modifier-firma**. Identità = "support puro affidabile", non "trickster reattivo".
+**Note:** Patamon è l'unico digimon **senza modifier-firma reattivo**. Identità = "support affidabile" (rev2: + damage burst ult). Ult hybrid risolve "ult dead" su team full-HP (damage AoE resta valore anche senza heal).
 
 ---
 
@@ -122,9 +122,9 @@ Solo i modifier necessari ai 6 baseline. Vocabolario completo §2.2b deferred.
 
 | Slot | Skill ID | Target | Costo | Effetto |
 |---|---|---|---|---|
-| Basic | `quick_strike` | `Single` | 0 SP, +1 gen | Damage piatto Holy |
-| Skill | `diamond_storm` | `AoE(All)` enemies | **1 SP** | Damage medio Holy su tutti; **`AdvanceTurn(self, 25%)`** |
-| Ultimate | `fox_drive` | `AoE(All)` enemies | UltCharge | Damage alto Holy a tutti; **`DelayTurn(all enemies, 30%)`**; applica `Blessed` agli alleati per 2 turni |
+| Basic | `kokaishu` (Fox Spin Kick) | `Single` | 0 SP, +1 gen | Damage piatto Holy |
+| Skill | `koyosetsu` (Diamond Storm) | `AoE(All)` enemies | **1 SP** | Damage medio Holy su tutti; **`AdvanceTurn(self, 25%)`** |
+| Ultimate | `tohakken` (Power Paw, Holy reskin) | `AoE(All)` enemies | UltCharge | Damage alto Holy a tutti; **`DelayTurn(all enemies, 30%)`**; applica `Blessed` agli alleati per 2 turni |
 | Passive | `kitsune_grace` | listener | — | Quando un alleato consuma Ult, **`AdvanceTurn(self, 10%)`** |
 
 **Note:** Skill costa **1 SP** (non 3-4) perché il payoff primario è time-manip, non damage. `Blessed` = `+15% damage dealt`, `+1 Ult charge gen per action`, non-cleansable da nemici.
@@ -139,9 +139,9 @@ Solo i modifier necessari ai 6 baseline. Vocabolario completo §2.2b deferred.
 
 | Slot | Skill ID | Target | Costo | Effetto |
 |---|---|---|---|---|
-| Basic | `petit_thunder` | `Single` | 0 SP, **+2 gen** | Damage piatto Electric (basso) |
-| Skill | `electro_shocker` | `Bounce(3)` | **1 SP** | Damage medio su 3 target. **Modifier: `OnHitN(3)→Apply(Paralyzed)`**. **+1 turno DR 25% self** (tank hook) |
-| Ultimate | `super_shocker` | `AoE(All)` | UltCharge | Damage medio su tutta la linea + Paralyzed su 1 random; **+1 SP team** (battery moment) |
+| Basic | `hard_claw` | `Single` | 0 SP, **+2 gen** | Damage piatto Electric (claw + static VFX, canon-flavored) |
+| Skill | `petit_thunder` | `Bounce(3)` | **1 SP** | Damage medio Electric su 3 target (chain lightning, canon: "static electricity amplified by wings"). **Modifier: `OnHitN(3)→Apply(Paralyzed)`**. **+1 turno DR 25% self** (tank hook) |
+| Ultimate | `electrical_discharge` | `AoE(All)` | UltCharge | Damage medio su tutta la linea + Paralyzed su 1 random; **+1 SP team** (battery moment). Canon: "discharges electricity from whole body" |
 | Passive | `battery_loop` | listener | — | Esistente: SP gen reattiva. **Override: +20% block reaction chance** (tank-lite) |
 
 ---

@@ -7,9 +7,9 @@ Stress test del design canon §8 contro l'architettura §2.2b Animation FSM. Obi
 | File | Scope | Output |
 |---|---|---|
 | `00_identity.md` | Identità, atlas mapping, kit shape, timing convention | Baseline + drift legacy |
-| `01_basic_claw_strike.md` | Basic 3-nodi `Windup→Strike→Recovery` | 4 gap (params, chance, headless drop, ult-charge timing) |
-| `02_skill_pepper_breath.md` | Heavy 4-nodi `Inhale→Wind→Spit→Recovery` | 3 gap (tough_break, stacks param, ordering) |
-| `03_ult_nova_blast.md` | Ult 4-nodi con edge reattivo `OnKill→ReactiveDetonate` + QTE | 5 gap nuovi (event payload, multi-target, frame budget, QTE window) |
+| `01_basic_sharp_claws.md` | Basic 3-nodi `Windup→Strike→Recovery` | 4 gap (params, chance, headless drop, ult-charge timing) |
+| `02_skill_baby_flame.md` | Heavy 4-nodi `Inhale→Wind→Spit→Recovery` | 3 gap (tough_break, stacks param, ordering) |
+| `03_ult_baby_burner.md` | Ult 4-nodi con edge reattivo `OnKill→ReactiveDetonate` + QTE | 5 gap nuovi (event payload, multi-target, frame budget, QTE window) |
 | `04_passive_twin_core_fire.md` | Listener passive + aggregato 12 gap cross-file | Top-3 da risolvere: G1, G5, G9 |
 
 ## Reading order

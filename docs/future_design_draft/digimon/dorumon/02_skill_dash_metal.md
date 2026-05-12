@@ -1,8 +1,12 @@
-# Dorumon — Skill: `draconic_edge` (threshold scaling + chain in Predator state)
+# Dorumon — Skill: `dash_metal` (threshold scaling + chain in Predator state)
+
+> **Canon source.** `dash_metal` = `ダッシュメタル` (Dash Metal), Dorumon's Signature Move per reference book (high-speed tackle that fires an iron sphere; more powerful if Dorumon stops and accumulates power first). Game-side mechanic preserved (Dark threshold scaling + Predator chain); only name + projectile flavour aligned to canon JP.
 
 > **Goal**: stress test **damage scaling condizionato a HP%** + **modifier reattivo `OnKill→Chain` gated dallo state Predator**. Caso più complesso del kit Dorumon, perché l'edge esiste **solo se Predator state attivo**.
 >
 > **Gap §2.2b condivisi:** params G1, source kind G5 (event payload), multi-target G6, ordering G4. Qui solo nuovi.
+
+> **VFX positioning:** `SpawnParticle` usa `origin: VfxLocus + motion: VfxMotion` per `§2.2d` (`02-02d_vfx_positioning.md`).
 
 ## §1 — Intent
 
@@ -13,17 +17,23 @@
 
 ## §2 — FSM topology
 
-4-nodo + edge reattivo: `Wind → Cleave → ChainStrike? → Recovery`.
+4-nodo + edge reattivo: `Wind → Impact → ChainStrike? → Recovery`.
 
 ```
-commit → Wind(2f) → Cleave(3f) → Recovery(2f) → exit
+commit → Wind(2f) → Impact(3f) → Recovery(2f) → exit
                       │            │ (no-chain path)
-                      │ on_enter:
+                      │ Wind.on_enter:
+                      │   SpawnParticle("dark_metal_charge", origin: SelfCenter, motion: Static)
+                      │   SpawnParticle("dash_dust",         origin: SelfCenter, motion: Static)  # NEW — anticipation
+                      │
+                      │ Impact.on_enter:
                       │   // damage scaling — risolto al commit (snapshot G5)
                       │   // se primary.hp_pct < 0.50 → mul = "skill_mul_threshold"
                       │   // else                     → mul = "skill_mul_base"
                       │   EmitDamage { hits:1, mul_param:"$chosen_mul", target:Single(primary) }
-                      │   SpawnParticle("dark_slash","claw")
+                      │   SpawnParticle("iron_sphere_bolt",   origin: SelfCenter,
+                      │                                       motion: Travel { to: EntityCenter(Primary), ease: EaseOut, ms: 100 })  # NEW — bolt fly
+                      │   SpawnParticle("iron_sphere_impact", origin: EntityCenter(Primary), motion: Static)  # FIX — was SelfCenter
                       │   Shake { intensity:2, duration_ms:100 }
                       │
                       ├── edge A (Predator-gated): predicate(
@@ -33,7 +43,9 @@ commit → Wind(2f) → Cleave(3f) → Recovery(2f) → exit
                       │       on_enter:
                       │         EmitDamage { hits:1, mul_param:"chain_mul",
                       │                      target:LowestHpPctAlive(scope:EnemyTeam) }
-                      │         SpawnParticle("chain_arc","new_target_pivot")
+                      │         SpawnParticle("iron_sphere_bolt", origin: SelfCenter,
+                      │                                           motion: Travel { to: EntityCenter(Primary), ease: EaseOut, ms: 80 })  # NEW — consistency col primary hit
+                      │         SpawnParticle("chain_arc",        origin: EntityCenter(Primary), motion: Static)  # FIX — was TargetCenter; Primary = new lowest dopo selector resolution
                       │
                       └── edge B (default): TimeInNode prio:0 ──▶ Recovery
 ```
@@ -42,9 +54,9 @@ commit → Wind(2f) → Cleave(3f) → Recovery(2f) → exit
 
 | Node | frames | atlas | on_enter |
 |---|---|---|---|
-| `Wind` | 2 | 31–32 | `SpawnParticle("dark_charge","horn")` |
-| `Cleave` | 3 | 33–35 | EmitDamage(primary, mul-scaled) + particle + shake |
-| `ChainStrike` | 2 | 36–37 | (solo edge A) EmitDamage(new_lowest) + particle |
+| `Wind` | 2 | 31–32 | `SpawnParticle("dark_metal_charge", origin: SelfCenter, motion: Static)` + `SpawnParticle("dash_dust", origin: SelfCenter, motion: Static)` |
+| `Impact` | 3 | 33–35 | EmitDamage(primary, mul-scaled) + `SpawnParticle("iron_sphere_bolt", origin: SelfCenter, motion: Travel{to:EntityCenter(Primary), EaseOut, 100ms})` + `SpawnParticle("iron_sphere_impact", origin: EntityCenter(Primary), motion: Static)` + shake |
+| `ChainStrike` | 2 | 36–37 | (solo edge A) EmitDamage(new_lowest) + `SpawnParticle("iron_sphere_bolt", origin: SelfCenter, motion: Travel{to:EntityCenter(Primary), EaseOut, 80ms})` + `SpawnParticle("chain_arc", origin: EntityCenter(Primary), motion: Static)` |
 | `Recovery` | 2 | 38–39 (no-chain) / 38–39 (chain) | — |
 
 Frame budget: con chain 2+3+2+2=9 = atlas. ✅ Senza chain 2+3+4 padded a 9 (Recovery 4f); usare variant Recovery via edge priority (vedi agumon/03 G7).
@@ -52,7 +64,7 @@ Frame budget: con chain 2+3+2+2=9 = atlas. ✅ Senza chain 2+3+4 padded a 9 (Rec
 ## §4 — Kernel events expected
 
 ```
-Cleave.on_enter
+Impact.on_enter
   ├─ DamageDealt(primary, ≈16 or ≈32, Dark)
   └─ se primary muore: KernelEvent::UnitDied { unit: primary }
 
@@ -81,7 +93,7 @@ else:
 
 ## §6 — Verdetto
 
-Draconic Edge è il **caso più ricco** del roster su edge reattivi:
+Dash Metal è il **caso più ricco** del roster su edge reattivi:
 - Edge gated da **blueprint state** (F2), non solo da kernel event.
 - Damage scaling condizionato → decisione tra DSL vs blueprint Rust → consigliato Rust (semplifica vocabolario).
 - Conferma necessità di `Selector::LowestHp` (allinea a gabumon/02 `AdjLowest`).

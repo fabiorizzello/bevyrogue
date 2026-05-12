@@ -23,11 +23,11 @@
 | Slot kit | Atlas clip | Range | Count |
 |---|---|---|---|
 | **Idle (loop)** | `idle` | 41–48 | 8 |
-| **Basic** (`petit_thunder`) | `attack` | 0–8 | 9 |
-| **Skill** (`electro_shocker`) | `heavy_attack` | 22–33 | 12 |
-| **Ultimate** (`super_shocker`) | `skill` | 49–64 | 16 |
+| **Basic** (`hard_claw`) | `attack` | 0–8 | 9 |
+| **Skill** (`petit_thunder`) | `heavy_attack` | 22–33 | 12 |
+| **Ultimate** (`electrical_discharge`) | `skill` | 49–64 | 16 |
 | **Hurt** | `hurt` | 34–40 | 7 |
-| **Block** | `block` | 9–13 | 5 |
+| **Block / Passive `battery_loop` reaction proc** | `block` | 9–13 | 5 |
 | **Death** | `death` | 14–21 | 8 |
 | **Victory** | `victory` | 65–82 | 18 |
 
@@ -41,9 +41,9 @@ Shared. Battery generation event timing: SP gen emesso su **frame Strike**, non 
 
 | Slot | Skill ID | Target | Costo | Effetto base |
 |---|---|---|---|---|
-| Basic | `petit_thunder` | Single | 0 SP, **+2 gen** (battery role), +25 Ult | Damage piatto Electric (basso) |
-| Skill | `electro_shocker` | **Bounce(3)** | **1 SP** | Damage medio su 3 target. **Modifier `OnHitN(3)→Apply(Paralyzed)`** — al 3° hit, Paralyzed sul target finale. **Su use, +1 turno DR 25% self** (tank hook) |
-| Ult | `super_shocker` | AoE(All) enemies | UltCharge | Damage medio su tutta la linea + Paralyzed su 1 random; **+1 SP team** (battery moment) |
+| Basic | `hard_claw` | Single | 0 SP, **+2 gen** (battery role), +25 Ult | Damage piatto **Electric** (basso). Tag Electric via VFX (claws + static, canon-flavored: Shock Jaw/Rhino Spin Tentomon hanno chele charged with electricity) |
+| Skill | `petit_thunder` | **Bounce(3)** | **1 SP** | Damage medio Electric su 3 target (chain lightning, canon: "static electricity amplified by wings"). **Modifier `OnHitN(3)→Apply(Paralyzed)`** — al 3° hit, Paralyzed sul target finale. **Su use, +1 turno DR 25% self** (tank hook) |
+| Ult | `electrical_discharge` | AoE(All) enemies | UltCharge | Damage medio su tutta la linea + Paralyzed su 1 random; **+1 SP team** (battery moment). Canon: "discharges electricity from whole body" |
 | Passive | `battery_loop` | listener | — | Esistente: SP generation reattiva. **Override: +20% block reaction chance** (tank-lite hook) |
 
 **SP economy:** Tentomon è l'unica fonte di **+2 SP** su basic. Senza Tentomon, team con 4 unità in mix basic/skill è marginale; con Tentomon, sostenibile a regime.
@@ -53,7 +53,7 @@ Shared. Battery generation event timing: SP gen emesso su **frame Strike**, non 
 Niente sistema taunt/aggro (out of scope §8.7). Tank-lite = mitigation passiva distribuita:
 
 - **HP pool:** 120 vs ~95 media → assorbe ~25% colpi in più.
-- **DR self on Skill:** quando usa `electro_shocker`, +25% DR per 1 turno (placeholder vocabulary; allineare a `fur_cloak` di Gabumon).
+- **DR self on Skill:** quando usa `petit_thunder`, +25% DR per 1 turno (placeholder vocabulary; allineare a `fur_cloak` di Gabumon).
 - **Block reaction:** `block` clip (5f) reagibile più spesso (`battery_loop` passive override). Esce dalla FSM `hurt`, è un edge: damage incoming ridotto del 50% se Tentomon ha SP ≥3 (skin reactive).
 - **Trade-off:** Tentomon è **lento** (`speed=85`): paga il tanking con turn order ridotto. Bilanciato dalla passive `kitsune_grace` di Renamon se in team.
 
@@ -63,12 +63,15 @@ Niente sistema taunt/aggro (out of scope §8.7). Tank-lite = mitigation passiva 
 - **Tentomon ↔ Patamon:** doppia mitigation. Patamon DR team (10%) + Tentomon tank-lite. Comp safe a costo di damage.
 - **Tentomon ↛ Dorumon (anti-sinergia parziale):** Dorumon vuole turni veloci per inseguire bassi-HP; Tentomon è lento. Compensato dalla SP feed: Dorumon spende skill più spesso.
 
-## §7 — Domande aperte
+## §7 — Domande chiuse (round 2026-05-12)
 
-- Block reaction DR 50% se SP≥3: gate corretto o troppo permissivo? Validare in playtest.
-- `super_shocker` "+1 SP team": rompe il cap di RoundSpTracker (`max_non_basic_per_round: 2`)? **Verificare**: l'Ult non passa dal contatore (è fuori dal canale skill), ma SP grant sì.
-- Tank-lite vocabulary: serve un componente `DamageReduction` esplicito o si riusa lo status set? (proposta: nuovo componente, allinea a Gabumon `fur_cloak`)
-- HP 120 sbilancia il roster? Verificare encounter design con team senza Tentomon.
+- **D1 — `electrical_discharge` "+1 SP team" vs `RoundSpTracker` cap.** ✅ **Chiuso:** l'Ult **non passa** dal contatore `max_non_basic_per_round` (è fuori dal canale Skill: SP grant da Ult è economy-side, non spend-side). La SP grant è cap-aware sul lato ricevente (`SpPool.add` clamp al cap 5, vedi `src/combat/sp.rs`), non lato spender-tracker. Allineato al pattern Gabumon ult (`blue_cyclone` `EmitSpGrant`). **`EmitSpGrant` formalizzato in `02-02b §C2`** come verbo kernel-known (gap S1 ✅ chiuso round-3 2026-05-12). Patamon heal usa `EmitHeal` (verbo separato, già in §C2), non `EmitSpGrant`.
+- **D2 — Tank-lite vocabulary.** ✅ **Chiuso:** **nuovo componente** `Buff_*DR` tag-pure (presence-only) + valore in stringy `Buffs` map, allineato a Gabumon `fur_cloak`. Formalizzato in `02-02e §E.1` (channel layout, tag-component convention) + `02-08 §H` (DR taxonomy, stacking rules intra-unit max-replace / cross-unit additive clamp 0.5). Niente status set riutilizzato: status hanno `stacks`, buff DR hanno `value` mult.
+
+## §7b — Domande aperte (defer playtest/M015+)
+
+- **B1 — Block reaction DR 50% se SP≥3.** Gate corretto o troppo permissivo? Validare in playtest (M015+ balance pass). Concern: rende Tentomon "always-on tank" se team gira high-SP — possibile soglia da raise a SP≥4 o togliere gate del tutto.
+- **B2 — HP 120 sbilancia il roster?** Verificare encounter design con team senza Tentomon (M015+ encounter validation). Se squad balance "no-Tentomon" risulta troppo fragile, considerare bumping HP altri tank-capable (Gabumon? Patamon?) o ridurre HP Tentomon a 110.
 
 ## §8 — Coverage check (post-override)
 

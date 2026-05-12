@@ -1,8 +1,12 @@
-# Gabumon — Basic: `horn_strike`
+# Gabumon — Basic: `claw_attack`
 
-> **Goal**: baseline FSM Ice, mirror di `agumon/claw_strike`. Stress test minimo: la differenza è il tag (Ice) e lo status (Chilled).
+> **Goal**: baseline FSM Ice, mirror di `agumon/sharp_claws`. Stress test minimo: la differenza è il tag (Ice) e lo status (Chilled).
+>
+> **Naming canon (v2):** rinominato `horn_strike` → `horn_attack` → **`claw_attack`** (dataset skill id 77 — "Attacks with its claws"). Reason: atlas clip `attack` mostra claw motion, non horn → match canon-anim coerente. Effetti **invariati** — solo ID + anchor change.
 >
 > **Gap §2.2b condivisi:** vedi `agumon/01-04` (params plumbing G1, source kind G5, ordering G4, ult charge G11). Qui solo gap nuovi.
+
+> **VFX positioning:** `SpawnParticle` usa `origin: VfxLocus + motion: VfxMotion` per `§2.2d` (`02-02d_vfx_positioning.md`).
 
 ## §1 — Intent
 
@@ -12,7 +16,7 @@
 
 ## §2 — FSM topology
 
-3-nodo: `Windup → Strike → Recovery → exit`. Stesso shape di `claw_strike`.
+3-nodo: `Windup → Strike → Recovery → exit`. Stesso shape di `sharp_claws`.
 
 ```
    commit → Windup(2f) → Strike(4f) → Recovery(3f) → exit
@@ -20,7 +24,8 @@
                           EmitDamage { hits:1, mul_param:"basic_mul" }
                           EmitStatus { id:"chilled", dur_param:"chilled_dur",
                                        chance_param:"chilled_chance", target:Primary }
-                          SpawnParticle { name:"ice_horn_burst", anchor:"horn" }
+                          SpawnParticle { name:"ice_claw_burst",  origin: SelfCenter,            motion: Static }   // weapon-side flash
+                          SpawnParticle { name:"ice_chill_impact", origin: EntityCenter(Primary), motion: Static }  // NEW — impact on target
                           Shake { intensity:1, duration_ms:80 }
 ```
 
@@ -29,7 +34,7 @@
 | Node | frames | atlas | on_enter (Commands) |
 |---|---|---|---|
 | `Windup` | 2 | 0–1 | `Shake { intensity:1, duration_ms:60 }` |
-| `Strike` | 4 | 2–5 | `EmitDamage`, `EmitStatus(Chilled)`, `SpawnParticle("ice_horn_burst")`, `Shake` |
+| `Strike` | 4 | 2–5 | `EmitDamage`, `EmitStatus(Chilled)`, `SpawnParticle("ice_claw_burst", SelfCenter, Static)` (weapon-side flash), `SpawnParticle("ice_chill_impact", EntityCenter(Primary), Static)` (impact on target), `Shake` |
 | `Recovery` | 3 | 6–8 | — |
 
 Frame budget: 9 = atlas. No stretch.
@@ -47,8 +52,8 @@ Frame budget: 9 = atlas. No stretch.
 
 1. **Chilled cap.** Proposta 6 stacks (mirror Heated). Conferma cap globale o per-source.
 2. **`fur_cloak` triggers su basic?** Passive `fur_cloak` arma DR 20% self quando Gabumon `EmitStatus(Chilled)`. Il basic applica Chilled → DR self attivo già al primo basic? Coerente con identity §1 (DR-self on apply) ma costoso a regime. **Proposta:** trigger su Skill+Ult solo, basic no. Vedi `04_passive_fur_cloak.md`.
-3. **Animation anchor `"horn"`** è una stringa libera (vedi gap §2.2b §4 di agumon/02). Confermare contratto presentation.
+3. ~~**Animation anchor `"claws"`** è una stringa libera~~ **RISOLTO 2026-05-12 via §2.2d**: anchor body-part collassa a `origin: SelfCenter, motion: Static`. Flavor mantenuto via particle preset name. Vedi `02-02d_vfx_positioning.md`.
 
 ## §6 — Verdetto
 
-Mirror pulito di claw_strike. **Nessun gap nuovo architetturale.** L'unico dubbio è game-design (passive trigger).
+Mirror pulito di sharp_claws. **Nessun gap nuovo architetturale.** L'unico dubbio è game-design (passive trigger).

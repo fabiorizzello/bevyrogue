@@ -6,6 +6,7 @@
 
 - **Atlas:** `assets/digimon/dorumon_atlas.json` v1, 81 frames, frame size 843×661
 - **Canon Digimon:** Dorumon, Child, Beast, Data, fields: Unknown / Nightmare Soldiers (X-Antibody lineage)
+- **Canon JP moves (reference book):** Special Move `メタルキャノン` / Metal Cannon (iron sphere from mouth) → slot Ult `metal_cannon`. Signature Move `ダッシュメタル` / Dash Metal (high-speed tackle, more damage if charged still) → slot Skill `dash_metal`. Basic `bite` rimane flavor non-canon (descrittivo, "barks and bites at everything" è canon flavour ma non skill nominata).
 - **§8 roster minimal** § Dorumon — Executor
 - **Predator Loop:** passive esistente, blueprint già in `src/combat/blueprints/dorumon.rs`
 
@@ -24,8 +25,8 @@ Mietitore single-target dark. Apre **Predator window** sui nemici bassi-HP, e de
 |---|---|---|---|
 | **Idle (loop)** | `idle` | 47–58 | 12 |
 | **Basic** (`bite`) | `attack` | 0–8 | 9 |
-| **Skill** (`draconic_edge`) | `heavy_attack` | 31–39 | 9 |
-| **Ultimate** (`heat_viper`) | `skill` | 59–68 | 10 |
+| **Skill** (`dash_metal`) | `heavy_attack` | 31–39 | 9 |
+| **Ultimate** (`metal_cannon`) | `skill` | 59–68 | 10 |
 | **Hurt** | `hurt` | 40–46 | 7 |
 | **Block** | `block` | 9–13 | 5 |
 | **Death** | `death` | 14–30 | 17 |
@@ -42,8 +43,8 @@ Shared. 12fps reference, frame logico autoritativo.
 | Slot | Skill ID | Target | Costo | Effetto base |
 |---|---|---|---|---|
 | Basic | `bite` | Single | 0 SP, +1 gen, +25 Ult | Damage piatto Dark |
-| Skill | `draconic_edge` | Single | **1 SP** | Damage scaling: ×2 se primary HP <50%, base altrimenti. **Modifier `OnKill→Chain` armato solo in Predator state** (max 1 chain) |
-| Ult | `heat_viper` | Single | UltCharge | Damage massivo Dark; bonus +50% se primary <30%; **forza Predator state on hit** |
+| Skill | `dash_metal` | Single | **1 SP** | Damage scaling: ×2 se primary HP <50%, base altrimenti. **Modifier `OnKill→Chain` armato solo in Predator state** (max 1 chain) |
+| Ult | `metal_cannon` | Single | UltCharge | Damage massivo Dark; bonus +50% se primary <30%; **forza Predator state on hit** |
 | Passive | `predator_loop` | listener | — | Esistente: tracking target lowest-HP, attiva Predator state per N turni |
 
 **Sinergie:** Renamon spreada status AoE → Dorumon entra a finire i bassi-HP. Patamon heal lo tiene vivo. Tentomon (battery+tank) lo nutre di SP.
@@ -53,11 +54,11 @@ Shared. 12fps reference, frame logico autoritativo.
 Riferimento: `src/combat/blueprints/dorumon.rs`, `PredatorLoopState`, `PredatorLoopResolved` event.
 
 - **Entry:** quando un nemico cade sotto HP threshold (X%, già configurato).
-- **Effect:** dentro Predator state, `draconic_edge` arma `OnKill→Chain`; Ult bonus threshold più aggressivo.
+- **Effect:** dentro Predator state, `dash_metal` arma `OnKill→Chain`; Ult bonus threshold più aggressivo.
 - **Exit:** target tracked muore (chain consumato) o timeout turni.
 
-## §6 — Domande aperte
+## §6 — Decisioni chiuse (ex-domande aperte, round-3)
 
-- Chain target selection: lowest-HP residuo, o stesso ranged group?
-- Predator state visibile in UI? (HSR-style debuff badge sul nemico tracked)
-- Heat Viper interaction con Twin Core / status altrui (Heated/Chilled/Confused/Holy): bonus o trasparente?
+- **D1 — Chain target selection:** `LowestHpPctAlive(scope: EnemyTeam, exclude: [self, dead, primary_just_killed])`. Coerente con `Selector::LowestHp` (skill `dash_metal` §F3) e con identity "executor che picka i bassi-HP". Non lo stesso ranged group: il chain salta liberamente a qualsiasi enemy alive col minor HP%.
+- **D2 — Predator state visibility:** **no separate UI badge.** La visibility è interamente affidata al **Channel 2 VFX mark** del passive (`predator_mark_loop`, vedi `04_passive_predator_loop.md` §5b) — mark che segue il tracked target + aura su Dorumon mentre `predator_active=true`. Il VFX *è* la UI: niente HSR-style debuff icon dedicato, niente duplicazione di canali informativi.
+- **D3 — Metal Cannon ↔ status altrui (Twin Core / Heated / Chilled / Confused / Holy):** **trasparente.** Dark damage di Dorumon **non** scala su Heated (Agumon) o Chilled (Gabumon) né su altri status di party allies. Mantiene identity "single-target executor pure", non status-dipendente. Niente sinergie cross-roster su Dorumon — le sue sinergie sono **HP-threshold based** (party comp che spreada damage gli porta lowest-HP da picckare).

@@ -1,6 +1,8 @@
-# Agumon — Basic: `claw_strike` (FSM stress test)
+# Agumon — Basic: `sharp_claws` (FSM stress test)
 
 > **Goal**: validare baseline FSM con la skill più semplice. Se la FSM non riesce a esprimere un basic attack pulito, abbiamo già un problema.
+
+> **VFX positioning:** `SpawnParticle` usa `origin: VfxLocus + motion: VfxMotion` per `§2.2d` (`02-02d_vfx_positioning.md`).
 
 ## §1 — Intent
 
@@ -22,7 +24,9 @@
                                                 EmitDamage { hits:1, mul_param:"basic_mul" }
                                                 EmitStatus { id:"heated", dur_param:"heated_dur",
                                                              chance_param:"heated_chance", target:Primary }
-                                                SpawnParticle { name:"fire_claw_trail", anchor:"weapon" }
+                                                SpawnParticle { name:"fire_claw_trail",  origin: SelfCenter,            motion: Static }
+                                                SpawnParticle { name:"fire_claw_impact", origin: EntityCenter(Primary), motion: Static }   # NEW impact flash
+                                                SpawnParticle { name:"heated_mark",      origin: EntityCenter(Primary), motion: Static }   # NEW stack pulse
                                                 Shake { intensity:1, duration_ms:80 }
 ```
 
@@ -31,7 +35,7 @@
 | Node | frames | atlas src range | ms (@12fps ref) | on_enter (Commands) | exit edge |
 |---|---|---|---|---|---|
 | `Windup` | 2 | 0–1 | 0–166 | `Shake { intensity:1, duration_ms:60 }` (anticipation tick) | `TimeInNode` → `Strike` (prio 0) |
-| `Strike` | 4 | 2–5 | 166–500 | `EmitDamage`, `EmitStatus(Heated)`, `SpawnParticle("fire_claw_trail")`, `Shake { intensity:1, duration_ms:80 }` | `TimeInNode` → `Recovery` (prio 0) |
+| `Strike` | 4 | 2–5 | 166–500 | `EmitDamage`, `EmitStatus(Heated)`, `SpawnParticle("fire_claw_trail")` (`SelfCenter` Static), `SpawnParticle("fire_claw_impact")` (`EntityCenter(Primary)` Static), `SpawnParticle("heated_mark")` (`EntityCenter(Primary)` Static), `Shake { intensity:1, duration_ms:80 }` | `TimeInNode` → `Recovery` (prio 0) |
 | `Recovery` | 3 | 6–8 | 500–750 | — | `TimeInNode` → exit (FSM completes; AnimGraph idle resumes) |
 
 **Frame budget:** 9 frames (= atlas clip esatto). No stretch.
@@ -81,9 +85,86 @@ Sul kernel bus dopo `Strike.on_enter` (= dopo che il blueprint traduce Commands)
 
 ### 🟡 Aperte (non blocker)
 
-- Vogliamo `Heated` cap (max 6 stacks)? Decidere prima di scrivere skill 02/03 — la Pepper Breath aggiunge +2, Nova Blast `OnKill→Detonate` consuma; il cap influenza il game-feel.
+- **Heated cap = 6 (canon, vedi 03 §8 G13).** Basic +1 → 6 basic puri saturano il cap; cap raggiungibile più rapidamente via mix con `baby_flame` (+2/cast).
 - `Hurt` interrupt: se Agumon viene colpito durante `Windup` (rare, non c'è sim. attack), la FSM viene preempted dal kernel? Probabilmente no in turn-based (è sempre il turno di Agumon durante la sua skill). **Skip per ora.**
 
 ## §7 — Verdetto
 
 Baseline FSM **funziona** per un basic attack. I gap (1–4) sono **architetturali, non basic-specifici** — emergeranno anche per Heavy/Ult. Risolverli su 02/03.
+
+## §8 — Decisioni risolte (round-2)
+
+### G1 — `SkillDef.params` plumbing **[ALTA]** ✅
+
+**Decisione canon:** estendere lo schema `skills.ron` con un campo `params: HashMap<String, ParamValue>` su `SkillDef`. Le Commands FSM referenziano i param **per nome** (es. `mul_param: "basic_mul"`).
+
+```rust
+// src/data/skills_ron.rs (schema target post-G1)
+pub struct SkillDef {
+    pub id: String,
+    pub cost: SpCost,
+    pub effects: Vec<Effect>,
+    pub params: HashMap<String, ParamValue>, // ← NEW
+}
+
+pub enum ParamValue {
+    Int(i64),
+    Float(f64),
+    Str(String),
+    Bool(bool),
+}
+```
+
+**Regole:**
+- Naming: snake_case (`basic_mul`, `heated_dur`, `heated_chance`, `qte_window`).
+- Lookup at-commit: il blueprint risolve `mul_param: "basic_mul"` come `skill_def.params["basic_mul"]` al `commit_action` (G5 cluster `Snapshot`).
+- Param **assente** = error fatal al load di `skills.ron` (`validate_skill_params()` in `src/data/units_ron.rs` o equivalente).
+- Literal inline (es. `Shake { intensity: 1 }`) restano consentiti per costanti presentation; tutto ciò che è gameplay-tunable passa per `params`.
+
+**Esempio `skills.ron` sharp_claws post-G1:**
+
+```ron
+SkillDef(
+    id: "agumon_basic_sharp_claws",
+    cost: SP(0),
+    effects: [/* legacy o derivati */],
+    params: {
+        "basic_mul":      Float(8.0),
+        "heated_dur":     Int(3),
+        "heated_chance":  Int(100),
+    },
+),
+```
+
+### G3-prev (chance vs param) ✅
+
+`EmitStatus` accetta **entrambi** `chance_pct: u8` (literal) e `chance_param: String` (deref), **mutuamente esclusivi** (validato al load). Stessa regola per `dur_pct` vs `dur_param`. Rationale: literal per status hard-coded 100%, param per skill che variano per tier/upgrade.
+
+### G3-cosmetic (Shake/Particle headless drop) ✅
+
+**Tagging statico in enum Command**, non runtime toggle. Schema target:
+
+```rust
+pub enum Command {
+    // gameplay (eseguite sempre, anche headless)
+    EmitDamage(EmitDamageArgs),
+    EmitStatus(EmitStatusArgs),
+    EmitHeal(EmitHealArgs),
+    // ... (vedi §9 in agumon/04)
+
+    // presentation (no-op headless, ufficiale via cfg/feature)
+    Shake(ShakeArgs),
+    SpawnParticle(SpawnParticleArgs),
+    PlaySound(PlaySoundArgs),
+}
+```
+
+Interprete: match arm cosmetic-set → `#[cfg(feature = "windowed")]` o branch headless drop. Niente toggle dinamico sul blueprint.
+
+### G11 — Ult charge trigger ✅
+
+`OnBasicAttack` rinominato → `OnAnyAttack` in `units.ron`. Sia basic che heavy (skill) accumulano +25 Ult charge. Ult non charga sé stessa (ricarica solo via basic/skill). Hook nel kernel su `CombatEvent::DamageDealt` filtrato per `skill_kind ∈ {Basic, Heavy}`.
+
+### G4 — Ordering Commands `on_enter` ✅
+
+**Ordine RON = ordine di emission, deterministico.** Il blueprint itera la `Vec<Command>` del nodo in ordine di dichiarazione e emette `KernelEffect` sequenziali. Da formalizzare nel doc §2.2b §H come contratto.

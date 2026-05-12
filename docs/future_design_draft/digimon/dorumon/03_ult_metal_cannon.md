@@ -1,8 +1,12 @@
-# Dorumon — Ult: `heat_viper` (single-target burst + threshold bonus + force Predator state)
+# Dorumon — Ult: `metal_cannon` (single-target burst + threshold bonus + force Predator state)
+
+> **Canon source.** `metal_cannon` = `メタルキャノン` (Metal Cannon), Dorumon's Special Move per reference book (fires an iron sphere from its mouth). Heat Viper era un fill-in non-canon (skill di Cyberdramon). Game-side mechanic preserved (Dark massive single-target + threshold <30% + force Predator state); name + particles aligned to canon JP iron-sphere flavour.
 
 > **Goal**: ult single-target con **scaling threshold più aggressivo** + **forza l'entry in Predator state on hit**. Caso "ult come setup", non solo finisher.
 >
 > **Gap §2.2b condivisi:** params G1, source kind G5, F1 (conditional param via blueprint), F2 (BlueprintState write), ordering G4. Qui solo nuovi.
+
+> **VFX positioning:** `SpawnParticle` usa `origin: VfxLocus + motion: VfxMotion` per `§2.2d` (`02-02d_vfx_positioning.md`).
 
 ## §1 — Intent
 
@@ -25,7 +29,10 @@ commit → Charge(3f) → Spit(4f) → Recovery(3f) → exit
                         │   // F2 — blueprint mutate state esplicito
                         │   SetBlueprintState { state_key:"predator_active", value:true,
                         │                       dur_param:"predator_force_dur" }
-                        │   SpawnParticle("infernal_viper","primary_pivot")
+                        │   // VFX — cannone *spara* iron sphere: Travel + impact, non materializzazione statica
+                        │   SpawnParticle("dark_iron_sphere_bolt",   origin: SelfCenter,
+                        │                                            motion: Travel { to: EntityCenter(Primary), ease: EaseOut, ms: 150 })  # NEW — cannon bolt fly
+                        │   SpawnParticle("dark_iron_sphere_impact", origin: EntityCenter(Primary), motion: Static)  # FIX — was `dark_iron_sphere` on TargetCenter Static
                         │   Shake { intensity:4, duration_ms:200 }
 ```
 
@@ -33,8 +40,8 @@ commit → Charge(3f) → Spit(4f) → Recovery(3f) → exit
 
 | Node | frames | atlas | on_enter |
 |---|---|---|---|
-| `Charge` | 3 | 59–61 | `SpawnParticle("dark_breath_charge","mouth")` |
-| `Spit` | 4 | 62–65 | EmitDamage(threshold-scaled) + SetBlueprintState + particle + shake |
+| `Charge` | 3 | 59–61 | `SpawnParticle("dark_metal_charge", origin: SelfCenter, motion: Static)` |
+| `Spit` | 4 | 62–65 | EmitDamage(threshold-scaled) + SetBlueprintState(predator_active=true) + `SpawnParticle("dark_iron_sphere_bolt", origin: SelfCenter, motion: Travel{to:EntityCenter(Primary), EaseOut, 150ms})` + `SpawnParticle("dark_iron_sphere_impact", origin: EntityCenter(Primary), motion: Static)` + shake |
 | `Recovery` | 3 | 66–68 | — |
 
 Frame budget: 10 = atlas. ✅
@@ -64,6 +71,6 @@ Listener side: Predator Loop passive registra state change (vedi 04).
 
 ## §6 — Verdetto
 
-Heat Viper introduce **1 verbo nuovo**: `SetBlueprintState` (F5). Pattern: ult può **modificare lo state del proprio blueprint**, abilitando setup/payoff combos (ult → predator → chain successivo).
+Metal Cannon introduce **1 verbo nuovo**: `SetBlueprintState` (F5). Pattern: ult può **modificare lo state del proprio blueprint**, abilitando setup/payoff combos (ult → predator → chain successivo).
 
 Nessun nuovo concetto architetturale; estensione del modello "blueprint state queryable + mutable".

@@ -19,7 +19,7 @@
 
 **Animation manifest (§2.2 + AnimGraph FSM §2.2b):**
 - [ ] `assets/digimon/<name>/clip.ron` e `clipmontage.ron` esistono per tutti e 6
-- [ ] Agumon ha `clipmontage.ron` come **AnimGraph FSM** popolato (nodi + edges + Commands `on_enter`), reference design `pepper_breath` con almeno 2 variant ortogonali da `skill_tree.ron` predicate (anche se `UnlockedPassives` è vuota a runtime M017 — i predicate sono parsati e validati)
+- [ ] Agumon ha `clipmontage.ron` come **AnimGraph FSM** popolato (nodi + edges + Commands `on_enter`), reference design `baby_flame` con almeno 2 variant ortogonali da `skill_tree.ron` predicate (anche se `UnlockedPassives` è vuota a runtime M017 — i predicate sono parsati e validati)
 - [ ] Gli altri 5 Digimon hanno `clipmontage.ron` come AnimGraph **degenerate** (1 nodo all-clip + Edge → Exit), forma valida per migrazione (§2.2b §N)
 - [ ] I `.json` atlas sono rimossi
 - [ ] Il caricatore emette `CombatEvent::AnimationNotify` quando un `SpawnParticle`/`Shake` Command è dispatcched (testato headless mockando il playhead)
@@ -29,7 +29,7 @@
 - [ ] `tick_fsm(rt, kernel_events, user_inputs) -> FsmTickOutput` è puro (no `&mut World`, no RNG global, no wall-clock)
 - [ ] Validator contract test `tests/anim_fsm_validation.rs` enforce: entry exists, exit reachable senza unlock, frame range in-bounds, `*_param` esistono in `skills.ron`, priority unique tra edge che possono matchare contemporaneamente
 - [ ] Vocabolario Commands chiuso a 6 verbi (EmitDamage, EmitStatus, SpawnParticle, Shake, Hold, StartQTE) — nessuna `Command::Custom(...)`
-- [ ] Golden test deterministico `tests/anim_fsm_pepper_breath.rs`: dato `(graph, unlocks, kernel_events_sequence)` lo `commands_sequence` emesso è bit-identico across run
+- [ ] Golden test deterministico `tests/anim_fsm_baby_flame.rs`: dato `(graph, unlocks, kernel_events_sequence)` lo `commands_sequence` emesso è bit-identico across run
 - [ ] `UnlockedPassives` resource opzionale (vuota in M017); edge `Predicate::Unlock(...)` parsate ma mai matchate
 - [ ] Headless determinism: cosmetic Commands (SpawnParticle/Shake) sono no-op in `#[cfg(not(feature = "windowed"))]` o quando `PresentationBus` assente; `StartQTE` auto-resolve via `headless_default_param`
 
