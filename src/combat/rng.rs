@@ -4,7 +4,7 @@ use rand::{Rng, SeedableRng, rngs::StdRng};
 /// Centralised combat RNG resource (R019).
 ///
 /// Wraps a seeded `StdRng` so every random decision in combat (status accuracy
-/// rolls, Shock cancel rolls) goes through one inspectable, re-seedable source.
+/// rolls, Paralyzed cancel rolls) goes through one inspectable, re-seedable source.
 /// Use `CombatRng::from_seed` in tests for deterministic outcomes.
 #[derive(Resource)]
 pub struct CombatRng(StdRng);

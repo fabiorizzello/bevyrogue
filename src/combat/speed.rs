@@ -4,7 +4,7 @@ use bevy::prelude::*;
 #[derive(Component, Debug, Clone, Copy)]
 pub struct Speed(pub i32);
 
-/// Delta applied to Speed when Freeze is active. Turn-order code reads (Speed - SpeedModifier)
+/// Delta applied to Speed when Chilled is active. Turn-order code reads (Speed - SpeedModifier)
 /// without re-seeding the static VecDeque.
 #[allow(dead_code)]
 #[derive(Component, Debug, Clone, Copy)]
