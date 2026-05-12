@@ -15,7 +15,7 @@
 
 ## Slices
 
-- [ ] **S01: Enum rewrite + RON migration + tests cascade** `risk:high` `depends:[]`
+- [ ] **S01: S01** `risk:high` `depends:[]`
   > After this: `cargo check` + `cargo test` full suite verdi senza referenze alla vecchia tassonomia. `grep -r 'Burn\|Freeze\|Shock\|DeepFreeze' src/ tests/` non trova match (eccetto Burn/Shock reserved).
 
 - [ ] **S02: Apply / refresh_max_dur / cleanse policy** `risk:medium` `depends:[S01]`

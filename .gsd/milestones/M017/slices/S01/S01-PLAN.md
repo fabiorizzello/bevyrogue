@@ -26,12 +26,12 @@ Tutti i moduli che referenziavano la vecchia tassonomia (speed, battery_loop, rn
 
 ## Tasks
 
-- [ ] **T01: Enum rewrite + apply/refresh/tick skeleton** `est:2-3h`
+- [x] **T01: Enum rewrite + apply/refresh/tick skeleton** `est:2-3h`
   Riscrivere StatusKind in src/combat/status_effect.rs sostituendo Burn/Freeze/Shock/DeepFreeze con Heated, Chilled, Paralyzed, Slowed, Blessed. Aggiungere Burn e Shock come reserved §H.1 (varianti dichiarate ma senza effetto attivo, documentate inline). Mantenere apply/refresh/tick come scheletro coerente: apply inserisce (target,kind) single-instance, re-apply applica refresh_max_dur (max(old.dur, new.dur)), tick decrementa e drop a 0. Nessuna semantica per-status (amp%, skip, delay, +Ult) — quelle in S03-S05. Aggiornare BuffKind se serve. Eventuali helper di pattern match aggiornati. Niente shim legacy.
   - Files: `src/combat/status_effect.rs`
   - Verify: cargo check (default + windowed) compila. Lo step T05 garantirà cargo test verde.
 
-- [ ] **T02: Effect::ApplyStatus RON schema + validator** `est:1h`
+- [x] **T02: Effect::ApplyStatus RON schema + validator** `est:1h`
   Aggiornare src/data/skills_ron.rs: Effect::ApplyStatus accetta i 5 id canon ('heated', 'chilled', 'paralyzed', 'slowed', 'blessed'). Validator a load-time rigetta id legacy ('burn_v0', 'freeze_v0', etc.) con messaggio chiaro che indica i 5 id validi. Eventuali costanti id collegate riscritte.
   - Files: `src/data/skills_ron.rs`
   - Verify: cargo check verde. Test di parsing RON esistenti continuano (saranno aggiornati ai nuovi id in T03/T05).
