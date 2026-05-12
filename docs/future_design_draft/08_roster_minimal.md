@@ -1,6 +1,13 @@
 # §8 — Roster minimal (canon)
 
-> **Sostituisce** i precedenti `08_skill_designs.md` / `10_full_kit_plan.md` / `11_roster_design_v2.md` (esplorazioni archiviate). Questo è il design **all'osso** validato il 2026-05-11: 6 Rookie, kit identico per slot, identità nei dettagli. Skill-tree, varianti, AoE estesi, status set extension, granted abilities, form: tutti **fuori scope**.
+> **Sostituisce** i precedenti `08_skill_designs.md` / `10_full_kit_plan.md` / `11_roster_design_v2.md` (esplorazioni archiviate). Design **all'osso** validato il 2026-05-11, **revisionato 2026-05-12** su Renamon e Tentomon. 6 Rookie, kit identico per slot, identità nei dettagli. Skill-tree, varianti, AoE estesi, status set extension, granted abilities, form: tutti **fuori scope**.
+>
+> **Stat baselines** (HP/speed/toughness/weakness/ult) vivono nelle identity sheet per Digimon in `docs/future_design_draft/digimon/<name>/00_identity.md`. Qui solo kit shape.
+>
+> **Revisione 2026-05-12:**
+> - **Renamon**: da "AoE caster Confused/crit" → **Holy + Time Manipulation** (AdvanceTurn/DelayTurn, buff `Blessed`). No crit, no `OnBreak→Detonate`. Skill 1 SP. Aggiunto passive `kitsune_grace`.
+> - **Tentomon**: da "SP battery puro" → **battery + tank-lite** (HP alto, DR su Skill, block reaction +20%). Skill 1 SP. Battery resta primaria.
+> - **Motivazione**: differenziare Renamon da Dorumon (lane opposte) e coprire asse tank senza 7° unità.
 
 ## §8.0 — Costanti del roster
 
@@ -28,10 +35,9 @@ Solo i modifier necessari ai 6 baseline. Vocabolario completo §2.2b deferred.
 | `OnKill→Detonate(status)` | `KernelEvent::UnitDied` su Strike target | Spread dello status sui 2 adiacenti |
 | `OnStatusApplied→Echo(status)` | `KernelEvent::StatusApplied` sul target | Re-applica status sull'adiacente più debole |
 | `OnKill→Chain` | `KernelEvent::UnitDied` su Strike target (in stato) | Strike ripete su nuovo target (one extra) |
-| `OnBreak→Detonate` | `KernelEvent::ToughnessBroken` su Strike target | AoE secondaria, scala su damage accumulato |
 | `OnHitN→Apply(status)` | `KernelEvent::DamageDealt` al `N`-esimo hit | Apply status all'ultimo hit della sequenza |
 
-5 modifier. Niente catalogo da 7+. Espansione (Splash, Escalate, ShapeOverride) deferred ad altra milestone.
+4 modifier attivi in v0. `OnBreak→Detonate` rimosso (Renamon revisione 2026-05-12). Espansione (Splash, Escalate, ShapeOverride) deferred.
 
 ## §8.2 — Target shape vocabolario (chiuso v0)
 
@@ -108,33 +114,35 @@ Solo i modifier necessari ai 6 baseline. Vocabolario completo §2.2b deferred.
 
 ---
 
-### Renamon — AoE caster
+### Renamon — Holy time-manip AoE
 
-- **Identità:** sweep AoE + capitalizer sullo stato del nemico. L'Ult scala con la quantità di status sul target.
-- **Sinergie:** Renamon → Dorumon (set status, Dorumon esegue). Renamon + Tentomon = wave clear.
+- **Identità:** sweep AoE Holy + manipolazione del turn order. No crit, no scaling su status nemico. Payoff = **tempo guadagnato** + damage AoE costante. Buff `Blessed` agli alleati.
+- **Sinergie:** Renamon ↛ Dorumon (lane separate, complementari non dipendenti). Renamon ↔ Patamon (entrambi Holy: `Blessed` + `holy_aegis`). Renamon ↔ Tentomon (SP feed → AoE spammabile).
+- **Vedi:** `digimon/renamon/00_identity.md` per stats e dettaglio time-manip mechanic.
 
 | Slot | Skill ID | Target | Costo | Effetto |
 |---|---|---|---|---|
-| Basic | `quick_strike` | `Single` | 0 SP, +1 gen | Damage piatto |
-| Skill | `diamond_storm` | `AoE(All)` | 4 SP | Damage medio su tutti, +1 Confused random |
-| Ultimate | `fox_drive` | `Single` | UltCharge | Damage scala lineare con N° status diversi sul primary. **Modifier-firma: `OnBreak→Detonate`** — se rompe la toughness, AoE secondaria 50% damage |
-| Passive | — | — | — | (assente in v0) |
+| Basic | `quick_strike` | `Single` | 0 SP, +1 gen | Damage piatto Holy |
+| Skill | `diamond_storm` | `AoE(All)` enemies | **1 SP** | Damage medio Holy su tutti; **`AdvanceTurn(self, 25%)`** |
+| Ultimate | `fox_drive` | `AoE(All)` enemies | UltCharge | Damage alto Holy a tutti; **`DelayTurn(all enemies, 30%)`**; applica `Blessed` agli alleati per 2 turni |
+| Passive | `kitsune_grace` | listener | — | Quando un alleato consuma Ult, **`AdvanceTurn(self, 10%)`** |
 
-**Note:** Skill costa 4 SP (non 3) perché `AoE(All)` con status apply è high-value. Calibrazione bilanciamento da fissare in playtest.
+**Note:** Skill costa **1 SP** (non 3-4) perché il payoff primario è time-manip, non damage. `Blessed` = `+15% damage dealt`, `+1 Ult charge gen per action`, non-cleansable da nemici.
 
 ---
 
-### Tentomon — SP battery
+### Tentomon — Battery + tank-lite
 
-- **Identità:** alimentatore della squadra. Bounce per spreadare paralisi.
+- **Identità:** alimentatore SP + bulwark distribuito. HP alto, DR su Skill, block reaction frequente. Bounce per spreadare Paralyzed. Battery resta primaria; tank-lite copre l'asse mancante senza 7° unità.
 - **Sinergie:** universale (alimenta Agumon/Gabumon/Dorumon/Renamon). Battery Loop esistente.
+- **Vedi:** `digimon/tentomon/00_identity.md` per stats (HP 120, speed 85) e dettaglio block reaction.
 
 | Slot | Skill ID | Target | Costo | Effetto |
 |---|---|---|---|---|
-| Basic | `petit_thunder` | `Single` | 0 SP, +2 gen | Damage piatto, **+2 SP** invece di +1 (battery role) |
-| Skill | `electro_shocker` | `Bounce(3)` | 3 SP | Damage medio su 3 target. **Modifier-firma: `OnHitN(3)→Apply(Paralyzed)`** — al 3° hit, Paralyzed sul target finale |
-| Ultimate | `super_shocker` | `AoE(All)` | UltCharge | Damage medio su tutta la linea, +1 Paralyzed su 1 random |
-| Passive | `battery_loop` | — | — | Esistente (vedi `combat_current.md`) |
+| Basic | `petit_thunder` | `Single` | 0 SP, **+2 gen** | Damage piatto Electric (basso) |
+| Skill | `electro_shocker` | `Bounce(3)` | **1 SP** | Damage medio su 3 target. **Modifier: `OnHitN(3)→Apply(Paralyzed)`**. **+1 turno DR 25% self** (tank hook) |
+| Ultimate | `super_shocker` | `AoE(All)` | UltCharge | Damage medio su tutta la linea + Paralyzed su 1 random; **+1 SP team** (battery moment) |
+| Passive | `battery_loop` | listener | — | Esistente: SP gen reattiva. **Override: +20% block reaction chance** (tank-lite) |
 
 ---
 
@@ -156,14 +164,15 @@ Hub: **Tentomon** (SP), **Patamon** (sustain). Coppia: **Agumon↔Gabumon** (Twi
 
 | Asse | Copertura | Note |
 |---|---|---|
-| Burst single-target | Agumon, Dorumon | Due profili: burst-prep (Agu) vs executor-threshold (Doru) |
-| Sustain DPS | Gabumon, Renamon | Erosione (Gabu) vs scaling-status (Reno) |
-| AoE | Renamon (`AoE(All)`), Tentomon (`Bounce`+`AoE(All)` ult), Agumon (`Blast` ult) | Wave clear copertura ok |
+| Burst single-target | Agumon, Dorumon | Burst-prep (Agu) vs executor-threshold (Doru) |
+| Sustain DPS | Gabumon | Erosione Chilled |
+| AoE | Renamon (Holy AoE × 2), Tentomon (`Bounce`+`AoE(All)` ult), Agumon (`Blast` ult) | Wave clear ok |
 | Sustain/heal | Patamon | Unico, niente backup |
-| SP economy | Tentomon battery, Patamon basso uso | Tentomon indispensabile in team con ≥2 spender |
-| Tank-lite | Gabumon (Fur Cloak DR), Patamon (Aegis DR team) | Niente tank dedicato. Mitigation distribuita |
-| Status apply | Agumon (Heated), Gabumon (Chilled/Slowed), Renamon (Confused), Tentomon (Paralyzed) | 4 axes attive |
-| Status capitalize | Renamon (Fox Drive scale-w-status), Dorumon (threshold HP) | 2 lane di payoff |
+| SP economy | Tentomon battery (+2 gen), Renamon spender (1 SP/skill) | Tentomon indispensabile con ≥2 spender |
+| Tank-lite | Tentomon (HP 120 + DR + block +20%), Gabumon (Fur Cloak DR), Patamon (Aegis DR team) | Mitigation distribuita su 3 unità |
+| Time manipulation | Renamon (AdvanceTurn/DelayTurn, `Blessed`) | Lane unica, nessun overlap |
+| Status apply | Agumon (Heated), Gabumon (Chilled/Slowed), Tentomon (Paralyzed) | 3 axes (Confused rimosso da Renamon) |
+| Status capitalize | Dorumon (threshold HP via Predator Loop) | 1 lane (Renamon non capitalizza più) |
 
 ## §8.6 — Scope architetturale (cosa serve per implementare)
 
@@ -179,7 +188,7 @@ Hub: **Tentomon** (SP), **Patamon** (sustain). Coppia: **Agumon↔Gabumon** (Twi
 - Catalogo modifier completo (7+) — solo 5 modifier listati in §8.1
 - Status set extension (Stealth, Cleanse altri, Frostbite, ecc) — Cleanse di Patamon usa il toggle binario esistente
 - AoE shape extra (Adjacent statico, Bounce parametrico, ShapeOverride conditional)
-- Passive Renamon (deferred)
 - Multiple actives heterogeneous (es. 4 skill Patamon) — kit shape uniforme
 - Form/Digivolution, Champion stage
-- Tank dedicato (niche distribuito su Gabumon Fur Cloak + Patamon Aegis)
+- Tank dedicato (niche distribuito su Tentomon + Gabumon + Patamon)
+- Turn-order UI animato (placeholder per Renamon time-manip, M017 fuori scope)
