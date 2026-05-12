@@ -55,7 +55,7 @@ fn actor(
     let basic = skill_ids
         .first()
         .cloned()
-        .unwrap_or_else(|| SkillId("pepper_breath".into()));
+        .unwrap_or_else(|| SkillId("baby_flame".into()));
     (
         Unit {
             id: UnitId(id),
@@ -77,7 +77,7 @@ fn actor(
         bevyrogue::combat::kit::UnitSkills {
             basic,
             skills: skill_ids,
-            ultimate: SkillId("pepper_breath".into()),
+            ultimate: SkillId("baby_flame".into()),
             follow_up: None,
         },
     )

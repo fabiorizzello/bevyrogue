@@ -180,7 +180,7 @@ fn lifecycle_root_action_emits_4_events_in_order() {
     let roster = load_roster();
     let mut app = setup_app(load_skill_book());
 
-    let agumon = pilot(&roster, "Agumon"); // pepper_breath basic, OnEnemyBreak follow-up
+    let agumon = pilot(&roster, "Agumon"); // baby_flame basic, OnEnemyBreak follow-up
     spawn_from_def(&mut app, &agumon, 100, 50, 0);
     // Sturdy enemy: high HP and toughness — no break, no KO from one Basic
     spawn_sturdy_enemy(&mut app, UnitId(20), "SturdyDummy", 500, 500);
@@ -286,7 +286,7 @@ fn lifecycle_follow_up_action_emits_second_cycle_with_depth_1() {
     let agumon = pilot(&roster, "Agumon"); // OnEnemyBreak → agumon_follow_up
     spawn_from_def(&mut app, &agumon, 100, 50, 0);
 
-    // Enemy with toughness=5 and Fire weakness — Agumon's pepper_breath (Fire, ToughnessHit=10)
+    // Enemy with toughness=5 and Fire weakness — Agumon's baby_flame (Fire, ToughnessHit=10)
     // drains toughness to -5 and the Fire weakness satisfies apply_hit's break condition.
     app.world_mut().spawn((
         Unit {
@@ -409,14 +409,14 @@ fn lifecycle_emitted_even_when_action_fails_for_sp_shortfall() {
     spawn_from_def(&mut app, &agumon, 100, 50, 0);
     spawn_sturdy_enemy(&mut app, UnitId(20), "SturdyDummy", 500, 500);
 
-    // Force SP to zero so pepper_breath (sp_cost=4) cannot be afforded
+    // Force SP to zero so baby_flame (sp_cost=4) cannot be afforded
     app.world_mut().resource_mut::<SpPool>().current = 0;
 
     let mut cursor = message_cursor::<CombatEvent>(&mut app);
 
     app.world_mut().write_message(ActionIntent::Skill {
         attacker: agumon.id,
-        skill_id: SkillId("pepper_breath".into()),
+        skill_id: SkillId("baby_flame".into()),
         target: UnitId(20),
     });
     app.update();

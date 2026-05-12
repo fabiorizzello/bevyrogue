@@ -196,7 +196,7 @@ fn depth_chain_progresses_to_depth_two() {
     // Enemy B: high HP (survives Impmon's follow-up) but low toughness (Dark-weak → breaks on ToughnessHit 13).
     spawn_from_def(&mut app, &agumon, 100, 50, 100);
     spawn_from_def(&mut app, &impmon, 86, 42, 0);
-    // Enemy A: HP 30, toughness 200 (no break from Nova Blast ToughnessHit 30)
+    // Enemy A: HP 30, toughness 200 (no break from Baby Burner ToughnessHit 30)
     app.world_mut().spawn((
         Unit {
             id: UnitId(4),
@@ -223,8 +223,8 @@ fn depth_chain_progresses_to_depth_two() {
             charge_per_event: 25,
         },
         UnitSkills {
-            basic: SkillId("pepper_breath".into()),
-            skills: vec![SkillId("pepper_breath".into())],
+            basic: SkillId("baby_flame".into()),
+            skills: vec![SkillId("baby_flame".into())],
             ultimate: SkillId("agumon_ult".into()),
             follow_up: None,
         },
@@ -256,8 +256,8 @@ fn depth_chain_progresses_to_depth_two() {
             charge_per_event: 25,
         },
         UnitSkills {
-            basic: SkillId("pepper_breath".into()),
-            skills: vec![SkillId("pepper_breath".into())],
+            basic: SkillId("baby_flame".into()),
+            skills: vec![SkillId("baby_flame".into())],
             ultimate: SkillId("agumon_ult".into()),
             follow_up: None,
         },
@@ -361,8 +361,8 @@ fn chain_terminates_when_follow_up_cannot_retrigger() {
         attribute: Attribute::Vaccine,
         team: Team::Ally,
         basic_damage_tag: DamageTag::Fire,
-        basic_skill: SkillId("pepper_breath".into()),
-        skill_ids: vec![SkillId("pepper_breath".into())],
+        basic_skill: SkillId("baby_flame".into()),
+        skill_ids: vec![SkillId("baby_flame".into())],
         ultimate_skill: SkillId("agumon_ult".into()),
         follow_up: None,
         enemy_traits: vec![],
@@ -445,8 +445,8 @@ fn chain_terminates_when_follow_up_cannot_retrigger() {
             charge_per_event: 25,
         },
         UnitSkills {
-            basic: SkillId("pepper_breath".into()),
-            skills: vec![SkillId("pepper_breath".into())],
+            basic: SkillId("baby_flame".into()),
+            skills: vec![SkillId("baby_flame".into())],
             ultimate: SkillId("agumon_ult".into()),
             follow_up: None,
         },

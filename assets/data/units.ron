@@ -8,8 +8,8 @@
         attribute: Vaccine,
         team: Ally,
         basic_damage_tag: Fire,
-        basic_skill: SkillId("pepper_breath"),
-        skill_ids: [SkillId("pepper_breath")],
+        basic_skill: SkillId("baby_flame"),
+        skill_ids: [SkillId("baby_flame")],
         ultimate_skill: SkillId("agumon_ult"),
         follow_up: Some((
             trigger: OnEnemyBreak,

@@ -1,7 +1,7 @@
 [
     (
-        id: SkillId("pepper_breath"),
-        name: "Pepper Breath",
+        id: SkillId("baby_flame"),
+        name: "Baby Flame",
         damage_tag: Fire,
         sp_cost: 4,
         targeting: SkillTargeting(
@@ -84,7 +84,7 @@
     ),
     (
         id: SkillId("agumon_ult"),
-        name: "Nova Blast",
+        name: "Baby Burner",
         damage_tag: Fire,
         sp_cost: 0,
         targeting: SkillTargeting(
@@ -190,7 +190,7 @@
     ),
     (
         id: SkillId("agumon_follow_up"),
-        name: "Agumon Follow-Up",
+        name: "Spitfire",
         damage_tag: Fire,
         sp_cost: 0,
         targeting: SkillTargeting(

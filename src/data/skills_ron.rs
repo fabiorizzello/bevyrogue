@@ -414,8 +414,8 @@ mod tests {
 
     fn sample_skill() -> SkillDef {
         SkillDef {
-            id: SkillId("pepper_breath".into()),
-            name: "Pepper Breath".into(),
+            id: SkillId("baby_flame".into()),
+            name: "Baby Flame".into(),
             damage_tag: DamageTag::Fire,
             sp_cost: 4,
             targeting: offensive_targeting(TargetShape::Single),
@@ -781,7 +781,7 @@ mod tests {
 
         for required in [
             // Surviving Child kits (post-cleanup D039)
-            "pepper_breath",
+            "baby_flame",
             "bubble_blast",
             "draconic_edge",
             "diamond_storm",

@@ -137,7 +137,7 @@ fn canonical_fire_ice_twin_core_loop_is_visible_through_validation_snapshots() {
     let garurumon = unit_def(&roster, "Garurumon");
     let ogremon = unit_def(&roster, "Ogremon");
 
-    assert_eq!(skill_def(&skills, "pepper_breath").id, agumon.basic_skill);
+    assert_eq!(skill_def(&skills, "baby_flame").id, agumon.basic_skill);
     assert_eq!(skill_def(&skills, "agumon_ult").id, agumon.ultimate_skill);
     assert_eq!(skill_def(&skills, "bubble_blast").id, gabumon.basic_skill);
     assert_eq!(skill_def(&skills, "gabumon_ult").id, gabumon.ultimate_skill);
@@ -226,7 +226,7 @@ fn skill_resolution_emits_twin_core_signals_through_blueprints() {
     spawn_snapshot_unit(&mut app, agumon_def);
     spawn_snapshot_unit(&mut app, ogremon_def);
 
-    // 1. Resolve Pepper Breath (Agumon Basic)
+    // 1. Resolve Baby Flame (Agumon Basic)
     let intent = bevyrogue::combat::turn_system::ActionIntent::Basic {
         attacker: agumon_def.id,
         target: ogremon_def.id,
@@ -240,9 +240,9 @@ fn skill_resolution_emits_twin_core_signals_through_blueprints() {
     };
 
     let resolved = bevyrogue::combat::resolution::resolve_action(&intent, &agumon_kit, Some(&skills))
-        .expect("should resolve pepper_breath");
+        .expect("should resolve baby_flame");
 
-    assert_eq!(resolved.skill_id, SkillId("pepper_breath".into()));
+    assert_eq!(resolved.skill_id, SkillId("baby_flame".into()));
     assert!(!resolved.custom_signals.is_empty());
     assert_eq!(resolved.custom_signals[0].owner(), "agumon");
     assert_eq!(resolved.custom_signals[0].signal(), "apply_heated");
