@@ -28,17 +28,18 @@ Resource per Digimon — solo quelle realmente esistenti in v0:
 |---|---|---|
 | Agumon | Heated stacks sul target (tag su enemy, non self) | letto da `ValidationSnapshot` |
 | Gabumon | Chilled stacks sul target + Fur Cloak DR flag self | DR window indicator |
-| Patamon | (nessuna resource — support puro) | passive `Holy Aegis` icon team-wide |
+| Patamon | (nessuna resource — support puro) | passive `Holy Aegis` icon team-wide (self-included) |
 | Dorumon | `Predator Loop` state (active/idle) + `PreyLock` su target | flag self + per-target |
 | Tentomon | `Battery Loop` state (esistente) | indicatore on/off |
-| Renamon | (nessuna resource v0 — niente passive) | — |
+| Renamon | (nessuna resource bar dedicata) | passive `Kitsune Grace` icon — proc flash su ally `UltimateUsed` |
 
 Passive icon w/ tooltip se attiva:
 - "Twin Core: damage bonus quando il partner applica lo status complementare."
 - "Fur Cloak: +DR 20% per 1 turno dopo aver applicato Chilled."
-- "Holy Aegis: ally team prendono -10% damage finché Patamon vive."
+- "Holy Aegis: tutti gli alleati vivi (incluso Patamon) prendono -10% damage finché Patamon vive."
 - "Predator Loop: in stato Predator, Dash Metal usa `OnKill→Chain`."
 - "Battery Loop: condizioni esistenti del blueprint."
+- "Kitsune Grace: quando un alleato (non self) consuma Ult, Renamon avanza il proprio gauge del 10%."
 
 ### §9.2.3 — Turn order timeline (top bar)
 
@@ -175,7 +176,7 @@ Color-coded by tag. Scrollable. Persistito su JSONL.
 ## §9.9 — Cosa NON va in UI v0
 
 - Skill-tree node panel — deferred.
-- Mind-Game phase strip (Renamon) — deferred (passive Renamon assente in v0).
+- Mind-Game phase strip (Renamon) — deferred. Renamon ora ha passive `kitsune_grace` (Reactive-proc), ma la sua proc cue rientra in §9.6 (reactive signature flash), non in una phase strip dedicata.
 - Grace counter team-wide — deferred (Patamon è support binario, niente Grace).
 - StaticCharge / CircuitCharge bar dedicate — Tentomon non ha resource ulteriore oltre Battery Loop esistente.
 - QTE prompt overlay (4 kinds) — deferred (niente QTE in v0).
