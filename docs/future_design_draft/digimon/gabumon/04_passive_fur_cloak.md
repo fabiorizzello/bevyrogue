@@ -1,14 +1,130 @@
-# Gabumon — Passive: `fur_cloak` (listener-only)
+# Gabumon — Passive: `fur_cloak` + `twin_core_ice` (Full FSM + listener, dual-path)
 
-> **Goal**: passive **self-targeting** triggered on outgoing `StatusApplied`. Mirror funzionale ma asse opposto al `twin_core_fire` di Agumon (che è **outgoing damage scaling** vs `fur_cloak` = **incoming damage mitigation**). Insieme al Twin Core ice-side definisce il dual-listener Gabumon.
+> **Goal**: passive **self-targeting** triggered on outgoing `StatusApplied`. Mirror funzionale ma asse opposto al `twin_core_fire` di Agumon (che è **outgoing damage scaling** vs `fur_cloak` = **incoming damage mitigation**). Insieme al Twin Core ice-side definisce il dual-path Gabumon.
+>
+> **Full FSM mandate (`02-02e §A.0`):** la passive ha **FSM 3+ nodi + edge + clip frame range + VFX su almeno un canale**, tickabile headless. Due `PassiveFsm` paralleli nel blueprint Gabumon, listener entry-point comune:
+> - **Path A — `fur_cloak`**: sub-variant **B — Reactive-proc** (block-react su outgoing Chilled, transient hold).
+> - **Path B — `twin_core_ice`**: sub-variant **C — State-watch** (specchio Agumon, partner Heated predicate).
 >
 > **Gap §2.2b condivisi:** dual-role (vedi agumon/04 §6), pre-damage vs post-event (G9), RoundId (G10). Qui solo nuovi.
 
 ## §1 — Intent
 
 - **Direzione:** self-mitigation reattiva. Quando Gabumon applica Chilled (qualsiasi target), arma DR self.
-- **Effect:** `BuffSelf { id:"fur_cloak_dr", value:0.20, dur:1 }` — −20% damage taken, dura 1 turno (fino al prossimo damage incoming risolto, o tier end).
-- **Scope:** listener-only. No FSM extra.
+- **Effect:** `ApplyBuff { id:"fur_cloak_dr", target:Self_, mul_param:Some(Snapshot("dr_value")), dur:Turns(1) }` — −20% damage taken, dura 1 turno (fino al prossimo damage incoming risolto, o tier end). Alias `ApplySelfBuff` chiuso in `02-02b §C2`.
+- **Scope:** **Full FSM dual-path** (vedi §1.5). Anim layer rimane `idle` — i frame range per nodo sono partizioni dello stesso loop idle per editor-inspectability.
+
+## §1.5 — FSM topology (Full FSM mandate, dual-path)
+
+Due FSM indipendenti nel blueprint Gabumon (`02-02e §A.1` boundary note: una passive può ospitare FSM multipli quando i path sono semanticamente disgiunti).
+
+### Path A — `fur_cloak_fsm` (Reactive-proc)
+
+```ron
+// Pseudocode FSM (target: src/combat/blueprints/gabumon.rs::fur_cloak_fsm)
+PassiveFsm {
+    initial: Dormant,
+    nodes: [
+        Node {
+            id: Dormant,
+            clip: ("idle", 0..3),
+            on_enter: [],
+        },
+        Node {
+            id: Armed,
+            clip: ("idle", 4..7),
+            on_enter: [
+                ApplyBuff { id:"fur_cloak_dr", target_ref: Self_,
+                            mul_param: Some(Snapshot("dr_value")), dur: Turns(1) },
+                SpawnParticle { preset:"fur_cloak_arm", origin: SelfCenter, motion: Static },
+            ],
+        },
+        Node {
+            id: Absorbed,
+            clip: ("idle", 8..11),
+            on_enter: [
+                SpawnParticle { preset:"fur_cloak_absorb", origin: SelfCenter, motion: Static },
+            ],
+        },
+    ],
+    edges: [
+        // Dormant → Armed: Gabumon applica Chilled (qualsiasi target, basic/skill/ult)
+        Edge { from: Dormant, to: Armed,
+               on: KernelEvent(StatusApplied { caster_is_self: true, status: Chilled }) },
+        // Armed → Absorbed: incoming damage assorbito (consume DR)
+        Edge { from: Armed, to: Absorbed,
+               on: KernelEvent(DamageDealt { target_is_self: true }) },
+        // Absorbed → Dormant: transient consume, torna a rest
+        Edge { from: Absorbed, to: Dormant, on: TimeInNode(1) },
+        // Armed → Dormant: nessun damage nel turno (buff dur:1 scade su TurnEnded)
+        Edge { from: Armed, to: Dormant,
+               on: KernelEvent(TurnEnded),
+               predicate: BlueprintState { state_key:"fur_cloak_dr.expires_in",
+                                           expected: Int(0) } },
+    ],
+}
+```
+
+### Path B — `twin_core_ice_fsm` (State-watch — specchio Agumon)
+
+```ron
+// Pseudocode FSM (target: src/combat/blueprints/gabumon.rs::twin_core_ice_fsm)
+PassiveFsm {
+    initial: Dormant,
+    nodes: [
+        Node {
+            id: Dormant,
+            clip: ("idle", 0..3),
+            on_enter: [],
+        },
+        Node {
+            id: Armed,
+            clip: ("idle", 4..7),
+            on_enter: [
+                ApplyBuff { id:"twin_core_ice_active", target_ref: Self_,
+                            mul_param: Some(Snapshot("ice_boost_mul")), dur: UntilRoundEnd },
+                SpawnParticle { preset:"twin_core_ice_ignite", origin: SelfCenter, motion: Static },
+                SpawnParticle { preset:"twin_core_ice_link",
+                                origin: SelfCenter,
+                                motion: Travel { to: EntityCenter(Caster), ease: EaseOut, ms: 200 } },
+            ],
+        },
+        Node {
+            id: Boosted,
+            clip: ("idle", 8..11),
+            on_enter: [
+                SpawnParticle { preset:"twin_core_ice_amplify",
+                                origin: EntityCenter(EventTarget), motion: Static },
+            ],
+        },
+    ],
+    edges: [
+        // Dormant → Armed: Agumon applica Heated
+        Edge { from: Dormant, to: Armed,
+               on: KernelEvent(StatusApplied { caster_is: "agumon", status: Heated }) },
+        // Armed → Boosted: Gabumon emette Ice damage (overlay transient)
+        Edge { from: Armed, to: Boosted,
+               on: KernelEvent(DamageDealt { caster_is_self: true, tag: Ice }) },
+        Edge { from: Boosted, to: Armed, on: TimeInNode(1) },
+        // Armed → Dormant: fine round
+        Edge { from: Armed, to: Dormant,
+               on: KernelEvent(RoundEnded),
+               on_exit: [SpawnParticle { preset:"twin_core_ice_dissipate",
+                                         origin: SelfCenter, motion: Static }] },
+    ],
+}
+```
+
+**Channel mapping (`02-02e §A.1`):**
+- **Path A** — Ch1 mandatory (`fur_cloak_arm` + `fur_cloak_absorb` su `on_enter`). Ch2 optional ma presente: `Added/Removed<Buff_FurCloakDR>` → `fur_cloak_loop` aura (armed state hold). Sub-variant B con Ch2 opzionale codificato in `02-02e §E.1`.
+- **Path B** — Ch1 + Ch2 entrambi mandatory (sub-variant C standard). Ch1: ignite/link/amplify/dissipate. Ch2: `Added/Removed<Buff_TwinCoreIceActive>` → `twin_core_ice_loop` aura.
+
+**Edge predicate semantica:**
+- `caster_is_self:true && status:Chilled` su Path A: filter outgoing status, strict. Basic/skill/ult tutti triggherano (semplicità >> game-feel optimization, decisione operativa preservata).
+- `caster_is:"agumon" && status:Heated` su Path B: specchio Agumon. `identity_id` filter.
+- `Turns(1)` per `fur_cloak_dr` vs `UntilRoundEnd` per `twin_core_ice_active`: durate intenzionalmente distinte. Path A è block-react (1-turn window), Path B è round-scope synergy.
+
+**Headless determinism:** entrambi gli FSM tickabili headless. `ApplyBuff` gameplay-side identico (`Buff_FurCloakDR` / `Buff_TwinCoreIceActive` tag-pure marker, valori nel `Buffs` stringy map letti dalla damage pipeline). `SpawnParticle` no-op.
 
 ## §2 — Blueprint contract
 
@@ -58,7 +174,7 @@ turno T+1 (nemico): nemico colpisce Gabumon
 - **Durata:** 1 turno (= fino al prossimo end-of-own-turn).
 - **Interazione con Ult `blue_cyclone` DR 30%:** vedi gap S2 (gabumon/03 §5.3). Replace-max consigliato.
 
-## §5b — Presentation (Forma C, §2.2e)
+## §5b — Presentation (Ch1 + Ch2, `02-02e §A.1` dual-path B+C)
 
 Passive listener-only ⇒ **no FSM**, **no clip dedicata**: Gabumon resta su `idle` in ogni momento dell'arming/aura. La presentation è interamente VFX, splittata sui due path del blueprint dual-role.
 
@@ -112,10 +228,11 @@ Passive listener-only ⇒ **no FSM**, **no clip dedicata**: Gabumon resta su `id
 
 ## §7 — Verdetto
 
-`fur_cloak` + `twin_core_ice` definiscono il **template buff-applier listener** del roster:
-- Self-buff (fur_cloak) e cross-buff (twin_core) condividono lo stesso effect path (`ApplySelfBuff`).
+`fur_cloak` + `twin_core_ice` definiscono il **template buff-applier dual-path Full FSM** del roster:
+- Due FSM paralleli nello stesso blueprint: Reactive-proc (block-react) + State-watch (partner synergy). `02-02e §A.1` boundary note ("una passive può mixare sub-variant") applica intra-blueprint.
+- Self-buff (fur_cloak) e cross-buff (twin_core) emettono Commands FSM-side via `ApplyBuff` unificato.
 - Cleanse-immune by design (buff, non debuff).
-- Listener filter discrimina caster/status precisamente.
-- **Presentation Forma C completa:** Channel 1 per eventi puntuali (arm/absorb/dissipate/boosted-hit), Channel 2 per aura state-bound (Added/Removed di buff tag-component). Niente clip anim dedicata — idle puro + VFX.
+- Edge predicate filtrano caster/status precisamente (`caster_is_self`, `caster_is:"agumon"`).
+- **Presentation completa:** Ch1 trigger-proc su FSM `on_enter`, Ch2 persistent-presence via observer su `Buff_*` typed-component. Anim layer idle puro — frame range per nodo sono partizioni dello stesso loop per editor-inspectability.
 
-**Gap nuovi esposti (status post round-3):** N1 ✅ chiuso (alias `ApplyBuff { target: Self_, kind: DR }`, `02-02b §C2`). N5 ✅ chiuso (tag-pure marker formalizzato, `02-02e §E.1`). N5.5 ✅ chiuso (ordering non-normativo, `02-02e §F`). N6 deferred a `02-02e §I` (primo caso reale). S2 ✅ chiuso (alias `ApplyBuff`, vedi gabumon/03 §5).
+**Gap nuovi esposti (status post round-3):** N1 ✅ chiuso (alias `ApplyBuff { target: Self_, kind: DR }`, `02-02b §C2`). N5 ✅ chiuso (tag-pure marker formalizzato, `02-02e §E.1`). N5.5 ✅ chiuso (ordering non-normativo, `02-02e §F`). N6 deferred a `02-02e §I` (primo caso reale). S2 ✅ chiuso (alias `ApplyBuff`, vedi gabumon/03 §5). **Full FSM mandate (`02-02e §A.0`)** ✅ chiuso: 3+3 nodi totali across Path A/B + 7 edge complessivi + clip frame range definiti + VFX su entrambi i canali.

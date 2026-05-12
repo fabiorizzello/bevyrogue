@@ -1,15 +1,91 @@
-# Dorumon — Passive: `predator_loop` (existing — tracking + state entry/exit)
+# Dorumon — Passive: `predator_loop` (Full FSM + listener, sub-variant C: State-watch)
 
 > **Goal**: passive **già implementata** (`src/combat/blueprints/dorumon.rs::PredatorLoopState`, `PredatorLoopResolved` event). Allineamento del design doc al codice esistente; identificare gap se l'identity sheet diverge dal comportamento attuale.
+>
+> **Full FSM mandate (`02-02e §A.0`):** la passive ha **FSM 3+ nodi + edge + clip frame range + VFX su almeno un canale**, tickabile headless. Sub-variant **C — State-watch** dominante (hp-threshold predicate `tracked_target.hp_pct < threshold`), con un sotto-blocco di **A — Aura-loop** sul tracking continuo (idle scan) e edge transient di **B — Reactive-proc** sul chain consume. §A.1 boundary note: una passive può mixare sub-variant tra canali — qui mixate tra nodi.
 >
 > **Gap §2.2b condivisi:** dual-role (agumon/04). Memory note: "PredatorLoopState must explicitly track a target before Dorumon transitions are emitted in a headless runtime test". Qui solo nuovi gap.
 
 ## §1 — Intent
 
-- **Tracking:** scan continuo lowest-HP% enemy alive; aggiorna `tracked_target`.
-- **Entry:** quando `tracked_target.hp_pct < threshold` → `predator_active = true` per N turni.
-- **Exit:** `tracked_target` muore (chain consumato in `dash_metal`) o N turni expira.
+- **Tracking:** scan continuo lowest-HP% enemy alive; aggiorna `tracked_target`. **FSM node `IdleScan`.**
+- **Entry:** quando `tracked_target.hp_pct < threshold` → `predator_active = true` per N turni. **Edge `IdleScan → Armed`.**
+- **Exit:** `tracked_target` muore (chain consumato in `dash_metal`) o N turni expira. **Edge `Armed → IdleScan`.**
+- **Chain consume:** transient `ChainPrimed` node durante `dash_metal` consume. **Edge `Armed → ChainPrimed → IdleScan`.**
 - **Effect:** abilita edge A su `dash_metal` (chain on kill); cambia threshold ult bonus a `<30%`.
+
+## §1.5 — FSM topology (Full FSM mandate)
+
+Sub-variant **C — State-watch** principale (hp-threshold predicate). Il listener osserva `DamageDealt`/`UnitDied`/`TurnEnded`, ricomputa `tracked_target` lowest-HP%, mutua `PredatorLoopState`, e pusha signal nell'FSM. Edge consumano signal su `KernelEvent(...)` filtrati per predicate.
+
+```ron
+// Pseudocode FSM (target: src/combat/blueprints/dorumon.rs::predator_loop_fsm)
+PassiveFsm {
+    initial: IdleScan,
+    nodes: [
+        Node {
+            id: IdleScan,
+            clip: ("idle", 0..3),
+            on_enter: [],                                 // pure tracking, no VFX
+        },
+        Node {
+            id: Armed,
+            clip: ("idle", 4..7),
+            on_enter: [
+                ApplyBuff { id:"predator_active", target_ref: Self_,
+                            mul_param: None, dur: Turns(3) /* config.duration_turns */ },
+                SpawnParticle { preset:"predator_lock", origin: SelfCenter,
+                                motion: Travel { to: EntityCenter(FromBlueprintState(
+                                    "predator_loop.tracked_target")),
+                                    ease: EaseOut, ms: 150 } },
+            ],
+        },
+        Node {
+            id: ChainPrimed,
+            clip: ("idle", 8..11),
+            on_enter: [],                                 // chain consume VFX coperto da dash_metal FSM
+        },
+    ],
+    edges: [
+        // IdleScan → Armed: tracked_target hp_pct sotto soglia
+        Edge { from: IdleScan, to: Armed,
+               on: KernelEvent(DamageDealt | UnitDied),
+               predicate: HpPctBelow {
+                   target_ref: FromBlueprintState("predator_loop.tracked_target"),
+                   pct: 50 /* config.entry_threshold */ } },
+        // Armed → IdleScan: timeout o tracked_target died (no chain)
+        Edge { from: Armed, to: IdleScan,
+               on: KernelEvent(TurnEnded),
+               predicate: BlueprintState { state_key:"predator_loop.expires_in",
+                                           expected: Int(0) },
+               on_exit: [SpawnParticle { preset:"predator_aura_dissipate",
+                                         origin: SelfCenter, motion: Static }] },
+        Edge { from: Armed, to: IdleScan,
+               on: KernelEvent(UnitDied),
+               predicate: BlueprintState { state_key:"predator_loop.tracked_target_died_without_chain",
+                                           expected: Bool(true) } },
+        // Armed → ChainPrimed: tracked dies during dash_metal active (chain consume)
+        Edge { from: Armed, to: ChainPrimed,
+               on: KernelEvent(UnitDied),
+               predicate: BlueprintState { state_key:"dash_metal_in_progress",
+                                           expected: Bool(true) } },
+        Edge { from: ChainPrimed, to: IdleScan, on: TimeInNode(1) },
+    ],
+}
+```
+
+**Edge predicate semantica:**
+- `HpPctBelow { target_ref: FromBlueprintState("predator_loop.tracked_target"), pct: 50 }`: il `tracked_target` è risolto via blueprint state lookup live (`02-02d §B.1` N8b). `tracked_target = None` → predicate false (no spawn).
+- `BlueprintState`: legge stato custom impostato dal listener (es. `expires_in` decrementato a 0 su `TurnEnded`). Read-only, niente side-effect dall'edge eval (§9 G-Pred).
+- Force-entry via `metal_cannon` Ult (identity §F5): `SetBlueprintState("predator_loop.predator_active", true)` dal Spit node bypassa edge `IdleScan → Armed`. Listener observa cambio state e pusha signal sintetico nell'FSM (alternativa: emit `predator_force_active` evento kernel, FSM consuma su quello).
+
+**Channel mapping (`02-02e §A.1`):**
+- **Ch1 (trigger-proc):** `predator_lock` su Armed `on_enter`, `predator_aura_dissipate` su `on_exit`, `predator_mark_fade` su `UnitDied{tracked}` (vedi §5b mapping). Reactive-proc style.
+- **Ch2 (persistent-presence):** **due osservabili**:
+  1. `Added/Removed<Buff_PredatorActive>` → `predator_aura_loop` su Dorumon (state-watch).
+  2. `Changed<DorumonBlueprint>` → `predator_mark_loop` migrating sul tracked_target via `observe_predator_mark` (template `02-02e §D`). Despawn-respawn (non emitter retarget) quando tracked cambia, perché il preset ha loop state da resettare.
+
+**Headless determinism:** FSM tickabile headless. `ApplyBuff(predator_active)` gira identico; `SpawnParticle` no-op. Listener-side state mutations (`PredatorLoopState.recompute_tracked`, `expires_in` decrement) sono già headless-safe nel codice corrente. Test integration osservano `PredatorLoopResolved` event payload + `predator_active` boolean diff via `tick_passive_fsm` + listener.
 
 ## §2 — Blueprint contract
 
@@ -116,12 +192,13 @@ oppure: ult metal_cannon forza state on hit (vedi 03 F5)
 
 ## §6 — Verdetto
 
-`predator_loop` è il **template "blueprint state machine listener"** del roster:
-- Listener mantiene state interno (`PredatorLoopState`).
-- State è interrogabile via predicate (`BlueprintState`, F2).
-- State è mutabile via Command (`SetBlueprintState`, F5).
-- Eventi del kernel (`DamageDealt`, `UnitDied`, `TurnEnded`) sono trigger.
+`predator_loop` è il **template "blueprint state machine listener" + Full FSM passive** del roster:
+- Listener mantiene state interno (`PredatorLoopState`) e pusha signal nell'FSM passivo.
+- FSM (`02-02e §A.0`) ha 3 nodi (IdleScan/Armed/ChainPrimed) + 5 edge ispezionabili editor-side.
+- State è interrogabile via predicate (`BlueprintState`, `HpPctBelow` con `FromBlueprintState` target_ref).
+- State è mutabile via Command (`SetBlueprintState`, F5 Ult force-entry).
+- Eventi del kernel (`DamageDealt`, `UnitDied`, `TurnEnded`) trasportano segnali edge-side.
 
-Pattern **generalizzabile** ad altri Digimon che richiedono state machine interna (es. futuri form-change Renamon/Kyubimon, evoluzioni). Vocabolario `BlueprintState` + `SetBlueprintState` formalizza il contratto.
+Pattern **generalizzabile** ad altri Digimon che richiedono state machine interna (es. futuri form-change Renamon/Kyubimon, evoluzioni). Vocabolario `BlueprintState` + `SetBlueprintState` + `FromBlueprintState(...)` formalizza il contratto. **Full FSM mandate fit**: la complessità native di predator_loop (tracking + threshold + chain consume + ult force) si esprime in 3 nodi distinti — niente edge esplosi, niente special-casing.
 
 **Allineamento doc-codice è action item pratico**, non gap architetturale.
