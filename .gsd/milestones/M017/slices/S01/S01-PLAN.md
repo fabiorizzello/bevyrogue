@@ -41,12 +41,12 @@ Tutti i moduli che referenziavano la vecchia tassonomia (speed, battery_loop, rn
   - Files: `assets/data/skills.ron`, `assets/data/units.ron`
   - Verify: cargo run --bin combat_cli (smoke) carica i RON senza loader error. Test di parsing RON in T05 confermano.
 
-- [ ] **T04: Cascade rename src/combat/* (8 file)** `est:1-2h`
+- [x] **T04: Cascade rename src/combat/* (8 file)** `est:1-2h`
   Sostituire occorrenze legacy in: src/combat/speed.rs (1), battery_loop.rs (1), rng.rs (1), observability.rs (1), kernel.rs (1), turn_system/mod.rs (7), turn_system/tests.rs (11). Mappare ogni token a Heated/Chilled/Paralyzed/Slowed coerentemente con la mappa di T03. Lasciare commenti '// canon §H.1' su siti non triviali (es. switch su StatusKind). Niente cambio logica.
   - Files: `src/combat/speed.rs`, `src/combat/battery_loop.rs`, `src/combat/rng.rs`, `src/combat/observability.rs`, `src/combat/kernel.rs`, `src/combat/turn_system/mod.rs`, `src/combat/turn_system/tests.rs`
   - Verify: cargo check (default + windowed) verde dopo questo task.
 
-- [ ] **T05: Cascade rename tests/* (7 file)** `est:2-3h`
+- [x] **T05: Cascade rename tests/* (7 file)** `est:2-3h`
   Aggiornare le referenze nei file: tests/status_effect_apply.rs (6), status_effect_integration.rs (11), status_effect_turn_tick.rs (11), combat_coherence.rs (8), status_accuracy.rs (6), follow_up_chains.rs (1), form_identity.rs (2). Stessa mappa T03/T04. Per i test 'status_effect_*' che assertano semantica per-status (DoT, skip turn, ecc): aggiornare i nomi, lasciare la semantica TODO con #[ignore] se i nuovi varianti non hanno ancora behavior (entra in S03-S05). Documentare ogni #[ignore] con commento '// S03 — Heated DoT amp%' style.
   - Files: `tests/status_effect_apply.rs`, `tests/status_effect_integration.rs`, `tests/status_effect_turn_tick.rs`, `tests/combat_coherence.rs`, `tests/status_accuracy.rs`, `tests/follow_up_chains.rs`, `tests/form_identity.rs`
   - Verify: cargo test --no-fail-fast: tutti i test non-ignored verdi, count ignored ≤ N documentato nel summary slice.
