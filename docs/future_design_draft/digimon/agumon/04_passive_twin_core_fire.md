@@ -163,7 +163,7 @@ Listener match deve evitare false positive:
 
 ## §6b — VFX (Channel 1 + Channel 2, §2.2e)
 
-> No clipmontage, no `SpawnParticle` Command. Twin Core fire-side is listener-only, so VFX vivono nei due canali §2.2e: **Channel 1** (`ListenerCtx::notify`) per i transition flash, **Channel 2** (presentation observer su `Added<Buff_TwinCoreFireActive>` / `RemovedComponents<...>`) per l'aura persistente. Naming preset porta il flavor (dual-element fire+ice), `VfxLocus` non ha anchor di body part.
+> Twin Core fire-side gira la Full FSM in §1.5 (sub-variant C State-watch). VFX su due canali §2.2e: **Channel 1** = `SpawnParticle` Commands su `on_enter` Armed/Boosted + `on_exit` Armed (transition flash) e `ListenerCtx::notify` su trigger event-bound; **Channel 2** = presentation observer su `Added<Buff_TwinCoreFireActive>` / `RemovedComponents<...>` per l'aura persistente. Naming preset porta il flavor (dual-element fire+ice), `VfxLocus` non ha anchor di body part.
 
 ### Mapping (per FX)
 

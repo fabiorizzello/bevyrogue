@@ -112,6 +112,6 @@ Quesito design da risolvere fuori stress test:
 1. `01_basic_sharp_claws.md` — FSM stress base attack (1-2 nodi, low complexity, baseline)
 2. `02_skill_baby_flame.md` — FSM stress heavy skill (3-4 nodi, status apply + tough hit)
 3. `03_ult_baby_burner.md` — FSM stress ult (4 nodi, edge reattivo `OnKill→ReactiveDetonate`, QTE HitCheck v1)
-4. `04_passive_twin_core_fire.md` — blueprint listener-only (no FSM), Twin Core con Gabumon
+4. `04_passive_twin_core_fire.md` — Full FSM + listener cascade (sub-variant C State-watch), Twin Core con Gabumon
 
 Obiettivo per ogni file: **trovare almeno 1 contraddizione/buco** del design §2.2b prima di M017.

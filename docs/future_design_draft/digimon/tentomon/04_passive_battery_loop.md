@@ -138,7 +138,7 @@ durante combat: alleato spende SP
 
 ## §4b — Anim hook (block clip)
 
-Passive listener-only ⇒ no FSM proprio. Un momento richiede comunque clip override (non solo VFX):
+L'FSM `battery_loop_fsm` (§1.5) modella `Dormant/BlockReady/BlockProc`. Il node `BlockProc` ha clip override (`block`, 0..4 = 5f @12fps) sopra al `idle` layer — preempts `hurt` flinch quando la reaction triggera:
 
 ```
 Signal: KernelEffect::BlockReaction { actor: self, damage_mult: 0.50 }
@@ -154,7 +154,7 @@ Signal: KernelEffect::BlockReaction { actor: self, damage_mult: 0.50 }
 
 ## §4c — VFX (Ch1 + Ch2, `02-02e §A.1` sub-variant B Reactive-proc)
 
-Passive listener-only ⇒ niente `SpawnParticle` Command (canale FSM). VFX viaggiano su:
+VFX viaggiano su due canali ortogonali: FSM `on_enter` `SpawnParticle` (override path BlockReady/BlockProc — vedi §1.5) per gli effetti gameplay-bound, side-channel listener `notify` per il path SP-grant non-FSM:
 
 - **Channel 1** = `ListenerCtx::notify(NotifyParticle)` per one-shot event-bound (§2.2e §C).
 - **Channel 2** = presentation observer su component diff (`Added`/`Removed`) per persistent state-bound (§2.2e §D).

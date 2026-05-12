@@ -163,7 +163,7 @@ oppure: ult metal_cannon forza state on hit (vedi 03 F5)
 
 ## §5b — VFX (Channel 1 + Channel 2, §2.2e)
 
-> No clipmontage, no `SpawnParticle` Command. Predator Loop è listener-only con state machine interna (`PredatorLoopState`). VFX seguono il pattern §2.2e: **Channel 1** per i transition flash (entry, chain consume, dissipate), **Channel 2** per le componenti persistenti (mark che segue il tracked, aura su Dorumon mentre `predator_active=true`). Il mark migra con `tracked_target` — l'observer detecta `Changed<DorumonBlueprint>` e diffa want vs have.
+> Predator Loop gira la Full FSM `predator_loop_fsm` in §1.5 (sub-variant C State-watch) + `PredatorLoopState` blueprint state per il tracking. VFX seguono `02-02e §A.1`: **Channel 1** = `SpawnParticle` Commands su FSM `on_enter`/`on_exit` (entry lock, dissipate) e `ctx.notify` su event-bound (mark fade flash); **Channel 2** = presentation observer per le componenti persistenti (mark che segue `tracked_target`, aura su Dorumon mentre `predator_active=true`). Il mark migra con `tracked_target` — l'observer detecta `Changed<DorumonBlueprint>` e diffa want vs have.
 
 ### Mapping (per FX)
 
@@ -189,6 +189,16 @@ oppure: ult metal_cannon forza state on hit (vedi 03 F5)
 - **Headless:** §2.2e §G. Listener gameplay (state machine, threshold gating, chain consume) gira identico in headless; test integration in `tests/` osservano `PredatorLoopResolved` event payload e `predator_active` state diff, non i VFX.
 
 ---
+
+## §5c — Sinergie cross-roster (propagazione D3 identity §6)
+
+Predator Loop attiva si traduce in **due bonus a cascata** sul kit Dorumon:
+1. **Skill `dash_metal`** — abilita modifier `OnKill→Chain` (chain target via `LowestHpPctAlive`, vedi `dorumon/02 §F3`).
+2. **Ult `metal_cannon`** — la threshold-bonus rule resta `+50% damage se primary HP <30%` (canon `dorumon/03 §4`), ma il **forced-Predator entry** post-hit garantisce setup chain anche se l'HP threshold del passive non era stato raggiunto pre-ult (canon `dorumon/03 §F6`).
+
+**Asimmetria threshold (chiusa identity §6 D3):** skill `dash_metal` scala `<50%` HP, ult `metal_cannon` scala `<30%` HP. Predator Loop è la passive che converge entrambe le finestre in un singolo signal di "executor mode".
+
+**Sinergie cross-roster (canon identity §6 D3): trasparente.** Dark damage Dorumon **non** scala su Heated/Chilled/Holy/Blessed di party allies. Le sinergie sono **HP-threshold based** lato party comp (alleati che spreadano damage portano enemy lowest-HP% sotto soglia → Predator entra). Niente Twin Core-style status interaction.
 
 ## §6 — Verdetto
 

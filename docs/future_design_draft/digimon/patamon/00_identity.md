@@ -60,7 +60,7 @@ Shared. Healing FSM nodes hanno target shape `Single` (Skill) / `AoE(All)` (Ult)
 ## §5 — Cleanse rules
 
 - **Targets:** rimuove 1 debuff dal target. Priorità: status più "vecchio" (FIFO sui timer), tie-break ID alfabetico.
-- **Filter:** cleanse rimuove SOLO debuff (Heated, Chilled, Confused, Paralyzed, Slowed). Mai buff alleati né `Holy` stack (vedi sotto).
+- **Filter:** cleanse rimuove SOLO debuff (Heated, Chilled, Slowed, Paralyzed). Mai buff alleati (incl. `Blessed`) né `Holy` stack (vedi sotto). `Confused` rimosso dal set v0 (round-3 2026-05-12).
 - **Vocabolario:** nessuna estensione status set per ora. Cleanse usa toggle binario esistente.
 
 ## §6 — Holy element (nota cross-roster)

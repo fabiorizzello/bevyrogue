@@ -176,7 +176,7 @@ turno T+1 (nemico): nemico colpisce Gabumon
 
 ## §5b — Presentation (Ch1 + Ch2, `02-02e §A.1` dual-path B+C)
 
-Passive listener-only ⇒ **no FSM**, **no clip dedicata**: Gabumon resta su `idle` in ogni momento dell'arming/aura. La presentation è interamente VFX, splittata sui due path del blueprint dual-role.
+Due `PassiveFsm` paralleli (§1.5): `fur_cloak_fsm` (Reactive-proc) + `twin_core_ice_fsm` (State-watch). Anim resta su `idle` (FSM nodes partizionano frame range per editor-inspectability, non clip distinte). Presentation split sui due path: FSM `SpawnParticle` Commands su `on_enter` (transition flash) + Ch1 `notify` listener-side per gli accent event-bound + Ch2 component observer (`Added/Removed<Buff_*>`) per le aura persistenti.
 
 ### Path A — `fur_cloak` (self DR su outgoing Chilled)
 
@@ -202,7 +202,7 @@ Passive listener-only ⇒ **no FSM**, **no clip dedicata**: Gabumon resta su `id
 
 - **Tag components convenzionali (§2.2e §E):**
   - `Buff_FurCloakDR` — **tag-pure** (presence/absence). Il valore numerico (mult 0.20) resta nella `Buffs` stringy map; l'observer Channel 2 legge solo presence. Vedi gap N5.
-  - `Buff_TwinCoreIceActive` — tag-pure (boost +10% gestito via lookup buff stringy nella damage pipeline; allineato a `00_identity.md §6 D3`).
+  - `Buff_TwinCoreIceActive` — tag-pure (boost ×1.15 gestito via lookup buff stringy nella damage pipeline; allineato a `00_identity.md §6 D3`, simmetrico con Agumon fire-side).
 - **`EntityRef::Caster` / `EntityRef::EventTarget`** sono ammessi solo in Channel 1 (listener context, §2.2e §C). Non possono essere usati da observer Channel 2 — che non ha event scope.
 - **A3 (`fur_cloak_absorb`)** è guard'd dal listener su `has_buff("fur_cloak_dr")` — il preset si attiva solo quando il DR effettivamente assorbe.
 - **B5 dissipate flash** vive su Channel 1 e va emesso **prima** del Removed event che chiude B6 (ordering interno listener vs ECS observer su RoundEnded). Vedi gap N5.5.
@@ -212,7 +212,7 @@ Passive listener-only ⇒ **no FSM**, **no clip dedicata**: Gabumon resta su `id
 
 ### ✅ Cosa funziona
 
-- Stesso pattern dual-role di agumon/04: listener vive in Rust, niente RON. **Riusabile** come template per passive listener-only del roster.
+- Stesso pattern dual-role di agumon/04: listener vive in Rust, niente RON. **Riusabile** come template per passive dual-path FSM (sub-variant B + C) del roster.
 
 ### ⚠️ Gap nuovi
 
@@ -220,7 +220,7 @@ Passive listener-only ⇒ **no FSM**, **no clip dedicata**: Gabumon resta su `id
 2. **N2 — Buff timing race con FSM owner.** Il listener applica buff **mentre Gabumon è ancora in `Burst` FSM**. Il buff è "attivo" già durante il resto della FSM corrente? **Decisione:** sì (state read live), ma il primo damage incoming è del nemico al turno successivo → effetto pratico = mitigation nel turno T+1.
 3. **N3 — Twin Core ice-side (specchio Agumon).** Stesso blueprint contiene 2 listener path: `fur_cloak` (self) + `twin_core_ice` (cross). **Action item:** decidere se file separato `04b_passive_twin_core_ice.md` o tutto qui. **Decisione operativa:** tutto qui. Il blueprint Gabumon ha 2 reactive arm:
    - `fur_cloak`: on outgoing Chilled → self DR
-   - `twin_core_ice`: on `StatusApplied(Heated, caster:Agumon)` → BuffSelf("twin_core_ice_active", round-scoped) che boosta Ice damage `+10%` next outgoing (canon `00_identity.md §6 D3`, simmetrico con Agumon Twin Core).
+   - `twin_core_ice`: on `StatusApplied(Heated, caster:Agumon)` → BuffSelf("twin_core_ice_active", round-scoped) che boosta Ice damage `×1.15` (+15%) next outgoing (canon `00_identity.md §6 D3`, simmetrico con Agumon Twin Core).
 4. **N4 — `value_param` schema buff.** Vedi gap S2 (gabumon/03). Buff `value` (mult) vs status `stacks` (count) sono entità distinte nel vocabolario. Cleanse Patamon non li tocca (è solo debuff filter).
 5. **N5 — Value-carrying typed-buff component.** ✅ **Chiuso (round-3, 2026-05-12):** decisione A (tag-pure marker) **formalizzata** in `02-02e §E.1` (channel layout) come convenzione canon del roster. `Buff_FurCloakDR` è zero-sized tag (presence-only); il valore numerico vive nella `Buffs` stringy map letta dalla damage pipeline. Observer Channel 2 osserva solo `Added/Removed` per gestire emitter lifecycle. Numeric binding ("VFX intensity proporzionale al mult") resta deferred a `§2.2e §I`.
 6. **N5.5 — Ordering Channel 1 vs Channel 2 su buff drop.** ✅ **Chiuso (round-3, 2026-05-12):** ordering **non-normativo**, overlap di ≤1 frame tollerato — codificato in `02-02e §F` (Channel arbitration rules). Sia "flash prima del Removed" sia "flash dopo il Removed" sono accettabili: i due path vivono su channel disgiunti e il player non distingue ≤1f di drift.

@@ -59,14 +59,14 @@ Shared con Agumon (§2.2b §G): frame counter logico autoritativo, ms metadata, 
 | Skill | `gabumon_shot` | Single | **1 SP** | Damage medio Ice; **+2 Chilled**; ToughnessHit(8). **Modifier `OnStatusApplied→Echo(Chilled)`** sull'adj lowest-HP |
 | Ult | `blue_cyclone` | Single | UltCharge | Damage massivo Ice; +Slowed 2 turni; **OnHit→DR 30% self 1 turno** |
 | Passive | `fur_cloak` | listener | — | On `EmitStatus(Chilled)` da Gabumon → DR 20% self 1 turno |
-| (Twin Core) | `twin_core_ice` | listener cross | — | Damage Ice +X% se target ha `Heated` (Agumon) |
+| (Twin Core) | `twin_core_ice` | listener cross | — | Damage Ice ×1.15 (+15%) se target ha `Heated` da Agumon (canon §6 D3) |
 
 **Sinergie Twin Core:** Agumon stacca Heated, Gabumon stacca Chilled. Quando entrambi presenti, ogni status applicato da uno **aumenta il damage dell'altro** sul medesimo target → loop `apply A → buff B → apply B → buff A`. Sinergico, non equivalente.
 
 ## §5 — Chilled (mechanic, condiviso con Twin Core)
 
 - **Apply:** Basic +1, Skill +2 + echo, Ult Slowed indipendente.
-- **Cap:** TBD (proposta: 6 stacks, allineato a Heated).
+- **Cap:** **6 stacks (chiuso round-3 2026-05-12)**, allineato a Heated. Apply oltre cap = no-op; refresh durata mantenuto.
 - **Effect on target:** +X% damage taken da Ice per stack; a soglia ≥3 sblocca `Slowed` (gate Skill).
 - **Echo (Skill modifier):** quando Chilled è applicato, il blueprint emette signal `chilled_echo` → +1 Chilled sull'adj con HP% più basso. Non ricorsivo (no chain echo).
 - **Twin Core hook:** la passive di Agumon legge `KernelEvent::StatusApplied(Chilled)` → +damage Fire condizionale.
@@ -75,4 +75,4 @@ Shared con Agumon (§2.2b §G): frame counter logico autoritativo, ms metadata, 
 
 - **D1 — DR stack `fur_cloak` (20%) vs Ult `blue_cyclone` (30%).** **Risolto: replace-max.** Se entrambi attivi, il DR effettivo è `max(0.20, 0.30) = 0.30`. Niente additivo, niente moltiplicativo. Allineato a `gabumon/03 §5.3`. La durata di ciascun buff resta indipendente: quando il maggiore decade, il minore (se ancora attivo) riprende. Single-instance per buff_id, refresh durata su re-apply.
 - **D2 — Echo target tie-break (Skill `gabumon_shot`).** **Risolto: slot index ascending (deterministic).** Se ≥2 adiacenti hanno lo stesso `hp_pct`, il selector `AdjLowest` sceglie quello con `slot_index` più basso. No RNG. Coerente con politica determinismo headless (`CLAUDE.md` §Convenzioni).
-- **D3 — Twin Core: bonus simmetrico o asimmetrico?** **Risolto: simmetrico, +10% damage per status partner presente.** Quando Gabumon colpisce target con `Heated` attivo (da Agumon), damage Ice `×1.10`. Specchio per Agumon su `Chilled`. **Stack:** se entrambi gli status sono presenti sul target (rara ma possibile in combat con Agumon+Gabumon attivi), ogni unit legge solo il proprio status partner — niente cross-stack. **Twin Core ↔ Metal Cannon (Dorumon Dark):** trasparente. Dark non scala su Heated/Chilled, quindi Dorumon non beneficia di Twin Core. Sinergia Dorumon resta HP-threshold based (`dorumon/02 §5` D3). **Inconsistency interna risolta:** `gabumon/04 §6 N3` riportava +15%; identity prevale → **+10%** canon.
+- **D3 — Twin Core: bonus simmetrico o asimmetrico?** **Risolto (round-3 2026-05-12): simmetrico, ×1.15 multiplicative (+15% damage) per status partner presente.** Quando Gabumon colpisce target con `Heated` attivo (da Agumon), damage Ice `×1.15`. Specchio per Agumon su `Chilled` (`agumon/04 §5`). **Stack:** se entrambi gli status sono presenti sul target (rara ma possibile in combat con Agumon+Gabumon attivi), ogni unit legge solo il proprio status partner — niente cross-stack. **Twin Core ↔ Metal Cannon (Dorumon Dark):** trasparente. Dark non scala su Heated/Chilled, quindi Dorumon non beneficia di Twin Core. Sinergia Dorumon resta HP-threshold based (`dorumon/02 §5` D3). **Cascade ordering:** Twin Core multiplier vive nel `mul_param` lookup della damage pipeline (`02-08 §B`), stacka moltiplicativamente con altri caster buff. **Inconsistency intra-doc risolta:** prior draft riportava +10% additivo (asimmetrico vs agumon/04 ×1.15 multiplicativo) — canonized round-3 a ×1.15 su entrambi i side per consistenza HSR-style buff stacking.

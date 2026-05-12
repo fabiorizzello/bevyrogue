@@ -298,7 +298,7 @@ fn compute_dr_for_target(target: Entity, status_registry: &StatusRegistry) -> f3
 }
 ```
 
-**Twin Core symmetric:** non è DR — è damage boost (+10%/status partner, Agumon `twin_core_fire` legge `Chilled` su Gabumon e viceversa). Stacka con DR del target ma è separato (legge `(StatusKind::Heated, source=*) > 0` sul partner, indipendente da chi ha applicato).
+**Twin Core symmetric:** non è DR — è damage boost (×1.15 multiplicative / +15% per status partner, Agumon `twin_core_fire` legge `Chilled` su Gabumon e viceversa, simmetrico ice-side). Stacka moltiplicativamente con altri caster buff (cfr. `mul_param` lookup §B) e con DR del target ma su asse separato (legge `(StatusKind::Heated, source=*) > 0` sul partner, indipendente da chi ha applicato).
 
 ### §H.4 — Cross-ref a skill-doc roster
 

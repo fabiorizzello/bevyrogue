@@ -16,7 +16,7 @@
 - **SP**: numero (team-shared pool, 1 volta per team).
 - **Ultimate charge**: barra dedicata + marker della threshold.
 - **Status badges** (icon list su target / caster, vedi §8.1 + §8.3):
-  - `Heated`, `Chilled`, `Slowed`, `Confused`, `Paralyzed` — stack count + durata residua (es. `2t`) + tooltip.
+  - `Heated`, `Chilled`, `Slowed`, `Paralyzed`, `Blessed` — stack count + durata residua (es. `2t`) + tooltip. `Confused` rimosso (round-3 2026-05-12, dropped da Renamon).
   - Mark blueprint esistenti: `PreyLock(turns)` (Dorumon), `TwinCore` shared meter (Agumon/Gabumon), `StaticCharge` (Tentomon, esistente come passive Battery Loop).
   - Tooltip on hover: nome status, effetto, fonte (chi l'ha applicato), interazione con modifier-firma se rilevante (es. "Heated: Baby Burner con kill spread Heated agli adiacenti").
 
@@ -67,7 +67,7 @@ Quando il player seleziona una skill (prima di confermare il target):
   - `Bounce(N)` → primary clickable, N target highlighted con numerazione hop.
 - Per primary highlighted:
   - **Damage projection** (post-mod): "Base 17 (Dark) × 1.12 PredatorLoop = 19".
-  - **Status che sarà applicato**: "+ Heated 3t" o "+ Confused 2t (random target)".
+  - **Status che sarà applicato**: "+ Heated 3t" o "+ Blessed 2t (alleato)".
   - **Toughness delta**: "−12 → BREAK!" se il break proc.
   - **Modifier-firma preview** (se armable): "If kill → Detonate Heated to adj" / "If primary breaks → AoE 50%".
 
@@ -134,7 +134,6 @@ Una sola voce per modifier; arco visivo che parte dallo Strike target verso i ta
 | `OnKill→Detonate(Heated)` (Agumon Baby Burner) | Esplosione + spread heat sui 2 adj | `DETONATE: HEATED SPREAD` |
 | `OnStatusApplied→Echo(Chilled)` (Gabumon Bubble Blast) | Onda fredda verso adj lowest-HP | `ECHO: CHILLED` |
 | `OnKill→Chain` (Dorumon Dash Metal in Predator) | Arrow dal target morto al nuovo target | `PREDATOR CHAIN` |
-| `OnBreak→Detonate` (Renamon Fox Drive) | AoE secondaria sulla linea | `SHATTER: FOX DRIVE` |
 | `OnHitN(3)→Apply(Paralyzed)` (Tentomon Electro Shocker) | Lampo finale sul 3° hop | `PARALYZE` |
 
 Patamon: nessuna cue di modifier-firma (kit puramente lineare).
@@ -147,8 +146,8 @@ Headless-friendly, una linea per `CombatEvent`. Esempi allineati ai kit §8.3:
 - `"Agumon casts Baby Burner → Goblimon takes 42 (Fire). Goblimon DIES. DETONATE: Heated spreads to 2 adjacent."`
 - `"Gabumon casts Bubble Blast → Wolfmon takes 14 (Ice). Chilled 2t applied. ECHO: Chilled applied to Slimon (lowest HP adj)."`
 - `"Dorumon casts Dash Metal (Predator state) → Goblimon takes 50 (Dark). Goblimon DIES. CHAIN: Dash Metal fires on Slimon, takes 38."`
-- `"Patamon casts Holy Breeze on Renamon → +30 HP, Confused cleansed."`
-- `"Renamon casts Fox Drive → Goblimon takes 60 (status×3). Goblimon BREAKS. SHATTER: AoE 30 to all enemies."`
+- `"Patamon casts Patapata Hover on Renamon → +30 HP, Heated cleansed."`
+- `"Renamon casts Tōhakken → all enemies take 60 (Holy). Blessed 2t to all allies. AdvanceTurn 25% to Agumon."`
 - `"Tentomon casts Electro Shocker → 3 bounces. 3rd hit: Slimon PARALYZED 2t."`
 
 Color-coded by tag. Scrollable. Persistito su JSONL.
@@ -164,7 +163,7 @@ Color-coded by tag. Scrollable. Persistito su JSONL.
 | Pannello | Componenti | Bloccante per kit minimal? |
 |---|---|---|
 | Unit roster + HP/Toughness/SP/Ult | esistente in `combat_panel.rs` | base |
-| Status badges (Heated/Chilled/Confused/Paralyzed/Slowed) con stack + durata | parziale | **bloccante** (Heated scaling, status apply) |
+| Status badges (Heated/Chilled/Slowed/Paralyzed/Blessed) con stack + durata | parziale | **bloccante** (Heated scaling, status apply) |
 | Twin Core tag visibility | esistente | parziale |
 | PreyLock mark + Predator state self-flag | nuovo | **bloccante** Dorumon |
 | Turn order timeline w/ telegraph | parziale | **bloccante** charged_attack enemy |

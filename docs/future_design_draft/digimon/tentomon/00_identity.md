@@ -13,8 +13,12 @@
 
 **Battery + Bulwark.** Alimenta SP team + assorbe pressione fisica con corazza chitinosa. Bounce per spreadare Paralyzed. **Differenziazione dal pure tank assente:** non è un tank dedicato (no taunt, no aggro forzato), ma fornisce **mitigation distribuita** + **HP pool alto** + **Block reaction frequente**. Battery resta identità primaria.
 
-- **Asse primario:** SP feed team (+2 SP gen su basic, vs +1 standard)
-- **Asse secondario:** Tank-lite (HP alto, DR su Skill, Block reaction più frequente)
+**Dual-path passive `battery_loop`** (canon `04_passive_battery_loop.md` §1.5): due meccaniche ortogonali nello stesso blueprint, con boundary chiara:
+- **Path A — SP-grant (side-channel listener):** reactive SP feedback su `SpEarned`/`SpSpent` event team. Non-FSM, puro `ctx.notify` + kernel emit (no state transition).
+- **Path B — Block-reaction (Full FSM):** sub-variant B Reactive-proc, FSM `Dormant/BlockReady/BlockProc` con clip override `block` 5f + DR 50% applicato pre-DR su `IncomingDamage` quando SP≥3 + RNG roll.
+
+- **Asse primario:** SP feed team (+2 SP gen su basic, vs +1 standard) — corrisponde a Path A side-channel.
+- **Asse secondario:** Tank-lite (HP alto, DR su Skill, Block reaction più frequente) — corrisponde a Path B FSM.
 - **Vita:** **alta** (HP ~120, la più alta del roster)
 - **Stat baseline (proposta):** `hp_max=120`, `speed=85` (lento per design tank), `toughness_max=70` (alto, regge break), `weakness=Fire`, `ultimate_trigger=100`, `ultimate_cap=150`, `ultimate_charge_per_event=25`
 

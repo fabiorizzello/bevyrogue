@@ -24,6 +24,13 @@
 - [ ] I `.json` atlas sono rimossi
 - [ ] Il caricatore emette `CombatEvent::AnimationNotify` quando un `SpawnParticle`/`Shake` Command è dispatcched (testato headless mockando il playhead)
 
+**Dematerialize/Rematerialize pattern (§2.2c):**
+- [ ] Pixel-noise dissolve shader esiste su `Sprite` material custom, parametri `dur_out_ms`/`dur_in_ms`/`noise_scale`/`tint` esposti
+- [ ] `skills.ron` accetta campo opzionale `requires_close_range: bool` (default `true`); skill ranged (es. `baby_flame`) settano `false`
+- [ ] Presentation dispatcher wrappa la sequenza dematerialize→reposition→rematerialize attorno alla FSM per skill `requires_close_range: true`; skill `false` saltano il cycle e restano in idle position
+- [ ] Headless gameplay invariato: shader e dispatcher sono `#[cfg(feature = "windowed")]`-gated, il combat headless non aspetta transizioni shader (test integration `tests/` non toccano il pattern)
+- [ ] Validator boot: ogni skill in `skills.ron` ha `requires_close_range` esplicito o default applicato senza fail
+
 **AnimGraph FSM runtime (§2.2b — S03f + S03g):**
 - [ ] Schema `AnimGraph` (nodi, edges, Commands, Predicate) parsato da `clipmontage.ron`
 - [ ] `tick_fsm(rt, kernel_events, user_inputs) -> FsmTickOutput` è puro (no `&mut World`, no RNG global, no wall-clock)
