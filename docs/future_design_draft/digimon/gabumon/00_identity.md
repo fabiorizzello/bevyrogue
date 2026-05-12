@@ -25,7 +25,7 @@ Canon Gabumon **non ha mosse ice** → reflavor designer-fiction Ice mantenuto, 
 
 ## §1 — Identità
 
-Erosore lento + scudo team. **Chilled stacks** sul nemico, eco sull'adiacente. Sé stesso DR-buffato quando applica status. **Differenziazione vs Agumon:** Agumon esplode al kill (burst, OnKill modifier); Gabumon **eroderà sostenendo** (apply ripetuto, OnStatusApplied echo, DR self). Stesso loop status-stack ma payoff opposto: Agu = detonate; Gabu = persistenza + diffusione laterale.
+Erosore lento + scudo team. **Chilled stacks** sul nemico, eco sull'adiacente. Sé stesso DR-buffato quando applica status. **Differenziazione vs Agumon:** Agumon esplode al kill (burst, OnKill reactive signature); Gabumon **eroderà sostenendo** (apply ripetuto, OnStatusApplied echo, DR self). Stesso loop status-stack ma payoff opposto: Agu = detonate; Gabu = persistenza + diffusione laterale.
 
 - **Asse primario:** Sustain DPS Ice, status spread laterale
 - **Asse secondario:** Tank-lite (DR self on apply)
@@ -56,7 +56,7 @@ Shared con Agumon (§2.2b §G): frame counter logico autoritativo, ms metadata, 
 | Slot | Skill ID | Target | Costo | Effetto base |
 |---|---|---|---|---|
 | Basic | `claw_attack` | Single | 0 SP, +1 gen, +25 Ult | Damage piatto Ice; **+1 Chilled** primary |
-| Skill | `gabumon_shot` | Single | **1 SP** | Damage medio Ice; **+2 Chilled**; ToughnessHit(8). **Modifier `OnStatusApplied→Echo(Chilled)`** sull'adj lowest-HP |
+| Skill | `gabumon_shot` | Single | **1 SP** | Damage medio Ice; **+2 Chilled**; ToughnessHit(8). **Reactive signature `OnStatusApplied→Echo(Chilled)`** sull'adj lowest-HP |
 | Ult | `blue_cyclone` | Single | UltCharge | Damage massivo Ice; +Slowed 2 turni; **OnHit→DR 30% self 1 turno** |
 | Passive | `fur_cloak` | listener | — | On `EmitStatus(Chilled)` da Gabumon → DR 20% self 1 turno |
 | (Twin Core) | `twin_core_ice` | listener cross | — | Damage Ice ×1.15 (+15%) se target ha `Heated` da Agumon (canon §6 D3) |
@@ -68,7 +68,7 @@ Shared con Agumon (§2.2b §G): frame counter logico autoritativo, ms metadata, 
 - **Apply:** Basic +1, Skill +2 + echo, Ult Slowed indipendente.
 - **Cap:** **6 stacks (chiuso round-3 2026-05-12)**, allineato a Heated. Apply oltre cap = no-op; refresh durata mantenuto.
 - **Effect on target:** +X% damage taken da Ice per stack; a soglia ≥3 sblocca `Slowed` (gate Skill).
-- **Echo (Skill modifier):** quando Chilled è applicato, il blueprint emette signal `chilled_echo` → +1 Chilled sull'adj con HP% più basso. Non ricorsivo (no chain echo).
+- **Echo (Skill reactive signature):** quando Chilled è applicato, il blueprint emette signal `chilled_echo` → +1 Chilled sull'adj con HP% più basso. Non ricorsivo (no chain echo).
 - **Twin Core hook:** la passive di Agumon legge `KernelEvent::StatusApplied(Chilled)` → +damage Fire condizionale.
 
 ## §6 — Domande chiuse (round 2026-05-12)

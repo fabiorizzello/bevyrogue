@@ -53,7 +53,7 @@ Per §2.2b §G (headless determinism): **frame counter logico è autoritativo**,
 |---|---|---|---|---|
 | Basic | `sharp_claws` | Single (Enemy/Alive) | 0 SP, **+1 SP gen**, +25 Ult charge (OnBasicAttack) | Damage piatto Fire `≈8`; **+1 Heated stack** al primary |
 | Skill | `baby_flame` | Single (Enemy/Alive) | **1 SP** | Damage medio Fire `18`; **+2 Heated stacks**; ToughnessHit(10) |
-| Ult | `baby_burner` | Single primary + splash adj (Blast) | 0 SP, drena ult bar (off-turn lanciabile anytime, HSR-style) | Damage alto `50` primary, splash 50% sui 2 adj; **modifier-firma `OnKill→Detonate(Heated)`** |
+| Ult | `baby_burner` | Single primary + splash adj (Blast) | 0 SP, drena ult bar (off-turn lanciabile anytime, HSR-style) | Damage alto `50` primary, splash 50% sui 2 adj; **reactive signature `OnKill→Detonate(Heated)`** |
 | Passive | `twin_core_fire` | — (listener) | — | +damage condizionale se Gabumon in team applica Chilled |
 | Follow-up | (TBD se mantenuto) | — | — | OnEnemyBreak (`agumon_follow_up`) — **da rivalutare**: M017 §8 non lo cita esplicitamente |
 

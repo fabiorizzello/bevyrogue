@@ -79,8 +79,8 @@ Round di review-3 del roster (Agumon/Dorumon/Gabumon/Tentomon/Renamon/Patamon) h
 |---|---|---|---|---|
 | `EmitHeal { amount_param, amount_kind: (HpPctMax\|HpPctMissing\|Flat), target }` | gameplay | applica heal a target; emette `Healed` event sul bus (alimenta Patamon ult charge `+25/heal event`) | `KernelEffect::Heal` | Patamon `patapata_hover` / `sparking_air_shot` |
 | `EmitCleanse { count_param, selector: (FIFO\|LIFO\|Random), target }` | gameplay | rimuove fino a `count` status `kind:Debuff` da target via selector; emette `StatusRemoved` per ognuno | `KernelEffect::RemoveStatus` × N | Patamon `patapata_hover` / `sparking_air_shot` |
-| `AdvanceTurn { actor, pct_param }` | gameplay | avanza gauge `TurnOrder` di `actor` di `pct%` del valore turn full | `KernelEffect::AdvanceTurnGauge` (kernel-owned `TurnOrder`) | Renamon `koyosetsu`, `kitsune_grace` |
-| `DelayTurn { target, pct_param }` | gameplay | ritarda gauge `TurnOrder` di `target` di `pct%` | `KernelEffect::DelayTurnGauge` | Renamon `tohakken` |
+| `AdvanceTurn { actor, pct_param }` | gameplay | avanza gauge `TurnOrder` di `actor` di `pct%` del **next-action gauge** (NON del `speed` stat); cap ±50%/call, clamp gauge `[0, 200]` (§C2.1) | `KernelEffect::AdvanceTurnGauge` (kernel-owned `TurnOrder`) | Renamon `koyosetsu`, `kitsune_grace` |
+| `DelayTurn { target, pct_param }` | gameplay | ritarda gauge `TurnOrder` di `target` di `pct%` del **next-action gauge** (NON del `speed` stat); cap ±50%/call, clamp gauge `[0, 200]` (§C2.1) | `KernelEffect::DelayTurnGauge` | Renamon `tohakken` |
 | `ApplyBuff { id, dur_param, kind: (Buff\|Debuff\|DR\|Aura\|Mark), target }` | gameplay | unifica `EmitStatus` con flag `kind` esplicita; status registry applica regole cleanse-eligibility per `kind:Buff` ∉ cleansable (vedi §2.8 §H) | `KernelEffect::ApplyStatus` con `BuffKind` field | Renamon `tohakken` (Blessed), Patamon `holy_aegis` (Aura), Gabumon `fur_cloak` (DR) |
 | `EmitSpGrant { amount_param, target }` | gameplay | aggiunge SP a SP pool del team di `target`; emette `SpGranted` event; **cap-aware sul lato ricevente** (`SpPool.add` clamp al cap, vedi `src/combat/sp.rs`), **non passa** dal contatore `RoundSpTracker.max_non_basic_per_round` (grant ≠ spend) | `KernelEffect::GrantSp` | Gabumon `blue_cyclone` (ult, team +1), Tentomon `electrical_discharge` (ult, team +1), override `+2 SP` Tentomon basic data-side via `units.ron.sp_gen_per_basic` |
 | `Reposition { anchor, target }` | gameplay | sposta `target` a posizione `anchor` sulla combat line (riusa §02-02c §D dematerialize pattern, ora promosso) | `KernelEffect::Reposition` | Dorumon `dash_metal` follow-up (chiude §02-02c §D dangling) |
@@ -97,6 +97,31 @@ Round di review-3 del roster (Agumon/Dorumon/Gabumon/Tentomon/Renamon/Patamon) h
 **Blueprint-local resta:** trigger predicates e state reads dentro Forma C FSM passive (es. Dorumon `predator_loop` `hp_pct < 0.5`, Agumon `twin_core_fire` `partner.has_status(Chilled)`). Blueprint legge stato → emette Commands kernel-known sugli eventi. Boundary chiara: **blueprint sa leggere, kernel sa scrivere.**
 
 **Espansioni candidate aggiornate (post-C2, non in M017):** `KnockBack`, `Move`, `Teleport`, `SummonMinion`, `Mark` restano candidati come §C base; rivalutazione round-4+.
+
+---
+
+## C2.1 — Time-manip metric: `% gauge`, no flat speed-stat (X11, 2026-05-12)
+
+**Regola canonica** (canon: `renamon/00 §8 D1`): `AdvanceTurn`/`DelayTurn` operano **esclusivamente** su `pct%` del **next-action gauge** del target (`TurnGauge` field-per-entity, runtime), **mai** sul `speed` stat (invariante di unit, definito in `units.ron`).
+
+| Aspetto | Decisione |
+|---|---|
+| Unit della `pct_param` | percentuale del next-action gauge `[0, 200]` |
+| Direzione `Advance` | sottrae `pct` al gauge → entity agisce prima (gauge `0` = ready) |
+| Direzione `Delay` | aggiunge `pct` al gauge → entity agisce dopo |
+| Cap per singola call | `±50%` (clamp resolver-side, **non** edge-side) |
+| Clamp globale gauge | `[0, 200]` post-applicazione |
+| Stacking multi-edge | additivo (es. due `kitsune_grace` proc nello stesso tick = +20% advance), clamp finale gauge |
+| `speed` stat impact | **nessuno** — `speed` resta tier-level invariant per turn-order init; Commands `AdvanceTurn`/`DelayTurn` NON lo modificano |
+
+**Rationale (riassunto da `renamon/00 §8 D1`):**
+- Leggibilità HSR-style: turn-order tracker UI mostra shift `%` del gauge, non delta `speed` astratto.
+- Evita interazioni opache con `speed` stat (es. "Renamon koyosetsu rende permanentemente più veloce Renamon?" — risposta: no, mai).
+- Match identity §5 (`AdvanceTurn(target, pct)` / `DelayTurn(target, pct)`).
+
+**Vocabolario vincolato:** `pct_param` accetta solo valori `[0, 50]` (cap per singola call). Validator §L rigetta a load-time `pct_param` > 50 o riferimenti a `speed`-derived ParamRef per `AdvanceTurn`/`DelayTurn`.
+
+**Race con `TurnOrder` (`renamon/02 §T2`):** il kernel applica `AdvanceTurn`/`DelayTurn` solo dopo che la FSM corrente exit (`Recovery.exit`); mid-FSM è atomicamente queued. Conforme a identity §5 ("modifiche atomiche dopo resolution; nessuna reorder mid-action").
 
 ---
 
@@ -170,11 +195,11 @@ fn resolve_shape(shape: TargetShape, ctx: &CommitCtx) -> Vec<TargetRef>;
 
 ---
 
-## C4 — Modifier-firma → FSM mapping (`08 §8.1` reverse table)
+## C4 — Reactive signature → FSM mapping (`08 §8.1` reverse table)
 
-Il roster `08 §8.1` enumera 4 modifier-firma reattivi v0 (`OnKill→Detonate`, `OnStatusApplied→Echo`, `OnKill→Chain`, `OnHitN→Apply`). Non sono primitive runtime — sono **shorthand di design** per pattern FSM edge + Command. Questa tabella formalizza la traduzione canon per dare ai blueprint M017 un riferimento unico.
+Il roster `08 §8.1` enumera 4 reactive signature v0 (`OnKill→Detonate`, `OnStatusApplied→Echo`, `OnKill→Chain`, `OnHitN→Apply`). Non sono primitive runtime — sono **shorthand di design** per pattern FSM edge + Command. Questa tabella formalizza la traduzione canon per dare ai blueprint M017 un riferimento unico.
 
-| Modifier-firma | Trigger (FSM edge predicate `§D`) | Effetto (Command `on_enter` su nodo Reactive) | Skill source (M017) |
+| Reactive signature | Trigger (FSM edge predicate `§D`) | Effetto (Command `on_enter` su nodo Reactive) | Skill source (M017) |
 |---|---|---|---|
 | `OnKill→Detonate(status)` | `KernelEvent(UnitDied { target == strike_target })` | `EmitStatus { id: status, target: AoE { side: EnemyTeam, scope: Adj }, dur: <residuo strike target> }` | Agumon `baby_burner` (Heated spread sui 2 adj) |
 | `OnStatusApplied→Echo(status)` | `KernelEvent(StatusApplied { status_id == target_status, target == strike_target })` con `caster_node == "Strike"` (no chain) | `EmitStatus { id: status, target: AdjLowest { metric: HpPctMin, side: EnemyTeam }, dur: <stesso del primary> }` | Gabumon `gabumon_shot` (Chilled echo) |
@@ -183,7 +208,7 @@ Il roster `08 §8.1` enumera 4 modifier-firma reattivi v0 (`OnKill→Detonate`, 
 
 **Pattern shape:**
 
-Ogni modifier-firma si traduce in un **nodo Reactive aggiuntivo** nell'FSM (o, per `OnHitN`, in un Command extra sul nodo Hop{N} esistente). La topology standard FSM 3-nodi (Windup → Strike → Recovery) diventa 4-nodi quando la skill ha modifier-firma:
+Ogni reactive signature si traduce in un **nodo Reactive aggiuntivo** nell'FSM (o, per `OnHitN`, in un Command extra sul nodo Hop{N} esistente). La topology standard FSM 3-nodi (Windup → Strike → Recovery) diventa 4-nodi quando la skill ha reactive signature:
 
 ```
 Windup → Strike → Reactive → Recovery → Exit
@@ -228,10 +253,10 @@ Windup → Strike → Reactive → Recovery → Exit
 
 **Regole di traduzione:**
 
-1. **Modifier-firma NON è un Command kernel-side.** Il blueprint executor `08 §8.1` short-hand non esiste a runtime — è una notazione di design che descrive shape FSM riusabili. Il blueprint M017 implementa il pattern via edge predicate + Command, niente "modifier" runtime field.
-2. **Re-entry prevention.** Il modifier reattivo NON deve auto-triggerare la propria edge (es. `OnStatusApplied→Echo(Chilled)` che applica `Chilled` non deve far ri-scattare `echo` infinito). Filtro canon: edge predicate include `caster_node == "Strike"` (vedi esempio sopra) o flag `once_per_skill: true` sull'edge (estensione §D candidata).
-3. **Param naming convention.** Skill con modifier-firma in `skills.ron::params` usa keys `modifier_firma_*` come metadati identificativi (es. `params: { "modifier_firma": "OnStatusApplied→Echo", ... }`); il blueprint executor li legge solo per debug/log. Il **vero comportamento** vive nell'FSM RON, non nel params.
-4. **Patamon eccezione.** `08 §8.1` documenta Patamon "senza modifier-firma reattivo" — la sua FSM 3-nodi standard non ha nodo Reactive aggiuntivo. Coerente con l'identità "support affidabile".
+1. **Reactive signature NON è un Command kernel-side.** Il blueprint executor `08 §8.1` short-hand non esiste a runtime — è una notazione di design che descrive shape FSM riusabili. Il blueprint M017 implementa il pattern via edge predicate + Command, niente "reactive signature" runtime field.
+2. **Re-entry prevention.** La reactive signature NON deve auto-triggerare la propria edge (es. `OnStatusApplied→Echo(Chilled)` che applica `Chilled` non deve far ri-scattare `echo` infinito). Filtro canon: edge predicate include `caster_node == "Strike"` (vedi esempio sopra) o flag `once_per_skill: true` sull'edge (estensione §D candidata).
+3. **Param naming convention.** Skill con reactive signature in `skills.ron::params` usa keys `reactive_signature_*` come metadati identificativi (es. `params: { "reactive_signature": "OnStatusApplied→Echo", ... }`); il blueprint executor li legge solo per debug/log. Il **vero comportamento** vive nell'FSM RON, non nel params.
+4. **Patamon eccezione.** `08 §8.1` documenta Patamon "senza reactive signature" — la sua FSM 3-nodi standard non ha nodo Reactive aggiuntivo. Coerente con l'identità "support affidabile".
 
 **Espansioni candidate (post-M017):** `Splash`, `Escalate`, `ShapeOverride` (rinviati in `08 §8.1`). Ognuno mapperà a un pattern FSM analogo quando il primo concreto emerge.
 

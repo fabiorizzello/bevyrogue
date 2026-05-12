@@ -1,6 +1,6 @@
 # Gabumon — Skill: `gabumon_shot`
 
-> **Goal**: validare modifier reattivo `OnStatusApplied→Echo(Chilled)` su adj lowest-HP. Primo caso d'uso di **edge reattivo che emette su un terzo bersaglio** (non primary, non self).
+> **Goal**: validare reactive signature `OnStatusApplied→Echo(Chilled)` su adj lowest-HP. Primo caso d'uso di **edge reattivo che emette su un terzo bersaglio** (non primary, non self).
 >
 > **Naming canon:** rinominato da `bubble_blast` → `gabumon_shot` per match canon (dataset skill id 72 — "Emits a small blast from the mouth"). Element-neutral, reflavor Ice OK. FSM Inhale→Hold→Burst→Echo→Recovery resta semanticamente coerente con "blast from mouth". Effetti **invariati**.
 >

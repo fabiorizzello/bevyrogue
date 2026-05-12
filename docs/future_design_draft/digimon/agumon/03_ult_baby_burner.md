@@ -1,6 +1,6 @@
 # Agumon — Ult: `baby_burner` (FSM stress test)
 
-> **Goal**: stressare il caso più complesso del kit Agumon — Ult con **edge reattivo** (`OnKill → ReactiveDetonate`), **QTE HitCheck** v1 durante windup (singolo press, esito binario), **splash AoE secondario**, e modifier-firma `Detonate(Heated)`.
+> **Goal**: stressare il caso più complesso del kit Agumon — Ult con **edge reattivo** (`OnKill → ReactiveDetonate`), **QTE HitCheck** v1 durante windup (singolo press, esito binario), **splash AoE secondario**, e reactive signature `Detonate(Heated)`.
 
 > **VFX positioning:** `SpawnParticle` usa `origin: VfxLocus + motion: VfxMotion` per `§2.2d` (`02-02d_vfx_positioning.md`).
 
@@ -8,7 +8,7 @@
 
 - **Cost:** 0 SP, **consuma full ult bar** (`ultimate_trigger=100` raggiunto). Non charga sé stesso. **Lanciabile anytime off-turn** (HSR-style) — non occupa lo slot azione del turno.
 - **Effect base:** Damage Fire alto `50` su primary; splash 50% sui 2 adj (Blast shape).
-- **Modifier-firma:** `OnKill→Detonate(Heated)` — se il primary muore dall'Ult hit, **gli stack rimanenti di `Heated`** del primary vengono detonati come damage aggiuntivo sui 2 adj.
+- **Reactive signature:** `OnKill→Detonate(Heated)` — se il primary muore dall'Ult hit, **gli stack rimanenti di `Heated`** del primary vengono detonati come damage aggiuntivo sui 2 adj.
 - **QTE v1 (semplice):** Hit Check — singolo press dentro la window di Windup. **Success** → splash damage moltiplicato per `ult_splash_mul_boosted` (≈ +25%). **Fail / no input** → splash base `ult_splash_mul`. Nessun mash, nessuna scala continua. Headless default = `success` (deterministic test).
 - **Atlas clip:** `skill` (source frames 50–66, count 17)
 
@@ -131,7 +131,7 @@ ReactiveDetonate.on_enter
 
 7. **`StartQTE` in headless test.** Test headless determinico richiede `qte_default_headless`. ✓ §G. Ma **dove è memorizzato?** In `skills.ron.params`? Sì. **Action item:** estendere schema con `params: { qte_default_headless: "success" }`.
 
-8. **Modifier-firma "OnKill→Detonate(Heated)" è una skill-tree variant?** §8 roster minimal lo cita come "modifier-firma" della Ult. Nel design §I (skill_tree.ron file separato), questo modifier sarebbe definito **dentro skill_tree.ron** o come **default Ult node behavior**? Senza skill_tree (in M017), il modifier è inline nella FSM (edge A). Quando skill_tree arriva, il modifier diventa un overlay che attiva/disattiva l'edge A. **Quesito design:** la FSM base ha l'edge sempre o solo con unlock? **Proposta canon §8:** sempre attivo (è la modifier-firma di default, non opzione). Confermare.
+8. **Reactive signature "OnKill→Detonate(Heated)" è una skill-tree variant?** §8 roster minimal lo cita come "reactive signature" della Ult. Nel design §I (skill_tree.ron file separato), questo modifier sarebbe definito **dentro skill_tree.ron** o come **default Ult node behavior**? Senza skill_tree (in M017), il modifier è inline nella FSM (edge A). Quando skill_tree arriva, il modifier diventa un overlay che attiva/disattiva l'edge A. **Quesito design:** la FSM base ha l'edge sempre o solo con unlock? **Proposta canon §8:** sempre attivo (è la reactive signature di default, non opzione). Confermare.
 
 ### 🟡 Aperte (non blocker M017)
 
@@ -306,6 +306,6 @@ Doc §2.2b §H esempio dedicato "QTE windup HitCheck" con timeline frame.
 
 **Decisione canon (vedi 00§5, 02§7 open):** `Heated` ha cap a **6 stacks per-target**. Apply oltre cap → no-op silente (no error, no overflow). Detonate (`OnKill→ReactiveDetonate`) consuma tutti gli stack residui in un'unica risoluzione (`EventPayload("heated_remaining")` cap-naturale a 6). Decay: -1/turno (TBD M018) — non blocker per M017 stress test.
 
-### G12 — Modifier-firma `OnKill→Detonate` come default ✅
+### G12 — Reactive signature `OnKill→Detonate` come default ✅
 
 Canon §8 conferma: **sempre attivo** come default behaviour della Ult, parte della FSM base. Edge A `KernelEvent(UnitDied)` esiste **sempre** in `baby_burner.fsm`. Quando arriverà `skill_tree.ron` (post-M017), il modifier diventa overlay opzionale ma di default ON; lo skill tree può solo aggiungere upgrade (es. "Detonate also stuns adj"), non rimuovere l'edge base.

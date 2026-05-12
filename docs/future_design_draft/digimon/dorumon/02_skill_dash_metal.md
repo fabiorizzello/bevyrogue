@@ -2,7 +2,7 @@
 
 > **Canon source.** `dash_metal` = `ダッシュメタル` (Dash Metal), Dorumon's Signature Move per reference book (high-speed tackle that fires an iron sphere; more powerful if Dorumon stops and accumulates power first). Game-side mechanic preserved (Dark threshold scaling + Predator chain); only name + projectile flavour aligned to canon JP.
 
-> **Goal**: stress test **damage scaling condizionato a HP%** + **modifier reattivo `OnKill→Chain` gated dallo state Predator**. Caso più complesso del kit Dorumon, perché l'edge esiste **solo se Predator state attivo**.
+> **Goal**: stress test **damage scaling condizionato a HP%** + **reactive signature `OnKill→Chain` gated dallo state Predator**. Caso più complesso del kit Dorumon, perché l'edge esiste **solo se Predator state attivo**.
 >
 > **Gap §2.2b condivisi:** params G1, source kind G5 (event payload), multi-target G6, ordering G4. Qui solo nuovi.
 
@@ -12,7 +12,7 @@
 
 - **Cost:** **1 SP** — **Gen:** +25 Ult
 - **Effect base:** Damage Dark `≈16` su primary; **×2 multiplier se primary HP <50%**.
-- **Modifier-firma:** **`OnKill→Chain`** — se primary muore E Predator state attivo → +1 hit su nuovo target lowest-HP residuo (max 1 chain).
+- **Reactive signature:** **`OnKill→Chain`** — se primary muore E Predator state attivo → +1 hit su nuovo target lowest-HP residuo (max 1 chain).
 - **Atlas clip:** `heavy_attack` (frames 31–39, count 9)
 
 ## §2 — FSM topology

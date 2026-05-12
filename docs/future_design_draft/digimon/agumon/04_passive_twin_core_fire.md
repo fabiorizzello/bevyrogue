@@ -217,7 +217,7 @@ Sintesi raccolta da 01/02/03/04. **Stato post round-2:** decisioni canon scritte
 | G9 | Pre-damage hook | 04 | **Alta** | ✅ Pattern buff-applier + kernel-reader cascade. Vedi §8.G9 sotto. |
 | G10 | RoundId nel `CombatState` | 04 | Bassa | 🟡 **Action item separato:** verificare in `src/combat/state.rs`, aggiungere se mancante. |
 | G11 | Ult charge trigger `OnBasicAttack` vs `OnAnyAttack` | 02 | Bassa | ✅ Rename → `OnAnyAttack` (basic + heavy charge). Vedi 01/§8 e 02/§8. |
-| G12 | Modifier-firma `OnKill→Detonate` default | 03 | Bassa | ✅ Sempre attivo, parte FSM base; skill_tree può solo aggiungere overlay. Vedi 03/§8. |
+| G12 | Reactive signature `OnKill→Detonate` default | 03 | Bassa | ✅ Sempre attivo, parte FSM base; skill_tree può solo aggiungere overlay. Vedi 03/§8. |
 
 ### G9 — Pre-damage hook vs post-event modifier **[ALTA]** ✅
 

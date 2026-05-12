@@ -1,6 +1,6 @@
 # §9 — UI Surface (allineato §8 roster minimal)
 
-> Pannelli del combat panel `bevy_egui` (feature `windowed`) e contratto headless. La UI legge da `CombatEvent` + `ValidationSnapshot`; **non muta lo stato di gameplay** (`combat_current.md` §Boundaries). Allineato a §8 (kit uniforme Basic/Skill/Ult/Passive, 5 modifier-firma chiusi, niente skill-tree, niente QTE in v0).
+> Pannelli del combat panel `bevy_egui` (feature `windowed`) e contratto headless. La UI legge da `CombatEvent` + `ValidationSnapshot`; **non muta lo stato di gameplay** (`combat_current.md` §Boundaries). Allineato a §8 (kit uniforme Basic/Skill/Ult/Passive, 5 reactive signature chiusi, niente skill-tree, niente QTE in v0).
 
 ## §9.1 — Principio guida
 
@@ -18,7 +18,7 @@
 - **Status badges** (icon list su target / caster, vedi §8.1 + §8.3):
   - `Heated`, `Chilled`, `Slowed`, `Paralyzed`, `Blessed` — stack count + durata residua (es. `2t`) + tooltip. `Confused` rimosso (round-3 2026-05-12, dropped da Renamon).
   - Mark blueprint esistenti: `PreyLock(turns)` (Dorumon), `TwinCore` shared meter (Agumon/Gabumon), `StaticCharge` (Tentomon, esistente come passive Battery Loop).
-  - Tooltip on hover: nome status, effetto, fonte (chi l'ha applicato), interazione con modifier-firma se rilevante (es. "Heated: Baby Burner con kill spread Heated agli adiacenti").
+  - Tooltip on hover: nome status, effetto, fonte (chi l'ha applicato), interazione con reactive signature se rilevante (es. "Heated: Baby Burner con kill spread Heated agli adiacenti").
 
 ### §9.2.2 — Caster identity panel (per ally selezionato)
 
@@ -56,7 +56,7 @@ Quando il player seleziona una skill (prima di confermare il target):
 - Skill name + icona + damage tag (Fire/Ice/Dark/Holy/Electric/Physical).
 - Cost: SP o "Ult" se ult.
 - Target shape (§8.2): `Single` / `Blast` / `AoE(All)` / `Bounce(N)` — disegno minimal sulla linea nemica.
-- Description (1-2 frasi) con esplicito modifier-firma se presente.
+- Description (1-2 frasi) con esplicito reactive signature se presente.
 
 ### §9.3.2 — Target selector
 
@@ -69,7 +69,7 @@ Quando il player seleziona una skill (prima di confermare il target):
   - **Damage projection** (post-mod): "Base 17 (Dark) × 1.12 PredatorLoop = 19".
   - **Status che sarà applicato**: "+ Heated 3t" o "+ Blessed 2t (alleato)".
   - **Toughness delta**: "−12 → BREAK!" se il break proc.
-  - **Modifier-firma preview** (se armable): "If kill → Detonate Heated to adj" / "If primary breaks → AoE 50%".
+  - **Reactive signature preview** (se armable): "If kill → Detonate Heated to adj" / "If primary breaks → AoE 50%".
 
 ### §9.3.3 — Legality reason
 
@@ -106,7 +106,7 @@ In `headless` (no `windowed`), tutto il rendering è soppresso. La FSM emette co
 - Numero grande sopra il colpito.
 - Color by tag (Fire orange, Ice cyan, Dark purple, Holy yellow, Electric yellow-white, Physical white).
 - **Breakdown** opzionale (small under main): "base 17 × 1.12 PredatorLoop = 19".
-- **Tag secondari**: `BREAK!` quando rompe toughness; `DETONATE!` / `CHAIN!` / `ECHO!` / `PARALYZE!` quando un modifier-firma proc'a.
+- **Tag secondari**: `BREAK!` quando rompe toughness; `DETONATE!` / `CHAIN!` / `ECHO!` / `PARALYZE!` quando un reactive signature proc'a.
 
 ### §9.5.2 — Status change popup
 
@@ -125,7 +125,7 @@ In `headless` (no `windowed`), tutto il rendering è soppresso. La FSM emette co
 - Big screen-wide flash + "BREAK!" banner + freeze frame ~200ms.
 - Trigger: `CombatEvent::ToughnessBroken` (kernel canon).
 
-### §9.5.5 — Modifier-firma cue (per skill che ne ha uno)
+### §9.5.5 — Reactive signature cue (per skill che ne ha uno)
 
 Una sola voce per modifier; arco visivo che parte dallo Strike target verso i target reattivi:
 
@@ -136,7 +136,7 @@ Una sola voce per modifier; arco visivo che parte dallo Strike target verso i ta
 | `OnKill→Chain` (Dorumon Dash Metal in Predator) | Arrow dal target morto al nuovo target | `PREDATOR CHAIN` |
 | `OnHitN(3)→Apply(Paralyzed)` (Tentomon Electro Shocker) | Lampo finale sul 3° hop | `PARALYZE` |
 
-Patamon: nessuna cue di modifier-firma (kit puramente lineare).
+Patamon: nessuna cue di reactive signature (kit puramente lineare).
 
 ## §9.6 — Combat log (text-side)
 
@@ -167,9 +167,9 @@ Color-coded by tag. Scrollable. Persistito su JSONL.
 | Twin Core tag visibility | esistente | parziale |
 | PreyLock mark + Predator state self-flag | nuovo | **bloccante** Dorumon |
 | Turn order timeline w/ telegraph | parziale | **bloccante** charged_attack enemy |
-| Pre-cast damage projection + modifier-firma preview | nuovo | desiderabile |
+| Pre-cast damage projection + reactive signature preview | nuovo | desiderabile |
 | Pre-cast legality_reason hover | nuovo | desiderabile (v0: nessuna gate complessa) |
-| Modifier-firma reactive cue (5 voci) | nuovo | **bloccante** (4 dei 6 Digimon usano modifier) |
+| Reactive signature cue (5 voci) | nuovo | **bloccante** (4 dei 6 Digimon usano reactive signature) |
 | Combat log line per event | esistente (`log.rs`) | base |
 
 ## §9.9 — Cosa NON va in UI v0
@@ -189,7 +189,7 @@ Color-coded by tag. Scrollable. Persistito su JSONL.
 Per ogni kit minimal, `cargo test` deve provare:
 
 - Skill cast end-to-end senza UI.
-- Modifier-firma armed/non-armed per ognuno dei 5 modifier (gate condition).
+- Reactive signature armed/non-armed per ognuna delle 5 reactive signature (gate condition).
 - Cleanse di Patamon rimuove ≥1 status binario.
 - All visible state derivabile da `CombatEvent` stream (no UI-only state).
 - Snapshot test sul `CombatEvent` order + payload finale.

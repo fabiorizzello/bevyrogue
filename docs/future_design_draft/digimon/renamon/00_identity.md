@@ -84,6 +84,7 @@ Riferimento codice da costruire: hook su `TurnOrder` via custom signal `advance_
 - AdvanceTurn/DelayTurn operano su **% del next-action gauge** del target, non su flat speed.
 - Rationale: leggibilità HSR-style (turn order tracker mostra shift % del gauge, non delta speed astratto); evita interazioni opache con `speed` stat (che resta invariante di unit, non field-per-event).
 - Conforme a §5 spec già scritta (`AdvanceTurn(target, pct)` / `DelayTurn(target, pct)`).
+- Formalizzata cross-doc in **`02-02b §C2.1`** (X11, 2026-05-12): cap ±50%/call, clamp gauge `[0, 200]`, stacking additivo, validator §L rigetta `pct_param > 50` e ParamRef `speed`-derived.
 
 **D2 — `Blessed` × Twin Core: no interaction (chiusa).**
 - `Blessed` (buff Renamon su alleati) è **isolato**: non triggera né è triggerato da Twin Core Agumon/Gabumon.
@@ -91,7 +92,7 @@ Riferimento codice da costruire: hook su `TurnOrder` via custom signal `advance_
 - Stack: `Blessed` può coesistere con `Heated`/`Chilled` su un alleato (buff + debuff separati), ma non somma né triggera nulla cross-buff.
 
 **D4 — FoxDrive `OnBreak→Detonate`: rimosso definitivo (chiusa).**
-- Niente modifier reattivo crit/break. **Identità Renamon = tempo, non break-payoff.**
+- Nessuna reactive signature crit/break. **Identità Renamon = tempo, non break-payoff.**
 - Rationale: introdurrebbe un asse meccanico secondario (break reattivo) che diluisce la focalizzazione time-manip; sovrapposto a Dorumon hp-threshold trigger (lane già differenziata in §1).
 - Conferma definitiva: nessuna FoxDrive mechanic nel kit. Riaprire solo se time-manip si dimostra sotto-power a playtest.
 

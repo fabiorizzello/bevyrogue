@@ -23,12 +23,12 @@
 | 5 | [05_slices.md](05_slices.md) | Slice candidate (ordering by risk) — **allineato §8 minimal** |
 | 6 | [06_out_of_scope.md](06_out_of_scope.md) | Out of scope esplicito |
 | 7 | [07_definition_of_done.md](07_definition_of_done.md) | Definition of done |
-| 8 | [08_roster_minimal.md](08_roster_minimal.md) | **Roster minimal (canon).** 6 Rookie, kit uniforme (Basic/Skill/Ult/Passive), 1 modifier-firma per Digimon (eccetto Patamon). Niente skill-tree, niente varianti — deferred. |
+| 8 | [08_roster_minimal.md](08_roster_minimal.md) | **Roster minimal (canon).** 6 Rookie, kit uniforme (Basic/Skill/Ult/Passive), 1 reactive signature per Digimon (eccetto Patamon). Niente skill-tree, niente varianti — deferred. |
 | 9 | [09_ui_surface.md](09_ui_surface.md) | UI surface — **allineato §8 minimal** |
 | 10 | [digimon/](digimon/) | **Stress test per-Digimon** (idle→skill/attack/ult→idle): valida §2.2b FSM su atlas reali, raccoglie gap prima di M017. Attivo: `agumon/`. |
 
 ## Nota sulla riduzione di scope (2026-05-11)
 
-I doc precedenti `08_skill_designs.md`, `10_full_kit_plan.md`, `11_roster_design_v2.md` sono stati **rimossi**: troppi modifier reattivi, skill-tree, status set extension, kit eterogeneo, passive multilivello. La direzione corrente è **all'osso**: vedi §8 (`08_roster_minimal.md`) come unica fonte di verità per identità e kit dei 6 Rookie.
+I doc precedenti `08_skill_designs.md`, `10_full_kit_plan.md`, `11_roster_design_v2.md` sono stati **rimossi**: troppe reactive signature, skill-tree, status set extension, kit eterogeneo, passive multilivello. La direzione corrente è **all'osso**: vedi §8 (`08_roster_minimal.md`) come unica fonte di verità per identità e kit dei 6 Rookie.
 
 Inoltre rimosso `02-09_worked_example.md` (Baby Flame full-featured con 2 unlock skill-tree `super_charge` + `triple_hit`): faceva riferimento a concetti deferred dal pivot minimal (skill-tree, variant). Quando servirà un reference end-to-end del pattern FSM, lo si riscrive aderente al kit §8.

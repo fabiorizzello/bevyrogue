@@ -24,13 +24,15 @@
   | Ultimate | `skill` | charge-gated (no SP) | 0 | Climax, gating su `UltCharge` |
   | Passive | — | — | — | Tratto persistente (anche assente, vedi Renamon v0) |
 
-- **Architettura skill (vincolo §2.2b):** ogni active = **AnimGraph FSM 3-nodi** (Windup → Strike → Recovery), con **nodo opzionale Reactive** se la skill ha modifier-firma. Il kernel resta autorità sull'apply; la FSM sequenzia intent.
+- **Architettura skill (vincolo §2.2b):** ogni active = **AnimGraph FSM 3-nodi** (Windup → Strike → Recovery), con **nodo opzionale Reactive** se la skill ha reactive signature. Il kernel resta autorità sull'apply; la FSM sequenzia intent.
 
-## §8.1 — Modifier-firma vocabolario (chiuso v0)
+## §8.1 — Reactive signature vocabolario (chiuso v0)
 
-Solo i modifier necessari ai 6 baseline. **Mapping FSM canon: vedi `02-02b §C4`** (round-3, 2026-05-12, X5 — ogni modifier-firma è shorthand per pattern FSM edge + Command, NON un Command runtime).
+Solo le reactive signature necessarie ai 6 baseline. **Mapping FSM canon: vedi `02-02b §C4`** (round-3, 2026-05-12, X5 — ogni reactive signature è shorthand per pattern FSM edge + Command, NON un Command runtime).
 
-| Modifier | Trigger kernel | Effetto | FSM mapping |
+> **Glossario "modifier" (X16, 2026-05-12).** Il termine "modifier" nei doc copre tre sensi distinti, **non intercambiabili**: (1) **playhead modifier** (`Hold`, `SpeedMul`, `Loop`) — opera sull'animazione, `02-02 §A` / `02-02b §A`; (2) **damage/stat modifier** (`AttributeSet`, multiplier Twin Core ×1.15) — opera sulla damage pipeline, `02-02b §C` / `agumon/04`; (3) **reactive signature** — pattern reattivo design-side (es. `OnKill→Detonate`), shorthand per FSM edge + Command, **mai un Command runtime**. La canon è: usare "reactive signature" per il senso (3); "modifier" solo per (1) e (2). Mai "modifier" da solo per indicare la firma reattiva.
+
+| Reactive signature | Trigger kernel | Effetto | FSM mapping |
 |---|---|---|---|
 | `OnKill→Detonate(status)` | `KernelEvent::UnitDied` su Strike target | Spread dello status sui 2 adiacenti | `02-02b §C4` riga 1 |
 | `OnStatusApplied→Echo(status)` | `KernelEvent::StatusApplied` sul target | Re-applica status sull'adiacente più debole | `02-02b §C4` riga 2 |
@@ -48,7 +50,7 @@ Solo i modifier necessari ai 6 baseline. **Mapping FSM canon: vedi `02-02b §C4`
 | `AoE(All)` | tutta la linea, danno full |
 | `Bounce(N)` | N hit sequenziali, ogni hit pesca un target diverso |
 
-`Adjacent` shape statico non usato in v0 — gli "adiacenti" arrivano solo via modifier reattivi.
+`Adjacent` shape statico non usato in v0 — gli "adiacenti" arrivano solo via reactive signature.
 
 ## §8.3 — Roster (6 schede)
 
@@ -61,7 +63,7 @@ Solo i modifier necessari ai 6 baseline. **Mapping FSM canon: vedi `02-02b §C4`
 |---|---|---|---|---|
 | Basic | `sharp_claws` | `Single` | 0 SP, +1 gen | Damage piatto, +1 Heated stack al primary |
 | Skill | `baby_flame` | `Single` | 3 SP | Damage medio, +2 Heated, +1 toughness reduce |
-| Ultimate | `baby_burner` | `Blast` | UltCharge | Damage alto sul primary, splash adj. **Modifier-firma: `OnKill→Detonate(Heated)`** — se uccide il primary, Heated stacks rimanenti spread sui 2 adiacenti |
+| Ultimate | `baby_burner` | `Blast` | UltCharge | Damage alto sul primary, splash adj. **Reactive signature: `OnKill→Detonate(Heated)`** — se uccide il primary, Heated stacks rimanenti spread sui 2 adiacenti |
 | Passive | `twin_core_fire` | — | — | Esistente (vedi `combat_current.md`). +damage se Gabumon in team applica Chilled |
 
 **AnimGraph nota:** `baby_burner` ha 4 nodi (Windup → Strike → ReactiveDetonate → Recovery). Edge `Strike→ReactiveDetonate` su `KernelEvent::UnitDied(primary)`; fallback `TimeInNode→Recovery`.
@@ -76,7 +78,7 @@ Solo i modifier necessari ai 6 baseline. **Mapping FSM canon: vedi `02-02b §C4`
 | Slot | Skill ID | Target | Costo | Effetto |
 |---|---|---|---|---|
 | Basic | `claw_attack` | `Single` | 0 SP, +1 gen | Damage piatto, +1 Chilled |
-| Skill | `gabumon_shot` | `Single` | 3 SP | Damage medio, +2 Chilled (Slowed 1 turno se Chilled ≥3). **Modifier-firma: `OnStatusApplied→Echo(Chilled)`** — il `Chilled` applicato eco sull'adiacente lowest-HP |
+| Skill | `gabumon_shot` | `Single` | 3 SP | Damage medio, +2 Chilled (Slowed 1 turno se Chilled ≥3). **Reactive signature: `OnStatusApplied→Echo(Chilled)`** — il `Chilled` applicato eco sull'adiacente lowest-HP |
 | Ultimate | `blue_cyclone` | `Single` | UltCharge | Damage massivo singolo, +Slowed 2 turni |
 | Passive | `fur_cloak` | — | — | Quando applica Chilled, +1 turno di DR 20% su sé stesso (mitigation tank-lite) |
 
@@ -90,7 +92,7 @@ Solo i modifier necessari ai 6 baseline. **Mapping FSM canon: vedi `02-02b §C4`
 | Slot | Skill ID | Target | Costo | Effetto |
 |---|---|---|---|---|
 | Basic | `bite` | `Single` | 0 SP, +1 gen | Damage piatto |
-| Skill | `dash_metal` | `Single` | 3 SP | Damage alto se primary < 50% HP, normale altrimenti. **Modifier-firma in Predator state: `OnKill→Chain`** — se uccide, Strike ripete su nuovo target (max 1 chain) |
+| Skill | `dash_metal` | `Single` | 3 SP | Damage alto se primary < 50% HP, normale altrimenti. **Reactive signature in Predator state: `OnKill→Chain`** — se uccide, Strike ripete su nuovo target (max 1 chain) |
 | Ultimate | `metal_cannon` | `Single` | UltCharge | Damage massivo executor (bonus se primary < 30%) |
 | Passive | `predator_loop` | — | — | Esistente (vedi `combat_current.md`) |
 
@@ -110,7 +112,7 @@ Solo i modifier necessari ai 6 baseline. **Mapping FSM canon: vedi `02-02b §C4`
 | Ultimate | `sparking_air_shot` (canon, hybrid) | Sparking Air Shot | `AoE(All)` enemies + `AoE(All)` ally | UltCharge | **Damage Holy ~25 a tutti i nemici** + **Heal ~20% HP max team** + Cleanse 1/ally |
 | Passive | `holy_aegis` | flavor-only | — | — | Tutti gli alleati: -10% damage taken finché Patamon vive |
 
-**Note:** Patamon è l'unico digimon **senza modifier-firma reattivo**. Identità = "support affidabile" (rev2: + damage burst ult). Ult hybrid risolve "ult dead" su team full-HP (damage AoE resta valore anche senza heal).
+**Note:** Patamon è l'unico digimon **senza reactive signature reattivo**. Identità = "support affidabile" (rev2: + damage burst ult). Ult hybrid risolve "ult dead" su team full-HP (damage AoE resta valore anche senza heal).
 
 ---
 
@@ -169,7 +171,7 @@ Hub: **Tentomon** (SP), **Patamon** (sustain). Coppia: **Agumon↔Gabumon** (Twi
 | AoE | Renamon (Holy AoE × 2), Tentomon (`Bounce`+`AoE(All)` ult), Agumon (`Blast` ult) | Wave clear ok |
 | Sustain/heal | Patamon | Unico, niente backup |
 | SP economy | Tentomon battery (+2 gen), Renamon spender (1 SP/skill) | Tentomon indispensabile con ≥2 spender |
-| Tank-lite | Tentomon (HP 120 + DR + block +20%), Gabumon (Fur Cloak DR), Patamon (Aegis DR team) | Mitigation distribuita su 3 unità |
+| Tank-lite | Tentomon (HP 120 + DR + block +20%), Gabumon (Fur Cloak DR) | Mitigation distribuita su 2 unità. Patamon `holy_aegis` (-10% DR team) **non conta come tank-lite**: è framed come *support mitigation aura* sotto l'asse sustain primario (vedi `patamon/00 §1`), non come contributo all'asse tank. |
 | Time manipulation | Renamon (AdvanceTurn/DelayTurn, `Blessed`) | Lane unica, nessun overlap |
 | Status apply | Agumon (Heated), Gabumon (Chilled/Slowed), Tentomon (Paralyzed) | 3 axes (Confused rimosso da Renamon) |
 | Status capitalize | Dorumon (threshold HP via Predator Loop) | 1 lane (Renamon non capitalizza più) |
@@ -177,7 +179,7 @@ Hub: **Tentomon** (SP), **Patamon** (sustain). Coppia: **Agumon↔Gabumon** (Twi
 ## §8.6 — Scope architetturale (cosa serve per implementare)
 
 1. **`clip.ron`** per ogni Digimon (lossless dal `_atlas.json`). § 2.2 invariato.
-2. **`animation_fsm.ron`** per ogni Digimon: 3 active × FSM 3 o 4 nodi (4 se ha modifier-firma). § 2.2b.
+2. **`animation_fsm.ron`** per ogni Digimon: 3 active × FSM 3 o 4 nodi (4 se ha reactive signature). § 2.2b.
 3. **`skills.ron`** entries per le 18 skill (3 per digimon). Numeri base, niente logica condizionale.
 4. **Blueprint listener** per ogni Digimon: minimal (Patamon = nessun listener). Twin Core/Predator Loop/Battery Loop riusano il blueprint esistente.
 5. **Kernel events necessari:** `UnitDied`, `StatusApplied`, `ToughnessBroken`, `DamageDealt` — tutti già emessi.
@@ -190,5 +192,5 @@ Hub: **Tentomon** (SP), **Patamon** (sustain). Coppia: **Agumon↔Gabumon** (Twi
 - AoE shape extra (Adjacent statico, Bounce parametrico, ShapeOverride conditional)
 - Multiple actives heterogeneous (es. 4 skill Patamon) — kit shape uniforme
 - Form/Digivolution, Champion stage
-- Tank dedicato (niche distribuito su Tentomon + Gabumon + Patamon)
+- Tank dedicato (niche distribuito su Tentomon + Gabumon; Patamon `holy_aegis` è support mitigation, non tank-lite — vedi §8.5)
 - Turn-order UI animato (placeholder per Renamon time-manip, M017 fuori scope)

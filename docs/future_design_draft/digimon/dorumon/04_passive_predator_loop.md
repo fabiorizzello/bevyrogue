@@ -193,7 +193,7 @@ oppure: ult metal_cannon forza state on hit (vedi 03 F5)
 ## §5c — Sinergie cross-roster (propagazione D3 identity §6)
 
 Predator Loop attiva si traduce in **due bonus a cascata** sul kit Dorumon:
-1. **Skill `dash_metal`** — abilita modifier `OnKill→Chain` (chain target via `LowestHpPctAlive`, vedi `dorumon/02 §F3`).
+1. **Skill `dash_metal`** — abilita la reactive signature `OnKill→Chain` (chain target via `LowestHpPctAlive`, vedi `dorumon/02 §F3`).
 2. **Ult `metal_cannon`** — la threshold-bonus rule resta `+50% damage se primary HP <30%` (canon `dorumon/03 §4`), ma il **forced-Predator entry** post-hit garantisce setup chain anche se l'HP threshold del passive non era stato raggiunto pre-ult (canon `dorumon/03 §F6`).
 
 **Asimmetria threshold (chiusa identity §6 D3):** skill `dash_metal` scala `<50%` HP, ult `metal_cannon` scala `<30%` HP. Predator Loop è la passive che converge entrambe le finestre in un singolo signal di "executor mode".

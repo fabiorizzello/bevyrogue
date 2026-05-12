@@ -15,7 +15,7 @@
 
 ## §1 — Identità
 
-Support-healer con damage burst su ult. Heal + cleanse + DR team (sustain primary) + AoE damage Holy burst (ult secondary). **Nessun modifier reattivo lato skill/passive**: la semplicità è la firma sulla lane sustain. Ult `sparking_air_shot` dual-axis damage+heal (rev2). Universale in ogni team con ≥1 spender heavy o team aggressivi.
+Support-healer con damage burst su ult. Heal + cleanse + DR team (sustain primary) + AoE damage Holy burst (ult secondary). **Nessuna reactive signature lato skill/passive**: la semplicità è la firma sulla lane sustain. Ult `sparking_air_shot` dual-axis damage+heal (rev2). Universale in ogni team con ≥1 spender heavy o team aggressivi.
 
 - **Asse primario:** Sustain (heal skill + heal ult + cleanse + DR passive)
 - **Asse secondario:** Damage Holy (basic single + ult AoE burst) — non più solo "filler turno"
