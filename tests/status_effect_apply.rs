@@ -76,7 +76,7 @@ fn flame_bite_skill() -> SkillDef {
             },
             Effect::ToughnessHit(8),
             Effect::ApplyStatus {
-                kind: StatusEffectKind::Burn { damage_per_turn: 5 },
+                kind: StatusEffectKind::Heated,
                 duration: 3,
             },
         ],
@@ -173,14 +173,14 @@ fn apply_status_inserts_component_and_emits_event() {
         "StatusEffect should be inserted on defender after Flame Bite"
     );
     let s = status.unwrap();
-    assert_eq!(s.kind, StatusEffectKind::Burn { damage_per_turn: 5 });
+    assert_eq!(s.kind, StatusEffectKind::Heated);
     assert_eq!(s.duration_remaining, 3);
 
     // OnStatusApplied event must be in the stream.
     let events = drain_events(&mut event_cursor, &app);
     let has_applied = events.iter().any(|e| {
         matches!(&e.kind, CombatEventKind::OnStatusApplied { kind }
-            if *kind == StatusEffectKind::Burn { damage_per_turn: 5 })
+            if *kind == StatusEffectKind::Heated)
     });
     assert!(
         has_applied,
@@ -216,7 +216,7 @@ fn reapply_status_overwrites_existing_component() {
             Toughness::new(100, vec![]),
             // Pre-existing status with different duration (simulates a previous tick).
             StatusEffect {
-                kind: StatusEffectKind::Burn { damage_per_turn: 5 },
+                kind: StatusEffectKind::Heated,
                 duration_remaining: 1,
             },
         ))

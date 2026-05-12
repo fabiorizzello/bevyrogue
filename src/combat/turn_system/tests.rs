@@ -134,9 +134,7 @@ fn advance_turn_system_burn_clamps_hp_and_expires_OLD() {
             unit(1, Attribute::Vaccine, 5),
             Team::Ally,
             StatusEffect {
-                kind: StatusEffectKind::Burn {
-                    damage_per_turn: 10,
-                },
+                kind: StatusEffectKind::Heated,
                 duration_remaining: 1,
             },
         ))
@@ -146,7 +144,7 @@ fn advance_turn_system_burn_clamps_hp_and_expires_OLD() {
     app.update();
 
     let unit = app.world().get::<Unit>(entity).expect("unit");
-    assert_eq!(unit.hp_current, 1);
+    assert_eq!(unit.hp_current, 5);
     assert!(app.world().get::<Ko>(entity).is_none());
     assert!(app.world().get::<StatusEffect>(entity).is_none());
 
@@ -154,14 +152,14 @@ fn advance_turn_system_burn_clamps_hp_and_expires_OLD() {
     assert!(events.iter().any(|event| matches!(
         &event.kind,
         CombatEventKind::OnStatusTick {
-            kind: StatusEffectKind::Burn { .. },
+            kind: StatusEffectKind::Heated,
             turns_left: 0,
         }
     )));
     assert!(events.iter().any(|event| matches!(
         &event.kind,
         CombatEventKind::OnStatusExpired {
-            kind: StatusEffectKind::Burn { .. },
+            kind: StatusEffectKind::Heated,
         }
     )));
 }
@@ -183,7 +181,7 @@ fn advance_turn_system_freeze_updates_and_clears_speed_modifier_OLD() {
             Team::Ally,
             SpeedModifier(99),
             StatusEffect {
-                kind: StatusEffectKind::Freeze { speed_reduction: 7 },
+                kind: StatusEffectKind::Chilled,
                 duration_remaining: 1,
             },
         ))
@@ -193,20 +191,19 @@ fn advance_turn_system_freeze_updates_and_clears_speed_modifier_OLD() {
     app.update();
 
     assert!(app.world().get::<StatusEffect>(entity).is_none());
-    assert!(app.world().get::<SpeedModifier>(entity).is_none());
 
     let events = combat_events(&mut app);
     assert!(events.iter().any(|event| matches!(
         &event.kind,
         CombatEventKind::OnStatusTick {
-            kind: StatusEffectKind::Freeze { speed_reduction: 7 },
+            kind: StatusEffectKind::Chilled,
             turns_left: 0,
         }
     )));
     assert!(events.iter().any(|event| matches!(
         &event.kind,
         CombatEventKind::OnStatusExpired {
-            kind: StatusEffectKind::Freeze { speed_reduction: 7 },
+            kind: StatusEffectKind::Chilled,
         }
     )));
 }
@@ -235,9 +232,7 @@ fn advance_turn_system_shock_zero_percent_does_not_cancel_OLD() {
             follow_up: None,
         },
         StatusEffect {
-            kind: StatusEffectKind::Shock {
-                cancel_chance_pct: 0,
-            },
+            kind: StatusEffectKind::Paralyzed,
             duration_remaining: 1,
         },
     ));
@@ -289,9 +284,7 @@ fn advance_turn_system_shock_full_cancel_emits_action_failed_OLD() {
             follow_up: None,
         },
         StatusEffect {
-            kind: StatusEffectKind::Shock {
-                cancel_chance_pct: 100,
-            },
+            kind: StatusEffectKind::Paralyzed,
             duration_remaining: 1,
         },
     ));
@@ -301,20 +294,14 @@ fn advance_turn_system_shock_full_cancel_emits_action_failed_OLD() {
 
     app.update();
 
-    let mut cursor = app
-        .world_mut()
-        .resource_mut::<Messages<ActionIntent>>()
-        .get_cursor();
-    let intents: Vec<ActionIntent> = cursor
-        .read(app.world().resource::<Messages<ActionIntent>>())
-        .cloned()
-        .collect();
-    assert!(intents.is_empty());
-
+    // v0 skeleton: Paralyzed is no-op; action cancel semantics deferred to S03.
     let events = combat_events(&mut app);
     assert!(events.iter().any(|event| matches!(
         &event.kind,
-        CombatEventKind::OnActionFailed { reason } if reason == "Shock"
+        CombatEventKind::OnStatusTick {
+            kind: StatusEffectKind::Paralyzed,
+            turns_left: 0,
+        }
     )));
 }
 
@@ -335,7 +322,7 @@ fn advance_turn_system_stunned_unit_skips_status_tick_OLD() {
             Team::Ally,
             Stunned { turns_left: 1 },
             StatusEffect {
-                kind: StatusEffectKind::Burn { damage_per_turn: 9 },
+                kind: StatusEffectKind::Heated,
                 duration_remaining: 2,
             },
         ))
@@ -349,7 +336,7 @@ fn advance_turn_system_stunned_unit_skips_status_tick_OLD() {
     assert_eq!(
         app.world().get::<StatusEffect>(entity),
         Some(&StatusEffect {
-            kind: StatusEffectKind::Burn { damage_per_turn: 9 },
+            kind: StatusEffectKind::Heated,
             duration_remaining: 2,
         })
     );

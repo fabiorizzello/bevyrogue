@@ -57,9 +57,7 @@ fn shock_skill() -> SkillDef {
             },
             Effect::ToughnessHit(0),
             Effect::ApplyStatus {
-                kind: StatusEffectKind::Shock {
-                    cancel_chance_pct: 30,
-                },
+                kind: StatusEffectKind::Paralyzed,
                 duration: 1,
             },
         ],
@@ -186,7 +184,7 @@ fn vaccine_vs_data_status_miss_emits_on_status_resisted() {
         kinds.iter().any(|k| matches!(
             k,
             CombatEventKind::OnStatusResisted {
-                kind: StatusEffectKind::Shock { .. }
+                kind: StatusEffectKind::Paralyzed
             }
         )),
         "expected OnStatusResisted(Shock) for miss — seed={seed}, threshold={threshold}\nevents: {kinds:?}"
@@ -228,7 +226,7 @@ fn vaccine_vs_data_status_hit_emits_on_status_applied() {
         kinds.iter().any(|k| matches!(
             k,
             CombatEventKind::OnStatusApplied {
-                kind: StatusEffectKind::Shock { .. }
+                kind: StatusEffectKind::Paralyzed
             }
         )),
         "expected OnStatusApplied(Shock) for hit — seed={seed}, threshold={threshold}\nevents: {kinds:?}"

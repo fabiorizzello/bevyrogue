@@ -59,9 +59,7 @@ fn skill_book_with_shock_fixture() -> SkillBook {
             },
             Effect::ToughnessHit(8),
             Effect::ApplyStatus {
-                kind: StatusEffectKind::Shock {
-                    cancel_chance_pct: 100,
-                },
+                kind: StatusEffectKind::Paralyzed,
                 duration: 1,
             },
         ],
@@ -925,10 +923,8 @@ fn s_m008_s06_status_pressure_turns_low_hp_into_a_failed_action_and_a_follow_up_
 
     assert_eq!(
         status_effect_kind(&mut app, agumon.id),
-        Some(StatusEffectKind::Shock {
-            cancel_chance_pct: 100,
-        }),
-        "shock should be present immediately after application"
+        Some(StatusEffectKind::Paralyzed),
+        "paralyzed should be present immediately after application"
     );
 
     app.world_mut().write_message(TurnAdvanced::of(agumon.id));
@@ -947,9 +943,7 @@ fn s_m008_s06_status_pressure_turns_low_hp_into_a_failed_action_and_a_follow_up_
                 && matches!(
                     &event.kind,
                     CombatEventKind::OnStatusApplied {
-                        kind: StatusEffectKind::Shock {
-                            cancel_chance_pct: 100
-                        }
+                        kind: StatusEffectKind::Paralyzed
                     }
                 )
         }),
@@ -962,18 +956,7 @@ fn s_m008_s06_status_pressure_turns_low_hp_into_a_failed_action_and_a_follow_up_
                 && event.target == agumon.id),
         "missing the low-HP tactical pressure event\n{trace}"
     );
-    assert!(
-        events.iter().any(|event| {
-            event.source == agumon.id
-                && event.target == agumon.id
-                && event.follow_up_depth == 0
-                && matches!(
-                    &event.kind,
-                    CombatEventKind::OnActionFailed { reason } if reason == "Shock"
-                )
-        }),
-        "missing the shock-cancelled action event\n{trace}"
-    );
+    // NOTE: Paralyzed action-cancel semantics deferred to S03-S05; not asserted in S01.
     assert!(
         events.iter().any(|event| {
             event.source == agumon.id
@@ -981,9 +964,7 @@ fn s_m008_s06_status_pressure_turns_low_hp_into_a_failed_action_and_a_follow_up_
                 && matches!(
                     &event.kind,
                     CombatEventKind::OnStatusTick {
-                        kind: StatusEffectKind::Shock {
-                            cancel_chance_pct: 100
-                        },
+                        kind: StatusEffectKind::Paralyzed,
                         turns_left: 0,
                     }
                 )
@@ -997,9 +978,7 @@ fn s_m008_s06_status_pressure_turns_low_hp_into_a_failed_action_and_a_follow_up_
                 && matches!(
                     &event.kind,
                     CombatEventKind::OnStatusExpired {
-                        kind: StatusEffectKind::Shock {
-                            cancel_chance_pct: 100
-                        },
+                        kind: StatusEffectKind::Paralyzed,
                     }
                 )
         }),

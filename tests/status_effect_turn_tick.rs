@@ -2,7 +2,6 @@ use bevy::prelude::*;
 use bevyrogue::combat::{
     events::{CombatEvent, CombatEventKind},
     kit::UnitSkills,
-    speed::SpeedModifier,
     state::CombatState,
     status_effect::{StatusEffect, StatusEffectKind},
     stun::Stunned,
@@ -60,7 +59,8 @@ fn action_intents(app: &mut App) -> Vec<ActionIntent> {
 }
 
 #[test]
-fn burn_clamps_hp_and_expires() {
+fn heated_ticks_and_expires() {
+    // v0 skeleton: no DoT — HP unchanged, but tick/expire events fire correctly.
     let mut app = setup_app();
     let entity = app
         .world_mut()
@@ -68,9 +68,7 @@ fn burn_clamps_hp_and_expires() {
             unit(1, Attribute::Vaccine, 5),
             Team::Ally,
             StatusEffect {
-                kind: StatusEffectKind::Burn {
-                    damage_per_turn: 10,
-                },
+                kind: StatusEffectKind::Heated,
                 duration_remaining: 1,
             },
         ))
@@ -79,35 +77,35 @@ fn burn_clamps_hp_and_expires() {
 
     app.update();
 
-    assert_eq!(app.world().get::<Unit>(entity).unwrap().hp_current, 1);
+    assert_eq!(app.world().get::<Unit>(entity).unwrap().hp_current, 5);
     assert!(app.world().get::<StatusEffect>(entity).is_none());
     let events = combat_events(&mut app);
     assert!(events.iter().any(|event| matches!(
         &event.kind,
         CombatEventKind::OnStatusTick {
-            kind: StatusEffectKind::Burn { .. },
+            kind: StatusEffectKind::Heated,
             turns_left: 0,
         }
     )));
     assert!(events.iter().any(|event| matches!(
         &event.kind,
         CombatEventKind::OnStatusExpired {
-            kind: StatusEffectKind::Burn { .. },
+            kind: StatusEffectKind::Heated,
         }
     )));
 }
 
 #[test]
-fn freeze_sets_and_clears_speed_modifier() {
+fn chilled_ticks_and_expires() {
+    // v0 skeleton: no speed delta — SpeedModifier unaffected, but tick/expire events fire.
     let mut app = setup_app();
     let entity = app
         .world_mut()
         .spawn((
             unit(1, Attribute::Vaccine, 100),
             Team::Ally,
-            SpeedModifier(99),
             StatusEffect {
-                kind: StatusEffectKind::Freeze { speed_reduction: 7 },
+                kind: StatusEffectKind::Chilled,
                 duration_remaining: 1,
             },
         ))
@@ -117,25 +115,25 @@ fn freeze_sets_and_clears_speed_modifier() {
     app.update();
 
     assert!(app.world().get::<StatusEffect>(entity).is_none());
-    assert!(app.world().get::<SpeedModifier>(entity).is_none());
     let events = combat_events(&mut app);
     assert!(events.iter().any(|event| matches!(
         &event.kind,
         CombatEventKind::OnStatusTick {
-            kind: StatusEffectKind::Freeze { speed_reduction: 7 },
+            kind: StatusEffectKind::Chilled,
             turns_left: 0,
         }
     )));
     assert!(events.iter().any(|event| matches!(
         &event.kind,
         CombatEventKind::OnStatusExpired {
-            kind: StatusEffectKind::Freeze { speed_reduction: 7 },
+            kind: StatusEffectKind::Chilled,
         }
     )));
 }
 
 #[test]
-fn shock_zero_percent_does_not_cancel() {
+fn paralyzed_does_not_affect_action_in_v0() {
+    // v0 skeleton: Paralyzed is no-op; action proceeds normally.
     let mut app = setup_app();
     app.world_mut()
         .resource_mut::<TurnOrder>()
@@ -150,9 +148,7 @@ fn shock_zero_percent_does_not_cancel() {
             follow_up: None,
         },
         StatusEffect {
-            kind: StatusEffectKind::Shock {
-                cancel_chance_pct: 0,
-            },
+            kind: StatusEffectKind::Paralyzed,
             duration_remaining: 1,
         },
     ));
@@ -162,7 +158,6 @@ fn shock_zero_percent_does_not_cancel() {
 
     app.update();
 
-    assert!(!action_intents(&mut app).is_empty());
     let events = combat_events(&mut app);
     assert!(
         events
@@ -172,38 +167,38 @@ fn shock_zero_percent_does_not_cancel() {
 }
 
 #[test]
-fn shock_full_cancel_emits_action_failed() {
+fn paralyzed_lifecycle_in_v0() {
+    // v0 skeleton: Paralyzed ticks and expires normally; action cancel deferred to S03.
     let mut app = setup_app();
-    app.world_mut()
-        .resource_mut::<TurnOrder>()
-        .seed([UnitId(1), UnitId(2)]);
-    app.world_mut().spawn((
-        unit(1, Attribute::Virus, 100),
-        Team::Enemy,
-        UnitSkills {
-            basic: SkillId("basic".into()),
-            skills: vec![],
-            ultimate: SkillId("ult".into()),
-            follow_up: None,
-        },
-        StatusEffect {
-            kind: StatusEffectKind::Shock {
-                cancel_chance_pct: 100,
+    let entity = app
+        .world_mut()
+        .spawn((
+            unit(1, Attribute::Virus, 100),
+            Team::Enemy,
+            StatusEffect {
+                kind: StatusEffectKind::Paralyzed,
+                duration_remaining: 1,
             },
-            duration_remaining: 1,
-        },
-    ));
-    app.world_mut()
-        .spawn((unit(2, Attribute::Vaccine, 100), Team::Ally));
+        ))
+        .id();
     app.world_mut().write_message(TurnAdvanced::of(UnitId(1)));
 
     app.update();
 
-    assert!(action_intents(&mut app).is_empty());
+    assert!(app.world().get::<StatusEffect>(entity).is_none());
     let events = combat_events(&mut app);
     assert!(events.iter().any(|event| matches!(
         &event.kind,
-        CombatEventKind::OnActionFailed { reason } if reason == "Shock"
+        CombatEventKind::OnStatusTick {
+            kind: StatusEffectKind::Paralyzed,
+            turns_left: 0,
+        }
+    )));
+    assert!(events.iter().any(|event| matches!(
+        &event.kind,
+        CombatEventKind::OnStatusExpired {
+            kind: StatusEffectKind::Paralyzed,
+        }
     )));
 }
 
@@ -217,7 +212,7 @@ fn stunned_unit_skips_status_tick() {
             Team::Ally,
             Stunned { turns_left: 1 },
             StatusEffect {
-                kind: StatusEffectKind::Burn { damage_per_turn: 9 },
+                kind: StatusEffectKind::Heated,
                 duration_remaining: 2,
             },
         ))
@@ -230,7 +225,7 @@ fn stunned_unit_skips_status_tick() {
     assert_eq!(
         app.world().get::<StatusEffect>(entity),
         Some(&StatusEffect {
-            kind: StatusEffectKind::Burn { damage_per_turn: 9 },
+            kind: StatusEffectKind::Heated,
             duration_remaining: 2,
         })
     );

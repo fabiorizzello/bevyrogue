@@ -4,7 +4,6 @@ use bevyrogue::combat::{
     kit::UnitSkills,
     log::ActionLog,
     sp::SpPool,
-    speed::SpeedModifier,
     state::CombatState,
     status_effect::{StatusEffect, StatusEffectKind},
     stun::Stunned,
@@ -142,7 +141,8 @@ fn combat_event_matches_expired(event: &CombatEvent, kind: &StatusEffectKind) ->
 }
 
 #[test]
-fn burn_ticks_hp_and_expires() {
+fn heated_ticks_and_expires() {
+    // v0 skeleton: no DoT — HP unchanged, but tick/expire lifecycle fires correctly.
     let mut app = turn_app();
     let entity = app
         .world_mut()
@@ -150,34 +150,25 @@ fn burn_ticks_hp_and_expires() {
             unit(1, 30),
             Team::Ally,
             StatusEffect {
-                kind: StatusEffectKind::Burn { damage_per_turn: 5 },
+                kind: StatusEffectKind::Heated,
                 duration_remaining: 3,
             },
         ))
         .id();
 
-    let expected_kind = StatusEffectKind::Burn { damage_per_turn: 5 };
-    let expected_hps = [25, 20, 15];
+    let expected_kind = StatusEffectKind::Heated;
     let expected_turns_left = [2_u32, 1, 0];
 
-    for ((hp_expected, turns_left), turn) in
-        expected_hps.into_iter().zip(expected_turns_left).zip(0..3)
-    {
+    for (turns_left, turn) in expected_turns_left.into_iter().zip(0..3) {
         app.world_mut().write_message(TurnAdvanced::of(UnitId(1)));
         app.update();
-
-        assert_eq!(
-            app.world().get::<Unit>(entity).unwrap().hp_current,
-            hp_expected,
-            "burn turn {turn} should subtract 5 HP"
-        );
 
         let events = status_events(&mut app);
         assert!(
             events
                 .iter()
                 .any(|event| combat_event_matches_tick(event, &expected_kind, turns_left)),
-            "burn turn {turn} should emit OnStatusTick with turns_left={turns_left}"
+            "heated turn {turn} should emit OnStatusTick with turns_left={turns_left}"
         );
 
         if turns_left == 0 {
@@ -186,7 +177,7 @@ fn burn_ticks_hp_and_expires() {
                 events
                     .iter()
                     .any(|event| combat_event_matches_expired(event, &expected_kind)),
-                "burn expiry should emit OnStatusExpired"
+                "heated expiry should emit OnStatusExpired"
             );
         } else {
             assert!(app.world().get::<StatusEffect>(entity).is_some());
@@ -195,7 +186,8 @@ fn burn_ticks_hp_and_expires() {
 }
 
 #[test]
-fn freeze_reduces_effective_speed_and_expires() {
+fn chilled_ticks_and_expires() {
+    // v0 skeleton: no speed delta — SpeedModifier unaffected, but tick/expire lifecycle fires.
     let mut app = turn_app();
     let entity = app
         .world_mut()
@@ -203,112 +195,72 @@ fn freeze_reduces_effective_speed_and_expires() {
             unit(1, 40),
             Team::Ally,
             StatusEffect {
-                kind: StatusEffectKind::Freeze { speed_reduction: 3 },
+                kind: StatusEffectKind::Chilled,
                 duration_remaining: 2,
             },
         ))
         .id();
 
-    let expected_kind = StatusEffectKind::Freeze { speed_reduction: 3 };
+    let expected_kind = StatusEffectKind::Chilled;
 
     app.world_mut().write_message(TurnAdvanced::of(UnitId(1)));
     app.update();
 
-    assert_eq!(
-        app.world()
-            .get::<SpeedModifier>(entity)
-            .map(|modifier| modifier.0),
-        Some(-3),
-        "freeze should attach a -3 speed modifier while active"
-    );
+    assert!(app.world().get::<StatusEffect>(entity).is_some());
     let events = status_events(&mut app);
     assert!(
         events
             .iter()
             .any(|event| combat_event_matches_tick(event, &expected_kind, 1)),
-        "freeze should emit OnStatusTick with turns_left=1 after the first tick"
+        "chilled should emit OnStatusTick with turns_left=1 after the first tick"
     );
 
     app.world_mut().write_message(TurnAdvanced::of(UnitId(1)));
     app.update();
 
-    assert!(
-        app.world().get::<SpeedModifier>(entity).is_none(),
-        "freeze should remove the speed modifier on expiry"
-    );
     assert!(app.world().get::<StatusEffect>(entity).is_none());
     let events = status_events(&mut app);
     assert!(
         events
             .iter()
             .any(|event| combat_event_matches_tick(event, &expected_kind, 0)),
-        "freeze expiry turn should emit OnStatusTick with turns_left=0"
+        "chilled expiry turn should emit OnStatusTick with turns_left=0"
     );
     assert!(
         events
             .iter()
             .any(|event| combat_event_matches_expired(event, &expected_kind)),
-        "freeze expiry should emit OnStatusExpired"
+        "chilled expiry should emit OnStatusExpired"
     );
 }
 
 #[test]
-fn shock_cancels_action_at_100pct() {
+fn paralyzed_ticks_and_expires_in_v0() {
+    // v0 skeleton: Paralyzed ticks/expires correctly; action cancel deferred to S03.
     let mut app = turn_app();
     let entity = app
         .world_mut()
         .spawn((
             unit(1, 50),
             Team::Enemy,
-            UnitSkills {
-                basic: SkillId("basic".into()),
-                skills: vec![],
-                ultimate: SkillId("ult".into()),
-                follow_up: None,
-            },
-            UltimateCharge::new(100, 150, UltAccumulationTrigger::OnBasicAttack, 25),
-            Toughness::new(100, vec![]),
             StatusEffect {
-                kind: StatusEffectKind::Shock {
-                    cancel_chance_pct: 100,
-                },
+                kind: StatusEffectKind::Paralyzed,
                 duration_remaining: 2,
             },
         ))
         .id();
-    app.world_mut()
-        .spawn((unit(2, 50), Team::Ally, Toughness::new(100, vec![])));
 
-    let expected_kind = StatusEffectKind::Shock {
-        cancel_chance_pct: 100,
-    };
+    let expected_kind = StatusEffectKind::Paralyzed;
 
     app.world_mut().write_message(TurnAdvanced::of(UnitId(1)));
     app.update();
 
-    assert!(
-        action_intents(&mut app).is_empty(),
-        "100% shock should not emit an ActionIntent"
-    );
     let events = status_events(&mut app);
-    assert!(
-        events.iter().any(|event| matches!(
-            &event.kind,
-            CombatEventKind::OnActionFailed { reason } if reason == "Shock"
-        )),
-        "100% shock should emit OnActionFailed with Shock reason"
-    );
     assert!(
         events
             .iter()
             .any(|event| combat_event_matches_tick(event, &expected_kind, 1)),
-        "100% shock should still tick down its duration"
-    );
-    assert!(
-        events
-            .iter()
-            .all(|event| !matches!(event.kind, CombatEventKind::OnDamageDealt { .. })),
-        "100% shock should not resolve any damage"
+        "paralyzed should tick down its duration"
     );
     assert!(app.world().get::<StatusEffect>(entity).is_some());
 
@@ -320,19 +272,20 @@ fn shock_cancels_action_at_100pct() {
         events
             .iter()
             .any(|event| combat_event_matches_tick(event, &expected_kind, 0)),
-        "100% shock expiry turn should emit OnStatusTick with turns_left=0"
+        "paralyzed expiry turn should emit OnStatusTick with turns_left=0"
     );
     assert!(
         events
             .iter()
             .any(|event| combat_event_matches_expired(event, &expected_kind)),
-        "100% shock should emit OnStatusExpired when duration reaches zero"
+        "paralyzed should emit OnStatusExpired when duration reaches zero"
     );
     assert!(app.world().get::<StatusEffect>(entity).is_none());
 }
 
 #[test]
-fn shock_never_cancels_at_0pct() {
+fn paralyzed_action_proceeds_in_v0() {
+    // v0 skeleton: Paralyzed is no-op; action and damage proceed normally.
     let mut app = action_app(SkillBook(vec![basic_skill()]));
     let attacker = app
         .world_mut()
@@ -343,9 +296,7 @@ fn shock_never_cancels_at_0pct() {
             UltimateCharge::new(100, 150, UltAccumulationTrigger::OnBasicAttack, 25),
             Toughness::new(100, vec![]),
             StatusEffect {
-                kind: StatusEffectKind::Shock {
-                    cancel_chance_pct: 0,
-                },
+                kind: StatusEffectKind::Paralyzed,
                 duration_remaining: 2,
             },
         ))
@@ -402,7 +353,7 @@ fn stunned_unit_does_not_tick_status() {
             Team::Ally,
             Stunned { turns_left: 1 },
             StatusEffect {
-                kind: StatusEffectKind::Burn { damage_per_turn: 9 },
+                kind: StatusEffectKind::Heated,
                 duration_remaining: 2,
             },
         ))
@@ -415,7 +366,7 @@ fn stunned_unit_does_not_tick_status() {
     assert_eq!(
         app.world().get::<StatusEffect>(entity),
         Some(&StatusEffect {
-            kind: StatusEffectKind::Burn { damage_per_turn: 9 },
+            kind: StatusEffectKind::Heated,
             duration_remaining: 2,
         })
     );
