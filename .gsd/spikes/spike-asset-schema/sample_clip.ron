@@ -1,0 +1,73 @@
+// SP4 — sample_clip.ron derived from agumon_atlas.json (bevy-v1)
+// Source: tools/sprite_pipeline/output/bevy_atlases/agumon_atlas.json
+// Target schema: docs/future_design_draft/02-02_animation_manifest.md §2.2 (clip.ron)
+//
+// Lossless: every field below maps directly from _atlas.json EXCEPT where
+// marked `// INVENTED:` — those are derived guesses required by the paper schema
+// but absent from the pipeline output.
+
+Clip(
+    meta: ClipMeta(
+        // === DIRECT from _atlas.json::meta ===
+        character:    "agumon",
+        version:      "bevy-v1",
+        frame_size:   (w: 1024, h: 1024),
+        columns:      10,
+        rows:         10,
+        total_frames: 93,
+
+        // INVENTED: source pipeline emits PNG atlas + json sidecar, but the
+        // `clip.ron` schema in §2.2 implies a `texture_path` to bind to a
+        // Bevy `Image` handle. Pipeline naming convention: `<name>_atlas.png`
+        // sibling of `<name>_atlas.json`. Confirm with SP5 (pipeline-determinism).
+        texture_path: "digimon/agumon/agumon_atlas.png",
+
+        // INVENTED: §2.2 example shows per-clip `fps`, but atlas json has no
+        // global default. Pipeline assumed 12 fps reference in all design docs
+        // (agumon/02 §3 "ms (@12fps ref)"). Promoted to clip default; per-clip
+        // override below.
+        default_fps:  12,
+    ),
+
+    clips: {
+        // === DIRECT mapping: start_index→start, end_index→end ===
+        // §2.2 example uses `Clip(start, end, fps, loop)`. Atlas has only
+        // start_index/end_index/count. `count == end - start + 1` (verified).
+
+        "attack": Clip(
+            start: 0, end: 8, fps: 12, loop_: false,
+            // INVENTED: `loop_` field. Atlas has no loop hint. Heuristic:
+            // idle/death = loop?; attack/skill/hurt/heavy_attack/victory = no-loop.
+            // §2.2 example shows `loop: true` only on "idle". Followed that.
+        ),
+        "block": Clip(
+            start: 9, end: 13, fps: 12, loop_: false,
+        ),
+        "death": Clip(
+            start: 14, end: 22, fps: 12, loop_: false,
+        ),
+        "heavy_attack": Clip(
+            // Canon: agumon `baby_flame` uses this clip (agumon/02 §1 "Atlas clip: heavy_attack source frames 23–36").
+            // NOTE: design doc says count 14 (frames 23–36), but atlas json
+            // reports count=23 (frames 23–45). Discrepancy → see validation_notes §A4.
+            start: 23, end: 45, fps: 12, loop_: false,
+        ),
+        "hurt": Clip(
+            start: 46, end: 52, fps: 12, loop_: false,
+        ),
+        "idle": Clip(
+            start: 53, end: 58, fps: 6, loop_: true,
+            // INVENTED fps=6: §2.2 example uses 6 for idle. Lower fps = breathing feel.
+            // Atlas json has no per-anim fps. Confirm canon in SP5.
+        ),
+        "skill": Clip(
+            // Canon: agumon `baby_burner` uses this (agumon/03 §1 "source frames 50–66, count 17").
+            // Atlas reports start=59 (NOT 50), count=17. Range discrepancy → see validation_notes §A4.
+            start: 59, end: 75, fps: 14, loop_: false,
+            // INVENTED fps=14: §2.2 example uses 14 for "skill" (faster cast feel).
+        ),
+        "victory": Clip(
+            start: 76, end: 92, fps: 12, loop_: false,
+        ),
+    },
+)
