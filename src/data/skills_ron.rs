@@ -482,9 +482,9 @@ mod tests {
     }
 
     #[test]
-    fn effect_roundtrip_apply_status_burn() {
+    fn effect_roundtrip_apply_status_heated() {
         let effect = Effect::ApplyStatus {
-            kind: StatusEffectKind::Burn { damage_per_turn: 8 },
+            kind: StatusEffectKind::Heated,
             duration: 3,
         };
         let s = ron::to_string(&effect).expect("serialize");
@@ -493,11 +493,9 @@ mod tests {
     }
 
     #[test]
-    fn effect_roundtrip_apply_status_freeze() {
+    fn effect_roundtrip_apply_status_chilled() {
         let effect = Effect::ApplyStatus {
-            kind: StatusEffectKind::Freeze {
-                speed_reduction: 15,
-            },
+            kind: StatusEffectKind::Chilled,
             duration: 2,
         };
         let s = ron::to_string(&effect).expect("serialize");
@@ -506,11 +504,9 @@ mod tests {
     }
 
     #[test]
-    fn effect_roundtrip_apply_status_shock() {
+    fn effect_roundtrip_apply_status_paralyzed() {
         let effect = Effect::ApplyStatus {
-            kind: StatusEffectKind::Shock {
-                cancel_chance_pct: 50,
-            },
+            kind: StatusEffectKind::Paralyzed,
             duration: 1,
         };
         let s = ron::to_string(&effect).expect("serialize");
@@ -527,25 +523,10 @@ mod tests {
         assert_eq!(back, effect);
     }
 
-    // Negative damage_per_turn is accepted at parse time (i32 allows it).
-    // Semantic validation (reject healing-burn) is deferred to apply time.
-    #[test]
-    fn apply_status_negative_damage_per_turn_accepted_at_parse_time() {
-        let effect = Effect::ApplyStatus {
-            kind: StatusEffectKind::Burn {
-                damage_per_turn: -5,
-            },
-            duration: 3,
-        };
-        let s = ron::to_string(&effect).expect("serialize");
-        let back: Effect = ron::from_str(&s).expect("parse — negative i32 is structurally valid");
-        assert_eq!(effect, back);
-    }
-
     // duration is u32 so negative durations are structurally impossible at parse time.
     #[test]
     fn apply_status_negative_duration_rejected_at_parse_time() {
-        let err = ron::from_str::<Effect>("ApplyStatus(kind:Burn(damage_per_turn:5),duration:-1)")
+        let err = ron::from_str::<Effect>("ApplyStatus(kind:Heated,duration:-1)")
             .expect_err("negative u32 must fail");
         let msg = err.to_string();
         assert!(

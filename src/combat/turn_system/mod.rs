@@ -473,40 +473,16 @@ pub fn advance_turn_system(
 
             if let Some(mut se) = status_opt {
                 let kind = se.kind.clone();
-                let mut deep_freeze_skips_action = false;
+                // Per-status semantics (DoT, speed delta, cancel probability, ult boost)
+                // are implemented in S03–S05. This is the v0 lifecycle skeleton only.
                 match &kind {
-                    StatusEffectKind::Burn { damage_per_turn } => {
-                        unit.hp_current = (unit.hp_current - damage_per_turn).max(1);
-                    }
-                    StatusEffectKind::Freeze { speed_reduction } => {
-                        commands
-                            .entity(snap.entity)
-                            .insert(SpeedModifier(-speed_reduction.abs()));
-                    }
-                    StatusEffectKind::Shock { cancel_chance_pct } => {
-                        let cancelled = match &mut combat_rng {
-                            Some(r) => r.roll_pct(*cancel_chance_pct as i32),
-                            None => CombatRng::from_seed(42).roll_pct(*cancel_chance_pct as i32),
-                        };
-                        if cancelled {
-                            shock_cancelled = true;
-                            emit_combat_event(
-                                &mut event_writer,
-                                CombatEventKind::OnActionFailed {
-                                    reason: "Shock".to_string(),
-                                },
-                                active_id,
-                                active_id,
-                                0,
-                            );
-                        }
-                    }
-                    StatusEffectKind::DeepFreeze => {
-                        // DeepFreeze is currently the deterministic hard-skip variant: it consumes the
-                        // unit's active turn like a stun while still ticking and expiring through the
-                        // shared status-effect lifecycle.
-                        deep_freeze_skips_action = true;
-                    }
+                    StatusEffectKind::Heated
+                    | StatusEffectKind::Chilled
+                    | StatusEffectKind::Paralyzed
+                    | StatusEffectKind::Slowed
+                    | StatusEffectKind::Blessed
+                    | StatusEffectKind::Burn
+                    | StatusEffectKind::Shock => {}
                 }
                 let expired = se.tick();
                 let turns_left = se.duration_remaining;
@@ -529,12 +505,6 @@ pub fn advance_turn_system(
                         active_id,
                         0,
                     );
-                    if matches!(kind, StatusEffectKind::Freeze { .. }) {
-                        commands.entity(snap.entity).remove::<SpeedModifier>();
-                    }
-                }
-                if deep_freeze_skips_action {
-                    continue;
                 }
             }
         } // mutable borrow released
