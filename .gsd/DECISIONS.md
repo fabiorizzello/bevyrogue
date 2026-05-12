@@ -1,36 +1,15 @@
 # Decisions Register
 
-This file is squashed to current decisions only. Historical decision rows are recoverable from milestone artifacts and git history; current implementation should follow this snapshot.
-
-## Current decisions
-
-| ID | Scope | Current decision | Rule |
-|---|---|---|---|
-| CD001 | Combat extension architecture | Unique Digimon, enemy, and party behavior extend through typed hook/blueprint seams. | Do not add central per-entity branches inside shared combat systems. Use per-Digimon Rust blueprints plus generic kernel transitions/hooks. |
-| CD002 | Combat kernel | Tactical Cycle, Strain, Flow, Fatigue, beats, tags, and mechanic transitions live in typed Rust kernel/state. | Keep the kernel generic and branch-light. Mechanic modules own shared state machines; blueprints feed them. |
-| CD003 | Presentation sync | Presentation beats and animation/QTE metadata are non-authoritative. | `animation_sequence`, `qte`, beat wording, and presentation trigger strings may synchronize UI/CLI/VFX only after combat emits canonical events/snapshots. They must not decide damage, legality, state transitions, status outcomes, resources, targeting, victory, or defeat. |
-| CD004 | RON role | RON owns numbers, targeting declarations, costs, metadata, presentation metadata, and typed custom-signal intent. | RON is not a hidden gameplay scripting engine. Unique behavior enters Rust through typed `custom_signals`. |
-| CD005 | Blueprint ownership | Long-term Digimon identity belongs in per-Digimon Rust blueprint modules; shared mechanic modules are primitives. | Patamon/Holy Support is the seeded proof. Full roster migration remains future work. |
-| CD006 | Kernel transitions in blueprint flow | `CombatKernelTransition` is canonical observable/mutation output after blueprint resolution. | Unique Digimon behavior starts in the blueprint module, then emits generic transitions. Do not put unique identity logic in the transition enum itself. |
-| CD007 | CLI/UI authority | CLI, UI, AI, logs, and tests consume shared action query, `CombatEvent`, beats, kernel state, and `ValidationSnapshot`. | No consumer-owned gameplay path. No CLI/windowed skill-ID-specific legality rules. |
-| CD008 | Test repair policy | Stale tests are rewritten to current source-of-truth contracts. | Do not restore removed APIs just to make tests green unless a new explicit architecture decision restores them. |
-| CD009 | M013/M015 provenance | Missing or contradictory M013 closure evidence remains a historical gap superseded by M015 proof. | Do not backfill M013 as if proof existed then. Current baseline lives in M015 docs and `docs/combat_current.md`. |
-| CD010 | Next architecture direction | Next combat architecture work should expand per-Digimon blueprint migration before presentation polish. | Prefer M016-style vertical slices that migrate one high-risk Digimon/mechanic through RON custom signal -> Rust blueprint -> kernel transition -> event/snapshot/CLI proof. |
-
-## Canonical references
-
-- `docs/combat_current.md`
-- `docs/contracts/combat_authority_map.md`
-- `docs/contracts/combat_mixed_pattern_drift_ledger.md`
-- `docs/contracts/presentation_metadata_boundary.md`
-- `docs/contracts/combat_cli_shared_surface_proof.md`
-- `docs/contracts/m015_failure_ledger.md`
-- `.gsd/milestones/M015/M015-VALIDATION.md`
-
----
-
-## Decisions Table
+<!-- Append-only. Never edit or remove existing rows.
+     To reverse a decision, add a new row that supersedes it.
+     Read this file at the start of any planning or research phase. -->
 
 | # | When | Scope | Decision | Choice | Rationale | Revisable? | Made By |
 |---|------|-------|----------|--------|-----------|------------|---------|
 | D001 |  | architecture | Per-Digimon blueprint implementation for Twin Core mechanics. | Agumon and Gabumon blueprints process character-specific custom signals into Twin Core tag transitions. | Decouples character-specific mechanic logic from the core combat kernel while maintaining data-driven control via skills.ron. | Yes | agent |
+| D002 | Pre-M017 planning, SP1 kernel primitives spike | combat-kernel | Reactive signature bus uniforme per OnKill / OnHitN / OnStatusApplied / OnUltimateUsed | Uniformare gli eventi reactive su CombatEventKind esistente (estendere UnitDied payload con status_remaining + heated_remaining; aggiungere StatusApplied, UltimateUsed). OnHitN resta FSM-side, non bus-side (canon §C4 row 4). | SP1 audit: 4 reactive verbs servono ai blueprint (Twin Core, Predator Loop, Echo, Kitsune Grace). Riusare il bus esistente evita un secondo canale e mantiene il contract single-source-of-truth (CLAUDE.md convenzione eventi). FSM topology copre OnHitN gratis. | yes — riapribile se M018 enemy roster richiede un canale separato per AI hooks | agent |
+| D003 | Pre-M017 planning, SP1 kernel primitives spike | combat-kernel | Time-manipulation primitive: split AdvanceTurn / DelayTurn con cap ±50% e clamp [0,200] | Sostituire l'attuale TurnAdvance signed (amount_pct + AV accumulator) con due varianti distinte AdvanceTurn(pct) e DelayTurn(pct), entrambe capate ±50% per chiamata, con gauge clamp [0,200] applicato dopo somma. Niente accumulator AV pre-cap. | Canon §02-02b C2.1 richiede semantica esplicita (advance vs delay) per Renamon Tōhakken + Kitsune Grace + telegraph UI. Cap + clamp formali sono già nel design ma non nel codice. Split rende l'intent leggibile a colpo d'occhio nei test e nei log JSONL. | no — è canon design lock-in di round-3 | agent |
+| D004 | Pre-M017 planning, SP1+SP3 convergente | combat-status | Status taxonomy v0 rewrite: Heated / Chilled / Paralyzed / Slowed / Blessed | Rimuovere Burn / Freeze / Shock / DeepFreeze. Introdurre i 5 status canon §H.1 con single-instance + refresh_max_dur. Heated multi-stack (cap definito da skill, non globale fisso). Confused dropped. | Ogni skill identity del roster M017 si poggia sui 5 status canon. Mantenere la vecchia tassonomia richiederebbe traduzione per ogni Effect e renderebbe i log incomprensibili. Refresh_max_dur (vs additive) è la regola che il design ha già lock-in nel round-3. | no — canon design | agent |
+| D005 | Pre-M017 planning, SP1 kernel primitives spike | combat-damage | DR pipeline modulare con taxonomy intra-unit max-replace + cross-unit additive clamp 0.5 | Aggiungere BuffKind::DR e mitigation layer in damage.rs. Più DR sulla stessa unit (es. fur_cloak + holy_aegis su Gabumon) → max-replace (vince il maggiore). DR cross-unit (sommare percentuali su un singolo target da fonti distinte) → additive con clamp finale a 0.5 (50% max). | Canon §02-08 H.3 formalizza la regola; oggi il damage pipeline non ha layer DR e impedisce Gabumon fur_cloak/blue_cyclone + Patamon holy_aegis. Max-replace intra-unit evita stacking degenere; additive cross-unit con clamp evita immortality builds. | parziale — il clamp 0.5 è un numero di balance, riapribile in M018+ playtest | agent |
+| D006 | Pre-M017 planning, SP1+SP3+SP4 convergente | combat-targeting | TargetShape resolver: implementare Blast / AoE(All) / Bounce(N) + selectors estesi | Espandere il resolver oltre Single, gated oggi da UnimplementedTargetShape. Aggiungere Blast (target + adiacenti), AoE{side} (All/Enemies/Allies), Bounce{hits, selector} con tie-break slot_index asc. Selectors aggiuntivi: AdjLowest, LowestHpPctAlive, RandomEnemyAlive{seed}, SingleAlly. Loosen il validator skills.ron di conseguenza. | 15/24 skill richiedono shape non-Single; senza questo lo scope M017 si dimezza (no Agumon ult, no Renamon, no Patamon ult, no Tentomon skill+ult). Tie-break deterministico (slot_index) è già canon §8 per Echo/Chain. | no — canon design | agent |
+| D007 | Pre-M017 planning, SP2 blueprint API spike | architecture | Blueprint API: trait Blueprint + BlueprintRegistry vuoto + Bevy plugin self-registration | Introdurre trait Blueprint (key + commit_signals + on_event + snapshot, ultimi tre con default no-op) e BlueprintRegistry come Resource Bevy popolata via plugin-per-Digimon (AgumonPlugin, GabumonPlugin, ...). Dispatcher kernel generico: reg.get(&sig.owner).commit_signals(...). Unica centralizzazione: add_plugins((...)) in main.rs (1 riga per blueprint). | Oggi aggiungere un blueprint = 8 site da toccare e CombatKernelTransition con 5 varianti Digimon-tipizzate. Pattern plugin chiude la regressione: nuovo blueprint = nuovo file + 1 riga. Allineato a hybrid SP3 (Effects in RON, listener filter in Rust). Estende a M018+ enemy roster senza modifiche al kernel. | parziale — la firma trait può evolvere; state-per-unit (D-M017-BLUEPRINT-STATE-PER-UNIT) deferred a M018+ | agent |
