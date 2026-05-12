@@ -39,7 +39,7 @@ use bevyrogue::data::{
 fn shock_skill() -> SkillDef {
     SkillDef {
         id: SkillId("shock_strike".into()),
-        name: "Shock Strike".into(),
+        name: "Para Strike".into(),
         damage_tag: DamageTag::Electric,
         sp_cost: 0,
         targeting: SkillTargeting {
@@ -187,7 +187,7 @@ fn vaccine_vs_data_status_miss_emits_on_status_resisted() {
                 kind: StatusEffectKind::Paralyzed
             }
         )),
-        "expected OnStatusResisted(Shock) for miss — seed={seed}, threshold={threshold}\nevents: {kinds:?}"
+        "expected OnStatusResisted(Paralyzed) for miss — seed={seed}, threshold={threshold}\nevents: {kinds:?}"
     );
     assert!(
         !kinds
@@ -229,7 +229,7 @@ fn vaccine_vs_data_status_hit_emits_on_status_applied() {
                 kind: StatusEffectKind::Paralyzed
             }
         )),
-        "expected OnStatusApplied(Shock) for hit — seed={seed}, threshold={threshold}\nevents: {kinds:?}"
+        "expected OnStatusApplied(Paralyzed) for hit — seed={seed}, threshold={threshold}\nevents: {kinds:?}"
     );
     assert!(
         !kinds

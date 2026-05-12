@@ -128,7 +128,7 @@ fn drain_events(cursor: &mut MessageCursor<CombatEvent>, app: &App) -> Vec<Comba
 // Happy-path tests
 // ---------------------------------------------------------------------------
 
-/// Casting Flame Bite on a live defender inserts StatusEffect(Burn, 3) on the defender
+/// Casting Flame Bite on a live defender inserts StatusEffect(Heated, 3) on the defender
 /// and emits OnStatusApplied.
 #[test]
 fn apply_status_inserts_component_and_emits_event() {
@@ -184,7 +184,7 @@ fn apply_status_inserts_component_and_emits_event() {
     });
     assert!(
         has_applied,
-        "OnStatusApplied(Burn) must be emitted; events={events:?}"
+        "OnStatusApplied(Heated) must be emitted; events={events:?}"
     );
 
     // Attacker entity should NOT have StatusEffect.

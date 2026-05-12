@@ -40,8 +40,8 @@ fn canonical_skill_book() -> SkillBook {
 fn skill_book_with_shock_fixture() -> SkillBook {
     let mut book = canonical_skill_book();
     book.0.push(SkillDef {
-        id: SkillId("shock_bolt".into()),
-        name: "Shock Bolt".into(),
+        id: SkillId("para_bolt".into()),
+        name: "Para Bolt".into(),
         damage_tag: DamageTag::Dark,
         sp_cost: 0,
         targeting: SkillTargeting {
@@ -899,14 +899,14 @@ fn s_m008_s06_status_pressure_turns_low_hp_into_a_failed_action_and_a_follow_up_
     spawn_custom_enemy(
         &mut app,
         UnitId(201),
-        "Shock Tester",
+        "Para Tester",
         220,
         220,
         12,
         12,
         Attribute::Virus,
-        "shock_bolt",
-        vec!["shock_bolt"],
+        "para_bolt",
+        vec!["para_bolt"],
         "enemy_ult_fire",
         vec![DamageTag::Dark],
     );
@@ -916,7 +916,7 @@ fn s_m008_s06_status_pressure_turns_low_hp_into_a_failed_action_and_a_follow_up_
 
     app.world_mut().write_message(ActionIntent::Skill {
         attacker: UnitId(201),
-        skill_id: SkillId("shock_bolt".into()),
+        skill_id: SkillId("para_bolt".into()),
         target: agumon.id,
     });
     app.update();

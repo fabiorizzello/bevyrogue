@@ -196,7 +196,7 @@ fn depth_chain_progresses_to_depth_two() {
     // Enemy B: high HP (survives Impmon's follow-up) but low toughness (Dark-weak → breaks on ToughnessHit 13).
     spawn_from_def(&mut app, &agumon, 100, 50, 100);
     spawn_from_def(&mut app, &impmon, 86, 42, 0);
-    // Enemy A: HP 30, toughness 200 (no break from Baby Burner ToughnessHit 30)
+    // Enemy A: HP 30, toughness 200 (no break from Agumon Ult ToughnessHit 30)
     app.world_mut().spawn((
         Unit {
             id: UnitId(4),
