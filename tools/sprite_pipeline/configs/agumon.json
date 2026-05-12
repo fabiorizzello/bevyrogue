@@ -1,11 +1,12 @@
 {
   "_source": "Cyber Sleuth Agumon (chr050). High-poly CS version (FBX).",
-  "model_path": "/home/fabio/dev/digimonsprites/sprite_pipeline/raw_models/agumon/chr050.fbx",
-  "texture_path": "/home/fabio/dev/digimonsprites/sprite_pipeline/raw_models/agumon/chr050a01.png",
-  "output_root": "/home/fabio/dev/digimonsprites/sprite_pipeline/raw_renders/agumon",
-  "render_size": 1024,
+  "_paths_note": "model_path/texture_path are relative to tools/sprite_pipeline/ — pipeline_run.py resolves them at runtime. output_root is always overridden by pipeline_run.py.",
+  "model_path": "raw_models/agumon/chr050.fbx",
+  "texture_path": "raw_models/agumon/chr050a01.png",
+  "output_root": "raw_renders/agumon",
+  "render_size": 512,
   "ortho_scale_auto": true,
-  "ortho_padding": 1.2,
+  "ortho_padding": 1.05,
   "hide_meshes": [
     "chr050_2"
   ],

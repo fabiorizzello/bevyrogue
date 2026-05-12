@@ -1,12 +1,15 @@
 {
   "_source": "Cyber Sleuth Dorumon (chr112). High-poly CS version (FBX).",
-  "model_path": "C:/Users/fabio/dev_windows/digimonsprites/sprite_pipeline/raw_models/dorumon/chr112.fbx",
-  "texture_path": "C:/Users/fabio/dev_windows/digimonsprites/sprite_pipeline/raw_models/dorumon/chr112a01.png",
-  "output_root": "C:/Users/fabio/dev_windows/digimonsprites/sprite_pipeline/raw_renders/dorumon",
-  "render_size": 1024,
+  "_paths_note": "model_path/texture_path are relative to tools/sprite_pipeline/ — pipeline_run.py resolves them at runtime. output_root is always overridden by pipeline_run.py.",
+  "model_path": "raw_models/dorumon/chr112.fbx",
+  "texture_path": "raw_models/dorumon/chr112a01.png",
+  "output_root": "raw_renders/dorumon",
+  "render_size": 512,
   "ortho_scale_auto": true,
-  "ortho_padding": 1.2,
-  "hide_meshes": ["chr112_3"],
+  "ortho_padding": 1.05,
+  "hide_meshes": [
+    "chr112_3"
+  ],
   "outline_meshes": [],
   "freestyle_outline": {
     "silhouette": true,
@@ -25,13 +28,41 @@
     "hue": 0.5,
     "saturation": 1.4,
     "value": 1.0,
-    "mihoyo_shadow_tint": [0.6, 0.55, 0.7],
-    "mihoyo_mid_tint": [0.95, 0.9, 1.05],
-    "mihoyo_lit_tint": [1.25, 1.2, 1.35],
-    "mihoyo_rim_tint": [0.8, 0.75, 0.9],
-    "eevee_shadow_tint": [0.6, 0.55, 0.7],
-    "eevee_mid_tint": [1.0, 0.9, 1.05],
-    "eevee_lit_tint": [1.35, 1.25, 1.4]
+    "mihoyo_shadow_tint": [
+      0.6,
+      0.55,
+      0.7
+    ],
+    "mihoyo_mid_tint": [
+      0.95,
+      0.9,
+      1.05
+    ],
+    "mihoyo_lit_tint": [
+      1.25,
+      1.2,
+      1.35
+    ],
+    "mihoyo_rim_tint": [
+      0.8,
+      0.75,
+      0.9
+    ],
+    "eevee_shadow_tint": [
+      0.6,
+      0.55,
+      0.7
+    ],
+    "eevee_mid_tint": [
+      1.0,
+      0.9,
+      1.05
+    ],
+    "eevee_lit_tint": [
+      1.35,
+      1.25,
+      1.4
+    ]
   },
   "model_rotation_deg": [
     90,

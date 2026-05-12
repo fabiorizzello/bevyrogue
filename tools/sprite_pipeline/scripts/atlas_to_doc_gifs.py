@@ -22,9 +22,9 @@ IDLE_HOLD_FRAMES = 6  # ~0.5s @ 12fps prima e dopo l'anim
 
 MAPPING: dict[str, dict[str, str]] = {
     "agumon": {
-        "01_basic_claw_strike": "attack",
-        "02_skill_pepper_breath": "heavy_attack",
-        "03_ult_nova_blast": "skill",
+        "01_basic_surudoi_tsume": "attack",
+        "02_skill_baby_flame": "heavy_attack",
+        "03_ult_baby_burner": "skill",
     },
 }
 

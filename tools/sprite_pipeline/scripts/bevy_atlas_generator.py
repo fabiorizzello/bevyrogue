@@ -51,7 +51,7 @@ def generate_bevy_atlas(char_name, output_dir):
         }
         total_frames += len(frames)
         
-        # All frames are expected to be same size in our pipeline (e.g. 1024x1024)
+        # All frames are expected to be same size in our pipeline (RENDER_SIZE × RENDER_SIZE, default 512²).
         if frames:
             f0 = frames[0]
             max_frame_w = max(max_frame_w, f0["w"])

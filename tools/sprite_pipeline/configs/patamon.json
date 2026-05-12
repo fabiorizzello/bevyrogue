@@ -1,11 +1,12 @@
 {
   "_source": "Cyber Sleuth Patamon (chr096). High-poly CS version (FBX).",
-  "model_path": "C:/Users/fabio/dev_windows/digimonsprites/sprite_pipeline/raw_models/patamon/chr096.fbx",
-  "texture_path": "C:/Users/fabio/dev_windows/digimonsprites/sprite_pipeline/raw_models/patamon/chr096a01.png",
-  "output_root": "C:/Users/fabio/dev_windows/digimonsprites/sprite_pipeline/raw_renders/patamon",
-  "render_size": 1024,
+  "_paths_note": "model_path/texture_path are relative to tools/sprite_pipeline/ — pipeline_run.py resolves them at runtime. output_root is always overridden by pipeline_run.py.",
+  "model_path": "raw_models/patamon/chr096.fbx",
+  "texture_path": "raw_models/patamon/chr096a01.png",
+  "output_root": "raw_renders/patamon",
+  "render_size": 512,
   "ortho_scale_auto": true,
-  "ortho_padding": 1.2,
+  "ortho_padding": 1.05,
   "hide_meshes": [
     "chr096_1"
   ],

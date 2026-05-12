@@ -44,6 +44,27 @@ Authoritative record of design/scope decisions. Future agents and dev sessions s
 - 1024 native gives oversampling headroom for downscale; output at 256/384/512 looks anime-quality, not 3D-render-residue.
 - Render time impact minimal (~30% slower, GPU-cap aware AUTO threshold in setup_render).
 
+**Reversed by 2026-05-12 entry below.**
+
+---
+
+## 2026-05-12 — Render size reduced 1024 → 512, ortho_padding 1.20 → 1.05
+
+**Decision:** `RENDER_SIZE = 512` in pipeline_run.py. Every per-char config sets `ortho_padding: 1.05` (was 1.20 for most, 1.15 for renamon). Reverses the 2026-04-30 "1024 native" decision.
+
+**Rationale:**
+- Anime-only track downscales to 256/384/512 in engine — 1024 source produced 4× pixel cost (file size + atlas memory) without commensurate visual gain at target display sizes (cards/dashboards in a card-battler render at ≤512px).
+- `ortho_padding 1.20` left ~20% transparent border per cell across the union bbox of all anims — pure waste once the camera framing is already shared.
+- Uniform values across the 6-char roster: same RENDER_SIZE + same ortho_padding → identical sprite cell dimensions per Digimon, simpler atlas packing.
+- Followup not taken: per-anim auto-crop of transparent bbox in `sheet_assemble.py` (option B from the design discussion). Deferred — current change already nets ~75% pixel reduction; auto-crop adds ~30-50% more but ~20 LOC of new logic.
+
+**Implementation:**
+- `scripts/pipeline_run.py`: `RENDER_SIZE = 512`.
+- `configs/*.json` (6 chars + example): `render_size: 512`, `ortho_padding: 1.05`.
+- `configs/*.json`: `model_path` / `texture_path` switched to paths **relative to `tools/sprite_pipeline/`** (e.g. `raw_models/agumon/chr050.fbx`). Resolved at runtime by `resolve_config_paths()` in `pipeline_run.py`. Absolute paths still accepted for one-off overrides. `output_root` kept relative as documentary value — `pipeline_run.py` overrides it per-run anyway.
+
+**To revert:** restore `RENDER_SIZE = 1024` + `ortho_padding: 1.20` in configs. Note: the relative-paths refactor is orthogonal and should stay.
+
 ---
 
 ## 2026-04-30 — Animation set = 8 actions (Slay-the-Spire-like)

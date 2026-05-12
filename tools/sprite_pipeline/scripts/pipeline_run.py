@@ -76,7 +76,8 @@ DEFAULT_CAMERAS = [
 
 # Each variant produces BOTH tracks (anime hi-res + pixel HD-2D)
 # Common render size = max needed by either track. Post-process splits.
-RENDER_SIZE = 1024  # bumped 768→1024 for anime polish (more detail before downscale)
+# See DECISIONS.md (2026-05-12) for the 1024→512 reduction rationale.
+RENDER_SIZE = 512
 
 TRACK_CONFIG = {
     "anime": {
@@ -102,6 +103,23 @@ def gen_run_id() -> str:
     ts = datetime.now().strftime("%Y-%m-%d_%H%M%S")
     rand = hashlib.sha256(os.urandom(8)).hexdigest()[:6]
     return f"{ts}_{rand}"
+
+
+def resolve_config_paths(cfg: dict, pipeline_dir: Path) -> dict:
+    """Resolve relative model_path/texture_path against pipeline_dir.
+
+    Configs ship with paths like "raw_models/agumon/chr050.fbx" so the repo
+    is portable across machines. Absolute paths are preserved untouched for
+    one-off overrides. Mutates and returns cfg.
+    """
+    for key in ("model_path", "texture_path"):
+        val = cfg.get(key)
+        if not val:
+            continue
+        p = Path(val)
+        if not p.is_absolute():
+            cfg[key] = str((pipeline_dir / p).resolve())
+    return cfg
 
 
 def check_blender() -> dict:
@@ -134,6 +152,7 @@ def check_dependencies(pipeline_dir: Path, char: str, plugins_required: list = N
 
     if config_path.exists():
         cfg = json.loads(config_path.read_text())
+        resolve_config_paths(cfg, pipeline_dir)
         # Model
         model = Path(cfg.get("model_path", ""))
         if not model.exists():
@@ -513,8 +532,10 @@ def main():
         print(f"\n→ New run: {run_id}")
         print(f"  workspace: {run_dir}")
 
-    # Load base config
+    # Load base config + resolve relative paths against the live pipeline dir.
+    # (Snapshot config keeps the original relative form for reproducibility.)
     base_config = json.loads((run_dir / "config.json").read_text())
+    resolve_config_paths(base_config, pipeline)
 
     # Build matrix
     shaders = args.shaders or DEFAULT_SHADERS
