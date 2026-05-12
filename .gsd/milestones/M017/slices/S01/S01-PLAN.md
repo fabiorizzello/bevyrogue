@@ -51,7 +51,7 @@ Tutti i moduli che referenziavano la vecchia tassonomia (speed, battery_loop, rn
   - Files: `tests/status_effect_apply.rs`, `tests/status_effect_integration.rs`, `tests/status_effect_turn_tick.rs`, `tests/combat_coherence.rs`, `tests/status_accuracy.rs`, `tests/follow_up_chains.rs`, `tests/form_identity.rs`
   - Verify: cargo test --no-fail-fast: tutti i test non-ignored verdi, count ignored ≤ N documentato nel summary slice.
 
-- [ ] **T06: Grep guard + smoke run + summary** `est:30min`
+- [x] **T06: Grep guard + smoke run + summary** `est:30min`
   Eseguire grep -rE '\b(Burn|Freeze|Shock|DeepFreeze)\b' src/ tests/ assets/ e verificare che gli unici match residui siano (a) la variant reserved Burn/Shock in status_effect.rs con commento '// reserved §H.1' (b) eventuali docs/ esclusi. cargo run --bin combat_cli smoke headless. Documentare nel SUMMARY.md la lista ignored test con la slice S0N target.
   - Files: `.gsd/milestones/M017/slices/S01/S01-SUMMARY.md`
   - Verify: grep guard ok, cargo check + cargo test full passa, smoke CLI runs.
