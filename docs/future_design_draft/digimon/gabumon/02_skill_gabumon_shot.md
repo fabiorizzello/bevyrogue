@@ -81,10 +81,7 @@ Listener side (kernel-side, non FSM):
 
 ## §5 — Open questions (nuovi)
 
-1. **AdjLowestHpPct target shape.** `EmitDamage`/`EmitStatus` `target` non ha questa modalità in §2.2b §C. Estensione richiesta:
-   - `TargetShape::AdjLowest { metric: HpPct | Hp | Raw }` (sintassi proposta)
-   - Tie-break deterministico: tie su HP% → slot index ascending.
-   - **Action item §2.2b:** aggiungere target-shape al vocabolario o spostarlo nel param-resolver (blueprint risolve `target_ref:"adj_lowest_hp_pct"` al commit per Echo).
+1. **AdjLowestHpPct target shape.** ✅ **Chiuso (round-3, 2026-05-12, X17): formalizzato in `02-02b §C3` come `AdjLowest { metric: HpPctMin | HpMin | RawHpMin, side: Side }`.** Blueprint-side resolver (non kernel-side, coerente con `02-02b §C3` regola 1). Tie-break deterministico: tie su HP% → slot index ascending (canonizzato qui, da propagare a §C3 se altre skill ne richiedono varianti).
 2. **Chain echo prevention.** Echo emette `StatusApplied(Chilled)` di nuovo → l'edge A matchassa di nuovo? **Filter necessario:** edge A predicate include `caster_node == "Burst"` (non `Echo`). Oppure: edge A flag `once_per_skill: true`.
 3. **DR `fur_cloak` listener path.** Listener applica buff su Gabumon **post** `StatusApplied`. Race: la skill è ancora in `Burst`. Il buff è attivo già durante la stessa FSM o solo al turno successivo? **Proposta:** buff applicato immediatamente, ma `expires_on: NextOwnerTurnEnd` → effetto pratico = mitigation nel turno successivo (quando subirà il colpo nemico).
 4. **C5-extended — snapshot scope: skill-commit vs edge-commit.** Tentomon `petit_thunder` ha introdotto la convention key `hopN_target` snapshot-once **a skill-commit time** (G5). `gabumon_shot.echo_target` è strutturalmente diverso: la risoluzione `AdjLowestHpPct` dipende dal **primary chilled**, quindi può essere risolta solo **dopo** che il primary ha effettivamente ricevuto `Chilled` — cioè **a edge-commit time**. Due scope distinti:
@@ -95,4 +92,4 @@ Listener side (kernel-side, non FSM):
 
 ## §6 — Verdetto
 
-`gabumon_shot` è il **primo edge reattivo a 3° bersaglio** del roster. Espone 1 gap nuovo (target-shape `AdjLowestX`) **non emerso** in agumon stress. Risolvibile con estensione param-resolver o con `TargetShape` esteso. Decisione consigliata: estendere `TargetShape` per coerenza dichiarativa.
+`gabumon_shot` è il **primo edge reattivo a 3° bersaglio** del roster. Espone 1 gap nuovo (target-shape `AdjLowestX`) **non emerso** in agumon stress. ✅ **Chiuso (X17): `TargetShape` esteso canonizzato in `02-02b §C3` con variante `AdjLowest { metric, side }`** — decisione coerenza dichiarativa adottata.

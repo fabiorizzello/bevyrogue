@@ -41,6 +41,15 @@ Tre invarianti:
 2. Le reazioni dei blueprint **estendono** il batch corrente (push in coda), non aprono un batch separato. Tutta la cascade è un'unica drain run.
 3. Se la skill ha bisogno di leggere stato post-cascade (es. "se il damage ha killato → branch"), suspende esplicitamente con `Suspend(CascadeComplete)` o splitta in due `execute` step. Default: la skill emette tutto in un colpo e il kernel risolve.
 
+**Pre-step `IncomingDamage` (block-reaction pipeline, X10 cross-ref):** `KernelEffect::Damage` su un target con block-reaction armata genera un **pre-step** che emette `IncomingDamage { attacker, defender, raw_amount, kind }` (vedi `02-02b §R-Events`). Listener gameplay (es. Tentomon `battery_loop`) può rispondere con `KernelEffect::BlockReaction { damage_mult }` (vedi `02-02b §C2` riga BlockReaction). Il `damage_mult` viene applicato al raw amount **prima** del DR cascade `§H.3`. Ordine canonico:
+1. `IncomingDamage` emesso pre-step.
+2. Listener `BlockReaction` (se trigger condition match) applica `damage_mult` (es. 0.50).
+3. DR cascade `§H.3` (intra-unit replace-max + cross-unit additivo, clamp 0.5).
+4. Damage finale applicato; `DamageDealt` event emesso.
+5. `BlockReactionTriggered` event emesso (se step 2 ha applicato mitigation) per consumo presentation listener.
+
+Canon source per FSM topology + stack rules block-reaction: **`tentomon/04 §1.5/§4`** — non duplicare qui.
+
 ## B — Subscribers (chi reagisce)
 
 Pattern coerente con §2.3 (blueprint plugin extension):
@@ -202,6 +211,8 @@ Il modello `IdempotencyScope` a 4 varianti chiuse è **OK con riserva**: durante
 ## H — Status & buff taxonomy (chiusura round-3 M017)
 
 Round-3 review del roster ha generato 5 status di skill (`Heated`/`Chilled`/`Paralyzed`/`Slowed`/`Blessed`) + 2 status gas-era riservati (`Burn`/`Shock`) + un buff `Aura` permanente (`holy_aegis`). Senza enum chiuso + semantica per-status + regole stacking, il status registry diventa drift point: ogni blueprint risolve cleanse/refresh/stack a modo suo, con risultati incoerenti tra digimon. Questa sezione li formalizza.
+
+**Cross-ref Commands (round-3, X8):** gli status di questa sezione sono **emessi** dai Commands `EmitStatus` (`02-02b §C` forma base, `kind` default `Debuff`) e `ApplyBuff` (`02-02b §C2` forma estesa con `kind` esplicito). I target sono risolti via `TargetShape` enum (`02-02b §C3`). Il vocabolario di status è **chiuso** qui (`§H.1` `StatusKind`, `§H.2` `BuffKind`) — il validator `02-02b §L` rigetta a load-time `id`/`kind` non riconosciuti. Pattern reattivi che applicano status (modifier-firma `OnStatusApplied→Echo`, `OnKill→Detonate(status)`, `OnHitN→Apply(status)`) sono mappati a FSM edge + Command in `02-02b §C4`.
 
 ### §H.1 — Status taxonomy (enum chiuso M017)
 

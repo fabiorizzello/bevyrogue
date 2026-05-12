@@ -62,7 +62,7 @@ Discharge.on_enter
 
 ## §5 — Open questions (nuovi)
 
-1. **D1 — `TargetShape::RandomEnemyAlive { seed: string }`.** Estensione vocabolario. Seed deve essere deterministico per test (default: `combat_rng` global seed). Headless: usa seed esplicito.
+1. **D1 — `TargetShape::RandomEnemyAlive { seed: string }`.** ✅ **Chiuso (round-3, 2026-05-12, X17): formalizzato in `02-02b §C3`** come `RandomEnemyAlive { seed: SeedSource }` con `SeedSource ∈ {TurnRng, CombatRng}`. Default canon = `TurnRng` (seedato dal turn counter, deterministico replay-stable). Headless test usa seed esplicito via `combat_seed` fixture. Vedi `02-02b §C3` regola 5.
 2. **D2 — SP grant team rompe `RoundSpTracker.max_non_basic_per_round`?** Identity §7 lo flagga.
    - **Decisione:** SP grant **non** passa dal contatore (è grant, non spese). Conta solo l'**uso** di SP per skill. Coerente.
    - Cap separato: `RoundSpTracker.max_grants_per_round` opzionale (es. 2) per evitare loop SP infinito tra Tentomon Ult + altri grant.
@@ -74,7 +74,7 @@ Discharge.on_enter
 
 Conferma bisogno di:
 - **`EmitSpGrant`** verbo ✅ formalizzato in `02-02b §C2` (S1 chiuso round-3 2026-05-12).
-- **`TargetShape::RandomEnemyAlive`** con seed deterministic (D1, ancora open — vocabolario `TargetShape` da estendere).
+- **`TargetShape::RandomEnemyAlive`** con seed deterministic (D1 ✅ chiuso, canonizzato in `02-02b §C3`).
 - **`RoundSpTracker.max_grants_per_round`** se decidiamo di cappare grant (D2, open — playtest M015+).
 
 Nessun nuovo concetto architetturale, estensioni di vocabolario.

@@ -50,7 +50,7 @@ Shared. Time-manip effects operano su `TurnOrder` (vedi `src/combat/turn_order.r
 | Basic | `kokaishu` | Kokaishū / Fox Spin Kick | Single | 0 SP, +1 gen, +25 Ult | Damage piatto Holy |
 | Skill | `koyosetsu` | Koyōsetsu / Diamond Storm (Tamers) | **AoE(All) enemies** | **1 SP** | Damage medio Holy su tutti (no crit, no status); **`AdvanceTurn(self, 25%)`** — la sua action gauge avanza |
 | Ult | `tohakken` | Tōhakken / Power Paw (Tamers, Holy reskin) | AoE(All) enemies | UltCharge | Damage alto Holy a tutti; **`DelayTurn(all enemies, 30%)`** — l'action gauge nemico arretra; applica `Blessed` a tutti gli alleati per 2 turni |
-| Passive | `kitsune_grace` | flavor-only (kitsune-mystic) | listener | — | Quando un alleato consuma Ult, **`AdvanceTurn(self, 10%)`** — Renamon recupera tempo per riapplicare AoE |
+| Passive | `kitsune_grace` | flavor-only (kitsune-mystic) | listener | — | Quando un **alleato non-self** consuma Ult, **`AdvanceTurn(self, 10%)`** — Renamon recupera tempo per riapplicare AoE. **Self-Ult NON triggera** (vedi §8 D6, gate filter `!is_self(actor)`) |
 
 **Niente crit, niente Confused random.** L'identità è **tempo**, non caos. Differenziato anche da Tentomon (Bounce + Paralyzed) e da Agumon (Heated burst).
 
@@ -94,6 +94,12 @@ Riferimento codice da costruire: hook su `TurnOrder` via custom signal `advance_
 - Niente modifier reattivo crit/break. **Identità Renamon = tempo, non break-payoff.**
 - Rationale: introdurrebbe un asse meccanico secondario (break reattivo) che diluisce la focalizzazione time-manip; sovrapposto a Dorumon hp-threshold trigger (lane già differenziata in §1).
 - Conferma definitiva: nessuna FoxDrive mechanic nel kit. Riaprire solo se time-manip si dimostra sotto-power a playtest.
+
+**D6 — `kitsune_grace` self-Ult gate: `no-self` (chiusa, X12).**
+- Filter `!ctx.is_self(actor)`: l'Ult di Renamon stessa (`tohakken`) **non triggera** `kitsune_grace`.
+- Rationale: identità §1 ("recupera tempo per riapplicare AoE") implica reagire **ad altri**. La proc su self-Ult creerebbe loop infinito teorico (Renamon ult → +10% gauge self → ult più presto → ...) che, pur cappato a 50%/call dal clamp di §5, produce UX confusa ("perché Renamon avanza sé stessa quando lei stessa casta?"). Identity reads cleaner come "Renamon ruba tempo dai compagni quando esplodono i loro Ult", non come self-feedback.
+- Canon source: `renamon/04 §5 K1 opzione B` (proposta) + `renamon/04 §2` blueprint contract `ev != self`. Ora propagata al kit shape §4.
+- Stack: alleati multipli che castano Ult nello stesso turno sommano additivamente (Patamon ult + Agumon ult = 2× edge fires → +20% advance), clamp `[0, 200%]` gauge globale.
 
 ## §8b — Domande aperte (defer playtest/M017+)
 

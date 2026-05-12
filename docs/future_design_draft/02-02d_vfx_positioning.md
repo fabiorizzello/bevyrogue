@@ -65,7 +65,7 @@ pub enum EntityRef {
     EventTarget,
 
     /// Read `blueprint_state[key]` and resolve to an `EntityId`. Mirrors
-    /// `ParamRef::BlueprintState` from §2.2b §G-Param. Drives passive marks
+    /// `ParamRef::BlueprintState` from §2.2b §S-Param. Drives passive marks
     /// whose target is owned by listener state (e.g. Dorumon
     /// `tracked_target`, Twin Core partner link).
     FromBlueprintState(String),
@@ -276,7 +276,7 @@ Body-part anchors collapse to `SelfCenter` because there is no rig to distinguis
 
 - §2.2b `02-02b_animation_fsm.md` §C: `SpawnParticle` command in the closed vocabulary. This doc defines its `origin` + `motion` fields.
 - §2.2b §G: cosmetic-vs-gameplay tagging — `SpawnParticle` is cosmetic, no-op headless.
-- §2.2b §G-Param: `ParamRef::BlueprintState` — `EntityRef::FromBlueprintState` is its entity-typed counterpart, same resolver backing store.
+- §2.2b §S-Param: `ParamRef::BlueprintState` — `EntityRef::FromBlueprintState` is its entity-typed counterpart, same resolver backing store.
 - §2.2e `02-02e_passive_presentation.md`: presentation channel for listeners (`ListenerCtx::notify`) + persistent state-driven emitter pattern that consumes the `EntityCenter` extension defined here.
 - §2.8 `02-08_effect_cascade.md` G5: snapshot model for resolution (motion `Travel` follows the same snapshot rule).
 - `digimon/agumon/02_skill_baby_flame.md` §6.4: superseded by this doc.

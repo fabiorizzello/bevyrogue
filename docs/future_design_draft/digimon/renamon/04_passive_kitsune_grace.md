@@ -124,10 +124,10 @@ turno successivo: gauge Renamon ridotto → agisce prima
 
 ## §5 — Open questions (nuovi)
 
-1. **K1 — Self-Ult triggera kitsune_grace?**
-   - **A.** Sì (Renamon ult charge sé stessa) → loop infinito se non capped. Cap 50% lo blocca, ma è UX strana.
-   - **B.** No (escluso da filter) → identity §1 ("recupera tempo per riapplicare AoE") implica reagire **ad altri**.
-   - **Decisione consigliata:** B. Filter `!ctx.is_self(actor)`.
+1. **K1 — Self-Ult triggera kitsune_grace?** ✅ **Chiusa (round-3, 2026-05-12, X12): opzione B `no-self`.**
+   - Filter canonico: `!ctx.is_self(actor)`. Self-Ult (`tohakken`) **non triggera** la passive.
+   - Rationale: vedi `renamon/00 §8 D6`. UX più leggibile ("ruba tempo dai compagni", non self-feedback). Loop teorico evitato a monte del clamp `±50%/call`.
+   - Conforme a `§2` blueprint contract (`ev != self` predicate) e `§1.5` FSM edge (`And(IsAlly(EventActor), Not(IsSelf(EventActor)))`).
 2. **K2 — `UltimateUsed` event quando è emesso?** Al `commit_action(Ult)` o a `Ult.Strike.on_enter` (consumo bar)? **Coerenza:** allineare a "consumo bar" → solo se l'Ult andata davvero. Cancellazioni (es. invalid target) non triggerano.
 3. **K3 — Bound check.** Cap 50% per call (T1). 10% × 5 alleati Ult in stesso round → 50%, ok. Reale: 1-2 ult/round max. Safe.
 4. **K4 — Compatibilità con `Blessed`.** Blessed (03_ult_tohakken.md) buffa damage e Ult charge gen. Niente double-dip con `kitsune_grace`: K1 reagisce all'**uso** dell'ult, non al **charge**. Distinto.
@@ -137,7 +137,7 @@ turno successivo: gauge Renamon ridotto → agisce prima
 ## §6 — Verdetto
 
 `kitsune_grace` consolida:
-- **Event canonico `UltimateUsed`** (verificare o aggiungere `02-02b §G-Events`).
+- **Event canonico `UltimateUsed`** (verificare o aggiungere `02-02b §R-Events`).
 - **FSM emette `AdvanceTurn` Command** — primo caso di passive FSM che produce gameplay Command non-buff (modifica direttamente `TurnGauge`).
 - **Full FSM Reactive-proc senza Ch2** — sub-variant B standard, Ch1 mandatory + Ch2 optional non instanziato (`02-02e §E.1`). K5 ✅ chiuso (Forma C abbandonata in favore di sub-variant trigger framework).
 

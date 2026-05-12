@@ -269,29 +269,17 @@ Ordine di registrazione = ordine team slot (party slot 0..5 → enemy slot 0..4)
 
 Decisioni dai gap emersi durante i brief Dorumon/Gabumon/Patamon/Renamon/Tentomon. Riferimento `_CONTINUE.md` righe 12-49. Tutte canon prima di scrivere i blueprint Rust in M017.
 
-### G-Sel — Selectors / `TargetShape` esteso ✅
+### G-Sel — Selectors / `TargetShape` esteso ✅ → **canonized in `02-02b §C3` (round-3, 2026-05-12, X17)**
 
-```rust
-pub enum TargetShape {
-    Primary,
-    Self_,
-    AdjLeft,
-    AdjRight,
-    Blast(TargetRef),                                  // primary + 2 adj
-    AdjLowestHp { side: Side },                        // alleato con HP più bassa adj
-    LowestHpPctAlive { side: Side },                   // lowest HP% nel target side
-    RandomEnemyAlive { seed: SeedSource },             // SeedSource ∈ {TurnRng, CombatRng}
-    AoE { side: Side, exclude_dead: bool },            // tutti i target del side
-    SingleAlly { slot: Option<u8> },                   // None = chooser via UI / AI
-    Bounce { hits: u8, selector: Box<TargetShape> },   // chain N hits, re-resolve ogni hop
-}
-```
+Definizione e regole sono state **promosse a fonte canonica unica in `02-02b §C3`** (round-3 consolidation, X17). Questa sub-sezione è ora un puntatore: vedi `02-02b §C3` per:
+- Enum completo (11 varianti single/multi-target).
+- Resolver contract `resolve_shape(shape, ctx) -> Vec<TargetRef>` blueprint-side.
+- Failure modes (entity despawned mid-cascade, `Bounce` chain break).
+- Side rules (`AllyTeam` esclude `Self_` di default).
+- Determinismo `RandomEnemyAlive` (`TurnRng` default).
+- Mapping skill roster → shape canon.
 
-**Regole:**
-- `TargetShape` vive nel blueprint (§5/§6 commit-time resolver).
-- Blueprint chiama `resolve_shape(shape, ctx) -> Vec<TargetRef>` e emette N Command (uno per `TargetRef`). Vedi G6.
-- `RandomEnemyAlive` usa `TurnRng` di default (deterministico, seedato dal turn counter). `CombatRng` solo per random fuori-turno (rare).
-- `Bounce` re-risolve il `selector` interno ad ogni hop — supporta "chain bounce a target diverso ogni volta". Hit count cap = `hits`.
+Le regole storicamente scritte qui restano invariate semanticamente — il `02-02b §C3` enum aggiunge `NextAliveAdj` (helper per `Bounce` Tentomon) e tipizza `AdjLowest` con campo `metric`. Nessun breaking change per le skill già definite.
 - Nessun shape inventato lazy: estensioni passano per design review.
 
 ### G-Verbs — Vocabolario `Command` esteso ✅

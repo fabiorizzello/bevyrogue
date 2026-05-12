@@ -28,14 +28,14 @@
 
 ## §8.1 — Modifier-firma vocabolario (chiuso v0)
 
-Solo i modifier necessari ai 6 baseline. Vocabolario completo §2.2b deferred.
+Solo i modifier necessari ai 6 baseline. **Mapping FSM canon: vedi `02-02b §C4`** (round-3, 2026-05-12, X5 — ogni modifier-firma è shorthand per pattern FSM edge + Command, NON un Command runtime).
 
-| Modifier | Trigger kernel | Effetto |
-|---|---|---|
-| `OnKill→Detonate(status)` | `KernelEvent::UnitDied` su Strike target | Spread dello status sui 2 adiacenti |
-| `OnStatusApplied→Echo(status)` | `KernelEvent::StatusApplied` sul target | Re-applica status sull'adiacente più debole |
-| `OnKill→Chain` | `KernelEvent::UnitDied` su Strike target (in stato) | Strike ripete su nuovo target (one extra) |
-| `OnHitN→Apply(status)` | `KernelEvent::DamageDealt` al `N`-esimo hit | Apply status all'ultimo hit della sequenza |
+| Modifier | Trigger kernel | Effetto | FSM mapping |
+|---|---|---|---|
+| `OnKill→Detonate(status)` | `KernelEvent::UnitDied` su Strike target | Spread dello status sui 2 adiacenti | `02-02b §C4` riga 1 |
+| `OnStatusApplied→Echo(status)` | `KernelEvent::StatusApplied` sul target | Re-applica status sull'adiacente più debole | `02-02b §C4` riga 2 |
+| `OnKill→Chain` | `KernelEvent::UnitDied` su Strike target (in stato) | Strike ripete su nuovo target (one extra) | `02-02b §C4` riga 3 |
+| `OnHitN→Apply(status)` | `KernelEvent::DamageDealt` al `N`-esimo hit | Apply status all'ultimo hit della sequenza | `02-02b §C4` riga 4 |
 
 4 modifier attivi in v0. `OnBreak→Detonate` rimosso (Renamon revisione 2026-05-12). Espansione (Splash, Escalate, ShapeOverride) deferred.
 

@@ -86,10 +86,7 @@ Hop3.on_enter →
 
 ## §5 — Open questions (nuovi)
 
-1. **C1 — `TargetShape::Bounce { hits: u8, selector: NextAliveAdj | Random }`.** Estensione necessaria. Bounce semantica:
-   - `NextAliveAdj`: hop al primo nemico vivo adiacente (clockwise dal primary). Skip morti durante la chain.
-   - `Random`: pick random alive (deterministic-seed).
-   - **Decisione canon Tentomon §1:** `NextAliveAdj`.
+1. **C1 — `TargetShape::Bounce { hits: u8, selector: NextAliveAdj | Random }`.** ✅ **Chiuso (round-3, 2026-05-12, X17): formalizzato in `02-02b §C3`** come `Bounce { hits: u8, selector: Box<TargetShape> }` (selector è un altro `TargetShape`, supporta `NextAliveAdj { side, scan: ClockWise | CounterClockWise }` o `RandomEnemyAlive { seed }`). **Canon Tentomon §1:** `selector: NextAliveAdj { side: EnemyTeam, scan: ClockWise }`, skip morti durante la chain (re-resolve ogni hop, vedi `02-02b §C3` regola 4).
 2. **C2 — Bounce chain con <3 nemici vivi.** Se 2 nemici vivi:
    - **A.** Hop3 ripete su tgt_2 (re-bounce).
    - **B.** Hop3 no-op (skip damage e skip Paralyzed).
@@ -97,11 +94,11 @@ Hop3.on_enter →
    - **Decisione consigliata:** A (re-bounce sull'ultimo vivo). `OnHitN(3)→Paralyzed` ancora valido (3° hit landed, anche se stesso target). Bilanciamento accettabile.
 3. **C3 — DR self 25% concurrent con `fur_cloak` mock?** Tentomon non ha `fur_cloak`. Self-DR è isolato. Stacking solo con `holy_aegis` (10% Patamon, additivo). Cap 50%.
 4. **C4 — `Paralyzed` status definito?** Verificare `status_effect.rs`. Se non esiste, **action item:** aggiungere `Paralyzed { skip_next_turn: true | turn_gauge_freeze: 1 turn }`. Identity §4 non dettaglia il meccanismo. **Proposta:** Paralyzed = skip next turn (semplice, leggibile).
-5. **C5 — Param snapshot keys `hopN_target`.** Le chiavi `hop1_target / hop2_target / hop3_target` devono essere scritte dal commit-time resolver del blueprint nel param snapshot (§G5 + §G6 di §02-02b) per essere lette da `EntityCenter(FromParamSnapshot(...))` nei bolt `Travel`. Convenzione naming non ancora formalizzata altrove nel roster: alternative `bounce_target_1..n` o `chain_hop_N`. **Decisione consigliata:** `hopN_target` (compatto, esplicito sulla semantica "bounce hop"). Verificare conflitto con eventuali altre skill chain (nessuna nel roster minimal). Da promuovere a §02-02b §G-Param come pattern documentato quando arriva un secondo bounce skill.
+5. **C5 — Param snapshot keys `hopN_target`.** Le chiavi `hop1_target / hop2_target / hop3_target` devono essere scritte dal commit-time resolver del blueprint nel param snapshot (`02-02b §F` snapshot-once + `02-02b §S-Param ParamRef::Snapshot`) per essere lette da `EntityCenter(FromParamSnapshot(...))` nei bolt `Travel`. Convenzione naming non ancora formalizzata altrove nel roster: alternative `bounce_target_1..n` o `chain_hop_N`. **Decisione consigliata:** `hopN_target` (compatto, esplicito sulla semantica "bounce hop"). Verificare conflitto con eventuali altre skill chain (nessuna nel roster minimal). Da promuovere a `02-02b §S-Param` come pattern documentato quando arriva un secondo bounce skill.
 
 ## §6 — Verdetto
 
-Bounce introduce **target shape nuovo** (`Bounce { hits, selector }`). Concorre con `AdjLowest` di Gabumon: vocabolario `TargetShape` cresce di 2 varianti.
+Bounce introduce **target shape nuovo** (`Bounce { hits, selector }`). ✅ **Chiuso (X17): canonizzato in `02-02b §C3`** insieme a `AdjLowest` di Gabumon e `RandomEnemyAlive` di Tentomon ult — vocabolario `TargetShape` unificato in 11 varianti single/multi-target con resolver blueprint-side.
 
 `OnHitN(3)→Apply(Paralyzed)` è un **edge condizionato a hit count**, ma in pratica risolto come "Hop3 on_enter applica Paralyzed" — niente edge runtime, è dichiarativo nel nodo finale. Niente nuovo verbo predicate.
 

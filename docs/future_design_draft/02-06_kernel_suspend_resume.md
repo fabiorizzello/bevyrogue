@@ -85,7 +85,7 @@ Nessuno yield può bloccare i test headless: assenza di resolver → applicazion
 - **S03d "Kernel suspend/resume"** isola: enum `YieldReason`/`YieldOutcome`, `SkillCursor`, fase `AwaitingSkillYield`, gating systems, JSONL logger del yield event. Risk: high (tocca il cuore del turn loop).
 - Test integration headless deve dimostrare: (a) replay-stability con yield seedato; (b) gating systems durante suspend; (c) default fallback funzionante.
 
-Per un esempio end-to-end di skill multi-fase con QTE + animation gate + emit di effetti vedi **§2.9 (worked example)**.
+Per un esempio end-to-end di skill multi-fase con QTE + animation gate + emit di effetti il **worked example full-featured è deferred post-M017** (vedi `02-02b §M` per il riferimento di shape; verrà autorizzato col primo skill-tree concreto + QTE entry).
 
 **H — Cosa NON entra in M017 (out of scope §2.6):**
 - Nested yield (suspend dentro suspend)

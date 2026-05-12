@@ -84,16 +84,156 @@ Round di review-3 del roster (Agumon/Dorumon/Gabumon/Tentomon/Renamon/Patamon) h
 | `ApplyBuff { id, dur_param, kind: (Buff\|Debuff\|DR\|Aura\|Mark), target }` | gameplay | unifica `EmitStatus` con flag `kind` esplicita; status registry applica regole cleanse-eligibility per `kind:Buff` ∉ cleansable (vedi §2.8 §H) | `KernelEffect::ApplyStatus` con `BuffKind` field | Renamon `tohakken` (Blessed), Patamon `holy_aegis` (Aura), Gabumon `fur_cloak` (DR) |
 | `EmitSpGrant { amount_param, target }` | gameplay | aggiunge SP a SP pool del team di `target`; emette `SpGranted` event; **cap-aware sul lato ricevente** (`SpPool.add` clamp al cap, vedi `src/combat/sp.rs`), **non passa** dal contatore `RoundSpTracker.max_non_basic_per_round` (grant ≠ spend) | `KernelEffect::GrantSp` | Gabumon `blue_cyclone` (ult, team +1), Tentomon `electrical_discharge` (ult, team +1), override `+2 SP` Tentomon basic data-side via `units.ron.sp_gen_per_basic` |
 | `Reposition { anchor, target }` | gameplay | sposta `target` a posizione `anchor` sulla combat line (riusa §02-02c §D dematerialize pattern, ora promosso) | `KernelEffect::Reposition` | Dorumon `dash_metal` follow-up (chiude §02-02c §D dangling) |
+| `BlockReaction { kind, target_ref, damage_mult, dur }` | gameplay (pre-DR pipeline) | applica `damage_mult` (es. 0.50) a `IncomingDamage` su `target` **prima** del cascade DR standard; emette `BlockReactionTriggered` event (§R-Events) post-mitigation. **Canon FSM pattern + stack rules: `tentomon/04 §1.5/§4`** (X10 consolidation, round-3 2026-05-12). Argomenti (`BlockReactionArgs`): vedi `agumon/04 §9 G-Verbs` per la firma | `KernelEffect::BlockReaction` | Tentomon `battery_loop` (FSM `BlockProc.on_enter`) |
 
 **Sugar form, NO command separato:** `ApplySelfBuff { id, dur_param, kind }` è alias di `ApplyBuff { target: EntityRef::Self_ }`. Vocabolario kernel resta minimal — il blueprint può scrivere la forma corta come zucchero sintattico nel proprio executor, ma `tick_fsm` emette solo `ApplyBuff`. Stesso pattern di `TargetCenter ↔ EntityCenter(Primary)` in §2.2d §B.
 
 **Relazione `EmitStatus` ↔ `ApplyBuff`:** `ApplyBuff` è **strict superset** di `EmitStatus` (§C base) — aggiunge il campo `kind`. M017+ usa `ApplyBuff` ovunque; `EmitStatus` resta nel vocabolario §C base come **forma degenerate** (`kind` defaulta a `Debuff`) per compat lazy delle skill già scritte. Nessuna doppia logica kernel-side: `EmitStatus { ... }` → `ApplyBuff { ..., kind: Debuff }` a parse-time del RON.
+
+**Cross-ref status registry (round-3, 2026-05-12, X8):** il vocabolario `id` di `EmitStatus`/`ApplyBuff` è il **`StatusKind` enum chiuso** definito in `02-08 §H.1` (Heated/Chilled/Paralyzed/Slowed/Blessed + riservati Burn/Shock). Il vocabolario `kind` di `ApplyBuff` è il **`BuffKind` enum chiuso** definito in `02-08 §H.2` (Buff/Debuff/DR/Aura/Mark). Validator `02-02b §L` rigetta a load-time qualsiasi `id` non in `StatusKind` o `kind` non in `BuffKind`. Regole cleanse-eligibility, stack policy, DR stacking intra/cross-unit, lifecycle Aura/Mark sono **tutte** in `02-08 §H` — non duplicare qui.
 
 **Tutti i 7 verbi sono kernel-known per design.** Test discriminante: il Command tocca state condiviso oltre la singola entity blueprint (TurnOrder resource, status registry con cleanse-eligibility, SP pool, hp altrui). Tenerli come custom blueprint code drifterebbe la semantica tra digimon (es. `heal` Patamon vs `heal` futuro Vaccine-healer si scollerebbe; cleanse FIFO/LIFO/Random si bifurcherebbe). Il prezzo "tocchi kernel per aggiungere verbo" si paga **una volta in M017**, poi è costante.
 
 **Blueprint-local resta:** trigger predicates e state reads dentro Forma C FSM passive (es. Dorumon `predator_loop` `hp_pct < 0.5`, Agumon `twin_core_fire` `partner.has_status(Chilled)`). Blueprint legge stato → emette Commands kernel-known sugli eventi. Boundary chiara: **blueprint sa leggere, kernel sa scrivere.**
 
 **Espansioni candidate aggiornate (post-C2, non in M017):** `KnockBack`, `Move`, `Teleport`, `SummonMinion`, `Mark` restano candidati come §C base; rivalutazione round-4+.
+
+---
+
+## C3 — `TargetShape` enum (consolidato, blueprint-side resolver)
+
+`TargetShape` è il **vocabolario chiuso** dei selettori di target per Commands gameplay (`EmitDamage`, `EmitHeal`, `EmitCleanse`, `EmitStatus`, `ApplyBuff`, `AdvanceTurn`, `DelayTurn`, `EmitSpGrant`, `Reposition`). Definito qui come fonte canonica unica — rimpiazza i frammenti sparsi nei roster doc (`agumon/04 §G-Sel`, `gabumon/02 §F3`, `tentomon/02 §C1`, `tentomon/03 §D1`).
+
+```rust
+pub enum TargetShape {
+    // === Single target (1 entity) ===
+    Primary,                                              // primary target of the action
+    Self_,                                                // caster
+    AdjLeft,                                              // left neighbour on combat line
+    AdjRight,                                             // right neighbour on combat line
+    SingleAlly { slot: Option<u8> },                      // None = chooser via UI / AI
+    AdjLowest { metric: HpPctMin | HpMin | RawHpMin,
+                side: Side },                             // metric-selected adj
+    LowestHpPctAlive { side: Side },                      // global lowest HP% in side
+    NextAliveAdj { side: Side, scan: ClockWise | CounterClockWise },  // bounce-hop helper
+    RandomEnemyAlive { seed: SeedSource },                // SeedSource ∈ {TurnRng, CombatRng}
+
+    // === Multi target (>1 entity) ===
+    Blast(TargetRef),                                     // primary + 2 adj (3 entities)
+    AoE { side: Side, exclude_dead: bool },               // tutti i target del side
+    Bounce { hits: u8, selector: Box<TargetShape> },      // chain N hits, re-resolve ogni hop
+}
+
+pub enum Side { EnemyTeam, AllyTeam, BothTeams }
+pub enum SeedSource { TurnRng, CombatRng }
+```
+
+**Resolver contract:**
+
+```rust
+/// Blueprint-side pure function. Returns 1..N TargetRef.
+/// Empty Vec ⇒ Command is no-op (silent drop, no panic).
+fn resolve_shape(shape: TargetShape, ctx: &CommitCtx) -> Vec<TargetRef>;
+```
+
+**Regole:**
+
+1. **Blueprint-side resolver, NOT kernel-side.** `TargetShape` è vocabolario blueprint (§5/§6 commit-time resolver). Il blueprint chiama `resolve_shape(shape, ctx) -> Vec<TargetRef>` e emette **N Command separati**, uno per `TargetRef` risolto. Il kernel vede solo Commands con `target: TargetRef` concreto, mai `TargetShape` direttamente. Coerente con `agumon/03 §6 scelta A`.
+
+2. **Snapshot-once.** `resolve_shape` viene chiamato a `commit_action`, il Vec risolto è snapshot frozen per la durata della skill (no re-resolve mid-cascade, eccetto `Bounce` che re-risolve il selector interno ad ogni hop, vedi punto 4).
+
+3. **Failure modes.** `TargetRef` despawned/dead post-resolution ⇒ il singolo Command per quel target è droppato silently dal kernel (no panic, no fallback). Skill multi-target degrada graciously (es. `AoE` su 4 nemici di cui 2 morti mid-cascade → 2 hit applicati).
+
+4. **`Bounce` semantica.** Re-risolve il `selector` interno ad ogni hop — supporta "chain bounce a target diverso ogni volta". Cap hit count = `hits`. Se il selector non trova target valido al hop N (es. tutti morti), la chain si interrompe (no panic). Esempio: `Bounce { hits: 3, selector: NextAliveAdj { side: EnemyTeam, scan: ClockWise } }` → fino a 3 hit, ognuno sul next alive enemy in senso orario.
+
+5. **`RandomEnemyAlive` determinismo.** Usa `TurnRng` di default (seedato dal turn counter, deterministico per replay). `CombatRng` solo per random fuori-turno (rari, e.g. proc passivi triggerati out-of-turn). Headless test: seed esplicito via `combat_seed` fixture.
+
+6. **Side rules.** `AllyTeam` include `Self_`? **No** per default — `AoE { side: AllyTeam }` esclude il caster (use `AoE { side: AllyTeam, exclude_dead: true }` + `Self_` separato se servono entrambi). Eccezione: `SingleAlly { slot: None }` può risolvere a self se il chooser lo permette (UI policy).
+
+**Source-of-truth roster:**
+
+| Skill | Shape canon | Doc |
+|---|---|---|
+| Agumon `baby_flame` (basic) | `Primary` | agumon/02 |
+| Agumon `baby_burner` (ult) | `Blast(Primary)` | agumon/03 |
+| Gabumon `gabumon_shot` (skill) | `AdjLowest { metric: HpPctMin, side: EnemyTeam }` | gabumon/02 |
+| Gabumon `blue_cyclone` (ult) | `AoE { side: EnemyTeam, exclude_dead: true }` | gabumon/03 |
+| Dorumon `dash_metal` (skill) | `LowestHpPctAlive { side: EnemyTeam }` | dorumon/02 |
+| Renamon `koyosetsu` (skill) | `AoE { side: EnemyTeam, exclude_dead: true }` + `Self_` (advance) | renamon/02 |
+| Renamon `tohakken` (ult) | `AoE { side: EnemyTeam, exclude_dead: true }` + `AoE { side: AllyTeam }` (Blessed) | renamon/03 |
+| Tentomon `petit_thunder` (skill) | `Bounce { hits: 3, selector: NextAliveAdj { side: EnemyTeam, scan: ClockWise } }` | tentomon/02 |
+| Tentomon `electrical_discharge` (ult) | `RandomEnemyAlive { seed: TurnRng }` × N | tentomon/03 |
+| Patamon `patapata_hover` (skill) | `SingleAlly { slot: None }` | patamon/02 |
+| Patamon `holy_aegis` (passive) | `AoE { side: AllyTeam }` | patamon/04 |
+
+**Espansioni candidate (post-M017):** `Mark`/`Tracked` (auto-target su mark applicato, e.g. Dorumon `predator_loop` `tracked_target`), `FurthestFromCaster`, `HighestThreat`. Aggiungere quando la prima skill concreta li richiede.
+
+---
+
+## C4 — Modifier-firma → FSM mapping (`08 §8.1` reverse table)
+
+Il roster `08 §8.1` enumera 4 modifier-firma reattivi v0 (`OnKill→Detonate`, `OnStatusApplied→Echo`, `OnKill→Chain`, `OnHitN→Apply`). Non sono primitive runtime — sono **shorthand di design** per pattern FSM edge + Command. Questa tabella formalizza la traduzione canon per dare ai blueprint M017 un riferimento unico.
+
+| Modifier-firma | Trigger (FSM edge predicate `§D`) | Effetto (Command `on_enter` su nodo Reactive) | Skill source (M017) |
+|---|---|---|---|
+| `OnKill→Detonate(status)` | `KernelEvent(UnitDied { target == strike_target })` | `EmitStatus { id: status, target: AoE { side: EnemyTeam, scope: Adj }, dur: <residuo strike target> }` | Agumon `baby_burner` (Heated spread sui 2 adj) |
+| `OnStatusApplied→Echo(status)` | `KernelEvent(StatusApplied { status_id == target_status, target == strike_target })` con `caster_node == "Strike"` (no chain) | `EmitStatus { id: status, target: AdjLowest { metric: HpPctMin, side: EnemyTeam }, dur: <stesso del primary> }` | Gabumon `gabumon_shot` (Chilled echo) |
+| `OnKill→Chain` | `KernelEvent(UnitDied { target == strike_target })` con `chain_count < max_chain` | re-emit `EmitDamage { ... }` su `LowestHpPctAlive { side: EnemyTeam }`, `chain_count += 1` | Dorumon `dash_metal` Predator state (max 1 chain) |
+| `OnHitN→Apply(status)` | `TimeInNode` su nodo `Hop{N}` (l'`N`-esimo hit della Bounce chain ha già emesso `EmitDamage` in `on_enter`) | `EmitStatus { id: status, target: Primary, dur_param: ... }` sul nodo Hop{N} stesso, **dopo** `EmitDamage` (Command ordering: damage then status per leggere kernel event `DamageDealt` correttamente) | Tentomon `petit_thunder` (Paralyzed al hop 3) |
+
+**Pattern shape:**
+
+Ogni modifier-firma si traduce in un **nodo Reactive aggiuntivo** nell'FSM (o, per `OnHitN`, in un Command extra sul nodo Hop{N} esistente). La topology standard FSM 3-nodi (Windup → Strike → Recovery) diventa 4-nodi quando la skill ha modifier-firma:
+
+```
+Windup → Strike → Reactive → Recovery → Exit
+                     ↑
+                     └─ edge predicate: KernelEvent(...)
+```
+
+- **`Reactive` nodo:** clip frame range tipicamente sovrapposto a `Strike` (es. `(s, e)` con `s = strike.end`, `e = strike.end + 2` per dare 2 frame di VFX); `on_enter` emette il Command reattivo.
+- **Edge `Strike → Reactive`:** predicate kernel-event. Se l'evento non arriva entro `TimeInNode(strike.frames)`, fallback edge `Strike → Recovery` con `priority: 0` lower del kernel-event edge.
+- **Edge `Reactive → Recovery`:** `TimeInNode` o `Always` per chiusura standard.
+
+**Esempio Gabumon `gabumon_shot`:**
+
+```ron
+"gabumon_gabumon_shot": AnimGraph(
+    clip: "skill",
+    entry: "windup",
+    nodes: {
+        "windup":   Node(frames: (0, 6)),
+        "strike":   Node(frames: (6, 10),
+                         on_enter: [
+                             EmitDamage { hits_param: "hits", mul_param: "atk_mul", ... },
+                             EmitStatus { id: "Chilled", target: Primary, dur_param: "chilled_dur" },
+                         ]),
+        "echo":     Node(frames: (10, 12),
+                         on_enter: [
+                             EmitStatus { id: "Chilled",
+                                          target: AdjLowest { metric: HpPctMin, side: EnemyTeam },
+                                          dur_param: "chilled_dur" },
+                         ]),
+        "recovery": Node(frames: (12, 16)),
+    },
+    transitions: [
+        Edge(from: "windup",   to: "strike",   when: TimeInNode),
+        Edge(from: "strike",   to: "echo",     when: KernelEvent(StatusApplied { status_id: "Chilled" }), priority: 10),
+        Edge(from: "strike",   to: "recovery", when: TimeInNode, priority: 0),
+        Edge(from: "echo",     to: "recovery", when: TimeInNode),
+        Edge(from: "recovery", to: Exit,       when: TimeInNode),
+    ],
+)
+```
+
+**Regole di traduzione:**
+
+1. **Modifier-firma NON è un Command kernel-side.** Il blueprint executor `08 §8.1` short-hand non esiste a runtime — è una notazione di design che descrive shape FSM riusabili. Il blueprint M017 implementa il pattern via edge predicate + Command, niente "modifier" runtime field.
+2. **Re-entry prevention.** Il modifier reattivo NON deve auto-triggerare la propria edge (es. `OnStatusApplied→Echo(Chilled)` che applica `Chilled` non deve far ri-scattare `echo` infinito). Filtro canon: edge predicate include `caster_node == "Strike"` (vedi esempio sopra) o flag `once_per_skill: true` sull'edge (estensione §D candidata).
+3. **Param naming convention.** Skill con modifier-firma in `skills.ron::params` usa keys `modifier_firma_*` come metadati identificativi (es. `params: { "modifier_firma": "OnStatusApplied→Echo", ... }`); il blueprint executor li legge solo per debug/log. Il **vero comportamento** vive nell'FSM RON, non nel params.
+4. **Patamon eccezione.** `08 §8.1` documenta Patamon "senza modifier-firma reattivo" — la sua FSM 3-nodi standard non ha nodo Reactive aggiuntivo. Coerente con l'identità "support affidabile".
+
+**Espansioni candidate (post-M017):** `Splash`, `Escalate`, `ShapeOverride` (rinviati in `08 §8.1`). Ognuno mapperà a un pattern FSM analogo quando il primo concreto emerge.
 
 ---
 
@@ -450,7 +590,7 @@ Se i grafi vengono generati da un agent, servono validatori statici che fallisca
 
 ## M — Esempio shape (Baby Flame senza unlock — minimale)
 
-Sketch sintetico per orientamento — il **worked example full-featured** (con super_charge + triple_hit + counter_window + QTE amplify) è in §2.9.
+Sketch sintetico per orientamento — il **worked example full-featured** (con super_charge + triple_hit + counter_window + QTE amplify) è **deferred (post-M017)**: scritto quando il primo skill-tree concreto + QTE entry vengono implementati. La forma sotto + l'AnimGraph effettivo di Baby Flame in `agumon/02_skill_baby_flame.md` bastano per M017.
 
 ```ron
 "agumon_baby_flame": AnimGraph(
@@ -557,6 +697,81 @@ Migration script (§N) è tooling, non slice gameplay.
 
 ---
 
+## R — Kernel events catalog (`§R-Events`)
+
+> **Naming note.** Originariamente programmato come `§G-Events`, rinominato a `§R-Events` per evitare collisione con `§G — Headless determinism`. Refs esterne (`renamon/04_passive_kitsune_grace.md`, `tentomon/04_passive_battery_loop.md`) usano già il nuovo nome.
+
+Estensione del bus `CombatEvent` (definito in `src/combat/events.rs`) con gli eventi richiesti dalle passive listener del roster M017. Sono **kernel events** emessi dalla pipeline gameplay, ascoltabili da `BlueprintListener::on_kernel_event` (§2.7 C2) e da edge FSM `KernelEvent(...)` (§D).
+
+| Event | Payload | Emesso da | Consumato da (M017) |
+|---|---|---|---|
+| `UltimateUsed` | `{ actor: EntityId }` | Kernel, dopo `commit_action(Ult)` quando l'Ult consuma la bar (post-`Strike.on_enter`, pre-cleanup) — cancellazioni mid-resolve non lo emettono | Renamon `kitsune_grace` (filter `is_ally && !is_self`) |
+| `BlockReactionTriggered` | `{ defender: EntityId, attacker: EntityId, mitigated_pct: u8 }` | Kernel, durante `IncomingDamage` cascade pre-step quando defender è in `BlockReady` state e mitigation applica | Tentomon `battery_loop` (FSM `BlockReady → BlockProc` edge), side-channel SP-grant listener |
+| `DamageDealt` | `{ source: EntityId, target: EntityId, amount: u32, kind: DamageKind }` | Kernel, post-resolution di ogni `KernelEffect::Damage` | Listener reattivi (dual-role §2.7 C2), esempi: Tentomon `OnAnyAttack` ult-charge gen |
+| `StatusApplied` | `{ target: EntityId, status: StatusId, source: Option<EntityId> }` | Kernel, post-`KernelEffect::ApplyStatus` | Edge `KernelEvent(StatusApplied { kind: "Stun" })` per cancel-pattern §D |
+| `Healed` | `{ target: EntityId, amount: u32, source: EntityId }` | Kernel, post-`KernelEffect::Heal` | Patamon ult charge `+25/heal event` |
+| `SpGranted` | `{ recipient_team: TeamId, amount: u8 }` | Kernel, post-`KernelEffect::GrantSp` (cap-aware) | Gabumon/Tentomon ult team-grant chain |
+| `IncomingDamage` *(pre-step)* | `{ attacker: EntityId, defender: EntityId, raw_amount: u32, kind: DamageKind }` | Kernel, **prima** del damage cascade (B4 gap §2.8) — finestra per block/parry reactive | Tentomon `battery_loop` block reaction, future parry mechanics |
+
+**Regole di emissione:**
+
+1. **Post-effect, not pre-effect (eccetto `IncomingDamage`).** Gli eventi sono emessi dopo che il `KernelEffect` ha mutato state, così i listener vedono lo stato consistente. `IncomingDamage` è l'unica eccezione: emessa pre-step per permettere mitigation reattiva nel cascade.
+2. **Niente cancellazioni triggerate.** Eventi cancellati a metà cascade (es. `UltimateUsed` su target morto durante windup) non vengono emessi. Listener vedono solo eventi "successful".
+3. **Ordering.** Eventi nello stesso tick di cascade sono ordinati per emit-order del kernel; listener vedono la sequenza completa via `kernel_events_since_last_tick` (§H tick contract).
+
+**Espansioni candidate (post-M017):** `LowHpEntered`, `BreakBarOpened`, `RoundStarted`, `RoundEnded`, `EntityDied`. Aggiungere quando la prima skill concreta li richiede.
+
+---
+
+## S — Param reference resolution (`§S-Param`)
+
+> **Naming note.** Originariamente programmato come `§G-Param`, rinominato a `§S-Param` per evitare collisione con `§G — Headless determinism`. Refs esterne (`02-02d §B`, `02-02d §I`) usano già il nuovo nome.
+
+`ParamRef` è il **vocabolario chiuso** per la risoluzione di numeri/identifier nei Commands. Estende la regola §C "numeri via reference, non literal" — il blueprint executor risolve `ParamRef` → valore concreto a `commit_action` time (snapshot-once §F) o on-the-fly per i `BlueprintState` reads.
+
+```rust
+pub enum ParamRef {
+    /// Lettura statica da `skills.ron::params[key]` della skill proprietaria.
+    /// Patchabile da skill_tree.ron (§I). Snapshot-once a commit_action.
+    Static(String),
+
+    /// Lettura snapshot-once da uno store ausiliario captured a commit_action
+    /// (es. target snapshot per skill multi-hit deterministiche).
+    Snapshot(String),
+
+    /// Lettura live da `BlueprintState[key]` del listener proprietario.
+    /// NON snapshottato — il valore può cambiare tra tick FSM successivi.
+    /// Esempi: Dorumon `predator_loop` `tracked_target`, Twin Core
+    /// `partner_status_flag`, Tentomon battery `last_block_attacker`.
+    BlueprintState(String),
+
+    /// Costante numerica letterale. Ammessa solo per soglie strutturali
+    /// (es. `cap: 50`), MAI per scaling values (vanno in skills.ron).
+    Literal(i32),
+}
+```
+
+**Resolution contract:**
+
+| ParamRef | When read | Lifetime | Patchable da skill_tree? |
+|---|---|---|---|
+| `Static(k)` | a `commit_action` | snapshot frozen per la skill | ✅ via `PatchParams(skill, params)` |
+| `Snapshot(k)` | a `commit_action` (capture phase) | snapshot frozen per la skill | ❌ — runtime capture, non patchable |
+| `BlueprintState(k)` | ogni read durante `tick_fsm` | live, mutabile mid-skill | ❌ — listener-owned, fuori scope skill_tree |
+| `Literal(n)` | parse-time | invariante | ❌ |
+
+**Failure modes:**
+
+- `Static(k)` con `k` non in `params`: validator §L lo rifiuta a load-time.
+- `Snapshot(k)` con `k` non capturato: runtime warning + skip Command (no-op).
+- `BlueprintState(k)` con `k` non in schema blueprint: validator warning (vedi §L extension `EntityRef::FromBlueprintState`).
+
+**Relazione con `EntityRef` (`02-02d §B`):** `EntityRef::FromBlueprintState(k)` è il counterpart entity-typed di `ParamRef::BlueprintState(k)` — stesso backing store, stesso failure mode (silent drop).
+
+**Espansioni candidate (post-M017):** `ParamRef::Computed(formula)` per scaling derivati (e.g. `atk_mul * level`) — rifiutato per ora (rompe determinismo + validator). Promuovere via kernel event se necessario (es. `OnLevelUp` ricalcola lo `Static`).
+
+---
+
 ## Riferimenti
 
 - §2.1 (data/logic separation): `skills.ron` invariato, `signal_bindings.ron` invariato
@@ -565,4 +780,4 @@ Migration script (§N) è tooling, non slice gameplay.
 - §2.6 (suspend/resume): `StartQTE` Command usa il meccanismo esistente, nessuna estensione
 - §2.7 (SkillBehavior trait): la FSM vive `self.fsm_rt` nel behavior, `execute()` la tick-a
 - §2.8 (effect cascade): invariata, i `KernelEffect` emessi dal blueprint executor entrano nella cascade standard
-- §2.9 (worked example): sostituito con full-featured AnimGraph di Baby Flame (4 unlock variant + counter reattivo + QTE amplify)
+- §2.9 (worked example full-featured Baby Flame: 4 unlock variant + counter reattivo + QTE amplify): **deferred post-M017** — autorizzato col primo skill-tree concreto + QTE entry. Per ora `agumon/02_skill_baby_flame.md` (forma base) e §M sketch coprono lo scope
