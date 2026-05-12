@@ -36,7 +36,7 @@ Tutti i moduli che referenziavano la vecchia tassonomia (speed, battery_loop, rn
   - Files: `src/data/skills_ron.rs`
   - Verify: cargo check verde. Test di parsing RON esistenti continuano (saranno aggiornati ai nuovi id in T03/T05).
 
-- [ ] **T03: RON migration (assets/data/skills.ron + units.ron)** `est:1h`
+- [x] **T03: RON migration (assets/data/skills.ron + units.ron)** `est:1h`
   Sostituire tutti i status id legacy in assets/data/skills.ron (11 occorrenze) e assets/data/units.ron (3 occorrenze) con i 5 id canon. Mappa di traduzione di lavoro: Burn->Heated, Freeze->Chilled, Shock->Paralyzed, DeepFreeze->Slowed. Blessed entra solo dove un buff offensivo è già modellato (probabile zero match attuali). Verifica che ogni occorrenza sia status id (non skill name come 'baby_flame'). Niente cambio di durate/numeri.
   - Files: `assets/data/skills.ron`, `assets/data/units.ron`
   - Verify: cargo run --bin combat_cli (smoke) carica i RON senza loader error. Test di parsing RON in T05 confermano.

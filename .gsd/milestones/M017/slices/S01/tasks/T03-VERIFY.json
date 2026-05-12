@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T03",
+  "unitId": "M017/S01/T03",
+  "timestamp": 1778603128703,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "cargo run --bin combat_cli (smoke) carica i RON senza loader error. Test di parsing RON in T05 confermano.",
+      "exitCode": 2,
+      "durationMs": 3,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}
