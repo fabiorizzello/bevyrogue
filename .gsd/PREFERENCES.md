@@ -1,10 +1,10 @@
 ---
 version: 1
-mode: solo
+mode: team
 git:
-  isolation: branch
-  main_branch: master
   auto_push: true
+  main_branch: master
+  isolation: branch
 ---
 # GSD Project Preferences
 

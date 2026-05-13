@@ -30,7 +30,7 @@
 - [x] **S05: S05** `risk:low` `depends:[]`
   > After this: Test `status_blessed_offensive.rs`: unit Blessed colpisce → dmg ×1.15. Test `status_blessed_ult_charge.rs`: unit Blessed esegue azione → +1 Ult charge oltre baseline. Test `status_blessed_cleanse_immune.rs`: cleanse non rimuove Blessed.
 
-- [ ] **S06: S06** `risk:low` `depends:[]`
+- [x] **S06: S06** `risk:low` `depends:[]`
   > After this: Scripted scenario CLI: applica Heated + Chilled + Paralyzed + Slowed + Blessed su units diversi → JSONL log analizzato via grep test, zero match su vocabolario legacy. ValidationSnapshot.statuses_per_unit deterministico in test fixture.
 
 ## Boundary Map
