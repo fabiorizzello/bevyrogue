@@ -13,7 +13,7 @@ use crate::combat::{
     team::Team,
     turn_system::{ActionIntent, emit_combat_beat, emit_combat_event, step_app, step_declaration},
     types::{Attribute, DamageTag, SkillId, UnitId},
-    unit::{BasicStreak, Commander, Ko, Unit},
+    unit::{BasicStreak, Commander, Ko, SlotIndex, Unit},
 };
 use crate::combat::{
     log::ActionLog, round_flags::RoundFlags, sp::SpPool, state::CombatState, toughness::Toughness,
@@ -104,6 +104,7 @@ type ResolveActorsQuery<'w, 's> = Query<
         Option<&'static mut StatusBag>,
         Option<&'static mut BasicStreak>,
         Option<&'static mut RoundFlags>,
+        Option<&'static SlotIndex>,
     ),
 >;
 
@@ -587,7 +588,7 @@ pub fn resolve_follow_up_action_system(
         );
 
         if intent.origin_kind == FollowUpOriginKind::FormIdentity {
-            for (_, _, unit, _, _, _, _, _, _, _, _, _, mut round_flags) in actors.iter_mut() {
+            for (_, _, unit, _, _, _, _, _, _, _, _, _, mut round_flags, _) in actors.iter_mut() {
                 if unit.id == intent.attacker {
                     if let Some(ref mut flags) = round_flags {
                         flags.form_identity_used = true;
@@ -657,6 +658,7 @@ mod tests {
                 Effect::Damage {
                     amount: damage,
                     target: TargetShape::Single,
+                    per_hop: Default::default(),
                 },
                 Effect::ToughnessHit(toughness_damage),
             ],

@@ -482,7 +482,10 @@ fn target_status_for_unit(
         SkillImplementation::Implemented => {}
     }
 
-    if skill_def.targeting.shape != TargetShape::Single {
+    if !matches!(
+        skill_def.targeting.shape,
+        TargetShape::Single | TargetShape::Blast | TargetShape::AllEnemies | TargetShape::Bounce { .. }
+    ) {
         return TargetStatus::Deferred {
             reason: LegalityReasonCode::UnimplementedTargetShape,
         };

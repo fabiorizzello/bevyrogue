@@ -33,7 +33,7 @@ use bevyrogue::combat::sp::SpPool;
 use bevyrogue::combat::state::CombatState;
 use bevyrogue::combat::turn_order::{TurnAdvanced, TurnOrder};
 use bevyrogue::combat::turn_system::{
-    ActionIntent, advance_turn_system, apply_turn_advance_system, check_victory_system,
+    ActionIntent, advance_turn_system, apply_av_ops_system, check_victory_system,
     resolve_action_system,
 };
 use bevyrogue::combat::ultimate::{UltGainQueue, flush_ult_gain_system, ult_accumulation_system};
@@ -66,7 +66,7 @@ fn main() {
             resolve_follow_up_action_system,
             ult_accumulation_system,
             flush_ult_gain_system,
-            apply_turn_advance_system,
+            apply_av_ops_system,
             advance_turn_system,
             check_victory_system,
             jsonl_logger_system,

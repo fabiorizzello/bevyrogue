@@ -1,6 +1,6 @@
 use bevy::prelude::Resource;
 
-use crate::data::skills_ron::{SkillCustomSignal, TargetShape};
+use crate::data::skills_ron::{DamageCurve, SkillCustomSignal, TargetShape};
 
 use super::status_effect::StatusEffectKind;
 use super::team::Team;
@@ -41,13 +41,16 @@ pub struct ResolvedAction {
     pub grant_free_skill_count: usize,
     /// First ApplyStatus effect found in the skill definition; first match wins.
     pub status_to_apply: Option<(StatusEffectKind, u32)>,
-    pub turn_advance_pct: i32,
+    pub advance_pct: u32,
+    pub delay_pct: u32,
     /// Energy to grant the attacker from a GrantEnergy effect (0 = none).
     pub energy_grant: i32,
     /// AV self-advance percent from SelfAdvance effect (targets attacker, not defender).
     pub self_advance_pct: i32,
     pub target_shape: TargetShape,
     pub custom_signals: Vec<SkillCustomSignal>,
+    /// Per-hop damage curve (relevant for `TargetShape::Bounce`; `Constant` for all other shapes).
+    pub damage_curve: DamageCurve,
 }
 
 #[derive(Debug, Clone)]

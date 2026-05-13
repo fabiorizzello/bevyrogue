@@ -60,6 +60,7 @@ fn boundary_skill(id: &str) -> SkillDef {
             Effect::Damage {
                 amount: 23,
                 target: TargetShape::Single,
+            per_hop: Default::default(),
             },
             Effect::ToughnessHit(11),
             Effect::GainSP(1),
@@ -374,11 +375,13 @@ fn presentation_metadata_does_not_change_action_query_or_resolved_action() {
             ult_effect: UltEffect::None,
             grant_free_skill_count: 0,
             status_to_apply: None,
-            turn_advance_pct: 0,
+            advance_pct: 0,
+        delay_pct: 0,
             energy_grant: 0,
             self_advance_pct: 0,
             target_shape: TargetShape::Single,
             custom_signals: plain_skill.custom_signals,
+            damage_curve: Default::default(),
         },
         "resolved action contract drift: gameplay fields should come only from canonical fields and custom signals"
     );

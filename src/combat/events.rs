@@ -89,11 +89,15 @@ pub enum CombatEventKind {
     OnStatusResisted {
         kind: StatusEffectKind,
     },
-    /// Evolves the combat architecture with a multi-phase lifecycle.
-    /// introduced in M010/S01.
-    TurnAdvance {
+    /// Pull a unit's turn forward by amount_pct% of MAX_AV.
+    AdvanceTurn {
         target: UnitId,
-        amount_pct: i32,
+        amount_pct: u32,
+    },
+    /// Push a unit's turn back by amount_pct% of MAX_AV (TempoResistance applies).
+    DelayTurn {
+        target: UnitId,
+        amount_pct: u32,
     },
     /// Emitted at the start of action processing, before any effects are applied.
     OnActionDeclared {

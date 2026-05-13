@@ -54,6 +54,7 @@ fn shock_skill() -> SkillDef {
             Effect::Damage {
                 amount: 1,
                 target: TargetShape::Single,
+            per_hop: Default::default(),
             },
             Effect::ToughnessHit(0),
             Effect::ApplyStatus {

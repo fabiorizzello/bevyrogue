@@ -106,6 +106,7 @@ fn basic_skill(id: &str) -> SkillDef {
         effects: vec![Effect::Damage {
             amount: 10,
             target: TargetShape::Single,
+        per_hop: Default::default(),
         }],
         custom_signals: vec![],
         animation_sequence: None,
@@ -153,6 +154,7 @@ fn deferred_skill(id: &str) -> SkillDef {
         effects: vec![Effect::Damage {
             amount: 10,
             target: TargetShape::Single,
+        per_hop: Default::default(),
         }],
         custom_signals: vec![],
         animation_sequence: None,

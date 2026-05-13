@@ -646,8 +646,11 @@ HP: {}/{}
                     LogEntry::ActionFailed { reason } => {
                         format!("[{}] Failed({})", i + 1, reason)
                     }
-                    LogEntry::TurnAdvance { target, amount_pct } => {
-                        format!("[{}] AV({:?}, {}%)", i + 1, target, amount_pct)
+                    LogEntry::AdvanceTurn { target, amount_pct } => {
+                        format!("[{}] Advance({:?}, {}%)", i + 1, target, amount_pct)
+                    }
+                    LogEntry::DelayTurn { target, amount_pct } => {
+                        format!("[{}] Delay({:?}, {}%)", i + 1, target, amount_pct)
                     }
                 };
                 cols[1].label(egui::RichText::new(s).monospace());

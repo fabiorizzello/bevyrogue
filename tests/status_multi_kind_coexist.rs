@@ -41,7 +41,7 @@ fn status_skill(id: &str, kind: StatusEffectKind, duration: u32) -> SkillDef {
         },
         implementation: SkillImplementation::Implemented,
         effects: vec![
-            Effect::Damage { amount: 1, target: TargetShape::Single },
+            Effect::Damage { amount: 1, target: TargetShape::Single , per_hop: Default::default()},
             Effect::ToughnessHit(0),
             Effect::ApplyStatus { kind, duration },
         ],

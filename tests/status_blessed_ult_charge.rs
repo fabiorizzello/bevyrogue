@@ -61,11 +61,13 @@ fn basic_resolved() -> ResolvedAction {
         ult_effect: UltEffect::GainFromBasic,
         grant_free_skill_count: 0,
         status_to_apply: None,
-        turn_advance_pct: 0,
+        advance_pct: 0,
+        delay_pct: 0,
         energy_grant: 0,
         self_advance_pct: 0,
         target_shape: TargetShape::Single,
         custom_signals: vec![],
+        damage_curve: Default::default(),
     }
 }
 

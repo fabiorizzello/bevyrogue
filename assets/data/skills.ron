@@ -830,7 +830,7 @@
             target_hp_rule: Any,
         ),
         implementation: Deferred(reason: UnimplementedTargetShape),
-        effects: [Damage(amount: 50, target: Row), ToughnessHit(28), TurnAdvance(20)],
+        effects: [Damage(amount: 50, target: Row), ToughnessHit(28), AdvanceTurn(20)],
     ),
     (
         id: SkillId("kyubimon_follow_up"),
@@ -1052,6 +1052,37 @@
         ),
         implementation: Hidden(reason: UnimplementedEffect),
         effects: [Damage(amount: 15, target: Single)],
+    ),
+    // === S02 AoE fixture skills ===
+    (
+        id: SkillId("nova_burst"),
+        name: "Nova Burst",
+        damage_tag: Fire,
+        sp_cost: 3,
+        targeting: SkillTargeting(
+            shape: Blast,
+            side: Enemy,
+            life: Alive,
+            self_rule: Forbid,
+            target_hp_rule: Any,
+        ),
+        implementation: Implemented,
+        effects: [Damage(amount: 20, target: Blast), ToughnessHit(10)],
+    ),
+    (
+        id: SkillId("dark_flood"),
+        name: "Dark Flood",
+        damage_tag: Dark,
+        sp_cost: 4,
+        targeting: SkillTargeting(
+            shape: AllEnemies,
+            side: Enemy,
+            life: Alive,
+            self_rule: Forbid,
+            target_hp_rule: Any,
+        ),
+        implementation: Implemented,
+        effects: [Damage(amount: 15, target: AllEnemies), ToughnessHit(8)],
     ),
     // === S09 enemy skills (T01) ===
     // Goblimon (minion, Physical — no toughness bar)

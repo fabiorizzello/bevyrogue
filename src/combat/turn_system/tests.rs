@@ -49,6 +49,7 @@ fn skill(
             Effect::Damage {
                 amount: damage,
                 target: TargetShape::Single,
+                per_hop: Default::default(),
             },
             Effect::ToughnessHit(toughness_damage),
         ],

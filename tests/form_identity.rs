@@ -445,12 +445,12 @@ fn kyubimon_freeze_application_self_advances() {
 
     let events = drain_combat_events(&mut cursor, &app);
     let has_self_advance = events.iter().any(|e| {
-        matches!(&e.kind, CombatEventKind::TurnAdvance { target, amount_pct }
+        matches!(&e.kind, CombatEventKind::AdvanceTurn { target, amount_pct }
             if *target == kyubimon.id && *amount_pct == 20)
     });
     assert!(
         has_self_advance,
-        "Kyubimon should emit TurnAdvance(self, 20%) from Form Identity after Chilled application"
+        "Kyubimon should emit AdvanceTurn(self, 20%) from Form Identity after Chilled application"
     );
     assert!(
         form_identity_used(&mut app, kyubimon.id),

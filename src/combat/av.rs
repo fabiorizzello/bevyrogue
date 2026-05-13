@@ -22,8 +22,10 @@ impl ActionValue {
 
     /// Advances the ActionValue.
     /// This method typically adds to the AV, moving the unit closer to MAX_AV.
+    /// Ceiling is 2*MAX_AV so that time-manipulation over-advances are representable;
+    /// `is_ready()` still triggers at MAX_AV.
     pub fn advance(&mut self, amount: i32) {
-        self.0 = (self.0 + amount).min(MAX_AV);
+        self.0 = (self.0 + amount).min(2 * MAX_AV);
     }
 
     /// Delays the ActionValue.
@@ -36,7 +38,7 @@ impl ActionValue {
     /// This method adds to the AV, pulling the unit's turn forward.
     /// (Conceptually distinct from `advance` for effect clarity, but mechanically similar here)
     pub fn self_advance(&mut self, amount: i32) {
-        self.0 = (self.0 + amount).min(MAX_AV);
+        self.0 = (self.0 + amount).min(2 * MAX_AV);
     }
 
     /// Checks if the unit's AV has reached the threshold to take a turn.

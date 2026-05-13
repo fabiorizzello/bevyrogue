@@ -119,6 +119,7 @@ fn ult_skill() -> SkillDef {
             Effect::Damage {
                 amount: 50,
                 target: TargetShape::Single,
+            per_hop: Default::default(),
             },
             Effect::ToughnessHit(10),
         ],
@@ -146,6 +147,7 @@ fn basic_skill() -> SkillDef {
             Effect::Damage {
                 amount: 10,
                 target: TargetShape::Single,
+            per_hop: Default::default(),
             },
             Effect::ToughnessHit(5),
         ],

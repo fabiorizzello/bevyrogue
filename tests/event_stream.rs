@@ -78,6 +78,7 @@ fn s09_event_stream_observes_all_variants() {
                 Effect::Damage {
                     amount: 10,
                     target: TargetShape::Single,
+                per_hop: Default::default(),
                 },
                 Effect::ToughnessHit(5),
             ],
@@ -102,6 +103,7 @@ fn s09_event_stream_observes_all_variants() {
                 Effect::Damage {
                     amount: 20,
                     target: TargetShape::Single,
+                per_hop: Default::default(),
                 },
                 Effect::ToughnessHit(5),
             ],
@@ -126,6 +128,7 @@ fn s09_event_stream_observes_all_variants() {
                 Effect::Damage {
                     amount: 10,
                     target: TargetShape::Single,
+                per_hop: Default::default(),
                 },
                 Effect::ToughnessHit(0),
             ],

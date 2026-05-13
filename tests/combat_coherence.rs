@@ -56,6 +56,7 @@ fn skill_book_with_shock_fixture() -> SkillBook {
             Effect::Damage {
                 amount: 15,
                 target: TargetShape::Single,
+            per_hop: Default::default(),
             },
             Effect::ToughnessHit(8),
             Effect::ApplyStatus {
@@ -89,6 +90,7 @@ fn sp_fixture_skill_book() -> SkillBook {
             effects: vec![Effect::Damage {
                 amount: 8,
                 target: TargetShape::Single,
+            per_hop: Default::default(),
             }],
 
             custom_signals: vec![],
@@ -111,6 +113,7 @@ fn sp_fixture_skill_book() -> SkillBook {
             effects: vec![Effect::Damage {
                 amount: 16,
                 target: TargetShape::Single,
+            per_hop: Default::default(),
             }],
 
             custom_signals: vec![],
@@ -133,6 +136,7 @@ fn sp_fixture_skill_book() -> SkillBook {
             effects: vec![Effect::Damage {
                 amount: 18,
                 target: TargetShape::Single,
+            per_hop: Default::default(),
             }],
 
             custom_signals: vec![],
@@ -174,6 +178,7 @@ fn sp_fixture_skill_book() -> SkillBook {
             effects: vec![Effect::Damage {
                 amount: 9999,
                 target: TargetShape::Single,
+            per_hop: Default::default(),
             }],
 
             custom_signals: vec![],
@@ -473,8 +478,12 @@ fn trace_kind_json(kind: &CombatEventKind) -> String {
         CombatEventKind::OnStatusApplied { kind } => {
             format!("{{\"kind\":\"OnStatusApplied\",\"effect\":\"{:?}\"}}", kind)
         }
-        CombatEventKind::TurnAdvance { target, amount_pct } => format!(
-            "{{\"kind\":\"TurnAdvance\",\"target\":{},\"amount_pct\":{}}}",
+        CombatEventKind::AdvanceTurn { target, amount_pct } => format!(
+            "{{\"kind\":\"AdvanceTurn\",\"target\":{},\"amount_pct\":{}}}",
+            target.0, amount_pct
+        ),
+        CombatEventKind::DelayTurn { target, amount_pct } => format!(
+            "{{\"kind\":\"DelayTurn\",\"target\":{},\"amount_pct\":{}}}",
             target.0, amount_pct
         ),
         _ => "{\"kind\":\"Other\"}".to_string(),
@@ -564,8 +573,12 @@ fn audit_trace(
             LogEntry::ActionFailed { reason } => {
                 format!("{{\"kind\":\"ActionFailed\",\"reason\":\"{}\"}}", reason)
             }
-            LogEntry::TurnAdvance { target, amount_pct } => format!(
-                "{{\"kind\":\"TurnAdvance\",\"target\":{},\"amount_pct\":{}}}",
+            LogEntry::AdvanceTurn { target, amount_pct } => format!(
+                "{{\"kind\":\"AdvanceTurn\",\"target\":{},\"amount_pct\":{}}}",
+                target.0, amount_pct
+            ),
+            LogEntry::DelayTurn { target, amount_pct } => format!(
+                "{{\"kind\":\"DelayTurn\",\"target\":{},\"amount_pct\":{}}}",
                 target.0, amount_pct
             ),
         };

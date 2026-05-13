@@ -4,6 +4,8 @@
 **Branch:** `milestone/M017`
 **Scope:** valutare lo stato attuale del coupling kernel↔digimon, definire l'architettura target ("kernel non sa nulla di Twin Core / Battery Loop / ..."), proporre la slicing completa di M021.
 
+> **Update 2026-05-13 (post-M018 S03):** questa research copre solo la **Fascia B** di M021 (Blueprint trait + plugin split + kernel decoupling). La **Fascia A** (Skill trait + `SkillCtx` + `Intent`, vedi **D010**) è stata aggiunta dopo, ed è descritta in `M021-CONTEXT.md`. Le slice S01–S08 qui sotto corrispondono a B1–B8 in CONTEXT; l'ordine finale interlea A e B (vedi §"Ordine slice" in CONTEXT).
+
 ---
 
 ## 1. Evidence — stato attuale
@@ -322,7 +324,7 @@ RosterEntry(name: "agumon", blueprint_data: {
 - TargetShape resolver (Blast/AoE/Bounce) → M018.
 - Asset pipeline loader (`clip.ron`, `animation_fsm.ron`) → M022.
 - AnimGraph runtime + sprite render → M023.
-- Skill RON schema redesign → fuori M021 (mantiene retrocompat durante migration).
+- Skill RON schema redesign → **dentro M021 fascia A (slice A6, vedi `M021-CONTEXT.md`)**: post-D010, RON viene ridotto a numeri/tag (dmg, hops, sp_cost, scaling, target_shape base) e la logica Effect/scripting esce. Questa nota originale (fuori M021) è obsoleta — era valida pre-D010 quando si pensava solo alla fascia B (Blueprint trait) e si voleva preservare lo schema `Effect` esistente.
 - `Entity → Instance<Unit>` cleanup in `av.rs`/`turn_system/mod.rs` payload → QQ post-M021.
 - `default_headless_script` esternalizzazione → QQ post-M021.
 - Split `kernel.rs` 1393 LOC per topic — **naturalmente risolto da S04+S05+S06** che svuotano il kernel di ~600 LOC digimon-specifici.

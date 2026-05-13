@@ -23,7 +23,7 @@ use crate::combat::{
     turn_order::{TurnAdvanced, TurnOrder},
     types::{DamageTag, SkillId, UnitId},
     ultimate::UltimateCharge,
-    unit::{BasicStreak, Commander, Ko, Unit},
+    unit::{BasicStreak, Commander, Ko, SlotIndex, Unit},
 };
 use crate::data::{SkillBookHandle, skills_ron::SkillBook};
 use bevy::prelude::*;
@@ -66,6 +66,7 @@ pub(crate) type ResolveActorsQuery<'w, 's> = Query<
         Option<&'static mut StatusBag>,
         Option<&'static mut BasicStreak>,
         Option<&'static mut RoundFlags>,
+        Option<&'static SlotIndex>,
     ),
 >;
 
@@ -199,6 +200,7 @@ pub fn resolve_action_system(
                         ko,
                         stunned,
                         commander,
+                        _,
                         _,
                         _,
                         _,
@@ -671,9 +673,9 @@ pub fn advance_turn_system(
     }
 }
 
-/// Processes `CombatEvent::TurnAdvance` messages and applies the corresponding AV delta
-/// to the target unit, factoring in `TempoResistance` for negative (Delay) amounts.
-pub fn apply_turn_advance_system(
+/// Processes `CombatEvent::AdvanceTurn` and `DelayTurn` messages, applying the
+/// corresponding AV delta via the T01 pure-logic primitives.
+pub fn apply_av_ops_system(
     mut events: MessageReader<crate::combat::events::CombatEvent>,
     mut units: Query<(
         &crate::combat::unit::Unit,
@@ -683,14 +685,24 @@ pub fn apply_turn_advance_system(
 ) {
     use crate::combat::events::CombatEventKind;
     for event in events.read() {
-        let CombatEventKind::TurnAdvance { target, amount_pct } = &event.kind else {
-            continue;
-        };
-        for (unit, mut av, mut res) in &mut units {
-            if unit.id == *target {
-                resistance::apply_av_change(&mut av, res.as_deref_mut(), *amount_pct);
-                break;
+        match &event.kind {
+            CombatEventKind::AdvanceTurn { target, amount_pct } => {
+                for (unit, mut av, _) in &mut units {
+                    if unit.id == *target {
+                        resistance::apply_advance(&mut av, *amount_pct);
+                        break;
+                    }
+                }
             }
+            CombatEventKind::DelayTurn { target, amount_pct } => {
+                for (unit, mut av, mut res) in &mut units {
+                    if unit.id == *target {
+                        resistance::apply_delay(&mut av, *amount_pct, res.as_deref_mut());
+                        break;
+                    }
+                }
+            }
+            _ => {}
         }
     }
 }

@@ -167,11 +167,13 @@ fn custom_signal_rejects_unknown_patamon_variant() {
             ult_effect: UltEffect::None,
             grant_free_skill_count: 0,
             status_to_apply: None,
-            turn_advance_pct: 0,
+            advance_pct: 0,
+        delay_pct: 0,
             energy_grant: 0,
             self_advance_pct: 0,
             target_shape: TargetShape::Single,
             custom_signals: skill.custom_signals.clone(),
+            damage_curve: Default::default(),
         },
     )
     .expect_err("unknown custom signal rejected");
@@ -220,6 +222,7 @@ fn custom_signal_resolved_action_carries_metadata_without_interpreting_it() {
         effects: vec![Effect::Damage {
             amount: 7,
             target: TargetShape::Single,
+            per_hop: Default::default(),
         }],
         custom_signals: vec![signal("patamon", "build_holy_support_grace", 1)],
         ..Default::default()

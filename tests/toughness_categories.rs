@@ -46,6 +46,7 @@ fn skill_book() -> SkillBook {
             Effect::Damage {
                 amount: 5,
                 target: TargetShape::Single,
+            per_hop: Default::default(),
             },
             Effect::ToughnessHit(TOUGHNESS_HIT),
         ],

@@ -48,7 +48,7 @@ fn damage_skill(id: &str, tag: DamageTag, amount: i32) -> SkillDef {
         },
         implementation: SkillImplementation::Implemented,
         effects: vec![
-            Effect::Damage { amount, target: TargetShape::Single },
+            Effect::Damage { amount, target: TargetShape::Single , per_hop: Default::default()},
             Effect::ToughnessHit(0),
         ],
         ..Default::default()

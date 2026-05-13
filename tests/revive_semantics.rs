@@ -75,6 +75,7 @@ fn s12_revive_semantics() {
             effects: vec![Effect::Damage {
                 amount: 1000,
                 target: TargetShape::Single,
+            per_hop: Default::default(),
             }],
 
             custom_signals: vec![],

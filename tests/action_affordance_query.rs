@@ -103,6 +103,7 @@ fn basic_attack_skill(id: &str) -> SkillDef {
         effects: vec![Effect::Damage {
             amount: 10,
             target: TargetShape::Single,
+        per_hop: Default::default(),
         }],
         custom_signals: vec![],
         animation_sequence: None,
@@ -127,6 +128,7 @@ fn offensive_skill(id: &str, sp_cost: i32) -> SkillDef {
         effects: vec![Effect::Damage {
             amount: 10,
             target: TargetShape::Single,
+        per_hop: Default::default(),
         }],
         custom_signals: vec![],
         animation_sequence: None,
@@ -151,6 +153,7 @@ fn any_target_skill(id: &str) -> SkillDef {
         effects: vec![Effect::Damage {
             amount: 10,
             target: TargetShape::Single,
+        per_hop: Default::default(),
         }],
         custom_signals: vec![],
         animation_sequence: None,
@@ -219,6 +222,7 @@ fn damaged_ally_skill() -> SkillDef {
         effects: vec![Effect::Damage {
             amount: 5,
             target: TargetShape::Single,
+        per_hop: Default::default(),
         }],
         custom_signals: vec![],
         animation_sequence: None,
@@ -243,6 +247,7 @@ fn row_skill() -> SkillDef {
         effects: vec![Effect::Damage {
             amount: 12,
             target: TargetShape::Row,
+        per_hop: Default::default(),
         }],
         custom_signals: vec![],
         animation_sequence: None,
