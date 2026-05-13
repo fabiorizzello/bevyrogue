@@ -376,6 +376,17 @@ pub fn apply_effects(
 
     outcome.sp_ok = true;
     outcome.succeeded = true;
+
+    // §H.1: Blessed grants +1 Ult charge per action, but not when the action is
+    // an Ultimate cast (Reset branch) — skipping avoids self-feeding the firing Ult.
+    if resolved.ult_effect != UltEffect::Reset {
+        if let Some(bag) = attacker_statuses {
+            if bag.has(&StatusEffectKind::Blessed) {
+                attacker_ult.try_add(1);
+            }
+        }
+    }
+
     (outcome, events)
 }
 
