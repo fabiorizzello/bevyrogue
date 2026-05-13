@@ -8,6 +8,8 @@ use crate::combat::types::{DamageTag, SkillId};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TargetShape {
     Single,
+    /// Primary target + adjacent slot_index ±1 on the same team, alive, slot_index asc.
+    Blast,
     Row,
     AllEnemies,
     SelfOnly,

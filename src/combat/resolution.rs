@@ -9,7 +9,7 @@ use crate::combat::{
     team::Team,
     toughness::{DamageKind, Toughness, can_apply_toughness_damage, classify},
     turn_system::ActionIntent,
-    types::{EvoStage, SkillId},
+    types::{EvoStage, SkillId, UnitId},
     ultimate::UltimateCharge,
     unit::{BasicStreak, Unit},
 };
@@ -49,6 +49,62 @@ impl Default for ResolutionOutcome {
             ko: false,
             sp_ok: true,
             succeeded: false,
+        }
+    }
+}
+
+/// Lightweight entry in a TargetableSnapshot.
+#[derive(Debug, Clone)]
+pub struct TargetEntry {
+    pub id: UnitId,
+    pub team: Team,
+    pub slot_index: u8,
+    pub alive: bool,
+}
+
+/// Snapshot of all targetable units for pure target-shape resolution.
+/// Built outside the ECS; passed to resolve_targets() and similar helpers.
+#[derive(Debug, Clone, Default)]
+pub struct TargetableSnapshot {
+    pub entries: Vec<TargetEntry>,
+}
+
+/// Resolve the full target list for a given shape and primary target.
+///
+/// - Single / Row / SelfOnly → [primary] (Row/SelfOnly: single-target fallback, fan-out deferred)
+/// - Blast → slot ±1 on primary's team, alive only, slot_index ascending
+/// - AllEnemies → all alive units on primary's team, slot_index ascending
+pub fn resolve_targets(
+    shape: &TargetShape,
+    primary: UnitId,
+    snapshot: &TargetableSnapshot,
+) -> Vec<UnitId> {
+    let Some(primary_entry) = snapshot.entries.iter().find(|e| e.id == primary) else {
+        return vec![];
+    };
+
+    match shape {
+        TargetShape::Single | TargetShape::Row | TargetShape::SelfOnly => vec![primary],
+        TargetShape::Blast => {
+            let team = primary_entry.team;
+            let slot = primary_entry.slot_index;
+            let mut targets: Vec<&TargetEntry> = snapshot
+                .entries
+                .iter()
+                .filter(|e| e.team == team && e.alive && e.slot_index.abs_diff(slot) <= 1)
+                .collect();
+            targets.sort_by_key(|e| e.slot_index);
+            targets.iter().map(|e| e.id).collect()
+        }
+        TargetShape::AllEnemies => {
+            let target_team = primary_entry.team;
+            let mut targets: Vec<&TargetEntry> = snapshot
+                .entries
+                .iter()
+                .filter(|e| e.team == target_team && e.alive)
+                .collect();
+            targets.sort_by_key(|e| e.slot_index);
+            targets.iter().map(|e| e.id).collect()
         }
     }
 }
@@ -416,6 +472,7 @@ mod tests {
     use super::*;
     use crate::combat::{
         sp::{RoundSpTracker, SpPool},
+        team::Team,
         toughness::Toughness,
         turn_system::ActionIntent,
         types::{Attribute, DamageTag, EvoStage, UnitId},
@@ -1333,5 +1390,94 @@ mod tests {
         assert!(outcome.sp_ok);
         assert_eq!(sp.current, 2, "Adult paid full 3 SP even with 5 basics");
         assert_eq!(streak.count, 5, "Adult streak unchanged");
+    }
+
+    // ── resolve_targets table-driven tests ──────────────────────────────────
+
+    fn snap(entries: Vec<(UnitId, Team, u8, bool)>) -> TargetableSnapshot {
+        TargetableSnapshot {
+            entries: entries
+                .into_iter()
+                .map(|(id, team, slot_index, alive)| TargetEntry { id, team, slot_index, alive })
+                .collect(),
+        }
+    }
+
+    #[test]
+    fn resolve_targets_single_returns_primary() {
+        let s = snap(vec![
+            (UnitId(1), Team::Ally, 0, true),
+            (UnitId(2), Team::Enemy, 0, true),
+        ]);
+        assert_eq!(resolve_targets(&TargetShape::Single, UnitId(2), &s), vec![UnitId(2)]);
+    }
+
+    #[test]
+    fn resolve_targets_blast_edge_slot_zero_returns_only_0_and_1() {
+        // primary at slot 0 → slot -1 absent → only slots 0 and 1
+        let s = snap(vec![
+            (UnitId(10), Team::Enemy, 0, true),
+            (UnitId(11), Team::Enemy, 1, true),
+            (UnitId(12), Team::Enemy, 2, true),
+        ]);
+        assert_eq!(
+            resolve_targets(&TargetShape::Blast, UnitId(10), &s),
+            vec![UnitId(10), UnitId(11)],
+        );
+    }
+
+    #[test]
+    fn resolve_targets_blast_ko_adjacent_omitted() {
+        // primary at slot 1, slot 0 KO'd → only [slot1, slot2]
+        let s = snap(vec![
+            (UnitId(10), Team::Enemy, 0, false),
+            (UnitId(11), Team::Enemy, 1, true),
+            (UnitId(12), Team::Enemy, 2, true),
+        ]);
+        assert_eq!(
+            resolve_targets(&TargetShape::Blast, UnitId(11), &s),
+            vec![UnitId(11), UnitId(12)],
+        );
+    }
+
+    #[test]
+    fn resolve_targets_blast_all_three_alive_sorted_asc() {
+        // Inserted out of order → sorted by slot_index
+        let s = snap(vec![
+            (UnitId(12), Team::Enemy, 2, true),
+            (UnitId(10), Team::Enemy, 0, true),
+            (UnitId(11), Team::Enemy, 1, true),
+        ]);
+        assert_eq!(
+            resolve_targets(&TargetShape::Blast, UnitId(11), &s),
+            vec![UnitId(10), UnitId(11), UnitId(12)],
+        );
+    }
+
+    #[test]
+    fn resolve_targets_all_enemies_omits_dead() {
+        let s = snap(vec![
+            (UnitId(1), Team::Ally, 0, true),
+            (UnitId(10), Team::Enemy, 0, true),
+            (UnitId(11), Team::Enemy, 1, false),
+            (UnitId(12), Team::Enemy, 2, true),
+        ]);
+        assert_eq!(
+            resolve_targets(&TargetShape::AllEnemies, UnitId(10), &s),
+            vec![UnitId(10), UnitId(12)],
+        );
+    }
+
+    #[test]
+    fn resolve_targets_all_enemies_sorted_slot_asc() {
+        let s = snap(vec![
+            (UnitId(12), Team::Enemy, 2, true),
+            (UnitId(10), Team::Enemy, 0, true),
+            (UnitId(11), Team::Enemy, 1, true),
+        ]);
+        assert_eq!(
+            resolve_targets(&TargetShape::AllEnemies, UnitId(12), &s),
+            vec![UnitId(10), UnitId(11), UnitId(12)],
+        );
     }
 }
