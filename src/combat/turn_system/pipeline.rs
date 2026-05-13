@@ -18,7 +18,7 @@ use crate::combat::resolution::{
 use crate::combat::rng::CombatRng;
 use crate::combat::sp::{RoundSpTracker, SpPool};
 use crate::combat::state::{CombatPhase, CombatState, InFlightAction, UltEffect};
-use crate::combat::status_effect::StatusEffect;
+use crate::combat::status_effect::StatusBag;
 use crate::combat::stun::Stunned;
 use crate::combat::team::Team;
 use crate::combat::turn_order::TurnOrder;
@@ -475,7 +475,7 @@ pub(crate) fn step_app(
         defender_ko,
         _,
         defender_commander,
-        _,
+        mut defender_bag,
         _,
         mut defender_round_flags,
     ) = defender;
@@ -728,10 +728,16 @@ pub(crate) fn step_app(
                     None => CombatRng::from_seed(42).roll_pct(threshold),
                 };
                 if passes {
-                    commands.entity(target_entity).insert(StatusEffect {
-                        kind: kind.clone(),
-                        duration_remaining: duration,
-                    });
+                    if let Some(ref mut bag) = defender_bag {
+                        bag.apply(kind.clone(), duration);
+                    } else {
+                        // Fallback: bag not yet in world — insert fresh bag with the status.
+                        // This should not occur post-bootstrap seeding, but guards against
+                        // units spawned without StatusBag (e.g. test fixtures).
+                        let mut fresh = StatusBag::default();
+                        fresh.apply(kind.clone(), duration);
+                        commands.entity(target_entity).insert(fresh);
+                    }
                     emit_combat_event(
                         event_writer,
                         CombatEventKind::OnStatusApplied { kind },

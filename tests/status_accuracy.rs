@@ -9,7 +9,7 @@
 /// 3. (neutral) Vaccine → Vaccine, threshold = 100           → always passes (R076).
 use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::{
-    StatusEffect, StatusEffectKind,
+    StatusBag, StatusEffectKind,
     events::{CombatEvent, CombatEventKind},
     kit::UnitSkills,
     log::ActionLog,
@@ -111,6 +111,7 @@ fn setup_app(seed: u64, defender_attribute: Attribute) -> (App, Entity) {
             charge_per_event: 10,
         },
         Toughness::new(100, vec![]),
+        StatusBag::default(),
     ));
 
     // Defender: attribute chosen by caller (Data or Vaccine); high HP so it survives the hit.
@@ -128,6 +129,7 @@ fn setup_app(seed: u64, defender_attribute: Attribute) -> (App, Entity) {
             },
             Team::Enemy,
             Toughness::new(1_000, vec![]),
+            StatusBag::default(),
         ))
         .id();
 
@@ -195,10 +197,13 @@ fn vaccine_vs_data_status_miss_emits_on_status_resisted() {
             .any(|k| matches!(k, CombatEventKind::OnStatusApplied { .. })),
         "OnStatusApplied must not appear on a miss — seed={seed}"
     );
-    // StatusEffect component must NOT be present
+    // StatusBag must be present but empty on a miss (bag is seeded by bootstrap)
     assert!(
-        app.world().get::<StatusEffect>(defender).is_none(),
-        "StatusEffect must not be inserted on a miss — seed={seed}"
+        app.world()
+            .get::<StatusBag>(defender)
+            .map(|b| b.is_empty())
+            .unwrap_or(true),
+        "StatusBag must be empty (no status applied) on a miss — seed={seed}"
     );
 }
 
@@ -237,10 +242,13 @@ fn vaccine_vs_data_status_hit_emits_on_status_applied() {
             .any(|k| matches!(k, CombatEventKind::OnStatusResisted { .. })),
         "OnStatusResisted must not appear on a hit — seed={seed}"
     );
-    // StatusEffect component MUST be present
+    // StatusBag must contain the Paralyzed status on a hit
     assert!(
-        app.world().get::<StatusEffect>(defender).is_some(),
-        "StatusEffect must be inserted on a hit — seed={seed}"
+        app.world()
+            .get::<StatusBag>(defender)
+            .map(|b| b.has(&StatusEffectKind::Paralyzed))
+            .unwrap_or(false),
+        "StatusBag must contain Paralyzed on a hit — seed={seed}"
     );
 }
 
@@ -276,7 +284,10 @@ fn vaccine_vs_vaccine_neutral_status_always_applies() {
         "OnStatusResisted must not appear on neutral matchup"
     );
     assert!(
-        app.world().get::<StatusEffect>(defender).is_some(),
-        "StatusEffect must be present after neutral matchup"
+        app.world()
+            .get::<StatusBag>(defender)
+            .map(|b| b.has(&StatusEffectKind::Paralyzed))
+            .unwrap_or(false),
+        "StatusBag must contain Paralyzed after neutral matchup"
     );
 }

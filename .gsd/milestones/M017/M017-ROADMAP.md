@@ -18,7 +18,7 @@
 - [x] **S01: S01** `risk:high` `depends:[]`
   > After this: `cargo check` + `cargo test` full suite verdi senza referenze alla vecchia tassonomia. `grep -r 'Burn\|Freeze\|Shock\|DeepFreeze' src/ tests/` non trova match (eccetto Burn/Shock reserved).
 
-- [ ] **S02: Apply / refresh_max_dur / cleanse policy** `risk:medium` `depends:[S01]`
+- [ ] **S02: S02** `risk:medium` `depends:[]`
   > After this: Test deterministico: apply Heated(dur=2), re-apply Heated(dur=1), check dur=2. Cleanse rimuove Debuff ma non Buff cleanse-immune.
 
 - [ ] **S03: Heated + Chilled — damage amp% pipeline + DoT + speed mod** `risk:medium` `depends:[S02]`

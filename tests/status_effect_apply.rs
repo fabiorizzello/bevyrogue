@@ -7,7 +7,7 @@
 /// - Negative path: action that KOs the defender produces no StatusEffect (KO guard)
 use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::{
-    StatusEffect, StatusEffectKind,
+    StatusBag, StatusEffectKind,
     events::{CombatEvent, CombatEventKind},
     kit::UnitSkills,
     log::ActionLog,
@@ -146,6 +146,7 @@ fn apply_status_inserts_component_and_emits_event() {
             attacker_skills(),
             ult_charge_default(),
             Toughness::new(100, vec![]),
+            StatusBag::default(),
         ))
         .id();
 
@@ -155,6 +156,7 @@ fn apply_status_inserts_component_and_emits_event() {
             make_unit(2, "Defender", 500),
             Team::Enemy,
             Toughness::new(100, vec![]),
+            StatusBag::default(),
         ))
         .id();
 
@@ -166,15 +168,17 @@ fn apply_status_inserts_component_and_emits_event() {
 
     app.update();
 
-    // StatusEffect must be present on the defender.
-    let status = app.world().get::<StatusEffect>(defender);
+    // StatusBag must contain Heated(3) on the defender.
+    let bag = app.world().get::<StatusBag>(defender);
     assert!(
-        status.is_some(),
-        "StatusEffect should be inserted on defender after Flame Bite"
+        bag.map(|b| b.has(&StatusEffectKind::Heated)).unwrap_or(false),
+        "StatusBag should contain Heated after Flame Bite"
     );
-    let s = status.unwrap();
-    assert_eq!(s.kind, StatusEffectKind::Heated);
-    assert_eq!(s.duration_remaining, 3);
+    assert_eq!(
+        bag.and_then(|b| b.get_dur(&StatusEffectKind::Heated)),
+        Some(3),
+        "Heated duration must be 3"
+    );
 
     // OnStatusApplied event must be in the stream.
     let events = drain_events(&mut event_cursor, &app);
@@ -187,10 +191,13 @@ fn apply_status_inserts_component_and_emits_event() {
         "OnStatusApplied(Heated) must be emitted; events={events:?}"
     );
 
-    // Attacker entity should NOT have StatusEffect.
+    // Attacker entity's bag should NOT contain any status.
     assert!(
-        app.world().get::<StatusEffect>(attacker).is_none(),
-        "StatusEffect must not be placed on the attacker"
+        app.world()
+            .get::<StatusBag>(attacker)
+            .map(|b| b.is_empty())
+            .unwrap_or(true),
+        "StatusBag on attacker must be empty"
     );
 }
 
@@ -206,19 +213,19 @@ fn reapply_status_overwrites_existing_component() {
         attacker_skills(),
         ult_charge_default(),
         Toughness::new(100, vec![]),
+        StatusBag::default(),
     ));
 
+    // Pre-existing Heated(1) simulates a previous tick that left duration_remaining=1.
+    let mut pre_bag = StatusBag::default();
+    pre_bag.apply(StatusEffectKind::Heated, 1);
     let defender = app
         .world_mut()
         .spawn((
             make_unit(2, "Defender", 500),
             Team::Enemy,
             Toughness::new(100, vec![]),
-            // Pre-existing status with different duration (simulates a previous tick).
-            StatusEffect {
-                kind: StatusEffectKind::Heated,
-                duration_remaining: 1,
-            },
+            pre_bag,
         ))
         .id();
 
@@ -230,13 +237,15 @@ fn reapply_status_overwrites_existing_component() {
 
     app.update();
 
-    let status = app
+    // refresh_max_dur policy: max(1, 3) = 3
+    let dur = app
         .world()
-        .get::<StatusEffect>(defender)
-        .expect("StatusEffect must exist");
+        .get::<StatusBag>(defender)
+        .and_then(|b| b.get_dur(&StatusEffectKind::Heated));
     assert_eq!(
-        status.duration_remaining, 3,
-        "Re-apply must reset duration to skill value"
+        dur,
+        Some(3),
+        "Re-apply must use refresh_max_dur: max(1, 3) = 3"
     );
 }
 
@@ -260,6 +269,7 @@ fn action_on_ko_target_produces_no_status() {
         attacker_skills(),
         ult_charge_default(),
         Toughness::new(100, vec![]),
+        StatusBag::default(),
     ));
 
     // hp_current=0 so Unit::is_ko() returns true — apply_effects rejects non-revive attacks.
@@ -278,6 +288,7 @@ fn action_on_ko_target_produces_no_status() {
             Team::Enemy,
             Ko,
             Toughness::new(100, vec![]),
+            StatusBag::default(),
         ))
         .id();
 
@@ -290,8 +301,11 @@ fn action_on_ko_target_produces_no_status() {
     app.update();
 
     assert!(
-        app.world().get::<StatusEffect>(defender).is_none(),
-        "StatusEffect must NOT be inserted when action fails (KO'd target)"
+        app.world()
+            .get::<StatusBag>(defender)
+            .map(|b| b.is_empty())
+            .unwrap_or(true),
+        "StatusBag must be empty when action fails (KO'd target)"
     );
 
     let events = drain_events(&mut event_cursor, &app);
@@ -320,6 +334,7 @@ fn action_that_kos_target_produces_no_status() {
         attacker_skills(),
         ult_charge_default(),
         Toughness::new(100, vec![]),
+        StatusBag::default(),
     ));
 
     // Defender with 1 HP — any damage KOs it.
@@ -329,6 +344,7 @@ fn action_that_kos_target_produces_no_status() {
             make_unit(2, "Fragile", 1),
             Team::Enemy,
             Toughness::new(100, vec![]),
+            StatusBag::default(),
         ))
         .id();
 
@@ -346,10 +362,13 @@ fn action_that_kos_target_produces_no_status() {
         "Defender with 1 HP must be KO'd after Flame Bite"
     );
 
-    // No StatusEffect on the KO'd defender.
+    // StatusBag must be empty on the KO'd defender (KO guard prevents status apply).
     assert!(
-        app.world().get::<StatusEffect>(defender).is_none(),
-        "StatusEffect must NOT be inserted on a KO'd defender"
+        app.world()
+            .get::<StatusBag>(defender)
+            .map(|b| b.is_empty())
+            .unwrap_or(true),
+        "StatusBag must be empty on a KO'd defender"
     );
 
     let events = drain_events(&mut event_cursor, &app);

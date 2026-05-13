@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::combat::{
-    StatusEffect,
+    StatusBag,
     energy::{Energy, RoundEnergyTracker},
     events::{ActionIntentKind, CombatEvent, CombatEventKind},
     kernel::{CombatBeatId, CombatKernelRegistry},
@@ -101,7 +101,7 @@ type ResolveActorsQuery<'w, 's> = Query<
         Option<&'static Ko>,
         Option<&'static Stunned>,
         Option<&'static Commander>,
-        Option<&'static mut StatusEffect>,
+        Option<&'static mut StatusBag>,
         Option<&'static mut BasicStreak>,
         Option<&'static mut RoundFlags>,
     ),

@@ -1,6 +1,6 @@
 use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::{
-    StatusEffect, StatusEffectKind,
+    StatusBag, StatusEffectKind,
     events::{CombatEvent, CombatEventKind},
     follow_up::{
         FollowUpIntent, FollowUpTrace, follow_up_listener_system, resolve_follow_up_action_system,
@@ -315,6 +315,7 @@ fn spawn_from_def(
                 ultimate: def.ultimate_skill.clone(),
                 follow_up: def.follow_up.clone(),
             },
+            StatusBag::default(),
         ))
         .id()
 }
@@ -362,6 +363,7 @@ fn spawn_custom_enemy(
                 ultimate: SkillId(ultimate_skill.into()),
                 follow_up: None,
             },
+            StatusBag::default(),
         ))
         .id()
 }
@@ -409,11 +411,13 @@ fn ult_current(app: &mut App, unit_id: UnitId) -> i32 {
 
 fn status_effect_kind(app: &mut App, unit_id: UnitId) -> Option<StatusEffectKind> {
     let world = app.world_mut();
-    let mut query = world.query::<(&Unit, Option<&StatusEffect>)>();
+    let mut query = world.query::<(&Unit, Option<&StatusBag>)>();
     query
         .iter(world)
         .find(|(unit, _)| unit.id == unit_id)
-        .and_then(|(_, status)| status.map(|effect| effect.kind.clone()))
+        .and_then(|(_, bag_opt)| {
+            bag_opt.and_then(|bag| bag.iter().next().map(|inst| inst.kind.clone()))
+        })
 }
 
 fn is_ko(app: &mut App, unit_id: UnitId) -> bool {

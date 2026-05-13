@@ -12,6 +12,7 @@ use super::kit::{FormIdentityKit, UnitSkills};
 use super::resistance::TempoResistance;
 use super::round_flags::RoundFlags;
 use super::speed::{Speed, SpeedModifier};
+use super::status_effect::StatusBag;
 use super::toughness::{Toughness, ToughnessCategory};
 use super::turn_order::TurnOrder;
 use super::ultimate::{UltAccumulationTrigger, UltimateCharge};
@@ -158,6 +159,7 @@ pub fn spawn_unit_from_def(commands: &mut Commands, def: &UnitDef) -> Entity {
             def.toughness_category,
         ),
         RoundFlags::default(),
+        StatusBag::default(),
         UltimateCharge::new(
             def.ultimate_trigger,
             def.ultimate_cap,

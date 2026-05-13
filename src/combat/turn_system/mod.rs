@@ -3,7 +3,7 @@ use crate::combat::enemy_ai;
 use crate::combat::resistance::{self, TempoResistance};
 use crate::combat::rng::CombatRng;
 use crate::combat::{
-    StatusEffect,
+    StatusBag,
     action_query::{ActionQueryKind, build_snapshot_from_ecs, query_intent_legality},
     enemy_counterplay::EnemyCounterplayKit,
     energy::{Energy, RoundEnergyTracker},
@@ -64,7 +64,7 @@ pub(crate) type ResolveActorsQuery<'w, 's> = Query<
         Option<&'static Ko>,
         Option<&'static Stunned>,
         Option<&'static Commander>,
-        Option<&'static mut StatusEffect>,
+        Option<&'static mut StatusBag>,
         Option<&'static mut BasicStreak>,
         Option<&'static mut RoundFlags>,
     ),
@@ -366,7 +366,7 @@ pub fn advance_turn_system(
             Option<&SpeedModifier>,
             Option<&mut ActionValue>,
             Option<&mut Stunned>,
-            Option<&mut StatusEffect>,
+            Option<&mut StatusBag>,
             Option<&UnitSkills>,
             Option<&UltimateCharge>,
             Option<&Toughness>,
@@ -471,41 +471,45 @@ pub fn advance_turn_system(
                 continue;
             }
 
-            if let Some(mut se) = status_opt {
-                let kind = se.kind.clone();
+            if let Some(mut bag) = status_opt {
                 // Per-status semantics (DoT, speed delta, cancel probability, ult boost)
                 // are implemented in S03–S05. This is the v0 lifecycle skeleton only.
-                match &kind {
-                    StatusEffectKind::Heated
-                    | StatusEffectKind::Chilled
-                    | StatusEffectKind::Paralyzed
-                    | StatusEffectKind::Slowed
-                    | StatusEffectKind::Blessed
-                    | StatusEffectKind::Burn
-                    | StatusEffectKind::Shock => {}
-                }
-                let expired = se.tick();
-                let turns_left = se.duration_remaining;
-                emit_combat_event(
-                    &mut event_writer,
-                    CombatEventKind::OnStatusTick {
-                        kind: kind.clone(),
-                        turns_left,
-                    },
-                    active_id,
-                    active_id,
-                    0,
-                );
-                if expired {
-                    commands.entity(snap.entity).remove::<StatusEffect>();
+                // Emit OnStatusTick for every still-active instance before ticking.
+                for inst in bag.iter() {
+                    // Totality check — all 7 variants covered; no-op in v0.
+                    match &inst.kind {
+                        StatusEffectKind::Heated
+                        | StatusEffectKind::Chilled
+                        | StatusEffectKind::Paralyzed
+                        | StatusEffectKind::Slowed
+                        | StatusEffectKind::Blessed
+                        | StatusEffectKind::Burn
+                        | StatusEffectKind::Shock => {}
+                    }
+                    // turns_left after this tick = current - 1 (clamped to 0).
+                    let turns_left = inst.duration_remaining.saturating_sub(1);
                     emit_combat_event(
                         &mut event_writer,
-                        CombatEventKind::OnStatusExpired { kind: kind.clone() },
+                        CombatEventKind::OnStatusTick {
+                            kind: inst.kind.clone(),
+                            turns_left,
+                        },
                         active_id,
                         active_id,
                         0,
                     );
                 }
+                let expired = bag.tick_all();
+                for kind in expired {
+                    emit_combat_event(
+                        &mut event_writer,
+                        CombatEventKind::OnStatusExpired { kind },
+                        active_id,
+                        active_id,
+                        0,
+                    );
+                }
+                // Do NOT remove the bag component — it persists empty and is re-used on next apply.
             }
         } // mutable borrow released
 
