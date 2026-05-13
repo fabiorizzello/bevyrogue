@@ -18,8 +18,6 @@ pub struct FollowUpConfig {
     pub action: SkillId,
 }
 
-// Used by S06/T02.
-#[allow(dead_code)]
 #[derive(Component, Debug, Clone, PartialEq, Eq)]
 pub struct UnitSkills {
     pub basic: SkillId,
