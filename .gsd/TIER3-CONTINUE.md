@@ -8,19 +8,19 @@ Stato al `2026-05-13`. Branch: `milestone/M017`. Fonte: `.gsd/quick/1-cattura-qu
 |---|------|--------|-------------|
 | Q7 | Template `blueprints/{name}/` + `Plugin` trait + Agumon canary | **DONE** (commit `5d8a23f`) | `src/combat/blueprints/agumon/{mod.rs, signals.rs, identity.rs}` |
 | Q8 | Migrare `twin_core.rs` → `blueprints/agumon/identity.rs` | **DONE** (commit `5d8a23f`) | idem |
-| Q9-patamon | Migrare `holy_support.rs` (254 LOC) → `blueprints/patamon/identity.rs` | **OPEN** | `src/combat/holy_support.rs` |
+| Q9-patamon | Migrare `holy_support.rs` (254 LOC) → `blueprints/patamon/identity.rs` | **DONE** (commit `d20164c`) | `src/combat/blueprints/patamon/{mod.rs, signals.rs, identity.rs}` |
 | Q9-tentomon | Migrare `battery_loop.rs` (261 LOC) → `blueprints/tentomon/identity.rs` | **OPEN — preferibilmente S0 di M026** | `src/combat/battery_loop.rs` |
 | Q9-renamon | Migrare `precision_mind_game.rs` (211 LOC) → `blueprints/renamon/identity.rs` | **OPEN — preferibilmente S0 di M027** | `src/combat/precision_mind_game.rs` |
-| Q9-dorumon | Migrare `predator_loop.rs` (510 LOC) → `blueprints/dorumon/identity.rs` | **OPEN** | `src/combat/predator_loop.rs` |
+| Q9-dorumon | Migrare `predator_loop.rs` (510 LOC) → `blueprints/dorumon/identity.rs` | **DONE** (commit `bd4f8f9`, verified green) | `src/combat/blueprints/dorumon/{mod.rs, signals.rs, identity.rs}` |
 | Q9-gabumon | Gabumon **non ha identity passive** in `src/combat/` (manca da BACKLOG); `blueprints/gabumon.rs` esiste solo per signal dispatch | **N/A** o trivial | `src/combat/blueprints/gabumon.rs` |
-| Q10 | `App::add_plugins((AgumonPlugin, PatamonPlugin, ...))` finale + rimozione `pub mod twin_core` shim e simili | **OPEN — quando tutti i Q9 sono in** | `src/combat/kernel.rs` registration site |
+| Q10 | `App::add_plugins((AgumonPlugin, PatamonPlugin, DorumonPlugin, ...))` finale + rimozione shim `pub use … as predator_loop` e simili | **OPEN — quando tutti i Q9 sono in** | `src/combat/kernel.rs` + `src/combat/mod.rs` |
 
 ## Raccomandazione stagger
 
 - **Q9 just-in-time per milestone feature:**
   - Q9-tentomon = S0 di **M026** (AoE Tentomon — atterra in `battery_loop`)
   - Q9-renamon = S0 di **M027** (time-manip Renamon — atterra in `precision_mind_game`)
-  - Q9-patamon / Q9-dorumon: milestone cleanup dedicato, o quando una feature li tocca
+  - Q9-patamon / Q9-dorumon: **già completati**
 - **Q10 a chiusura** quando tutti e 4 i Q9 sono in.
 
 Razionale: Q7+Q8 hanno già pagato il setup-cost e validato la seam con Agumon (147 lib tests + 532 integration verdi). Migrare codice "stabile" che non sta per essere toccato sarebbe debt anticipata — meglio agganciare la migrazione alla milestone che già modifica quel file.
