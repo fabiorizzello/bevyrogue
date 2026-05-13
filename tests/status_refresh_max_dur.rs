@@ -81,7 +81,7 @@ fn setup_app() -> (App, Entity) {
         Team::Ally,
         UnitSkills {
             basic: SkillId("h2".into()),
-            skills: vec![],
+            skills: vec![SkillId("h1".into()), SkillId("h5".into())],
             ultimate: SkillId("h2".into()),
             follow_up: None,
         },

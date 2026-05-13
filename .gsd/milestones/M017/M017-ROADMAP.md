@@ -1,4 +1,4 @@
-# M017: Status taxonomy v0 rewrite (canon §H.1)
+# M017: M017: Status taxonomy v0 rewrite (canon §H.1)
 
 **Vision:** Allineare il combat kernel al canon §H.1: rimpiazzare la tassonomia attuale (`Burn`/`Freeze`/`Shock`/`DeepFreeze`) con i 5 status canon `Heated`/`Chilled`/`Paralyzed`/`Slowed`/`Blessed` (+ 2 reserved gas-era). Policy `refresh_max_dur` single-instance per (target,kind), cleanse default Debuff-only. Le 5 semantiche per-status (DoT, amp%, skip turn, delay, buff dealt) cablate nelle rispettive pipeline. JSONL log + ValidationSnapshot usano nomi canon. Nessuna nuova reactive event (è M020), nessun DR (è M019), nessun TargetShape expansion (è M018) — questo milestone è **solo** la fondazione vocabolaria + apply/refresh/tick + per-status effect base.
 
@@ -32,6 +32,8 @@
 
 - [ ] **S06: Observability — canon JSONL log + ValidationSnapshot** `risk:low` `depends:[S01,S02,S03,S04,S05]`
   > After this: Scripted scenario CLI: applica Heated + Chilled + Paralyzed + Slowed + Blessed su units diversi → JSONL log analizzato via grep test, zero match su vocabolario legacy. ValidationSnapshot.statuses_per_unit deterministico in test fixture.
+
+## Boundary Map
 
 ## Boundary Map
 

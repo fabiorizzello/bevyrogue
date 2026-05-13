@@ -6,7 +6,7 @@ use bevy::prelude::*;
 use bevy_common_assets::ron::RonAssetPlugin;
 
 use self::party_ron::PartyConfig;
-use self::skills_ron::SkillBook;
+use self::skills_ron::{validate_skill_book, SkillBook};
 use self::units_ron::UnitRoster;
 
 #[derive(Resource)]
@@ -37,7 +37,7 @@ impl Plugin for DataPlugin {
             .add_plugins(RonAssetPlugin::<PartyConfig>::new(&["ron"]))
             .init_resource::<DataLoadState>()
             .add_systems(Startup, load_data)
-            .add_systems(Update, hydrate_data_ready);
+            .add_systems(Update, (hydrate_data_ready, validate_skill_book_on_load));
     }
 }
 
@@ -103,5 +103,28 @@ fn hydrate_data_ready(
 
     if state.roster && state.party && data_ready.is_none() {
         commands.insert_resource(DataReady);
+    }
+}
+
+fn validate_skill_book_on_load(
+    mut events: MessageReader<AssetEvent<SkillBook>>,
+    handle: Option<Res<SkillBookHandle>>,
+    books: Res<Assets<SkillBook>>,
+) {
+    let Some(handle) = handle else { return };
+    for event in events.read() {
+        let id = match event {
+            AssetEvent::LoadedWithDependencies { id } => id,
+            AssetEvent::Modified { id } => id,
+            _ => continue,
+        };
+        if *id != handle.0.id() {
+            continue;
+        }
+        if let Some(book) = books.get(&handle.0) {
+            if let Err(e) = validate_skill_book(book) {
+                panic!("SkillBook validation failed: {e}");
+            }
+        }
     }
 }
