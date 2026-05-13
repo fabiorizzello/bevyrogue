@@ -18,7 +18,7 @@ use crate::combat::resolution::{
 use crate::combat::rng::CombatRng;
 use crate::combat::sp::{RoundSpTracker, SpPool};
 use crate::combat::state::{CombatPhase, CombatState, InFlightAction, UltEffect};
-use crate::combat::status_effect::StatusBag;
+use crate::combat::status_effect::{StatusBag, StatusEffectKind};
 use crate::combat::stun::Stunned;
 use crate::combat::team::Team;
 use crate::combat::turn_order::TurnOrder;
@@ -730,6 +730,11 @@ pub(crate) fn step_app(
                     None => CombatRng::from_seed(42).roll_pct(threshold),
                 };
                 if passes {
+                    // Check first-apply before bag.apply() mutates it.
+                    let is_first_apply_slowed = matches!(kind, StatusEffectKind::Slowed)
+                        && defender_bag
+                            .as_deref()
+                            .map_or(true, |b| !b.has(&StatusEffectKind::Slowed));
                     if let Some(ref mut bag) = defender_bag {
                         bag.apply(kind.clone(), duration);
                     } else {
@@ -747,6 +752,18 @@ pub(crate) fn step_app(
                         target_id,
                         inflight.follow_up_depth,
                     );
+                    if is_first_apply_slowed {
+                        emit_combat_event(
+                            event_writer,
+                            CombatEventKind::TurnAdvance {
+                                target: target_id,
+                                amount_pct: -30,
+                            },
+                            attacker_id,
+                            target_id,
+                            inflight.follow_up_depth,
+                        );
+                    }
                 } else {
                     emit_combat_event(
                         event_writer,
