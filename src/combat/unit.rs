@@ -50,3 +50,9 @@ pub struct Commander;
 // Used by S06/T02.
 #[derive(Component, Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct Ko;
+
+/// Per-team slot index assigned at spawn time (insertion order in apply_composition).
+/// Stable across the encounter — never mutated, survives Revive.
+/// (Team, SlotIndex) together give global uniqueness.
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct SlotIndex(pub u8);

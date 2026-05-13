@@ -16,7 +16,7 @@ use super::status_effect::StatusBag;
 use super::toughness::{Toughness, ToughnessCategory};
 use super::turn_order::TurnOrder;
 use super::ultimate::{UltAccumulationTrigger, UltimateCharge};
-use super::unit::{BasicStreak, Commander, Unit};
+use super::unit::{BasicStreak, Commander, SlotIndex, Unit};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SelectionRequest {
@@ -201,12 +201,14 @@ pub fn apply_composition(
     composition: &EncounterComposition,
     _order: &mut TurnOrder, // TurnOrder is now managed by AV system
 ) {
-    for def in &composition.allies {
-        spawn_unit_from_def(commands, def);
+    for (idx, def) in composition.allies.iter().enumerate() {
+        let entity = spawn_unit_from_def(commands, def);
+        commands.entity(entity).insert(SlotIndex(idx as u8));
     }
 
-    for def in &composition.enemies {
-        spawn_unit_from_def(commands, def);
+    for (idx, def) in composition.enemies.iter().enumerate() {
+        let entity = spawn_unit_from_def(commands, def);
+        commands.entity(entity).insert(SlotIndex(idx as u8));
     }
 }
 
