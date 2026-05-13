@@ -2,7 +2,7 @@ use crate::combat::kernel::{CombatKernelTransition, PredatorLoopTransition};
 use crate::combat::state::ResolvedAction;
 use crate::data::skills_ron::{CustomSignalPayload, SkillCustomSignal};
 
-use super::CustomSignalDispatchError;
+use super::super::CustomSignalDispatchError;
 
 pub const OWNER: &str = "dorumon";
 

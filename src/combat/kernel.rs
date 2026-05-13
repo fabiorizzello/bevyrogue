@@ -1067,18 +1067,15 @@ impl CombatKernelRegistry {
 pub fn register_combat_kernel_runtime(app: &mut App) {
     let mut registry = CombatKernelRegistry::new();
     registry.register(crate::combat::battery_loop::BatteryLoopHook);
-    registry.register(crate::combat::predator_loop::PredatorLoopHook);
     registry.register(crate::combat::precision_mind_game::PrecisionMindGameHook);
 
     app.init_resource::<CombatKernelState>()
         .init_resource::<crate::combat::battery_loop::BatteryLoopState>()
-        .init_resource::<crate::combat::predator_loop::PredatorLoopState>()
         .init_resource::<crate::combat::precision_mind_game::PrecisionMindGameState>()
         .add_systems(
             Update,
             (
                 crate::combat::battery_loop::apply_battery_loop_transitions_system,
-                crate::combat::predator_loop::apply_predator_loop_transitions_system,
                 crate::combat::precision_mind_game::apply_precision_mind_game_transitions_system,
             ),
         )
@@ -1091,6 +1088,7 @@ pub fn register_combat_kernel_runtime(app: &mut App) {
     app.add_plugins((
         crate::combat::blueprints::agumon::AgumonPlugin,
         crate::combat::blueprints::patamon::PatamonPlugin,
+        crate::combat::blueprints::dorumon::DorumonPlugin,
     ));
 }
 

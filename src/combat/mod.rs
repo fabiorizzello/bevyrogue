@@ -97,8 +97,12 @@ pub use blueprints::agumon::identity as twin_core;
 pub use blueprints::patamon::identity as holy_support;
 /// Battle loop redesign: Static/Circuit charge and battery payoff state.
 pub mod battery_loop;
-/// Predator loop (Exploit / Prey Lock / Berserk) shared kernel seam.
-pub mod predator_loop;
+/// Predator loop (Dorumon): Exploit / Prey Lock / Berserk builder–spender.
+///
+/// Lives in `blueprints/dorumon/identity.rs` after Q9-dorumon; this re-export
+/// keeps every legacy `crate::combat::predator_loop::*` path resolvable
+/// without touching existing import sites.
+pub use blueprints::dorumon::identity as predator_loop;
 /// Precision mind game (Renamon): exploit weakness / Kitsune Grace stacks.
 pub mod precision_mind_game;
 

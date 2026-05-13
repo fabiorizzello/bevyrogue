@@ -3,13 +3,13 @@ use std::collections::HashMap;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use super::events::{CombatEvent, CombatEventKind};
-use super::kernel::{
+use crate::combat::events::{CombatEvent, CombatEventKind};
+use crate::combat::kernel::{
     CombatKernelHook, CombatKernelHookDomain, CombatKernelState, CombatKernelTransition,
     PredatorLoopBlockedReason, PredatorLoopCapKind, PredatorLoopSignal, PredatorLoopStep,
     PredatorLoopTransition, TacticalCycleTransition,
 };
-use super::types::UnitId;
+use crate::combat::types::UnitId;
 
 pub const DEFAULT_EXPLOIT_CAP: u8 = 3;
 pub const DEFAULT_PREY_LOCK_DURATION: u8 = 2;
