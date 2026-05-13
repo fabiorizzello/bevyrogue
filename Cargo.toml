@@ -28,6 +28,17 @@ default = []
 windowed = ["dep:bevy_egui", "bevy/2d"]
 dev = ["bevy/dynamic_linking"]
 
+[dev-dependencies]
+# Agent-first observability: dump Bevy `Schedule` graphs to .gsd/schedules/*.dot
+# so future agents can read the system ordering without grepping `add_systems` /
+# `.before()` / `.after()` across the codebase. Run with:
+#   cargo run --example dump_schedule
+bevy_mod_debugdump = "0.15"
+
+[[example]]
+name = "dump_schedule"
+path = "examples/dump_schedule.rs"
+
 [[test]]
 name = "twin_core_roster_contract"
 path = "tests/twin_core_roster_contract.rs"
