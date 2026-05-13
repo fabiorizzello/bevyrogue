@@ -1,32 +1,8 @@
-# M018: M018: Time-manipulation split + TargetShape resolver expansion
+# M018: M018
 
-**Vision:** Abilitare le primitive che alimentano gran parte delle skill identity del roster: split semantico advance/delay sul turn pipeline (con cap e clamp esplicitati nel codice, non solo nel design), e resolver `TargetShape` esteso oltre `Single` con tie-break deterministico. Insieme, queste due primitive sbloccano Renamon Tōhakken, Kitsune Grace, Patamon AoE, Tentomon Bounce, e in generale ogni skill identity che chiede targeting non-`Single` o manipolazione del turn order. Foundation già presente in M017 (Slowed → TurnAdvance) viene refactored qui per non avere accumulator AV pre-cap.
-
-## Success Criteria
-
-- AdvanceTurn(pct) e DelayTurn(pct) sono enum variants distinti; nessun caller residuo usa il vecchio TurnAdvance signed
-- Nessun cap ±50% globale né clamp [0,200] post-somma (override di D003 deciso in M018-CONTEXT "Time-manipulation split senza cap/clamp globale"): l'AV resta nel range raw esistente (`MAX_AV` / `MIN_ACTION_THRESHOLD_AV`); eventuali cap per-unit vivono in passive boss-specifiche, non nel kernel. Test di boundary verificano AV raw + roundtrip advance/delay deterministico
-- TargetShape resolver supporta Single + Blast + AoE(All) + Bounce(N), tie-break su slot_index ascendente, deterministico in tutti i test
-- Selectors AdjLowest, LowestHpPctAlive, RandomEnemyAlive{seed}, SingleAlly disponibili nel resolver e usabili da skills.ron
-- Skill di esempio (advance/delay + Bounce chain) scriptable da CLI scenario, output JSONL leggibile, ogni step verificato in headless
-- cargo check + cargo test verdi, zero regressioni sui 40 binari di test esistenti, status taxonomy M017 invariata
+**Vision:** 
 
 ## Slices
 
-- [x] **S01: S01** `risk:high` `depends:[]`
-  > After this: Test headless deterministici per cap/clamp boundary + regressione Slowed (M017) che continua a funzionare con la nuova primitive. CLI scenario advance/delay print AV gauge step-by-step.
-
-- [x] **S02: S02** `risk:med` `depends:[]`
-  > After this: CLI scenario scripted con Blast (target primario + spillover adiacenti slot_index ±1) e AoE(All), ordine di applicazione damage stabile su 10 run. JSONL log mostra target list per ogni hit.
-
-- [ ] **S03: S03** `risk:high` `depends:[]`
-  > After this: CLI scenario con N=3 hops, enemy che muore al hop 2: chain ricalcola hop 3 sui survivors mantenendo tie-break slot_index asc. JSONL log mostra sequenza hop completa con stato vivo/morto a ogni step.
-
-- [ ] **S04: Selectors estesi: AdjLowest, LowestHpPctAlive, RandomEnemyAlive{seed}, SingleAlly** `risk:med` `depends:[S02]`
-  > After this: CLI scenario con i 4 selector usati in skill di esempio (RON): output target stabile e seed-deterministico per Random. JSONL log mostra selector usato e target risolto per ogni skill.
-
-## Boundary Map
-
-## Boundary Map
-
-Not provided.
+- [ ] **S03: S03** `risk:medium` `depends:[]`
+  > After this:

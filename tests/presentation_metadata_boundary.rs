@@ -381,6 +381,7 @@ fn presentation_metadata_does_not_change_action_query_or_resolved_action() {
             self_advance_pct: 0,
             target_shape: TargetShape::Single,
             custom_signals: plain_skill.custom_signals,
+            damage_curve: Default::default(),
         },
         "resolved action contract drift: gameplay fields should come only from canonical fields and custom signals"
     );

@@ -15,7 +15,7 @@ use crate::combat::{
     ultimate::UltimateCharge,
     unit::{BasicStreak, Unit},
 };
-use crate::data::skills_ron::{BounceSelector, Effect, RepeatPolicy, SkillBook, TargetShape};
+use crate::data::skills_ron::{BounceSelector, DamageCurve, Effect, RepeatPolicy, SkillBook, TargetShape};
 
 /// Emit one `OnSkillCast` per granted free-skill slot, using the provided ally basic skill ids.
 /// Callers (e.g. `execute_action_intent`) collect the ally basics and call this; the function is
@@ -267,6 +267,7 @@ pub fn resolve_action(
         self_advance_pct: skill_self_advance(&skill.effects),
         target_shape: skill.targeting.shape,
         custom_signals: skill.custom_signals.clone(),
+        damage_curve: skill_damage_curve(&skill.effects),
     })
 }
 
@@ -278,6 +279,45 @@ fn skill_base_damage(effects: &[Effect]) -> i32 {
             _ => None,
         })
         .unwrap_or(0)
+}
+
+/// Extract the `DamageCurve` from the first `Effect::Damage` in `effects`.
+/// Returns `DamageCurve::Constant` when no damage effect is found.
+pub fn skill_damage_curve(effects: &[Effect]) -> DamageCurve {
+    effects
+        .iter()
+        .find_map(|effect| match effect {
+            Effect::Damage { per_hop, .. } => Some(per_hop.clone()),
+            _ => None,
+        })
+        .unwrap_or(DamageCurve::Constant)
+}
+
+/// Compute the damage for hop `k` (0-based) given `base_damage` and a `DamageCurve`.
+///
+/// - `Constant`: always returns `base_damage`.
+/// - `Falloff { pct }`: hop k = `base_damage * pct^k / 100^k`, i.e. applies `pct/100` repeatedly
+///   starting from hop 0. Floored at 1 when `base_damage > 0`.
+/// - `PerHop(v)`: returns `v[k]`. Panics in debug if `k >= v.len()`; in release clamps to last.
+pub fn compute_hop_damage(base_damage: i32, curve: &DamageCurve, hop: usize) -> i32 {
+    match curve {
+        DamageCurve::Constant => base_damage,
+        DamageCurve::Falloff { pct } => {
+            // Apply multiplicative falloff: multiply by pct/100 for each hop after 0.
+            let mut dmg = base_damage as f64;
+            for _ in 0..hop {
+                dmg = dmg * (*pct as f64) / 100.0;
+            }
+            // Floor at 1 if original base_damage was > 0.
+            let result = dmg.floor() as i32;
+            if base_damage > 0 { result.max(1) } else { result }
+        }
+        DamageCurve::PerHop(v) => {
+            // Clamp index to last element to stay total.
+            let idx = hop.min(v.len().saturating_sub(1));
+            v.get(idx).copied().unwrap_or(0)
+        }
+    }
 }
 
 fn skill_toughness_hit(effects: &[Effect]) -> i32 {

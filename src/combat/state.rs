@@ -1,6 +1,6 @@
 use bevy::prelude::Resource;
 
-use crate::data::skills_ron::{SkillCustomSignal, TargetShape};
+use crate::data::skills_ron::{DamageCurve, SkillCustomSignal, TargetShape};
 
 use super::status_effect::StatusEffectKind;
 use super::team::Team;
@@ -49,6 +49,8 @@ pub struct ResolvedAction {
     pub self_advance_pct: i32,
     pub target_shape: TargetShape,
     pub custom_signals: Vec<SkillCustomSignal>,
+    /// Per-hop damage curve (relevant for `TargetShape::Bounce`; `Constant` for all other shapes).
+    pub damage_curve: DamageCurve,
 }
 
 #[derive(Debug, Clone)]

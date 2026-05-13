@@ -64,6 +64,7 @@ fn dorumon_action() -> ResolvedAction {
             dorumon_signal("build_exploit", CustomSignalPayload::Amount { amount: 2 }),
             dorumon_signal("apply_prey_lock", CustomSignalPayload::Empty),
         ],
+        damage_curve: Default::default(),
     }
 }
 

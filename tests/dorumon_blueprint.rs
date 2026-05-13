@@ -23,6 +23,7 @@ fn base_action() -> ResolvedAction {
         self_advance_pct: 0,
         target_shape: bevyrogue::data::skills_ron::TargetShape::Single,
         custom_signals: Vec::new(),
+        damage_curve: Default::default(),
     }
 }
 

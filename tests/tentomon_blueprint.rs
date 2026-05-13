@@ -27,6 +27,7 @@ fn base_action() -> ResolvedAction {
         self_advance_pct: 0,
         target_shape: TargetShape::Single,
         custom_signals: Vec::new(),
+        damage_curve: Default::default(),
     }
 }
 
