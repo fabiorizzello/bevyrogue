@@ -19,9 +19,9 @@ use crate::combat::{
     status_effect::StatusEffectKind,
     stun::Stunned,
     team::Team,
-    toughness::Toughness,
+    toughness::{DamageKind, Toughness},
     turn_order::{TurnAdvanced, TurnOrder},
-    types::{SkillId, UnitId},
+    types::{DamageTag, SkillId, UnitId},
     ultimate::UltimateCharge,
     unit::{BasicStreak, Commander, Ko, Unit},
 };
@@ -460,6 +460,36 @@ pub fn advance_turn_system(
             }
             if let Some(ref mut tracker) = round_energy_tracker_opt {
                 tracker.reset();
+            }
+
+            // Heated DoT: 4 HP Fire damage, bypasses stun (canon §H.1).
+            // Runs unconditionally before stun-skip so Heated+Stunned units still burn.
+            if let Some(ref bag) = status_opt {
+                if bag.has(&StatusEffectKind::Heated) && unit.hp_current > 0 {
+                    unit.hp_current = (unit.hp_current - 4).max(0);
+                    emit_combat_event(
+                        &mut event_writer,
+                        CombatEventKind::OnDamageDealt {
+                            amount: 4,
+                            kind: DamageKind::Normal,
+                            damage_tag: DamageTag::Fire,
+                            tag_mod_pct: 100,
+                            triangle_mod_pct: 100,
+                        },
+                        active_id,
+                        active_id,
+                        0,
+                    );
+                    if unit.hp_current <= 0 {
+                        emit_combat_event(
+                            &mut event_writer,
+                            CombatEventKind::OnKO,
+                            active_id,
+                            active_id,
+                            0,
+                        );
+                    }
+                }
             }
 
             if let Some(mut s) = stunned_opt {
