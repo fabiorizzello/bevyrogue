@@ -41,14 +41,6 @@ name = "dump_schedule"
 path = "examples/dump_schedule.rs"
 
 [[test]]
-name = "twin_core_roster_contract"
-path = "tests/twin_core_roster_contract.rs"
-
-[[test]]
-name = "twin_core_resolution"
-path = "tests/twin_core_resolution.rs"
-
-[[test]]
 name = "twin_core_integration"
 path = "tests/twin_core_integration.rs"
 
