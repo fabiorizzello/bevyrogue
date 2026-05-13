@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T01",
+  "unitId": "M018/S03/T01",
+  "timestamp": 1778708991954,
+  "passed": true,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "cargo test --lib resolution::tests",
+      "exitCode": 0,
+      "durationMs": 162,
+      "verdict": "pass"
+    },
+    {
+      "command": "cargo check",
+      "exitCode": 0,
+      "durationMs": 156,
+      "verdict": "pass"
+    }
+  ]
+}

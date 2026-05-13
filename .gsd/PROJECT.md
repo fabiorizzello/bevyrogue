@@ -8,14 +8,16 @@ Core value: una run giocabile end-to-end dove combat, party build, e futuri laye
 
 ## Current State
 
-M017 è completato. Il combat kernel ora usa la tassonomia status canon §H.1: 5 status attivi (Heated/Chilled/Paralyzed/Slowed/Blessed) + 2 reserved gas-era (Burn/Shock), con policy single-instance per (target,kind), refresh_max_dur, BuffKind-classified cleanse, e tutte le 5 semantiche per-status cablate. JSONL log e ValidationSnapshot emettono nomi canon. RON loader rifiuta id non-canon a load-time.
+M018 è completato. Il combat kernel ora supporta AdvanceTurn/DelayTurn split e TargetShape resolver expansion (Blast, AoE(All), Bounce(N)), le due foundation primitives che sbloccano la maggior parte delle skill identity del roster in arrivo.
 
 Latest combat baseline:
 
-- All M017 slices (S01–S06) are complete: enum rewrite, StatusBag + cleanse policy, Heated DoT + amp%, Chilled −20% AV, Paralyzed skip-turn, Slowed delay-on-apply, Blessed ×1.15 + Ult charge, JSONL/ValidationSnapshot observability.
-- `cargo check` + `cargo test` green: 40 test binaries, 0 failed, 0 ignored.
-- Zero references to Freeze/DeepFreeze in src/ and tests/; Burn/Shock present only in 7 canonical exempt locations.
-- Status foundation is ready for M018 (AdvanceTurn/DelayTurn split + TargetShape expansion), M019 (DR pipeline + Heal/Cleanse Effects), and M020 (reactive event variants).
+- All M018 slices (S01–S03) are complete: AdvanceTurn(u32)/DelayTurn(u32) split with ±50% cap at emission; SlotIndex(u8) component + pure resolve_targets(); Blast (primary + adjacent slot±1), AoE(All) alias for AllEnemies, Bounce(N) with BounceSelector/RepeatPolicy/DamageCurve.
+- `cargo test` green: 201 tests across all integration and lib targets, 0 failed, 0 ignored.
+- All M017 regression tests (status_slowed_delay, tempo_resistance, turn_advance_split) remain green.
+- CLI scenario `advance-delay-cap`: turn order recalculated step-by-step with cap enforcement (80→50) and floor clamp (delta=0 at AV=0) visible in JSONL.
+- CLI scenario `aoe-blast`: Blast targeting deterministic across 10 runs (byte-for-byte identical JSONL).
+- Bounce hop loop rebuilds TargetableSnapshot each hop; KO'd units excluded from candidate pool in subsequent hops.
 
 ## Architecture / Key Patterns
 
@@ -28,21 +30,28 @@ Latest combat baseline:
 - **Validation snapshots:** diagnostic state surface for tests, CLI, UI, and future tools.
 - **Legality contract:** shared query vocabulary in `docs/contracts/skill_legality_contract.md` and `docs/contracts/combat_ui_readiness_gap_matrix.md`; no skill-ID-specific CLI/windowed legality rules.
 - **StatusBag:** per-unit consolidated component with single-instance-per-kind enforcement at apply(). BuffKind-classified cleanse (Buff entries immune by default). Reserved Burn/Shock variants declared but rejected at load-time by RON allow-list.
-- **Status semantics (§H.1):** Heated = DoT 4 Fire + fire amp%; Chilled = −20% AV (derived-read at AV-gain site) + ice amp%; Paralyzed = action-dispatch gated in process_turn_advanced_system; Slowed = TurnAdvance −30% on first apply; Blessed = ×1.15 damage dealt + +1 Ult charge per action + cleanse-immune.
+- **Status semantics (§H.1):** Heated = DoT 4 Fire + fire amp%; Chilled = −20% AV (derived-read at AV-gain site) + ice amp%; Paralyzed = action-dispatch gated in process_turn_advanced_system; Slowed = DelayTurn{30} on first apply; Blessed = ×1.15 damage dealt + +1 Ult charge per action + cleanse-immune.
+- **TargetShape resolver (M018):** pure `resolve_targets(TargetableSnapshot)` fn handles Single/Blast/AllEnemies; pure `select_bounce_hop(TargetableSnapshot)` fn handles Bounce selector dispatch. Both are ECS-free and directly unit-testable. SlotIndex(u8) component assigned post-spawn by apply_composition.
+- **Turn manipulation (M018):** `AdvanceTurn(u32)` + `DelayTurn(u32)` replace `TurnAdvance(i32)`. Cap ±50% enforced at emission; consumers never see an unclamped value. Resource consumption (SP/ult/streak) hoisted before per-target loop — consumed once per cast regardless of fan-out width.
 
 ## Capability Contract
 
-See `.gsd/REQUIREMENTS.md`. Active requirements: none. Current validated baseline: M017 Status taxonomy v0 rewrite (canon §H.1). M016 per-Digimon blueprint migration and M017 status taxonomy are both complete.
+See `.gsd/REQUIREMENTS.md`. Active requirements: none. Current validated baseline: M018 AdvanceTurn/DelayTurn split + TargetShape resolver expansion. M016 per-Digimon blueprint migration, M017 status taxonomy, and M018 turn/targeting foundations are all complete.
 
 ## Milestone Sequence
 
+M016 (blueprint migration) → M017 (status taxonomy §H.1) → M018 (turn manipulation + targeting expansion) → **next**
+
 ## Recommended Next Milestone
 
-**M018: AdvanceTurn/DelayTurn split + TargetShape resolver expansion.**
+**M019: DR pipeline + Heal/Cleanse Effects**, or **M020: reactive event variants**.
 
-Per la boundary map di M017: il passo successivo è M018 (AdvanceTurn/DelayTurn split, cap ±50%, gauge clamp [0,200], TargetShape resolver expansion), oppure M019 (DR pipeline BuffKind::DR + Heal/Cleanse Effects come variant), oppure M020 (reactive event variants tipizzati). M018 è la scelta naturale perché il foundation del turn pipeline (Slowed TurnAdvance) è già cablato in M017.
+Per la boundary map di M018: il passo successivo naturale è M019 (DR pipeline BuffKind::DR + Heal/Cleanse Effects come Effect variant nel DSL RON), oppure M020 (reactive event variants tipizzati per follow-up triggers). Entrambi consumano la foundation multi-target di M018.
 
-Nota: SC-3 (Chilled) chiude con PARTIAL — l'integration test per il turn-order shift visibile di Chilled è opzionale/deferred. M018 può chiuderlo se il turn pipeline viene refactored.
+Known deferred items from M018 (plan into a follow-up slice):
+- Per-hop CombatEvent emission for Bounce (UI/log observability of intermediate hop state)
+- OnActionFailed on Bounce pool exhaustion (currently silent truncation)
+- DamageCurve::PerHop runtime length guard in the kernel hop loop
 
 ## Operational Notes
 
@@ -52,3 +61,5 @@ Nota: SC-3 (Chilled) chiude con PARTIAL — l'integration test per il turn-order
 - Use `cargo test` for broad verification before claiming baseline health.
 - Status taxonomy reference: `src/combat/status_effect.rs` (StatusEffectKind enum, StatusBag, apply/tick/expire).
 - RON status id allow-list: `src/data/skills_ron.rs` (`validate_skill_book_on_load`, 5 valid ids).
+- TargetShape resolver: `src/combat/resolution.rs` (resolve_targets), `src/combat/turn_system/pipeline.rs` (Bounce hop loop), `src/combat/action_query.rs` (select_bounce_hop).
+- Turn manipulation: `src/combat/av.rs` (AdvanceTurn/DelayTurn applicators with cap/floor).
