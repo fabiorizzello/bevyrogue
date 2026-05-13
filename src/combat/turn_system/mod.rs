@@ -76,15 +76,6 @@ pub(super) fn set_phase(state: &mut CombatState, next: CombatPhase) {
     }
 }
 
-#[allow(dead_code)]
-fn intent_label(intent: &ActionIntent) -> &'static str {
-    match intent {
-        ActionIntent::Basic { .. } => "Basic",
-        ActionIntent::Skill { .. } => "Skill",
-        ActionIntent::Ultimate { .. } => "Ultimate",
-    }
-}
-
 pub(crate) fn emit_combat_event(
     event_writer: &mut MessageWriter<CombatEvent>,
     kind: CombatEventKind,
