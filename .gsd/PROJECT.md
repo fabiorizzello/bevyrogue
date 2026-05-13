@@ -36,22 +36,6 @@ See `.gsd/REQUIREMENTS.md`. Active requirements: none. Current validated baselin
 
 ## Milestone Sequence
 
-- [x] M001: Combat core giocabile
-- [x] M002: Combat hardening
-- [x] M004: Bevy 0.18 + headless adoption
-- [x] M005: Combat consolidation + event bus + skill DSL
-- [x] M006: Roster completo + Taichi + party selection
-- [x] M008: Combat Refinement & Polish
-- [x] M009: Digimon Synergy & Combat Coherence Analysis
-- [ ] M010: Combat Architecture & Synergistic Roster — interrupted, residue migrated later
-- [x] M011: Combat Architecture & Synergistic Roster alignment
-- [x] M012: Data-driven skill legality and UI-readiness query surface
-- [ ] M013: Combat architecture revision + animation beat pipeline — historical closure incomplete; superseded by M015 proof
-- [x] M015: M013 Closure and Combat Architecture Coherence
-- [x] M016: Per-Digimon Blueprint Migration and Roster Combat Identity
-- [x] M017: Status taxonomy v0 rewrite (canon §H.1)
-- [ ] M007: Roguelite Loop End-to-End
-
 ## Recommended Next Milestone
 
 **M018: AdvanceTurn/DelayTurn split + TargetShape resolver expansion.**
