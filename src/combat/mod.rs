@@ -122,11 +122,6 @@ pub mod floating;
 // ─── Re-exports ──────────────────────────────────────────────────────────────
 // Stable shortcuts for the most-imported types.
 
-#[allow(unused_imports)]
-pub use action_query::{
-    build_snapshot_from_ecs, build_snapshot_from_ecs_with_sp, enabled_target_ids,
-    first_enabled_target_id, query_charged_telegraph_affordance, query_enemy_trait_affordances,
-};
 pub use round_flags::RoundFlags;
 #[allow(deprecated)]
 pub use status_effect::{StatusBag, StatusEffect, StatusEffectKind};
