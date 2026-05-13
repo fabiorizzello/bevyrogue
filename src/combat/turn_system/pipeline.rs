@@ -289,6 +289,7 @@ pub(crate) fn step_app(
             streak_ref,
             attacker_commander.is_some(),
             defender_break_sealed,
+            None,
         );
 
         if !outcome.sp_ok {
@@ -585,6 +586,7 @@ pub(crate) fn step_app(
         streak_ref,
         defender_commander.is_some(),
         defender_break_sealed,
+        defender_bag.as_deref(),
     );
 
     if !outcome.sp_ok {

@@ -1,4 +1,5 @@
 use crate::combat::{
+    status_effect::{StatusBag, status_amp_pct},
     types::{Attribute, DamageTag},
     unit::Unit,
 };
@@ -68,14 +69,17 @@ pub struct DamageBreakdown {
     pub tag_mod_pct: i32,
     /// Triangle modifier as integer percentage: 111 (attacker loses), 87 (attacker wins), 100 (neutral).
     pub triangle_mod_pct: i32,
+    /// Status amplification as integer percentage: 115 (Heated+Fire or Chilled+Ice), 100 otherwise.
+    pub status_amp_pct: i32,
 }
 
 /// Compute final damage from `attacker` landing `attack` on `defender`.
 ///
 /// Formula (v5.3 multiplicative model):
-///   tag_mod  = 1.25 if tag is a weakness, 0.75 if tag is resisted, else 1.0
-///   tri_mod  = triangle_modifiers(attacker.attribute, defender.attribute).dmg_modifier
-///   damage   = round(base × tag_mod × tri_mod × (2.0 if is_break else 1.0))
+///   tag_mod        = 1.25 if tag is a weakness, 0.75 if tag is resisted, else 1.0
+///   tri_mod        = triangle_modifiers(attacker.attribute, defender.attribute).dmg_modifier
+///   status_amp_mod = status_amp_pct(defender_status, damage_tag) / 100  (1.15 or 1.0)
+///   damage         = round(base × tag_mod × tri_mod × break_mod × status_amp_mod)
 ///
 /// No clamp: the multiplicative model is naturally bounded by the discrete modifier set.
 pub fn calculate_damage(
@@ -83,6 +87,7 @@ pub fn calculate_damage(
     attack: &AttackContext,
     defender: &Unit,
     weaknesses: &[DamageTag],
+    defender_status: Option<&StatusBag>,
 ) -> DamageBreakdown {
     let tag_mod = if weaknesses.contains(&attack.damage_tag) {
         1.25_f32
@@ -93,12 +98,18 @@ pub fn calculate_damage(
     };
     let tri = triangle_modifiers(attacker.attribute, defender.attribute);
     let break_mod = if attack.is_break { 2.0_f32 } else { 1.0_f32 };
+    let amp_pct = defender_status
+        .map(|bag| status_amp_pct(bag, attack.damage_tag))
+        .unwrap_or(100);
+    let amp_mod = amp_pct as f32 / 100.0;
     let final_damage =
-        (attack.base_damage as f32 * tag_mod * tri.dmg_modifier * break_mod).round() as i32;
+        (attack.base_damage as f32 * tag_mod * tri.dmg_modifier * break_mod * amp_mod).round()
+            as i32;
     DamageBreakdown {
         final_damage,
         tag_mod_pct: (tag_mod * 100.0).round() as i32,
         triangle_mod_pct: (tri.dmg_modifier * 100.0).round() as i32,
+        status_amp_pct: amp_pct,
     }
 }
 

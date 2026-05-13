@@ -1,6 +1,7 @@
 use crate::combat::{
     StatusEffectKind,
     damage::{AttackContext, DamageBreakdown, calculate_damage},
+    status_effect::StatusBag,
     events::CombatEventKind,
     kit::UnitSkills,
     sp::RoundSpTracker,
@@ -194,6 +195,7 @@ pub fn apply_effects(
     basic_streak: &mut BasicStreak,
     defender_is_commander: bool,
     defender_break_sealed: bool,
+    defender_status: Option<&StatusBag>,
 ) -> (ResolutionOutcome, Vec<CombatEventKind>) {
     let mut events = Vec::new();
 
@@ -282,7 +284,14 @@ pub fn apply_effects(
                 final_damage: amount,
                 tag_mod_pct,
                 triangle_mod_pct,
-            } = calculate_damage(attacker_unit, &attack, defender_unit, &toughness_weaknesses);
+                status_amp_pct: _status_amp_pct,
+            } = calculate_damage(
+                attacker_unit,
+                &attack,
+                defender_unit,
+                &toughness_weaknesses,
+                defender_status,
+            );
             defender_unit.hp_current -= amount;
             let broke = if can_apply_toughness_damage(defender_team, defender_tough.as_deref()) {
                 defender_tough

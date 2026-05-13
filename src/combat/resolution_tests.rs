@@ -222,6 +222,7 @@ fn resolve_apply_basic_adds_sp_and_not_on_skill_cast() {
         &mut BasicStreak::default(),
         false,
         false,
+        None,
     );
 
     assert!(outcome.sp_ok);
@@ -270,6 +271,7 @@ fn resolve_apply_skill_spends_sp_and_emits_on_skill_cast() {
         &mut BasicStreak::default(),
         false,
         false,
+        None,
     );
 
     assert!(outcome.sp_ok);
@@ -312,6 +314,7 @@ fn resolve_apply_skill_fails_when_pool_too_low() {
         &mut BasicStreak::default(),
         false,
         false,
+        None,
     );
 
     assert!(!outcome.sp_ok);
@@ -347,6 +350,7 @@ fn resolve_apply_break_sets_broke_flag_and_on_break_event() {
         &mut BasicStreak::default(),
         false,
         false,
+        None,
     );
 
     assert!(outcome.broke);
@@ -386,6 +390,7 @@ fn resolve_apply_no_break_no_on_break_event() {
         &mut BasicStreak::default(),
         false,
         false,
+        None,
     );
 
     assert!(!outcome.broke);
@@ -423,6 +428,7 @@ fn resolve_apply_ko_flag_when_hp_drops_below_zero_and_emits_on_ko() {
         &mut BasicStreak::default(),
         false,
         false,
+        None,
     );
 
     assert!(outcome.ko);
@@ -461,6 +467,7 @@ fn resolve_apply_no_ko_no_on_ko_event() {
         &mut BasicStreak::default(),
         false,
         false,
+        None,
     );
 
     assert!(!outcome.ko);
@@ -502,6 +509,7 @@ fn resolve_apply_ultimate_resets_charge_and_emits_on_skill_cast() {
         &mut BasicStreak::default(),
         false,
         false,
+        None,
     );
 
     assert!(outcome.sp_ok);
@@ -544,6 +552,7 @@ fn test_apply_revive_success() {
         &mut BasicStreak::default(),
         false,
         false,
+        None,
     );
 
     assert!(outcome.sp_ok);
@@ -631,6 +640,7 @@ fn test_apply_revive_fails_on_active() {
         &mut BasicStreak::default(),
         false,
         false,
+        None,
     );
 
     assert_eq!(defender.hp_current, 50); // No change
@@ -675,6 +685,7 @@ fn child_gets_minus1_sp_after_2_consecutive_basics() {
         &mut streak,
         false,
         false,
+        None,
     );
     apply_effects(
         &basic_resolved,
@@ -688,6 +699,7 @@ fn child_gets_minus1_sp_after_2_consecutive_basics() {
         &mut streak,
         false,
         false,
+        None,
     );
     assert_eq!(streak.count, 2);
     assert!(streak.qualifies_for_discount());
@@ -712,6 +724,7 @@ fn child_gets_minus1_sp_after_2_consecutive_basics() {
         &mut streak,
         false,
         false,
+        None,
     );
 
     assert!(outcome.sp_ok, "skill should succeed with discounted cost");
@@ -752,6 +765,7 @@ fn adult_gets_no_discount_after_consecutive_basics() {
         &mut streak,
         false,
         false,
+        None,
     );
 
     assert_eq!(sp.current, 0, "Adult paid full 3 SP, no discount");
@@ -791,6 +805,7 @@ fn child_1_basic_not_enough_for_discount() {
         &mut streak,
         false,
         false,
+        None,
     );
 
     assert!(outcome.sp_ok);
@@ -829,6 +844,7 @@ fn child_discount_resets_streak_needs_2_more_basics() {
         &mut streak,
         false,
         false,
+        None,
     );
     assert_eq!(streak.count, 0, "streak reset after discount use");
 
@@ -879,6 +895,7 @@ fn adult_5_consecutive_basics_no_discount() {
         &mut streak,
         false,
         false,
+        None,
     );
 
     assert!(outcome.sp_ok);
