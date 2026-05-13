@@ -39,7 +39,7 @@ Slowed delay path goes through canonical `TurnAdvance` event → `apply_turn_adv
   - Files: `tests/status_paralyzed_skip.rs`
   - Verify: cargo test --test status_paralyzed_skip
 
-- [ ] **T04: Integration test: status_slowed_delay** `est:M`
+- [x] **T04: Integration test: status_slowed_delay** `est:M`
   Create `tests/status_slowed_delay.rs`. Spawn a defender unit with a known starting `ActionValue` (e.g. 5000). Apply Slowed via the skill-resolution path (so `pipeline.rs` runs and the first-apply branch executes) — use a deterministic seed so the status-accuracy roll passes. Assert: exactly one `CombatEventKind::TurnAdvance { target, amount_pct: -30 }` is emitted, sourced after `OnStatusApplied`. Run `apply_turn_advance_system` and assert defender AV decreased by 3000 (or matches the expected value once `resistance::apply_av_change` is applied for a unit with no TempoResistance, which equals 3000). Then apply Slowed a second time on the same target and assert NO additional `TurnAdvance` event is emitted (refresh_max_dur path only, gauge already pushed). Keep deterministic and headless.
   - Files: `tests/status_slowed_delay.rs`
   - Verify: cargo test --test status_slowed_delay
