@@ -45,8 +45,9 @@ use bevyrogue::combat::action_query::{
     build_snapshot_from_ecs_with_sp, first_enabled_target_id, query_action_affordance,
     query_charged_telegraph_affordance, query_enemy_trait_affordances,
 };
-use bevyrogue::combat::av::ActionValueUpdated;
+use bevyrogue::combat::av::{ActionValue, ActionValueUpdated, MAX_AV};
 use bevyrogue::combat::energy::{Energy, RoundEnergyTracker};
+use bevyrogue::combat::resistance::{TempoResistance, apply_advance, apply_delay};
 use bevyrogue::combat::kit::UnitSkills;
 use bevyrogue::combat::stun::Stunned;
 use bevyrogue::combat::team::Team;
@@ -836,7 +837,100 @@ fn load_ally_roster() -> Result<Vec<UnitDef>, String> {
         .collect())
 }
 
+/// Standalone scenario: advance-delay-cap
+///
+/// Demonstrates AdvanceTurn / DelayTurn cap (≤50%) and AV clamp [0, 2*MAX_AV].
+/// Prints a human-readable AV gauge step-by-step and emits JSONL to stdout.
+/// Does not start Bevy — exits after printing.
+fn run_advance_delay_cap_scenario() {
+    println!("=== scenario: advance-delay-cap ===");
+    println!("MAX_AV = {MAX_AV}");
+
+    struct MockUnit {
+        name: &'static str,
+        av: ActionValue,
+        resistance: Option<TempoResistance>,
+    }
+
+    let mut units = [
+        MockUnit { name: "Agumon", av: ActionValue(0), resistance: None },
+        MockUnit { name: "Gabumon", av: ActionValue(MAX_AV / 2), resistance: Some(TempoResistance::default()) },
+    ];
+
+    #[derive(serde::Serialize)]
+    struct JsonlEntry {
+        kind: &'static str,
+        target: &'static str,
+        amount_pct_requested: u32,
+        amount_pct_capped: u32,
+        av_pre: i32,
+        av_delta: i32,
+        av_post: i32,
+    }
+
+    let steps: &[(&str, usize, u32)] = &[
+        ("AdvanceTurn", 0, 50),
+        ("AdvanceTurn", 0, 50),
+        ("DelayTurn", 1, 80),
+        ("DelayTurn", 1, 50),
+    ];
+
+    for (kind, unit_idx, amount_pct) in steps {
+        let unit = &mut units[*unit_idx];
+        let av_pre = unit.av.0;
+        let capped = (*amount_pct).min(50);
+
+        let delta = if *kind == "AdvanceTurn" {
+            apply_advance(&mut unit.av, *amount_pct)
+        } else {
+            apply_delay(&mut unit.av, *amount_pct, unit.resistance.as_mut())
+        };
+
+        let av_post = unit.av.0;
+        let bar_width = 40usize;
+        let fill = ((av_post.max(0) as f64 / (2.0 * MAX_AV as f64)) * bar_width as f64) as usize;
+        let bar: String = "#".repeat(fill.min(bar_width)) + &".".repeat(bar_width - fill.min(bar_width));
+
+        println!(
+            "[{kind}] {name} pct={amount_pct}(cap={capped}) AV {av_pre:>6} → {av_post:>6} (Δ{delta:+}) [{bar}]",
+            name = unit.name,
+        );
+
+        let entry = JsonlEntry {
+            kind,
+            target: unit.name,
+            amount_pct_requested: *amount_pct,
+            amount_pct_capped: capped,
+            av_pre,
+            av_delta: delta,
+            av_post,
+        };
+        println!("{}", serde_json::to_string(&entry).unwrap());
+    }
+
+    println!("=== scenario complete ===");
+}
+
 fn main() -> AppExit {
+    // Handle --scenario before starting Bevy.
+    let args: Vec<String> = env::args().collect();
+    if let Some(pos) = args.iter().position(|a| a == "--scenario") {
+        match args.get(pos + 1).map(String::as_str) {
+            Some("advance-delay-cap") => {
+                run_advance_delay_cap_scenario();
+                return AppExit::Success;
+            }
+            Some(other) => {
+                eprintln!("Unknown scenario: {other}");
+                return AppExit::error();
+            }
+            None => {
+                eprintln!("--scenario requires an argument");
+                return AppExit::error();
+            }
+        }
+    }
+
     println!("=== BevyRogue Combat CLI Harness ===");
 
     let proof_mode = cli_proof_enabled();
