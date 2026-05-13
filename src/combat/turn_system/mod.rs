@@ -391,6 +391,7 @@ pub fn advance_turn_system(
         id: UnitId,
         team: Team,
         is_stunned: bool,
+        is_paralyzed: bool,
         hp_current: i32,
         hp_max: i32,
         toughness_current: i32,
@@ -402,12 +403,16 @@ pub fn advance_turn_system(
     let snapshots: Vec<Snap> = query
         .iter_mut()
         .map(
-            |(entity, unit, team, _, _, _, stunned, _, skills, ult, toughness, commander, _, _)| {
+            |(entity, unit, team, _, _, _, stunned, status_bag, skills, ult, toughness, commander, _, _)| {
                 Snap {
                     entity,
                     id: unit.id,
                     team: *team,
                     is_stunned: stunned.is_some(),
+                    is_paralyzed: status_bag
+                        .as_ref()
+                        .map(|b| b.has(&StatusEffectKind::Paralyzed))
+                        .unwrap_or(false),
                     hp_current: unit.hp_current,
                     hp_max: unit.hp_max,
                     toughness_current: toughness.map(|t| t.current).unwrap_or(0),
@@ -440,7 +445,7 @@ pub fn advance_turn_system(
                 _,
                 _,
                 stunned_opt,
-                status_opt,
+                mut status_opt,
                 _,
                 _,
                 _,
@@ -501,6 +506,46 @@ pub fn advance_turn_system(
                 continue;
             }
 
+            // Paralyzed: always skip action dispatch (canon §H.1). Bag is ticked so
+            // duration decrements; OnStatusTick + OnStatusExpired fire as normal.
+            if snap.is_paralyzed {
+                if let Some(ref mut bag) = status_opt {
+                    for inst in bag.iter() {
+                        let turns_left = inst.duration_remaining.saturating_sub(1);
+                        emit_combat_event(
+                            &mut event_writer,
+                            CombatEventKind::OnStatusTick {
+                                kind: inst.kind.clone(),
+                                turns_left,
+                            },
+                            active_id,
+                            active_id,
+                            0,
+                        );
+                    }
+                    let expired = bag.tick_all();
+                    for kind in expired {
+                        emit_combat_event(
+                            &mut event_writer,
+                            CombatEventKind::OnStatusExpired { kind },
+                            active_id,
+                            active_id,
+                            0,
+                        );
+                    }
+                }
+                emit_combat_event(
+                    &mut event_writer,
+                    CombatEventKind::OnActionFailed { reason: "paralyzed".to_string() },
+                    active_id,
+                    active_id,
+                    0,
+                );
+                drop(status_opt);
+                drop(unit);
+                continue;
+            }
+
             if let Some(mut bag) = status_opt {
                 // Per-status semantics (DoT, speed delta, cancel probability, ult boost)
                 // are implemented in S03–S05. This is the v0 lifecycle skeleton only.
@@ -544,7 +589,7 @@ pub fn advance_turn_system(
         } // mutable borrow released
 
         // Enemy AI: emit ActionIntent for enemy units whose action wasn't cancelled
-        if snap.team == Team::Enemy && !shock_cancelled && !snap.is_stunned {
+        if snap.team == Team::Enemy && !shock_cancelled && !snap.is_stunned && !snap.is_paralyzed {
             let fallback_skills;
             let skills_ref: &UnitSkills = if let Some(s) = snap.skills.as_ref() {
                 s
