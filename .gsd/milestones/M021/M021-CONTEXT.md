@@ -57,6 +57,7 @@ Fascia B1–B2 prima (plugin split + Blueprint trait) — abilita injection puli
 - **D008** — `CombatPlugin` separation headless/windowed.
 - **D010** — Skill API: `trait Skill` + `SkillCtx` (query/enqueue split). Pre-M021.
 - **K-P001** — Kernel generico, specifiche fuori dal kernel (aggiornato con `SkillCtx`/`Intent` rule).
+- **`M021-RESEARCH.md`** — audit kernel↔digimon coupling, target architecture (`trait Blueprint` + opaque `BlueprintTransition`), slicing originale S01–S08 = B1–B8 di questo CONTEXT.
 - **SP2 INTERFACE-OPTIONS** — spike Blueprint API.
 - **SP-skill-dsl-coverage** — `.gsd/spikes/spike-skill-dsl-coverage/` — 24/24 skill canon Effect-expressible; conferma curva pattern chiusa.
 - **M020 §entry portfolio** — rimanda esplicitamente le 5 famiglie enum Digimon-specific alla migration di M021 S05–S06 (qui rinumerate B5–B6).
