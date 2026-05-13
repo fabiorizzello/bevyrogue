@@ -58,7 +58,8 @@ pub mod state;
 /// Buff/debuff con durata; tick a turn end.
 pub mod status_effect;
 pub mod twin_core;
-pub use status_effect::{StatusEffect, StatusEffectKind};
+#[allow(deprecated)]
+pub use status_effect::{StatusBag, StatusEffect, StatusEffectKind};
 /// Per-unit flags reset each round (Break Seal, etc.).
 pub mod round_flags;
 /// Component `Stunned { turns_left }`.
