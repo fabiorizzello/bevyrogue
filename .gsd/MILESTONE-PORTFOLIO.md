@@ -12,7 +12,7 @@
 - Out of scope di tutto il portfolio: meta-loop (StS-like), encounter chain, save/load, evolution Champion/Ultimate, enemy AI revisione, balance pass. Sono milestone M030+.
 
 **Spike che hanno informato lo scope:** SP1–SP5 in `.gsd/spikes/` (closed).
-**Decisioni già registrate:** D002–D008 in `.gsd/DECISIONS.md`.
+**Decisioni già registrate:** D002–D010 in `.gsd/DECISIONS.md`.
 
 ---
 
@@ -82,25 +82,30 @@ M017 ─→ M018 ─→ M019 ─→ M020 ─┐
 
 ## Plugin + asset (2 milestone)
 
-### M021 — Blueprint trait + registry + Bevy plugin self-registration
-**Obiettivo:** consolidare l'extension pattern e formalizzare `CombatPlugin` separation.
-**Scope (slice prevista):**
-- **S01** Estrarre `CombatPlugin` da `register_combat_kernel_runtime` (refactor `main.rs` + `headless.rs` + `windowed.rs` a composizione plugin, zero cambio di logica).
-- **S02** Definire `trait Blueprint` + `BlueprintRegistry` resource + dispatcher generico in `src/combat/blueprints/api.rs` (no migrate).
-- **S03** Migrate Agumon plugin al nuovo trait + self-registration (shim per gli altri 5).
-- **S04** Migrate Gabumon (paired Twin Core).
-- **S05** Migrate Dorumon + Tentomon.
-- **S06** Migrate Patamon + Renamon. Rimozione shim. `CombatKernelTransition` Digimon-specific eliminato.
-- **S07** Extension-friendly `RosterEntry`: rimuovere field hard-coded Digimon-specific (`twin_core`, `holy_support`, …) a favore di un blueprint-keyed payload generico. Lo schema roster non deve più conoscere i nomi delle mechanic per essere esteso.
-- **S08** `ValidationSnapshot` field nominati: passare dall'attuale shape inline (con `battery_loop` di default) a una struct con field nominati per blueprint key, popolata dal registry. Stabilizza l'osservabilità per asserzioni di test e log JSON.
+### M021 — Skill trait + SkillCtx + Blueprint trait + plugin split
+**Obiettivo:** decouplare kernel (primitive generiche) da skill/blueprint Digimon-specifici. Due fasce di scope intrecciate, vedi `M021-CONTEXT.md` per ordinamento slice definitivo.
+
+**Fascia A — Skill trait + SkillCtx (D010, 2026-05-13):**
+- Introdurre `trait Skill::resolve(&mut SkillCtx, &Params)` in Rust puro.
+- `SkillCtx` con split netto query read-only (`predict_damage`, `adjacents`, `can_target`, `sp_available`, …) ed enqueue write-deferred (`Intent::DealDamage`, `Intent::ApplyStatus`, `Intent::FollowUp`, `Intent::AdvanceTurn`, `Intent::DelayTurn`, …).
+- Kernel resta unico esecutore degli `Intent` (formula damage, mitigation, break, status tick, event bus): single source of truth, determinismo bit-identico.
+- RON ridotto a numeri/tag (dmg, hops, sp_cost, scaling, target_shape base) — niente logica in RON. Niente scripting embedded (Rhai/Rune scartati: vedi D010).
+- Migrate skill esistenti M018 (Bounce, Blast, AoE) come primo banco di prova della migrazione.
+
+**Fascia B — Blueprint trait + plugin self-registration (scope storico portfolio):**
+- Estrarre `CombatPlugin` da `register_combat_kernel_runtime` (refactor `main.rs` + `headless.rs` + `windowed.rs` a composizione plugin, zero cambio di logica).
+- Definire `trait Blueprint` + `BlueprintRegistry` Resource + dispatcher generico in `src/combat/blueprints/api.rs`. Firma target allineata a `SkillCtx` (`owner`/`dispatch`/`build` con `ctx.enqueue`), non più `commit_signals`/`on_event`/`snapshot` come in D007 originale.
+- Migrate 6 plugin Digimon (Agumon+Gabumon paired Twin Core, Dorumon+Tentomon, Patamon+Renamon). Rimozione shim, `CombatKernelTransition` Digimon-specific eliminato.
+- Extension-friendly `RosterEntry`: rimuovere field hard-coded Digimon-specific (`twin_core`, `holy_support`, …) a favore di un payload blueprint-keyed.
+- `ValidationSnapshot` con field nominati per blueprint key, popolata dal registry.
 
 **Vincoli (da D008):**
 - `CombatPlugin` non importa `bevy::winit`, `bevy::render`, `bevy_egui`.
 - `cargo check` (no feature) verifica il confinamento.
 - Test esistenti restano verdi a ogni slice.
 
-**Demo:** 6 plugin auto-registrati, dispatcher generico, test esistenti verdi.
-**Riferimenti:** D007 (`D-M017-BLUEPRINT-TRAIT-REGISTRY`), D008 (`D-M021-ARCH-PLUGIN-SPLIT`), SP2 INTERFACE-OPTIONS.
+**Demo:** 6 plugin auto-registrati, dispatcher generico, skill identity esistenti riscritte sopra `trait Skill`+`SkillCtx`, kernel zero-knowledge dei Digimon, test esistenti verdi.
+**Riferimenti:** D007 (Blueprint trait — firma evoluta), D008 (plugin split), D010 (Skill trait + SkillCtx + Intent), `.gsd/milestones/M021/M021-CONTEXT.md`, `M021-RESEARCH.md`, SP2 INTERFACE-OPTIONS.
 
 ### M022 — Asset pipeline (loader + validator + hot-reload, Agumon-only)
 **Obiettivo:** validare `clip.ron` + `animation_fsm.ron` schema su 1 Digimon, infrastruttura pronta.

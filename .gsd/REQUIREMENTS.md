@@ -18,7 +18,7 @@ M015 established the current combat baseline:
 - failure-ledger-first repair process before broad fixes;
 - current combat authority map across RON, action query, turn pipeline, kernel transitions, mechanic hooks, snapshots, CLI, UI, tests, and docs;
 - seeded Patamon/Holy Support per-Digimon blueprint seam;
-- RON as declarative data/custom-signal layer, not gameplay authority;
+- RON as declarative data layer (numbers, tags, target shape, scaling, sp/ult costs, presentation metadata) — non gameplay authority e non carrier di logica skill; skill behavior in Rust (target post-M021: `trait Skill` + `SkillCtx`, D010);
 - generic branch-light combat kernel and shared hook state;
 - presentation metadata (`animation_sequence`, `qte`, beat wording, presentation trigger strings) as non-authoritative;
 - real `combat_cli` proof through shared action query, `CombatEvent`, `OnCombatBeat`, `OnKernelTransition`, and `ValidationSnapshot` surfaces;

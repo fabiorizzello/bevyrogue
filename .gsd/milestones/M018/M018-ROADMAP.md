@@ -5,7 +5,7 @@
 ## Success Criteria
 
 - AdvanceTurn(pct) e DelayTurn(pct) sono enum variants distinti; nessun caller residuo usa il vecchio TurnAdvance signed
-- Cap ±50% per chiamata e clamp [0,200] dopo somma sono enforced in codice (non solo in design doc), con test deterministici di boundary
+- Nessun cap ±50% globale né clamp [0,200] post-somma (override di D003 deciso in M018-CONTEXT "Time-manipulation split senza cap/clamp globale"): l'AV resta nel range raw esistente (`MAX_AV` / `MIN_ACTION_THRESHOLD_AV`); eventuali cap per-unit vivono in passive boss-specifiche, non nel kernel. Test di boundary verificano AV raw + roundtrip advance/delay deterministico
 - TargetShape resolver supporta Single + Blast + AoE(All) + Bounce(N), tie-break su slot_index ascendente, deterministico in tutti i test
 - Selectors AdjLowest, LowestHpPctAlive, RandomEnemyAlive{seed}, SingleAlly disponibili nel resolver e usabili da skills.ron
 - Skill di esempio (advance/delay + Bounce chain) scriptable da CLI scenario, output JSONL leggibile, ogni step verificato in headless

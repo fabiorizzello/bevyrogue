@@ -22,8 +22,8 @@ Latest combat baseline:
 - **Headless-first Bevy:** default features avoid UI/windowing.
 - **Combat authority:** action query + turn pipeline + resolution + kernel/hooks decide legality, timing, damage, and state.
 - **Typed kernel:** Tactical Cycle, Strain, Flow, Fatigue, beats, tags, and mechanic transitions live in typed Rust.
-- **Content layer:** RON owns data, numbers, target declarations, metadata, and typed custom-signal intent; not final gameplay authority.
-- **Blueprint seam:** unique Digimon behavior belongs in per-Digimon Rust modules that emit generic kernel transitions.
+- **Content layer:** RON owns numbers, tags, target shape, scaling, sp/ult costs, and presentation metadata — **no skill logic**. Skill behavior lives in Rust (target post-M021: `trait Skill::resolve(&mut SkillCtx, &Params)`, see D010). Custom-signal handling is a blueprint concern in Rust, not a RON layer.
+- **Blueprint seam:** unique Digimon behavior lives in per-Digimon Rust modules that produce generic kernel intents via `SkillCtx` (target post-M021); kernel resta unico esecutore degli `Intent` (formula damage, mitigation, break, status tick).
 - **Event bus:** `CombatEvent` is the canonical consumer stream.
 - **Validation snapshots:** diagnostic state surface for tests, CLI, UI, and future tools.
 - **Legality contract:** shared query vocabulary in `docs/contracts/skill_legality_contract.md` and `docs/contracts/combat_ui_readiness_gap_matrix.md`; no skill-ID-specific CLI/windowed legality rules.
