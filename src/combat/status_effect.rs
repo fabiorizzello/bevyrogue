@@ -1,6 +1,8 @@
 use bevy::prelude::Component;
 use serde::{Deserialize, Serialize};
 
+use crate::combat::types::DamageTag;
+
 /// Canon status taxonomy v0 (M017 D004+D009).
 /// Re-application follows refresh_max_dur: keep the longer of old/new duration.
 /// Per-status semantics (damage ticks, speed delta, cancel probability, ult boost)
@@ -103,6 +105,18 @@ impl StatusBag {
 
     pub fn iter(&self) -> impl Iterator<Item = &StatusInstance> {
         self.0.iter()
+    }
+}
+
+/// Returns the damage amplifier percentage for a given status bag and damage tag.
+/// 115 when Heated+Fire or Chilled+Ice (canon §H.1); 100 otherwise.
+pub fn status_amp_pct(bag: &StatusBag, tag: DamageTag) -> i32 {
+    if (bag.has(&StatusEffectKind::Heated) && tag == DamageTag::Fire)
+        || (bag.has(&StatusEffectKind::Chilled) && tag == DamageTag::Ice)
+    {
+        115
+    } else {
+        100
     }
 }
 
@@ -213,6 +227,33 @@ mod tests {
         assert!(expired.contains(&StatusEffectKind::Slowed));
         assert!(bag.has(&StatusEffectKind::Blessed));
         assert_eq!(bag.iter().count(), 1);
+    }
+
+    #[test]
+    fn status_amp_no_status_returns_100() {
+        let bag = StatusBag::default();
+        assert_eq!(status_amp_pct(&bag, DamageTag::Fire), 100);
+    }
+
+    #[test]
+    fn status_amp_heated_fire_returns_115() {
+        let mut bag = StatusBag::default();
+        bag.apply(StatusEffectKind::Heated, 2);
+        assert_eq!(status_amp_pct(&bag, DamageTag::Fire), 115);
+    }
+
+    #[test]
+    fn status_amp_heated_ice_returns_100() {
+        let mut bag = StatusBag::default();
+        bag.apply(StatusEffectKind::Heated, 2);
+        assert_eq!(status_amp_pct(&bag, DamageTag::Ice), 100);
+    }
+
+    #[test]
+    fn status_amp_chilled_ice_returns_115() {
+        let mut bag = StatusBag::default();
+        bag.apply(StatusEffectKind::Chilled, 2);
+        assert_eq!(status_amp_pct(&bag, DamageTag::Ice), 115);
     }
 
     #[test]
