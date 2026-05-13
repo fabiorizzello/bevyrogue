@@ -65,6 +65,7 @@ fn build_app() -> App {
             effects: vec![Effect::Damage {
                 amount: 9999,
                 target: TargetShape::Single,
+                per_hop: Default::default(),
             }],
 
             custom_signals: vec![],

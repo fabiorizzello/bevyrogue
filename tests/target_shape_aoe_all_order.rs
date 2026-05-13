@@ -56,6 +56,7 @@ fn all_enemies_skill() -> SkillBook {
             Effect::Damage {
                 amount: 10,
                 target: TargetShape::AllEnemies,
+            per_hop: Default::default(),
             },
             Effect::ToughnessHit(5),
         ],

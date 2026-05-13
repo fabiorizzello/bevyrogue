@@ -58,6 +58,7 @@ fn fire_skill() -> SkillDef {
             Effect::Damage {
                 amount: 100,
                 target: TargetShape::Single,
+            per_hop: Default::default(),
             },
             Effect::ToughnessHit(0),
         ],

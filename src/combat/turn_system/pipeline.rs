@@ -191,11 +191,20 @@ pub(crate) fn step_app(
         let snapshot = {
             let entries = actors
                 .iter()
-                .map(|(_, team, unit, _, _, _, _, ko, _, _, _, _, _, slot)| TargetEntry {
-                    id: unit.id,
-                    team: *team,
-                    slot_index: slot.map(|s: &SlotIndex| s.0).unwrap_or(0),
-                    alive: ko.is_none() && unit.hp_current > 0,
+                .map(|(_, team, unit, _, _, _, _, ko, _, _, _, _, _, slot)| {
+                    let alive = ko.is_none() && unit.hp_current > 0;
+                    let hp_per_mille = if unit.hp_max > 0 {
+                        ((unit.hp_current.max(0) as u64 * 1000) / unit.hp_max as u64) as u32
+                    } else {
+                        0
+                    };
+                    TargetEntry {
+                        id: unit.id,
+                        team: *team,
+                        slot_index: slot.map(|s: &SlotIndex| s.0).unwrap_or(0),
+                        alive,
+                        hp_per_mille,
+                    }
                 })
                 .collect();
             TargetableSnapshot { entries }

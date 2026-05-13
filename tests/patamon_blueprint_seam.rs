@@ -221,6 +221,7 @@ fn custom_signal_resolved_action_carries_metadata_without_interpreting_it() {
         effects: vec![Effect::Damage {
             amount: 7,
             target: TargetShape::Single,
+            per_hop: Default::default(),
         }],
         custom_signals: vec![signal("patamon", "build_holy_support_grace", 1)],
         ..Default::default()

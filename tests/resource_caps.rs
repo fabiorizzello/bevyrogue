@@ -49,6 +49,7 @@ fn build_app() -> App {
                 Effect::Damage {
                     amount: 5,
                     target: TargetShape::Single,
+                per_hop: Default::default(),
                 },
                 Effect::ToughnessHit(1),
             ],
@@ -74,6 +75,7 @@ fn build_app() -> App {
                 Effect::Damage {
                     amount: 10,
                     target: TargetShape::Single,
+                per_hop: Default::default(),
                 },
                 Effect::ToughnessHit(1),
             ],

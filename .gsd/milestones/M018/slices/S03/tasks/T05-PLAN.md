@@ -4,21 +4,21 @@ estimated_files: 1
 skills_used: []
 ---
 
-# T05: combat_cli bounce-chain scenario + determinism gate + final regression sweep
+# T05: combat_cli scenarios for each fixture + determinism gate × N + final regression sweep
 
-Add `run_bounce_chain_scenario()` to `src/bin/combat_cli.rs` mirroring `run_aoe_blast_scenario` (line 921). Build a deterministic 3-enemy mock encounter where HP values force a meaningful chain (e.g. primary slot-1 at HP 60, two others at 50 and 40 — first hop lands on user-chosen primary, then next_bounce_hop visits lowest HP% remaining). At hop 2, deal enough damage to KO the current target so the chain naturally recomputes on the remaining survivor. Emit one JSONL line per hop with fields `{event:"BounceHop", hop_index, source_id, target_id, target_slot, target_hp_pre, target_hp_post, ko, skill_id:"chain_bolt"}` — wrap the existing per-hop damage events with the hop counter at print-time only (no new CombatEvent variant). Add `Some("bounce-chain")` arm to the dispatcher around line 1050. Run determinism gate: invoke `cargo run --bin combat_cli -- --scenario bounce-chain` twice, capture stdout to two files, byte-diff must be empty. Then run final regression sweep: `cargo test` full suite (must be all green, S02 + M017 suites included), `cargo check --features windowed` clean. Document the determinism result in T05 verification evidence.
+Add `run_bounce_chain_scenario()` and `run_arc_bolt_scenario()` to src/bin/combat_cli.rs (mirroring run_aoe_blast_scenario structure). Each spins up a deterministic 3-enemy mock encounter with HP values engineered to drive a meaningful chain through the fixture's selector + curve combo (chain_bolt: HP gradient surfacing LowestHpPct progression; arc_bolt: slot-walking with falloff visible in per-hop damage). Emit one JSONL line per hop with `{event:"BounceHop", hop_index, source_id, target_id, target_slot, target_hp_pre, target_hp_post, damage_dealt, selector, repeat_policy, ko, skill_id}` — wrap existing OnDamageDealt events at print time, no engine schema churn. Add `Some("bounce-chain")` and `Some("arc-bolt")` arms to the dispatcher. Run determinism gate per scenario: invoke twice, capture stdout, byte-diff must be empty. Final sweep: `cargo test` full suite green (S02 + M017 suites included), `cargo check --features windowed` clean. Document determinism diff results in verification evidence.
 
 ## Inputs
 
-- ``src/bin/combat_cli.rs` — `run_aoe_blast_scenario` (line 921) as template; dispatcher line 1050`
-- ``src/combat/resolution.rs` (T01-T03 outputs) — apply_damage_only and next_bounce_hop available`
-- ``assets/data/skills.ron` (T04 output) — chain_bolt fixture`
-- ``tests/target_shape_bounce_chain.rs` (T03 output) — integration tests must still pass`
+- `chain_bolt + arc_bolt fixtures from T04`
+- `generic kernel hop loop from T03`
 
 ## Expected Output
 
-- ``src/bin/combat_cli.rs` — `run_bounce_chain_scenario()` fn and `Some("bounce-chain")` dispatcher arm`
+- `run_bounce_chain_scenario + run_arc_bolt_scenario in combat_cli.rs`
+- `byte-for-byte deterministic JSONL per scenario across 2 runs`
+- `full cargo test + cargo check --features windowed green`
 
 ## Verification
 
-cargo build --bin combat_cli && bash -c 'cargo run --quiet --bin combat_cli -- --scenario bounce-chain > /tmp/bounce1.txt 2>&1 && cargo run --quiet --bin combat_cli -- --scenario bounce-chain > /tmp/bounce2.txt 2>&1 && diff -q /tmp/bounce1.txt /tmp/bounce2.txt' && cargo test && cargo check --features windowed
+cargo build --bin combat_cli && bash -c 'for s in bounce-chain arc-bolt; do cargo run --quiet --bin combat_cli -- --scenario $s > /tmp/${s}1.txt 2>&1 && cargo run --quiet --bin combat_cli -- --scenario $s > /tmp/${s}2.txt 2>&1 && diff -q /tmp/${s}1.txt /tmp/${s}2.txt; done' && cargo test && cargo check --features windowed

@@ -4,21 +4,20 @@ estimated_files: 2
 skills_used: []
 ---
 
-# T04: Add chain_bolt fixture skill + RON round-trip test for Bounce(N) inside Effect::Damage
+# T04: Two distinct Bounce fixture skills exercising different (selector, repeat, curve) tuples
 
-Add an Implemented fixture skill `chain_bolt` to `assets/data/skills.ron`. Targeting: `shape: Bounce(3)`, side: Enemy, life: Alive. Effects: `Damage { target: Bounce(3), base_damage: 18, damage_tag: ... }` (target must equal targeting.shape exactly — copy-paste pitfall; see resolution.rs:301). Include a `ToughnessHit`-style toughness damage value matching project conventions (cross-reference existing `nova_burst` Blast fixture). Add a focused RON round-trip unit test in `src/data/skills_ron.rs` `#[cfg(test)] mod tests` mirroring `effect_roundtrip_damage_struct_variant` (line ~461) but for `Effect::Damage { target: Bounce(3), ... }` — proves tuple-inside-struct-variant deserialization is correct. Also add a load-and-validate test confirming `chain_bolt` survives the full `SkillBook::load` pipeline.
+Add two Implemented fixture skills to assets/data/skills.ron that exercise the kernel's generic dispatcher: (a) `chain_bolt` — Bounce{hops:3, selector:LowestHpPctAlive, repeat:NoRepeat} + Damage{base:18, curve:Constant} (canonical bounce, no curve); (b) `arc_bolt` — Bounce{hops:3, selector:NextSlotAlive, repeat:NoRepeat} + Damage{base:24, curve:Falloff{pct:25}} (slot-walking with falloff). Optionally add (c) `echo_strike` — Bounce{hops:2, selector:LowestHpPctAlive, repeat:AllowRepeat} + Damage{curve:PerHop[20,12]} to prove AllowRepeat path. Each must round-trip RON and survive SkillBook::load validation. Add focused unit tests in skills_ron.rs `#[cfg(test)] mod tests`: per-fixture deserialize + validate; assert the in-memory representation matches the expected struct (selector variant, repeat variant, curve variant). Cross-link fixture metadata (id, label) to satisfy any existing data_loaders integration test.
 
 ## Inputs
 
-- ``assets/data/skills.ron` — current Blast fixture `nova_burst` and AllEnemies fixture `dark_flood` (S02 T05) as template`
-- ``src/data/skills_ron.rs` (T01/T02 outputs) — Bounce(u8) variant, validate_skill_def gate widened`
-- ``src/data/skills_ron.rs` — existing `effect_roundtrip_damage_struct_variant` test (line ~461)`
+- `DSL schema from T02`
+- `existing nova_burst/dark_flood fixture patterns`
 
 ## Expected Output
 
-- ``assets/data/skills.ron` — new `chain_bolt` SkillDef entry with Bounce(3) targeting and matching Effect::Damage target`
-- ``src/data/skills_ron.rs` — new round-trip test for Bounce(3) inside Effect::Damage; new chain_bolt load-and-validate test`
+- `chain_bolt + arc_bolt (and optionally echo_strike) fixtures in skills.ron`
+- `round-trip + validate tests per fixture`
 
 ## Verification
 
-cargo test --lib skills_ron::tests::chain_bolt_roundtrip && cargo test --test data_loaders
+cargo test --lib skills_ron::tests && cargo test --test data_loaders

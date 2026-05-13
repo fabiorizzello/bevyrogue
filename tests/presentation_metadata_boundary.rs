@@ -60,6 +60,7 @@ fn boundary_skill(id: &str) -> SkillDef {
             Effect::Damage {
                 amount: 23,
                 target: TargetShape::Single,
+            per_hop: Default::default(),
             },
             Effect::ToughnessHit(11),
             Effect::GainSP(1),

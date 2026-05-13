@@ -100,6 +100,7 @@ fn s08_boundary_turn_advance_and_action_intent() {
             Effect::Damage {
                 amount: 50,
                 target: TargetShape::Single,
+            per_hop: Default::default(),
             },
             Effect::ToughnessHit(20),
         ],
@@ -221,6 +222,7 @@ fn s08_ultimate_interrupt_flow() {
                 Effect::Damage {
                     amount: 50,
                     target: TargetShape::Single,
+                per_hop: Default::default(),
                 },
                 Effect::ToughnessHit(20),
             ],
@@ -246,6 +248,7 @@ fn s08_ultimate_interrupt_flow() {
                 Effect::Damage {
                     amount: 10,
                     target: TargetShape::Single,
+                per_hop: Default::default(),
                 },
                 Effect::ToughnessHit(5),
             ],

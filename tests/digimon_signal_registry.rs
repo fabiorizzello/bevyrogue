@@ -58,6 +58,7 @@ fn blueprint_skill(
         effects: vec![Effect::Damage {
             amount: 1,
             target: TargetShape::Single,
+        per_hop: Default::default(),
         }],
         custom_signals: vec![SkillCustomSignal::blueprint(owner, signal, payload)],
         ..Default::default()

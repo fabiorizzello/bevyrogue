@@ -954,6 +954,7 @@ fn run_aoe_blast_scenario() {
                 team: Team::Enemy,
                 slot_index: u.slot_index,
                 alive: u.hp > 0,
+                hp_per_mille: 1000, // mock: full HP for shape-only scenarios
             })
             .collect(),
     };

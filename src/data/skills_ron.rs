@@ -5,6 +5,26 @@ use std::fmt;
 use crate::combat::status_effect::StatusEffectKind;
 use crate::combat::types::{DamageTag, SkillId};
 
+/// How the next bounce hop target is selected.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum BounceSelector {
+    /// Select the alive enemy with the lowest HP percentage.
+    LowestHpPctAlive,
+    /// Select the next alive enemy in slot order (wrapping).
+    NextSlotAlive,
+    /// Select the alive enemy in the adjacent slot with the lowest HP.
+    AdjLowest,
+}
+
+/// Whether the bounce chain is allowed to revisit already-hit targets.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum RepeatPolicy {
+    /// Each target can only be hit once per cast.
+    NoRepeat,
+    /// Targets may be re-selected on subsequent hops.
+    AllowRepeat,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TargetShape {
     Single,
@@ -13,6 +33,13 @@ pub enum TargetShape {
     Row,
     AllEnemies,
     SelfOnly,
+    /// Chaining bounce: hits up to `hops` targets in sequence, re-resolving the selector
+    /// each hop. Chain stops early if no valid target is found.
+    Bounce {
+        hops: u8,
+        selector: BounceSelector,
+        repeat: RepeatPolicy,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -154,12 +181,32 @@ impl SkillCustomSignal {
     }
 }
 
+/// Per-hop damage scaling for Bounce chains.
+///
+/// - `Constant`: every hop deals `base_damage` (default).
+/// - `Falloff { pct }`: each subsequent hop deals `pct/100` of `base_damage` less than the previous
+///   (i.e. hop N deals `base_damage * (pct/100)^N`). `pct` must be <= 100.
+/// - `PerHop(Vec<i32>)`: explicit override per hop; vec length must equal `hops`.
+///   Overrides `base_damage` for each index; `base_damage` is ignored.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum DamageCurve {
+    #[default]
+    Constant,
+    Falloff {
+        /// Percentage retained per hop (1–100). E.g. 80 means each hop deals 80% of the previous.
+        pct: u16,
+    },
+    PerHop(Vec<i32>),
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub enum Effect {
     Damage {
         amount: i32,
         target: TargetShape,
+        #[serde(default)]
+        per_hop: DamageCurve,
     },
     ToughnessHit(i32),
     GainSP(i32),
@@ -276,26 +323,45 @@ fn validate_skill_def(skill: &SkillDef) -> Result<(), SkillBookValidationError> 
     let has_damage = skill_has_effect(skill, |effect| matches!(effect, Effect::Damage { .. }));
     let has_revive = skill_has_effect(skill, |effect| matches!(effect, Effect::Revive(_)));
 
-    if matches!(skill.implementation, SkillImplementation::Implemented)
-        && !matches!(
-            skill.targeting.shape,
-            TargetShape::Single | TargetShape::Blast | TargetShape::AllEnemies
+    // Reject Bounce with hops == 0 (always, regardless of implementation status).
+    if let TargetShape::Bounce { hops, .. } = skill.targeting.shape {
+        if hops == 0 {
+            return Err(validation_error(
+                skill,
+                SkillBookValidationCategory::Semantic,
+                LegalityReasonCode::UnimplementedTargetShape,
+                "Bounce hops must be >= 1; found hops=0",
+            ));
+        }
+    }
+
+    fn shape_is_executable(shape: TargetShape) -> bool {
+        matches!(
+            shape,
+            TargetShape::Single
+                | TargetShape::Blast
+                | TargetShape::AllEnemies
+                | TargetShape::Bounce { .. }
         )
+    }
+
+    if matches!(skill.implementation, SkillImplementation::Implemented)
+        && !shape_is_executable(skill.targeting.shape)
     {
         return Err(validation_error(
             skill,
             SkillBookValidationCategory::Semantic,
             LegalityReasonCode::UnimplementedTargetShape,
             format!(
-                "implemented skills support Single, Blast, or AllEnemies; found {:?}",
+                "implemented skills support Single, Blast, AllEnemies, or Bounce{{hops>=1}}; found {:?}",
                 skill.targeting.shape
             ),
         ));
     }
 
     if has_damage {
-        for target in skill.effects.iter().filter_map(|effect| match effect {
-            Effect::Damage { target, .. } => Some(*target),
+        for (target, per_hop) in skill.effects.iter().filter_map(|effect| match effect {
+            Effect::Damage { target, per_hop, .. } => Some((*target, per_hop)),
             _ => None,
         }) {
             if target != skill.targeting.shape {
@@ -308,6 +374,40 @@ fn validate_skill_def(skill: &SkillDef) -> Result<(), SkillBookValidationError> 
                         target, skill.targeting.shape
                     ),
                 ));
+            }
+
+            // Validate DamageCurve constraints for Bounce shapes.
+            if let TargetShape::Bounce { hops, .. } = skill.targeting.shape {
+                match per_hop {
+                    DamageCurve::Constant => {}
+                    DamageCurve::Falloff { pct } => {
+                        if *pct > 100 {
+                            return Err(validation_error(
+                                skill,
+                                SkillBookValidationCategory::Semantic,
+                                LegalityReasonCode::UnimplementedEffect,
+                                format!(
+                                    "DamageCurve::Falloff pct must be <= 100; found pct={}",
+                                    pct
+                                ),
+                            ));
+                        }
+                    }
+                    DamageCurve::PerHop(v) => {
+                        if v.len() != hops as usize {
+                            return Err(validation_error(
+                                skill,
+                                SkillBookValidationCategory::Semantic,
+                                LegalityReasonCode::UnimplementedEffect,
+                                format!(
+                                    "DamageCurve::PerHop length {} must equal hops {}",
+                                    v.len(),
+                                    hops
+                                ),
+                            ));
+                        }
+                    }
+                }
             }
         }
     }
@@ -437,6 +537,7 @@ mod tests {
                 Effect::Damage {
                     amount: 18,
                     target: TargetShape::Single,
+                    per_hop: DamageCurve::Constant,
                 },
                 Effect::ToughnessHit(10),
             ],
@@ -461,10 +562,15 @@ mod tests {
         let effect = Effect::Damage {
             amount: 18,
             target: TargetShape::Single,
+            per_hop: DamageCurve::Constant,
         };
         let s = ron::to_string(&effect).expect("serialize");
-        assert_eq!(s, "Damage(amount:18,target:Single)");
-        let back: Effect = ron::from_str("Damage(amount: 18, target: Single)").expect("parse");
+        // per_hop is always serialized (serde default only skips on deserialize side)
+        assert!(
+            s.contains("amount:18") && s.contains("target:Single"),
+            "unexpected serialized form: {s}"
+        );
+        let back: Effect = ron::from_str("Damage(amount: 18, target: Single)").expect("parse with default per_hop");
         assert_eq!(back, effect);
     }
 
@@ -674,6 +780,7 @@ mod tests {
             effects: vec![Effect::Damage {
                 amount: 10,
                 target: TargetShape::Row,
+                per_hop: DamageCurve::Constant,
             }],
             ..Default::default()
         }]);
@@ -730,6 +837,7 @@ mod tests {
             effects: vec![Effect::Damage {
                 amount: 10,
                 target: TargetShape::Row,
+                per_hop: DamageCurve::Constant,
             }],
             ..Default::default()
         }]);
@@ -762,6 +870,7 @@ mod tests {
                 Effect::Damage {
                     amount: 48,
                     target: TargetShape::Row,
+                    per_hop: DamageCurve::Constant,
                 },
                 Effect::ToughnessHit(28),
                 Effect::Revive(20),
@@ -859,5 +968,240 @@ mod tests {
                 "missing MVP v5.3 skill asset {mvp}"
             );
         }
+    }
+
+    // ── chain_bolt inline fixture ──────────────────────────────────────────────
+
+    /// Returns the canonical chain_bolt fixture: 3-hop Bounce with LowestHpPctAlive,
+    /// NoRepeat, and a Falloff curve (80% per hop).
+    fn chain_bolt_skill() -> SkillDef {
+        SkillDef {
+            id: SkillId("chain_bolt".into()),
+            name: "Chain Bolt".into(),
+            damage_tag: DamageTag::Electric,
+            sp_cost: 3,
+            targeting: offensive_targeting(TargetShape::Bounce {
+                hops: 3,
+                selector: BounceSelector::LowestHpPctAlive,
+                repeat: RepeatPolicy::NoRepeat,
+            }),
+            implementation: SkillImplementation::Implemented,
+            effects: vec![
+                Effect::Damage {
+                    amount: 20,
+                    target: TargetShape::Bounce {
+                        hops: 3,
+                        selector: BounceSelector::LowestHpPctAlive,
+                        repeat: RepeatPolicy::NoRepeat,
+                    },
+                    per_hop: DamageCurve::Falloff { pct: 80 },
+                },
+                Effect::ToughnessHit(8),
+            ],
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn chain_bolt_fixture_validates() {
+        let book = SkillBook(vec![chain_bolt_skill()]);
+        validate_skill_book(&book).expect("chain_bolt must validate");
+    }
+
+    #[test]
+    fn bounce_target_shape_ron_roundtrip() {
+        let shape = TargetShape::Bounce {
+            hops: 3,
+            selector: BounceSelector::LowestHpPctAlive,
+            repeat: RepeatPolicy::NoRepeat,
+        };
+        let s = ron::to_string(&shape).expect("serialize");
+        let back: TargetShape = ron::from_str(&s).expect("deserialize");
+        assert_eq!(shape, back);
+    }
+
+    #[test]
+    fn damage_curve_constant_roundtrip() {
+        let curve = DamageCurve::Constant;
+        let s = ron::to_string(&curve).expect("serialize");
+        let back: DamageCurve = ron::from_str(&s).expect("deserialize");
+        assert_eq!(curve, back);
+    }
+
+    #[test]
+    fn damage_curve_falloff_roundtrip() {
+        let curve = DamageCurve::Falloff { pct: 75 };
+        let s = ron::to_string(&curve).expect("serialize");
+        let back: DamageCurve = ron::from_str(&s).expect("deserialize");
+        assert_eq!(curve, back);
+    }
+
+    #[test]
+    fn damage_curve_per_hop_roundtrip() {
+        let curve = DamageCurve::PerHop(vec![30, 25, 20]);
+        let s = ron::to_string(&curve).expect("serialize");
+        let back: DamageCurve = ron::from_str(&s).expect("deserialize");
+        assert_eq!(curve, back);
+    }
+
+    #[test]
+    fn effect_damage_with_bounce_shape_roundtrip() {
+        let effect = Effect::Damage {
+            amount: 20,
+            target: TargetShape::Bounce {
+                hops: 3,
+                selector: BounceSelector::LowestHpPctAlive,
+                repeat: RepeatPolicy::NoRepeat,
+            },
+            per_hop: DamageCurve::Falloff { pct: 80 },
+        };
+        let s = ron::to_string(&effect).expect("serialize");
+        let back: Effect = ron::from_str(&s).expect("deserialize");
+        assert_eq!(effect, back);
+    }
+
+    #[test]
+    fn validator_accepts_bounce_with_per_hop_curve_matching_hops() {
+        let book = SkillBook(vec![SkillDef {
+            id: SkillId("per_hop_test".into()),
+            name: "PerHop Test".into(),
+            damage_tag: DamageTag::Electric,
+            sp_cost: 3,
+            targeting: offensive_targeting(TargetShape::Bounce {
+                hops: 3,
+                selector: BounceSelector::NextSlotAlive,
+                repeat: RepeatPolicy::NoRepeat,
+            }),
+            implementation: SkillImplementation::Implemented,
+            effects: vec![Effect::Damage {
+                amount: 25,
+                target: TargetShape::Bounce {
+                    hops: 3,
+                    selector: BounceSelector::NextSlotAlive,
+                    repeat: RepeatPolicy::NoRepeat,
+                },
+                per_hop: DamageCurve::PerHop(vec![30, 25, 20]),
+            }],
+            ..Default::default()
+        }]);
+        validate_skill_book(&book).expect("PerHop with matching length must validate");
+    }
+
+    #[test]
+    fn validator_accepts_bounce_with_falloff_curve() {
+        let book = SkillBook(vec![SkillDef {
+            id: SkillId("falloff_test".into()),
+            name: "Falloff Test".into(),
+            damage_tag: DamageTag::Electric,
+            sp_cost: 3,
+            targeting: offensive_targeting(TargetShape::Bounce {
+                hops: 2,
+                selector: BounceSelector::AdjLowest,
+                repeat: RepeatPolicy::AllowRepeat,
+            }),
+            implementation: SkillImplementation::Implemented,
+            effects: vec![Effect::Damage {
+                amount: 20,
+                target: TargetShape::Bounce {
+                    hops: 2,
+                    selector: BounceSelector::AdjLowest,
+                    repeat: RepeatPolicy::AllowRepeat,
+                },
+                per_hop: DamageCurve::Falloff { pct: 100 },
+            }],
+            ..Default::default()
+        }]);
+        validate_skill_book(&book).expect("Falloff pct=100 must validate");
+    }
+
+    #[test]
+    fn validator_rejects_per_hop_length_mismatch() {
+        let book = SkillBook(vec![SkillDef {
+            id: SkillId("per_hop_mismatch".into()),
+            name: "PerHop Mismatch".into(),
+            damage_tag: DamageTag::Electric,
+            sp_cost: 3,
+            targeting: offensive_targeting(TargetShape::Bounce {
+                hops: 3,
+                selector: BounceSelector::LowestHpPctAlive,
+                repeat: RepeatPolicy::NoRepeat,
+            }),
+            implementation: SkillImplementation::Implemented,
+            effects: vec![Effect::Damage {
+                amount: 25,
+                target: TargetShape::Bounce {
+                    hops: 3,
+                    selector: BounceSelector::LowestHpPctAlive,
+                    repeat: RepeatPolicy::NoRepeat,
+                },
+                // length 2, but hops = 3 -> mismatch
+                per_hop: DamageCurve::PerHop(vec![30, 20]),
+            }],
+            ..Default::default()
+        }]);
+        let err = validate_skill_book(&book).expect_err("PerHop length mismatch must fail");
+        assert_eq!(err.skill_id, SkillId("per_hop_mismatch".into()));
+        assert_eq!(err.reason, LegalityReasonCode::UnimplementedEffect);
+        assert!(err.detail.contains("PerHop length"));
+    }
+
+    #[test]
+    fn validator_rejects_bounce_hops_zero() {
+        let book = SkillBook(vec![SkillDef {
+            id: SkillId("zero_hops".into()),
+            name: "Zero Hops".into(),
+            damage_tag: DamageTag::Electric,
+            sp_cost: 3,
+            targeting: offensive_targeting(TargetShape::Bounce {
+                hops: 0,
+                selector: BounceSelector::LowestHpPctAlive,
+                repeat: RepeatPolicy::NoRepeat,
+            }),
+            implementation: SkillImplementation::Deferred {
+                reason: LegalityReasonCode::UnimplementedTargetShape,
+            },
+            effects: vec![Effect::Damage {
+                amount: 10,
+                target: TargetShape::Bounce {
+                    hops: 0,
+                    selector: BounceSelector::LowestHpPctAlive,
+                    repeat: RepeatPolicy::NoRepeat,
+                },
+                per_hop: DamageCurve::Constant,
+            }],
+            ..Default::default()
+        }]);
+        let err = validate_skill_book(&book).expect_err("Bounce hops=0 must fail");
+        assert_eq!(err.reason, LegalityReasonCode::UnimplementedTargetShape);
+        assert!(err.detail.contains("hops"));
+    }
+
+    #[test]
+    fn validator_rejects_falloff_pct_over_100() {
+        let book = SkillBook(vec![SkillDef {
+            id: SkillId("bad_falloff".into()),
+            name: "Bad Falloff".into(),
+            damage_tag: DamageTag::Electric,
+            sp_cost: 3,
+            targeting: offensive_targeting(TargetShape::Bounce {
+                hops: 2,
+                selector: BounceSelector::NextSlotAlive,
+                repeat: RepeatPolicy::NoRepeat,
+            }),
+            implementation: SkillImplementation::Implemented,
+            effects: vec![Effect::Damage {
+                amount: 20,
+                target: TargetShape::Bounce {
+                    hops: 2,
+                    selector: BounceSelector::NextSlotAlive,
+                    repeat: RepeatPolicy::NoRepeat,
+                },
+                per_hop: DamageCurve::Falloff { pct: 150 },
+            }],
+            ..Default::default()
+        }]);
+        let err = validate_skill_book(&book).expect_err("Falloff pct > 100 must fail");
+        assert_eq!(err.reason, LegalityReasonCode::UnimplementedEffect);
+        assert!(err.detail.contains("pct"));
     }
 }

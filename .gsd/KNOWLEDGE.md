@@ -35,15 +35,3 @@ Se `lookup NAME_EN` non trova nulla, ritentare con la forma JP prima di dichiara
 **Quando NON consultarla:**
 - Design di meccaniche (skill point, turn order, ultimate) — sono originali del nostro progetto, i dati Digimon non rispondono.
 - Bilanciamento numerico (HP/Atk/Def delle skill) — i dati del franchise non mappano 1:1 sul nostro modello.
-
-## K002 — Communication Protocol: Caveman Mode
-
-**Data:** 2026-04-27
-
-Ogni agente (Gemini, Claude, gsd-pi sub-agents) deve operare in **Caveman Mode**.
-
-- **Regola:** Terse, technical substance exact, drop fluff/articles/filler/pleasantries.
-- **Pattern:** `[thing] [action] [reason]. [next step].`
-- **Skill:** Se disponibile, attivare `activate_skill("caveman")`.
-- **Persistence:** Attivo per ogni risposta. Disattivabile solo con "normal mode".
-

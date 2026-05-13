@@ -1,27 +1,22 @@
 ---
-estimated_steps: 4
+estimated_steps: 1
 estimated_files: 2
 skills_used: []
 ---
 
-# T03: Extend pipeline multi-target arm with Bounce hop loop + add integration test
+# T03: Generic kernel hop loop: dispatch on selector + repeat + damage curve read from inflight action
 
-In `src/combat/turn_system/pipeline.rs` around the multi-target arm (currently line 182: `if matches!(inflight.action.target_shape, TargetShape::Blast | TargetShape::AllEnemies)`), widen the match to also cover `TargetShape::Bounce(_)`. Inside the arm, branch on shape:
-- For `Blast | AllEnemies`: existing `resolve_targets()` + per-target loop unchanged.
-- For `Bounce(n)`: implement hop loop. Hoist SP/ult/streak in Phase 1 exactly as the existing path does (resources spent once-per-cast even if chain truncates — see S02 D04). Seed `let mut already_hit: HashSet<UnitId> = HashSet::from([inflight.action.target])`. Hop 0 = primary; call `apply_damage_only` against the primary entity. For hop k in 1..n: rebuild `TargetableSnapshot` from `actors.iter()` (alive-only filter handled inside `next_bounce_hop`), call `next_bounce_hop(&snapshot, &already_hit, attacker_team.opposite())`. If `None`, break. Otherwise, insert id into `already_hit`, look up entity via the stable `actor_pairs` Vec, call `apply_damage_only` on it. Phase 3 attacker-side effects remain after the loop, unchanged. Use the existing `get_many_mut` / borrow-release pattern (rebuild snapshot after each mut borrow drops).
-Add new integration test `tests/target_shape_bounce_chain.rs` (functional naming per CLAUDE.md) following the structure of `tests/target_shape_blast_spillover.rs`. Cases: (1) N=3 full chain no KO, asserts 3 distinct OnDamageDealt events with slot_index tie-break order on equal HP%; (2) N=3 with primary HP-engineered so hop-2 KOs target, chain still hits hop 3 on remaining alive enemy or truncates if none; (3) only-one-alive-enemy → 1 hop only; (4) N=3 primary is lowest-HP%, confirm hop 1 does NOT revisit primary.
+Refactor the Bounce arm in src/combat/turn_system/pipeline.rs so the kernel carries zero per-skill bias. Read (hops, selector, repeat) from the inflight action's TargetShape and the damage curve from the Effect::Damage being applied. Hop 0 = primary; for hop k in 1..hops rebuild TargetableSnapshot from actors, call select_bounce_hop(selector, snapshot, already_hit, enemy_team, last_target_slot), break on None. Track last_target_slot for selectors that need it (NextSlotAlive, AdjLowest). already_hit insertion gated by repeat policy: NoRepeat inserts after each hop; AllowRepeat skips insertion (or always-empty set). Per-hop damage computation: Constant → base_damage; Falloff{pct} → base_damage * (100 - pct*k) / 100 floored at 1; PerHop(v) → v[k]. SP/ult/streak hoist (S02 D04) unchanged — paid once pre-loop regardless of truncation. Add integration test tests/target_shape_bounce_chain.rs with 4 cases: (1) LowestHpPct + NoRepeat + Constant full chain N=3 no KO; (2) NextSlotAlive + NoRepeat + Falloff(20%) with KO mid-chain → chain truncates or skips to next slot; (3) LowestHpPct + AllowRepeat + PerHop[30,15,5] → same target may be hit twice when still lowest HP% after first hop; (4) pool exhaustion truncates silently. Each case asserts on per-hop damage delta from OnDamageDealt to prove curve is honored.
 
 ## Inputs
 
-- ``src/combat/turn_system/pipeline.rs` — multi-target arm line 182 (verified), actor_pairs collection line 187, snapshot build line 191`
-- ``src/combat/resolution.rs` (T01/T02 outputs) — must contain `next_bounce_hop` and `apply_damage_only` (S02)`
-- ``src/data/skills_ron.rs` (T01 output) — Bounce(u8) variant`
-- ``tests/target_shape_blast_spillover.rs` — template for new integration test (3-enemy mock encounter pattern)`
+- `select_bounce_hop dispatcher (T01)`
+- `TargetShape::Bounce struct + DamageCurve (T02)`
 
 ## Expected Output
 
-- ``src/combat/turn_system/pipeline.rs` — multi-target arm widened to include Bounce(_); hop loop with already_hit HashSet and per-hop snapshot rebuild`
-- ``tests/target_shape_bounce_chain.rs` — new integration test with ≥4 cases`
+- `generic kernel Bounce arm reading selector/repeat/curve from action`
+- `integration test covering 4 selector/repeat/curve combos`
 
 ## Verification
 

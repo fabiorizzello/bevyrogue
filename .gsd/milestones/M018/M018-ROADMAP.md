@@ -19,7 +19,7 @@
 - [x] **S02: S02** `risk:med` `depends:[]`
   > After this: CLI scenario scripted con Blast (target primario + spillover adiacenti slot_index ±1) e AoE(All), ordine di applicazione damage stabile su 10 run. JSONL log mostra target list per ogni hit.
 
-- [ ] **S03: TargetShape: Bounce(N) path-dependent chain con tie-break** `risk:high` `depends:[S02]`
+- [ ] **S03: S03** `risk:high` `depends:[]`
   > After this: CLI scenario con N=3 hops, enemy che muore al hop 2: chain ricalcola hop 3 sui survivors mantenendo tie-break slot_index asc. JSONL log mostra sequenza hop completa con stato vivo/morto a ogni step.
 
 - [ ] **S04: Selectors estesi: AdjLowest, LowestHpPctAlive, RandomEnemyAlive{seed}, SingleAlly** `risk:med` `depends:[S02]`

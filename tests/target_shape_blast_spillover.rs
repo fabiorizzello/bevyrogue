@@ -56,6 +56,7 @@ fn blast_skill() -> SkillBook {
             Effect::Damage {
                 amount: 10,
                 target: TargetShape::Blast,
+            per_hop: Default::default(),
             },
             Effect::ToughnessHit(5),
         ],
