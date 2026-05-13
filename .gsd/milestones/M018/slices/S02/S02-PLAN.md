@@ -44,12 +44,12 @@ Upstream surfaces consumed: src/data/skills_ron.rs (TargetShape, validate_skill_
   - Files: `src/data/skills_ron.rs`, `src/combat/resolution.rs`, `src/combat/action_query.rs`
   - Verify: cargo test 2>&1 | tail -20 | grep -E '(test result|FAILED)' && cargo check --features windowed 2>&1 | tail -5
 
-- [ ] **T04: Fan out apply_effects in pipeline::step_app over resolve_targets()** `est:1h30m`
+- [x] **T04: Fan out apply_effects in pipeline::step_app over resolve_targets()** `est:1h30m`
   In `src/combat/turn_system/pipeline.rs:160-292` (step_app), today: finds a single `target_entity` (~line 168) and calls `apply_effects` once (~line 278). Change: build the target list via `resolve_targets(&action.target_shape, action.target, &snapshot)`, then loop apply_effects over each defender.
   - Files: `src/combat/turn_system/pipeline.rs`, `src/combat/resolution.rs`, `tests/target_shape_blast_spillover.rs`, `tests/target_shape_aoe_all_order.rs`
   - Verify: cargo test --test target_shape_blast_spillover --test target_shape_aoe_all_order 2>&1 | grep -E '(test result|FAILED)' && cargo test 2>&1 | tail -5
 
-- [ ] **T05: Add Blast + AoE fixture skills and combat_cli --scenario aoe-blast with JSONL determinism gate** `est:1h`
+- [x] **T05: Add Blast + AoE fixture skills and combat_cli --scenario aoe-blast with JSONL determinism gate** `est:1h`
   1. **Fixture skills (`assets/data/skills.ron`):** Add ONE new Blast skill and ONE new AllEnemies skill (or flip an existing Implemented Single skill if doing so is lower-churn). Both marked `implementation: Implemented`. Keep all 11 existing non-Single deferred skills untouched (no scope creep). Ensure Effect::Damage{target} matches targeting.shape so the consistency check at skills_ron.rs:291-330 passes.
   - Files: `assets/data/skills.ron`, `src/bin/combat_cli.rs`
   - Verify: cargo run --bin combat_cli -- --scenario aoe-blast > /tmp/aoe1.jsonl 2>&1 && cargo run --bin combat_cli -- --scenario aoe-blast > /tmp/aoe2.jsonl 2>&1 && diff /tmp/aoe1.jsonl /tmp/aoe2.jsonl && cargo test 2>&1 | tail -5

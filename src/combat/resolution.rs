@@ -250,6 +250,120 @@ pub fn target_shape_rejection_reason(shape: TargetShape) -> Option<String> {
     }
 }
 
+/// Apply damage to a single defender without consuming attacker resources (SP, ult, streak).
+/// Called in the per-target loop of Blast/AllEnemies fan-out; the caller hoists resource
+/// consumption before the loop. Returns per-target events only: OnDamageDealt, OnBreak, OnKO.
+pub fn apply_damage_only(
+    resolved: &ResolvedAction,
+    attacker_unit: &Unit,
+    defender_unit: &mut Unit,
+    defender_team: Team,
+    mut defender_tough: Option<&mut Toughness>,
+    defender_is_commander: bool,
+    defender_break_sealed: bool,
+    defender_status: Option<&StatusBag>,
+    attacker_statuses: Option<&StatusBag>,
+) -> (ResolutionOutcome, Vec<CombatEventKind>) {
+    if defender_is_commander {
+        return (
+            ResolutionOutcome::default(),
+            vec![CombatEventKind::OnActionFailed {
+                reason: "Target is a Commander".to_string(),
+            }],
+        );
+    }
+    if attacker_unit.is_ko() {
+        return (
+            ResolutionOutcome::default(),
+            vec![CombatEventKind::OnActionFailed {
+                reason: "Attacker is KO".to_string(),
+            }],
+        );
+    }
+    // KO'd adjacents are omitted by resolve_targets; guard here for stale-snapshot edge cases.
+    if defender_unit.is_ko() {
+        return (ResolutionOutcome::default(), vec![]);
+    }
+
+    let mut events = Vec::new();
+    let mut outcome = ResolutionOutcome::default();
+
+    if resolved.base_damage > 0 || resolved.toughness_damage > 0 {
+        let toughness_weaknesses = defender_tough
+            .as_deref()
+            .map(|t| t.weaknesses.clone())
+            .unwrap_or_default();
+        let attack = AttackContext {
+            damage_tag: resolved.damage_tag,
+            base_damage: resolved.base_damage,
+            is_break: false,
+        };
+        let attacker_dmg_mult = attacker_statuses
+            .map(|bag| {
+                if bag.has(&StatusEffectKind::Blessed) {
+                    1.15_f32
+                } else {
+                    1.0_f32
+                }
+            })
+            .unwrap_or(1.0_f32);
+        let DamageBreakdown {
+            final_damage: amount,
+            tag_mod_pct,
+            triangle_mod_pct,
+            ..
+        } = calculate_damage(
+            attacker_unit,
+            &attack,
+            defender_unit,
+            &toughness_weaknesses,
+            defender_status,
+            attacker_dmg_mult,
+        );
+        defender_unit.hp_current -= amount;
+        let broke = if can_apply_toughness_damage(defender_team, defender_tough.as_deref()) {
+            defender_tough
+                .as_deref_mut()
+                .map(|t| {
+                    t.apply_hit(resolved.damage_tag, resolved.toughness_damage, defender_break_sealed)
+                })
+                .unwrap_or(false)
+        } else {
+            false
+        };
+        let kind = classify(
+            resolved.damage_tag,
+            &toughness_weaknesses,
+            &defender_unit.resists,
+            broke,
+        );
+        let ko = defender_unit.hp_current <= 0;
+
+        outcome.amount = amount;
+        outcome.kind = kind;
+        outcome.broke = broke;
+        outcome.ko = ko;
+
+        events.push(CombatEventKind::OnDamageDealt {
+            amount,
+            kind,
+            tag_mod_pct,
+            triangle_mod_pct,
+            damage_tag: resolved.damage_tag,
+        });
+        if broke {
+            events.push(CombatEventKind::OnBreak { damage_tag: resolved.damage_tag });
+        }
+        if ko {
+            events.push(CombatEventKind::OnKO);
+        }
+    }
+
+    outcome.sp_ok = true;
+    outcome.succeeded = true;
+    (outcome, events)
+}
+
 pub fn apply_effects(
     resolved: &ResolvedAction,
     attacker_unit: &Unit,

@@ -23,7 +23,7 @@ use crate::combat::{
     turn_order::{TurnAdvanced, TurnOrder},
     types::{DamageTag, SkillId, UnitId},
     ultimate::UltimateCharge,
-    unit::{BasicStreak, Commander, Ko, Unit},
+    unit::{BasicStreak, Commander, Ko, SlotIndex, Unit},
 };
 use crate::data::{SkillBookHandle, skills_ron::SkillBook};
 use bevy::prelude::*;
@@ -66,6 +66,7 @@ pub(crate) type ResolveActorsQuery<'w, 's> = Query<
         Option<&'static mut StatusBag>,
         Option<&'static mut BasicStreak>,
         Option<&'static mut RoundFlags>,
+        Option<&'static SlotIndex>,
     ),
 >;
 
@@ -199,6 +200,7 @@ pub fn resolve_action_system(
                         ko,
                         stunned,
                         commander,
+                        _,
                         _,
                         _,
                         _,

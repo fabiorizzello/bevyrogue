@@ -48,6 +48,8 @@ use bevyrogue::combat::action_query::{
 use bevyrogue::combat::av::{ActionValue, ActionValueUpdated, MAX_AV};
 use bevyrogue::combat::energy::{Energy, RoundEnergyTracker};
 use bevyrogue::combat::resistance::{TempoResistance, apply_advance, apply_delay};
+use bevyrogue::combat::resolution::{TargetEntry, TargetableSnapshot, resolve_targets};
+use bevyrogue::data::skills_ron::TargetShape;
 use bevyrogue::combat::kit::UnitSkills;
 use bevyrogue::combat::stun::Stunned;
 use bevyrogue::combat::team::Team;
@@ -911,6 +913,131 @@ fn run_advance_delay_cap_scenario() {
     println!("=== scenario complete ===");
 }
 
+/// Standalone scenario: aoe-blast
+///
+/// Builds a deterministic 3-enemy encounter, casts one Blast skill (slot-1 primary)
+/// then one AllEnemies skill. Prints resolved target list + per-target damage,
+/// final HP per enemy, and emits one JSONL line per OnDamageDealt event.
+fn run_aoe_blast_scenario() {
+    println!("=== scenario: aoe-blast ===");
+
+    #[derive(Clone)]
+    struct MockUnit {
+        id: UnitId,
+        name: &'static str,
+        slot_index: u8,
+        hp: i32,
+    }
+
+    #[derive(serde::Serialize)]
+    struct JsonlDamageEvent {
+        event: &'static str,
+        source_id: u32,
+        target_id: u32,
+        target_slot: u8,
+        amount: i32,
+        skill_id: &'static str,
+    }
+
+    let attacker_id = UnitId(0);
+    let mut enemies = vec![
+        MockUnit { id: UnitId(1), name: "GobA", slot_index: 0, hp: 60 },
+        MockUnit { id: UnitId(2), name: "GobB", slot_index: 1, hp: 60 },
+        MockUnit { id: UnitId(3), name: "GobC", slot_index: 2, hp: 60 },
+    ];
+
+    let build_snapshot = |units: &[MockUnit]| TargetableSnapshot {
+        entries: units
+            .iter()
+            .map(|u| TargetEntry {
+                id: u.id,
+                team: Team::Enemy,
+                slot_index: u.slot_index,
+                alive: u.hp > 0,
+            })
+            .collect(),
+    };
+
+    // --- Cast 1: Blast on slot-1 primary (GobB) ---
+    println!("\n--- Cast 1: nova_burst (Blast, primary=GobB slot-1) ---");
+    let primary_blast = UnitId(2);
+    let snapshot1 = build_snapshot(&enemies);
+    let blast_targets = resolve_targets(&TargetShape::Blast, primary_blast, &snapshot1);
+
+    let blast_damage_per_target = 20i32;
+    let blast_toughness_per_target = 10i32;
+    println!(
+        "Resolved targets (slot_index asc): {:?}",
+        blast_targets
+            .iter()
+            .filter_map(|id| enemies.iter().find(|u| u.id == *id))
+            .map(|u| format!("{}(slot{})", u.name, u.slot_index))
+            .collect::<Vec<_>>()
+    );
+
+    for &target_id in &blast_targets {
+        let enemy = enemies.iter_mut().find(|u| u.id == target_id).unwrap();
+        enemy.hp -= blast_damage_per_target;
+        println!(
+            "  {} (slot {}) takes {} dmg → HP {}",
+            enemy.name, enemy.slot_index, blast_damage_per_target, enemy.hp
+        );
+        let entry = JsonlDamageEvent {
+            event: "OnDamageDealt",
+            source_id: attacker_id.0,
+            target_id: enemy.id.0,
+            target_slot: enemy.slot_index,
+            amount: blast_damage_per_target,
+            skill_id: "nova_burst",
+        };
+        println!("{}", serde_json::to_string(&entry).unwrap());
+        let _ = blast_toughness_per_target;
+    }
+
+    // --- Cast 2: AllEnemies (dark_flood) ---
+    println!("\n--- Cast 2: dark_flood (AllEnemies) ---");
+    let primary_all = UnitId(1);
+    let snapshot2 = build_snapshot(&enemies);
+    let all_targets = resolve_targets(&TargetShape::AllEnemies, primary_all, &snapshot2);
+
+    let all_damage_per_target = 15i32;
+    let all_toughness_per_target = 8i32;
+    println!(
+        "Resolved targets (slot_index asc): {:?}",
+        all_targets
+            .iter()
+            .filter_map(|id| enemies.iter().find(|u| u.id == *id))
+            .map(|u| format!("{}(slot{})", u.name, u.slot_index))
+            .collect::<Vec<_>>()
+    );
+
+    for &target_id in &all_targets {
+        let enemy = enemies.iter_mut().find(|u| u.id == target_id).unwrap();
+        enemy.hp -= all_damage_per_target;
+        println!(
+            "  {} (slot {}) takes {} dmg → HP {}",
+            enemy.name, enemy.slot_index, all_damage_per_target, enemy.hp
+        );
+        let entry = JsonlDamageEvent {
+            event: "OnDamageDealt",
+            source_id: attacker_id.0,
+            target_id: enemy.id.0,
+            target_slot: enemy.slot_index,
+            amount: all_damage_per_target,
+            skill_id: "dark_flood",
+        };
+        println!("{}", serde_json::to_string(&entry).unwrap());
+        let _ = all_toughness_per_target;
+    }
+
+    // --- Final HP gauge ---
+    println!("\n--- Final HP ---");
+    for enemy in &enemies {
+        println!("  {} (slot {}): HP {}", enemy.name, enemy.slot_index, enemy.hp);
+    }
+    println!("=== scenario complete ===");
+}
+
 fn main() -> AppExit {
     // Handle --scenario before starting Bevy.
     let args: Vec<String> = env::args().collect();
@@ -918,6 +1045,10 @@ fn main() -> AppExit {
         match args.get(pos + 1).map(String::as_str) {
             Some("advance-delay-cap") => {
                 run_advance_delay_cap_scenario();
+                return AppExit::Success;
+            }
+            Some("aoe-blast") => {
+                run_aoe_blast_scenario();
                 return AppExit::Success;
             }
             Some(other) => {

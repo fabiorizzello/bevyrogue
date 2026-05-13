@@ -13,15 +13,17 @@ use crate::combat::floating::FloatingDamage;
 use crate::combat::kernel::{CombatBeatId, CombatKernelRegistry};
 use crate::combat::log::{ActionLog, LogEntry};
 use crate::combat::resolution::{
-    apply_effects, resolve_action, target_shape_rejection_reason,
+    apply_damage_only, apply_effects, resolve_action, resolve_targets, target_shape_rejection_reason,
 };
+use crate::combat::resolution::{TargetEntry, TargetableSnapshot};
 use crate::combat::rng::CombatRng;
 use crate::combat::sp::{RoundSpTracker, SpPool};
 use crate::combat::state::{CombatPhase, CombatState, InFlightAction, UltEffect};
 use crate::combat::status_effect::{StatusBag, StatusEffectKind};
 use crate::combat::stun::Stunned;
 use crate::combat::turn_order::TurnOrder;
-use crate::combat::unit::{BasicStreak, Ko};
+use crate::combat::types::{EvoStage, UnitId};
+use crate::combat::unit::{BasicStreak, Ko, SlotIndex};
 use crate::data::{
     SkillBookHandle,
     skills_ron::{SkillBook, TargetShape},
@@ -55,7 +57,7 @@ pub(crate) fn step_declaration(
     let (_entity, kit) =
         actors
             .iter()
-            .find_map(|(entity, _, unit, kit, _, _, _, _, _, _, _, _, _)| {
+            .find_map(|(entity, _, unit, kit, _, _, _, _, _, _, _, _, _, _)| {
                 if unit.id == attacker_id {
                     Some((entity, kit))
                 } else {
@@ -176,6 +178,456 @@ pub(crate) fn step_app(
         return;
     };
 
+    // === MULTI-TARGET PATH (Blast / AllEnemies) ===
+    if matches!(
+        inflight.action.target_shape,
+        TargetShape::Blast | TargetShape::AllEnemies
+    ) {
+        // Phase 0: build entity→id map and snapshot (read-only pass, released before mut borrows)
+        let actor_pairs: Vec<(Entity, UnitId)> = actors
+            .iter()
+            .map(|(entity, _, unit, ..)| (entity, unit.id))
+            .collect();
+        let snapshot = {
+            let entries = actors
+                .iter()
+                .map(|(_, team, unit, _, _, _, _, ko, _, _, _, _, _, slot)| TargetEntry {
+                    id: unit.id,
+                    team: *team,
+                    slot_index: slot.map(|s: &SlotIndex| s.0).unwrap_or(0),
+                    alive: ko.is_none() && unit.hp_current > 0,
+                })
+                .collect();
+            TargetableSnapshot { entries }
+        };
+
+        let target_ids =
+            resolve_targets(&inflight.action.target_shape, inflight.action.target, &snapshot);
+
+        if target_ids.is_empty() {
+            set_phase(state, CombatPhase::WaitingAction);
+            return;
+        }
+
+        // Phase 1: attacker validation + resource consumption (mut borrow released after block)
+        {
+            let Ok((
+                _,
+                _,
+                attacker_unit,
+                _,
+                att_ult_opt,
+                _,
+                _,
+                att_ko,
+                att_stun,
+                _,
+                _,
+                mut att_streak_opt,
+                _,
+                _,
+            )) = actors.get_mut(attacker_entity)
+            else {
+                return;
+            };
+
+            if att_stun.is_some() {
+                log.push(LogEntry::ActionFailed {
+                    reason: "Attacker is stunned".to_string(),
+                });
+                emit_combat_event(
+                    event_writer,
+                    CombatEventKind::OnActionFailed {
+                        reason: "Attacker is stunned".to_string(),
+                    },
+                    attacker_id,
+                    target_id,
+                    inflight.follow_up_depth,
+                );
+                set_phase(state, CombatPhase::WaitingAction);
+                return;
+            }
+            if att_ko.is_some() {
+                log.push(LogEntry::ActionFailed {
+                    reason: "Attacker is KO".to_string(),
+                });
+                emit_combat_event(
+                    event_writer,
+                    CombatEventKind::OnActionFailed {
+                        reason: "Attacker is KO".to_string(),
+                    },
+                    attacker_id,
+                    target_id,
+                    inflight.follow_up_depth,
+                );
+                set_phase(state, CombatPhase::WaitingAction);
+                return;
+            }
+
+            let Some(mut att_ult) = att_ult_opt else {
+                return;
+            };
+
+            // SP cost with Child streak discount (hoisted from apply_effects)
+            let effective_sp_cost = if matches!(inflight.action.ult_effect, UltEffect::None)
+                && inflight.action.sp_cost > 0
+                && attacker_unit.evo_stage == EvoStage::Child
+                && att_streak_opt
+                    .as_deref()
+                    .map(|s| s.qualifies_for_discount())
+                    .unwrap_or(false)
+            {
+                if let Some(ref mut streak) = att_streak_opt {
+                    streak.reset();
+                }
+                (inflight.action.sp_cost - 1).max(0)
+            } else {
+                inflight.action.sp_cost
+            };
+
+            if effective_sp_cost > 0 && !sp.spend(effective_sp_cost) {
+                emit_combat_event(
+                    event_writer,
+                    CombatEventKind::OnActionFailed {
+                        reason: "SP shortfall".to_string(),
+                    },
+                    attacker_id,
+                    target_id,
+                    inflight.follow_up_depth,
+                );
+                set_phase(state, CombatPhase::WaitingAction);
+                return;
+            }
+
+            if matches!(inflight.action.ult_effect, UltEffect::Reset) && !att_ult.ready() {
+                emit_combat_event(
+                    event_writer,
+                    CombatEventKind::OnActionFailed {
+                        reason: "SP shortfall".to_string(),
+                    },
+                    attacker_id,
+                    target_id,
+                    inflight.follow_up_depth,
+                );
+                set_phase(state, CombatPhase::WaitingAction);
+                return;
+            }
+        } // attacker mut borrow released
+
+        // Phase 2: per-target damage loop
+        set_phase(state, CombatPhase::Resolving);
+        emit_combat_beat(
+            event_writer,
+            registry,
+            CombatBeatId::Impact,
+            attacker_id,
+            target_id,
+            inflight.follow_up_depth,
+        );
+
+        for &def_id in &target_ids {
+            let Some(def_entity) = actor_pairs
+                .iter()
+                .find_map(|(e, id)| if *id == def_id { Some(*e) } else { None })
+            else {
+                continue;
+            };
+
+            if def_entity == attacker_entity {
+                continue;
+            }
+
+            let Ok([att_row, mut def_row]) =
+                actors.get_many_mut([attacker_entity, def_entity])
+            else {
+                continue;
+            };
+
+            let (_, att_team_val, att_unit_val, _, _, _, _, _, _, _, att_bag_val, _, _, _) =
+                &att_row;
+            let (
+                _,
+                def_team_val,
+                ref mut def_unit_val,
+                _,
+                _,
+                ref mut def_tough_val,
+                _,
+                _,
+                _,
+                def_cmdr_val,
+                ref mut def_bag_val,
+                _,
+                ref mut def_flags_val,
+                _,
+            ) = def_row;
+
+            let hp_before = def_unit_val.hp_current;
+            let low_hp_threshold = def_unit_val.hp_max * 3 / 10;
+            let defender_break_sealed =
+                def_flags_val.as_ref().map(|f| f.break_sealed).unwrap_or(false);
+
+            let (outcome, core_events) = apply_damage_only(
+                &inflight.action,
+                att_unit_val,
+                def_unit_val,
+                *def_team_val,
+                def_tough_val.as_deref_mut(),
+                def_cmdr_val.is_some(),
+                defender_break_sealed,
+                def_bag_val.as_deref(),
+                att_bag_val.as_deref(),
+            );
+
+            for kind in core_events {
+                let hit_taken_amount =
+                    if let CombatEventKind::OnDamageDealt { amount, .. } = &kind {
+                        Some(*amount)
+                    } else {
+                        None
+                    };
+
+                match &kind {
+                    CombatEventKind::OnDamageDealt {
+                        amount,
+                        kind: dkind,
+                        ..
+                    } => {
+                        log.push(LogEntry::BasicHit {
+                            attacker: attacker_id,
+                            target: def_id,
+                            amount: *amount,
+                            kind: *dkind,
+                        });
+                        commands.spawn(FloatingDamage {
+                            target: def_id,
+                            amount: *amount,
+                            kind: *dkind,
+                            spawn_time: time.elapsed_secs(),
+                        });
+                    }
+                    CombatEventKind::OnBreak { damage_tag } => {
+                        commands.entity(def_entity).insert(Stunned { turns_left: 1 });
+                        log.push(LogEntry::Break {
+                            target: def_id,
+                            damage_tag: *damage_tag,
+                        });
+                    }
+                    CombatEventKind::OnKO => {
+                        commands.entity(def_entity).insert(Ko);
+                        log.push(LogEntry::Ko { target: def_id });
+                        if **att_team_val != *def_team_val {
+                            emit_combat_event(
+                                event_writer,
+                                CombatEventKind::OnEnemyKill,
+                                attacker_id,
+                                def_id,
+                                inflight.follow_up_depth,
+                            );
+                        }
+                    }
+                    _ => {}
+                }
+                emit_combat_event(
+                    event_writer,
+                    kind,
+                    inflight.action.source,
+                    def_id,
+                    inflight.follow_up_depth,
+                );
+
+                if let Some(amount) = hit_taken_amount {
+                    emit_combat_event(
+                        event_writer,
+                        CombatEventKind::OnHitTaken { amount },
+                        attacker_id,
+                        def_id,
+                        inflight.follow_up_depth,
+                    );
+                    emit_combat_beat(
+                        event_writer,
+                        registry,
+                        CombatBeatId::Damage,
+                        attacker_id,
+                        def_id,
+                        inflight.follow_up_depth,
+                    );
+                }
+            }
+
+            if outcome.broke {
+                if let Some(flags) = def_flags_val {
+                    flags.break_sealed = true;
+                }
+            }
+
+            if hp_before > low_hp_threshold
+                && def_unit_val.hp_current <= low_hp_threshold
+                && !def_unit_val.is_ko()
+            {
+                emit_combat_event(
+                    event_writer,
+                    CombatEventKind::OnAllyLowHp,
+                    def_id,
+                    def_id,
+                    inflight.follow_up_depth,
+                );
+            }
+        }
+
+        // Phase 3: post-loop attacker resource effects + once-per-cast events
+        let ult_delta = {
+            let Ok((
+                _,
+                _,
+                _,
+                _,
+                att_ult_opt,
+                _,
+                _,
+                _,
+                _,
+                _,
+                att_bag_opt,
+                mut att_streak_opt,
+                _,
+                _,
+            )) = actors.get_mut(attacker_entity)
+            else {
+                set_phase(state, CombatPhase::WaitingAction);
+                return;
+            };
+
+            let Some(mut att_ult) = att_ult_opt else {
+                set_phase(state, CombatPhase::WaitingAction);
+                return;
+            };
+
+            let before = att_ult.current;
+
+            match inflight.action.ult_effect {
+                UltEffect::GainFromBasic => {
+                    sp.gain(1);
+                    let cpe = att_ult.charge_per_event;
+                    att_ult.try_add(cpe);
+                    if let Some(ref mut streak) = att_streak_opt {
+                        streak.increment();
+                    }
+                }
+                UltEffect::None => {}
+                UltEffect::Reset => {
+                    att_ult.current = 0;
+                }
+            }
+
+            if inflight.action.ult_effect != UltEffect::Reset {
+                if let Some(bag) = att_bag_opt.as_deref() {
+                    if bag.has(&StatusEffectKind::Blessed) {
+                        att_ult.try_add(1);
+                    }
+                }
+            }
+
+            att_ult.current - before
+        };
+
+        // Once-per-cast events (not per-target)
+        emit_combat_event(
+            event_writer,
+            CombatEventKind::OnSkillCast {
+                skill_id: inflight.action.skill_id.clone(),
+            },
+            attacker_id,
+            target_id,
+            inflight.follow_up_depth,
+        );
+
+        if inflight.action.advance_pct != 0 {
+            emit_combat_event(
+                event_writer,
+                CombatEventKind::AdvanceTurn {
+                    target: inflight.action.target,
+                    amount_pct: inflight.action.advance_pct,
+                },
+                attacker_id,
+                target_id,
+                inflight.follow_up_depth,
+            );
+        }
+        if inflight.action.delay_pct != 0 {
+            emit_combat_event(
+                event_writer,
+                CombatEventKind::DelayTurn {
+                    target: inflight.action.target,
+                    amount_pct: inflight.action.delay_pct,
+                },
+                attacker_id,
+                target_id,
+                inflight.follow_up_depth,
+            );
+        }
+        if inflight.action.self_advance_pct != 0 {
+            let capped = (inflight.action.self_advance_pct.max(0) as u32).min(50);
+            if capped != 0 {
+                emit_combat_event(
+                    event_writer,
+                    CombatEventKind::AdvanceTurn {
+                        target: inflight.action.source,
+                        amount_pct: capped,
+                    },
+                    attacker_id,
+                    attacker_id,
+                    inflight.follow_up_depth,
+                );
+            }
+        }
+
+        if matches!(inflight.action.ult_effect, UltEffect::GainFromBasic) && ult_delta > 0 {
+            emit_combat_event(
+                event_writer,
+                CombatEventKind::UltGain {
+                    unit_id: attacker_id,
+                    amount: ult_delta,
+                },
+                attacker_id,
+                attacker_id,
+                inflight.follow_up_depth,
+            );
+        }
+
+        if inflight.action.energy_grant > 0 {
+            if let Ok((mut energy, mut tracker)) = energy_q.get_mut(attacker_entity) {
+                let granted_by_round_cap = tracker
+                    .as_deref_mut()
+                    .map(|tracker| {
+                        tracker.try_gain(
+                            EnergyGainSource::SecondaryAction,
+                            inflight.action.energy_grant,
+                        )
+                    })
+                    .unwrap_or(inflight.action.energy_grant);
+                let applied = energy.gain_capped(granted_by_round_cap);
+                if applied > 0 {
+                    emit_combat_event(
+                        event_writer,
+                        CombatEventKind::EnergyGained {
+                            unit_id: attacker_id,
+                            amount: applied,
+                        },
+                        attacker_id,
+                        attacker_id,
+                        inflight.follow_up_depth,
+                    );
+                }
+            }
+        }
+
+        dispatch_blueprint_transitions(inflight, log, event_writer, registry);
+        set_phase(state, CombatPhase::WaitingAction);
+        return;
+    }
+    // === END MULTI-TARGET PATH ===
+
     if attacker_entity == target_entity
         && inflight.action.base_damage == 0
         && inflight.action.toughness_damage == 0
@@ -195,6 +647,7 @@ pub(crate) fn step_app(
             attacker_bag,
             mut attacker_streak,
             attacker_round_flags,
+            _attacker_slot,
         )) = actors.get_mut(attacker_entity)
         else {
             return;
@@ -472,6 +925,7 @@ pub(crate) fn step_app(
         attacker_bag,
         mut attacker_streak,
         _attacker_round_flags,
+        _attacker_slot,
     ) = attacker;
     let (
         _,
@@ -487,6 +941,7 @@ pub(crate) fn step_app(
         mut defender_bag,
         _,
         mut defender_round_flags,
+        _defender_slot,
     ) = defender;
 
     if attacker_stunned.is_some() {
