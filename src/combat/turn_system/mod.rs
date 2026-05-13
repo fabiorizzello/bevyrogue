@@ -650,7 +650,7 @@ pub fn advance_turn_system(
         let old_av = av.0;
         av.advance(av_gain);
         av_event_writer.write(ActionValueUpdated {
-            unit_id: entity,
+            unit_entity: entity,
             old_value: old_av,
             new_value: av.0,
         });

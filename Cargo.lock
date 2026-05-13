@@ -1126,6 +1126,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7ef8e4b7e61dfe7719bb03c884dc270cd46a82efb40f93e9933b990c5c190c59"
 
 [[package]]
+name = "bevy_mod_debugdump"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0615f61bef44aca7d094a261c4b65a9f8587f1d5d18091be77fbc0f6cd5846c8"
+dependencies = [
+ "bevy_app",
+ "bevy_color",
+ "bevy_ecs",
+ "bevy_log",
+ "bevy_platform",
+ "bevy_render",
+ "bevy_utils",
+ "disqualified",
+ "lexopt",
+]
+
+[[package]]
 name = "bevy_pbr"
 version = "0.18.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1704,6 +1721,7 @@ dependencies = [
  "bevy",
  "bevy_common_assets",
  "bevy_egui",
+ "bevy_mod_debugdump",
  "inquire",
  "rand 0.8.6",
  "ron 0.8.1",
@@ -3444,6 +3462,12 @@ dependencies = [
  "ogg",
  "tinyvec",
 ]
+
+[[package]]
+name = "lexopt"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "803ec87c9cfb29b9d2633f20cba1f488db3fd53f2158b1024cbefb47ba05d413"
 
 [[package]]
 name = "libc"

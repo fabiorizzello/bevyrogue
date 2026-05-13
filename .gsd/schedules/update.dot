@@ -1,0 +1,38 @@
+digraph "" {
+	"compound"="true";
+	"splines"="spline";
+	"rankdir"="LR";
+	"bgcolor"="#0d1117";
+	"fontname"="Helvetica";
+	"nodesep"="0.15";
+	edge ["penwidth"="2"];
+	node ["shape"="box", "style"="filled"];
+	"node_System(SystemKey(1v1))" ["label"="decay_floating_damage", "tooltip"="bevyrogue::combat::floating::decay_floating_damage"]
+	"node_System(SystemKey(2v1))" ["label"="apply_battery_loop_transitions_system", "tooltip"="bevyrogue::combat::battery_loop::apply_battery_loop_transitions_system"]
+	"node_System(SystemKey(3v1))" ["label"="apply_predator_loop_transitions_system", "tooltip"="bevyrogue::combat::predator_loop::apply_predator_loop_transitions_system"]
+	"node_System(SystemKey(4v1))" ["label"="apply_twin_core_transitions_system", "tooltip"="bevyrogue::combat::twin_core::apply_twin_core_transitions_system"]
+	"node_System(SystemKey(5v1))" ["label"="apply_holy_support_transitions_system", "tooltip"="bevyrogue::combat::holy_support::apply_holy_support_transitions_system"]
+	"node_System(SystemKey(6v1))" ["label"="apply_precision_mind_game_transitions_system", "tooltip"="bevyrogue::combat::precision_mind_game::apply_precision_mind_game_transitions_system"]
+	"node_System(SystemKey(7v1))" ["label"="resolve_action_system", "tooltip"="bevyrogue::combat::turn_system::resolve_action_system"]
+	"node_System(SystemKey(8v1))" ["label"="follow_up_listener_system", "tooltip"="bevyrogue::combat::follow_up::follow_up_listener_system"]
+	"node_System(SystemKey(9v1))" ["label"="form_identity_listener_system", "tooltip"="bevyrogue::combat::follow_up::form_identity_listener_system"]
+	"node_System(SystemKey(10v1))" ["label"="resolve_follow_up_action_system", "tooltip"="bevyrogue::combat::follow_up::resolve_follow_up_action_system"]
+	"node_System(SystemKey(11v1))" ["label"="ult_accumulation_system", "tooltip"="bevyrogue::combat::ultimate::ult_accumulation_system"]
+	"node_System(SystemKey(12v1))" ["label"="flush_ult_gain_system", "tooltip"="bevyrogue::combat::ultimate::flush_ult_gain_system"]
+	"node_System(SystemKey(13v1))" ["label"="apply_turn_advance_system", "tooltip"="bevyrogue::combat::turn_system::apply_turn_advance_system"]
+	"node_System(SystemKey(14v1))" ["label"="advance_turn_system", "tooltip"="bevyrogue::combat::turn_system::advance_turn_system"]
+	"node_System(SystemKey(15v1))" ["label"="check_victory_system", "tooltip"="bevyrogue::combat::turn_system::check_victory_system"]
+	"node_System(SystemKey(16v1))" ["label"="jsonl_logger_system", "tooltip"="bevyrogue::combat::jsonl_logger::jsonl_logger_system"]
+	"node_System(SystemKey(17v1))" ["label"="apply_deferred", "tooltip"="bevy_ecs::apply_deferred"]
+	"node_System(SystemKey(18v1))" ["label"="apply_deferred", "tooltip"="bevy_ecs::apply_deferred"]
+	"node_System(SystemKey(19v1))" ["label"="apply_deferred", "tooltip"="bevy_ecs::apply_deferred"]
+	"node_System(SystemKey(9v1))" -> "node_System(SystemKey(10v1))" ["lhead"="", "ltail"="", "tooltip"="form_identity_listener_system → resolve_follow_up_action_system", "color"="#eede00"]
+	"node_System(SystemKey(10v1))" -> "node_System(SystemKey(11v1))" ["lhead"="", "ltail"="", "tooltip"="resolve_follow_up_action_system → ult_accumulation_system", "color"="#881877"]
+	"node_System(SystemKey(11v1))" -> "node_System(SystemKey(12v1))" ["lhead"="", "ltail"="", "tooltip"="ult_accumulation_system → flush_ult_gain_system", "color"="#00b0cc"]
+	"node_System(SystemKey(13v1))" -> "node_System(SystemKey(14v1))" ["lhead"="", "ltail"="", "tooltip"="apply_turn_advance_system → advance_turn_system", "color"="#aa3a55"]
+	"node_System(SystemKey(14v1))" -> "node_System(SystemKey(15v1))" ["lhead"="", "ltail"="", "tooltip"="advance_turn_system → check_victory_system", "color"="#44d488"]
+	"node_System(SystemKey(7v1))" -> "node_System(SystemKey(8v1))" ["lhead"="", "ltail"="", "tooltip"="resolve_action_system → follow_up_listener_system", "color"="#0090cc"]
+	"node_System(SystemKey(8v1))" -> "node_System(SystemKey(9v1))" ["lhead"="", "ltail"="", "tooltip"="follow_up_listener_system → form_identity_listener_system", "color"="#ee9e44"]
+	"node_System(SystemKey(15v1))" -> "node_System(SystemKey(16v1))" ["lhead"="", "ltail"="", "tooltip"="check_victory_system → jsonl_logger_system", "color"="#663699"]
+	"node_System(SystemKey(12v1))" -> "node_System(SystemKey(13v1))" ["lhead"="", "ltail"="", "tooltip"="flush_ult_gain_system → apply_turn_advance_system", "color"="#3363bb"]
+}
