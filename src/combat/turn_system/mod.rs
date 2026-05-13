@@ -32,7 +32,6 @@ pub const TICK_AV_AMOUNT: i32 = 1000; // Arbitrary tick amount for AV accumulati
 // this could be based on a fixed percentage or smallest speed denominator.
 // Using 1000 for now to ensure multiple units can cross MAX_AV without too many sub-ticks.
 
-#[allow(dead_code)]
 #[derive(Message, Debug, Clone, PartialEq, Eq)]
 pub enum ActionIntent {
     Basic {

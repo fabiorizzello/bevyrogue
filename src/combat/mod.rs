@@ -67,7 +67,6 @@ pub mod round_flags;
 // ─── Enemy & encounter ───────────────────────────────────────────────────────
 // Spawn composition, enemy AI, counterplay catalog, per-digimon blueprints.
 
-#[allow(dead_code)]
 /// Spawn composizione encounter (party + nemici) da `SelectionRequest`.
 pub mod bootstrap;
 /// AI nemica: routing decisioni → `ActionIntent`.

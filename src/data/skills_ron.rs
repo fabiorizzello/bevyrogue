@@ -5,7 +5,6 @@ use std::fmt;
 use crate::combat::status_effect::StatusEffectKind;
 use crate::combat::types::{DamageTag, SkillId};
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TargetShape {
     Single,
@@ -14,7 +13,6 @@ pub enum TargetShape {
     SelfOnly,
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TargetSide {
     Ally,
@@ -22,7 +20,6 @@ pub enum TargetSide {
     Any,
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TargetLife {
     Alive,
@@ -30,14 +27,12 @@ pub enum TargetLife {
     Any,
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SelfTargetRule {
     Forbid,
     Allow,
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum TargetHpRule {
     #[default]
@@ -46,7 +41,6 @@ pub enum TargetHpRule {
 }
 
 // S03 declares side/life/self targeting metadata here; later slices make it queryable and enforce it.
-#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SkillTargeting {
@@ -70,7 +64,6 @@ impl Default for SkillTargeting {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum LegalityReasonCode {
     UnimplementedTargetShape,
@@ -99,7 +92,6 @@ pub enum LegalityReasonCode {
     EnergyCapReached,
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum SkillImplementation {
     #[default]
@@ -112,7 +104,6 @@ pub enum SkillImplementation {
     },
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub enum CustomSignalPayload {
@@ -126,7 +117,6 @@ impl Default for CustomSignalPayload {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SkillCustomSignal {
@@ -162,7 +152,6 @@ impl SkillCustomSignal {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub enum Effect {
@@ -189,7 +178,6 @@ pub enum Effect {
     SelfAdvance(i32),
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(deny_unknown_fields)]
 pub struct SkillDef {
@@ -208,14 +196,13 @@ pub struct SkillDef {
     pub qte: Option<String>,
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SkillBookValidationCategory {
+    #[allow(dead_code)] // kept for: structural-error category (vocabulary anchor; only Semantic constructed today)
     Structural,
     Semantic,
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SkillBookValidationError {
     pub skill_id: SkillId,
@@ -403,7 +390,6 @@ fn validate_skill_def(skill: &SkillDef) -> Result<(), SkillBookValidationError> 
     Ok(())
 }
 
-#[allow(dead_code)]
 #[derive(Asset, TypePath, Debug, Clone, Deserialize)]
 #[serde(transparent)]
 pub struct SkillBook(pub Vec<SkillDef>);

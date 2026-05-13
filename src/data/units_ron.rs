@@ -67,7 +67,6 @@ pub struct HolySupportRosterMetadata {
     pub personal_resource_label: Option<HolySupportPersonalLabel>,
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct UnitDef {
     pub id: UnitId,
@@ -115,7 +114,6 @@ pub struct UnitDef {
     pub toughness_category: ToughnessCategory,
 }
 
-#[allow(dead_code)]
 #[derive(Asset, TypePath, Debug, Clone, Deserialize)]
 #[serde(transparent)]
 pub struct UnitRoster(pub Vec<UnitDef>);

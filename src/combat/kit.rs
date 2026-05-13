@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use super::status_effect::StatusEffectKind;
 use super::types::{Attribute, DamageTag, SkillId};
 
-#[allow(dead_code, clippy::enum_variant_names)]
+#[allow(clippy::enum_variant_names)]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FollowUpTrigger {
     OnEnemyBreak,
@@ -12,7 +12,6 @@ pub enum FollowUpTrigger {
     OnEnemyKill,
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FollowUpConfig {
     pub trigger: FollowUpTrigger,
@@ -31,7 +30,6 @@ pub struct UnitSkills {
 
 /// Trigger condition for Form Identity — once-per-round conditional bonuses.
 /// All four variants declared upfront; only OnFirstHitVsTagThisRound is wired in T02.
-#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FormIdentityTrigger {
     /// Fires on the first hit with the given damage tag dealt by this unit this round.
@@ -45,7 +43,6 @@ pub enum FormIdentityTrigger {
     OnAttackVsAttribute(Attribute),
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FormIdentityConfig {
     pub trigger: FormIdentityTrigger,
@@ -54,7 +51,6 @@ pub struct FormIdentityConfig {
 
 /// ECS component carrying Form Identity configuration.
 /// Only spawned for units that have `form_identity` set in their UnitDef.
-#[allow(dead_code)]
 #[derive(Component, Debug, Clone, PartialEq, Eq)]
 pub struct FormIdentityKit {
     pub config: FormIdentityConfig,

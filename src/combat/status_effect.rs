@@ -15,10 +15,8 @@ pub enum StatusEffectKind {
     Slowed,
     Blessed,
     /// Reserved §H.1 — vocabulary anchor for RON/log; no active effect in v0.
-    #[allow(dead_code)]
     Burn,
     /// Reserved §H.1 — vocabulary anchor for RON/log; no active effect in v0.
-    #[allow(dead_code)]
     Shock,
 }
 

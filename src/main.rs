@@ -22,7 +22,6 @@ use combat::turn_system::ActionIntent;
 use combat::ultimate::UltGainQueue;
 
 // Used by S03+ turn state transitions
-#[allow(dead_code)]
 #[derive(States, Default, Debug, Clone, Eq, PartialEq, Hash)]
 enum AppState {
     #[default]

@@ -7,7 +7,6 @@ use super::team::Team;
 use super::types::{DamageTag, SkillId, UnitId};
 
 // Used by S06/T02.
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CombatPhase {
     /// AV system is ticking; no unit has been selected yet.
@@ -59,7 +58,6 @@ pub struct InFlightAction {
 }
 
 // Used by S06/T02.
-#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CombatState {
     pub phase: CombatPhase,
@@ -79,11 +77,12 @@ impl Default for CombatState {
 
 impl CombatState {
     // Used by S06/T02.
-    #[allow(dead_code)]
     pub fn reset(&mut self) {
         *self = Self::default();
     }
 
+    // kept for: M020 reactive bus (UnitDied taxonomy) + M023 phase-strip
+    // observability; exercised by unit tests in this module.
     #[allow(dead_code)]
     pub fn update_terminal_state(&mut self, ally_alive: bool, enemy_alive: bool) {
         if self.winner.is_some() {

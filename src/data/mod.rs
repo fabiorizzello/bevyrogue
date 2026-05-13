@@ -12,7 +12,6 @@ use self::units_ron::UnitRoster;
 #[derive(Resource)]
 pub struct UnitRosterHandle(pub Handle<UnitRoster>);
 
-#[allow(dead_code)]
 #[derive(Resource)]
 pub struct SkillBookHandle(pub Handle<SkillBook>);
 

@@ -77,6 +77,9 @@ pub(crate) fn amount_payload(
     }
 }
 
+// kept for: empty-payload custom signals (Tentomon Battery Loop M026 /
+// Renamon Kitsune Grace M027 reactive passives); sibling amount_payload
+// is already wired — keep dispatcher pattern symmetric.
 #[allow(dead_code)]
 pub(crate) fn no_payload(
     signal: &SkillCustomSignal,
