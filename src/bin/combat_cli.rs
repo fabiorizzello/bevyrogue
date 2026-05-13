@@ -1,6 +1,7 @@
 use bevy::app::ScheduleRunnerPlugin;
 use bevy::prelude::*;
 use inquire::{MultiSelect, Select};
+use moonshine_kind::Instance;
 use std::env;
 use std::io::IsTerminal;
 use std::path::PathBuf;
@@ -131,7 +132,7 @@ fn bootstrap_system(
     mut order: ResMut<TurnOrder>,
     mut combat_state: ResMut<CombatState>,
     mut combat_events: MessageWriter<CombatEvent>,
-    units: Query<Entity, With<Unit>>,
+    units: Query<Instance<Unit>>,
     mut exit: MessageWriter<AppExit>,
 ) {
     if data_ready.is_none() || !units.is_empty() {

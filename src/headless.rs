@@ -7,6 +7,7 @@ use std::{collections::VecDeque, time::Duration};
 
 use bevy::app::ScheduleRunnerPlugin;
 use bevy::prelude::*;
+use moonshine_kind::Instance;
 
 use crate::combat::bootstrap::{
     EncounterPreset, SelectionRequest, apply_composition, bootstrap_encounter,
@@ -206,7 +207,7 @@ fn headless_smoke_tick(
     mut combat_state: ResMut<CombatState>,
     mut sp: ResMut<SpPool>,
     mut log: ResMut<ActionLog>,
-    unit_entities: Query<Entity, With<Unit>>,
+    unit_entities: Query<Instance<Unit>>,
     units: HeadlessUnitsQuery,
     mut bootstrap: BootstrapParams,
 ) {
@@ -334,8 +335,8 @@ fn headless_smoke_tick(
                         let _ = script.pop();
                         debug!("script step: ReloadAssets");
                         asset_server.reload("data/units.ron");
-                        for entity in &unit_entities {
-                            commands.entity(entity).despawn();
+                        for unit in &unit_entities {
+                            commands.entity(unit.entity()).despawn();
                         }
                         *order = TurnOrder::default();
                         combat_state.reset();

@@ -1723,6 +1723,7 @@ dependencies = [
  "bevy_egui",
  "bevy_mod_debugdump",
  "inquire",
+ "moonshine-kind",
  "rand 0.8.6",
  "ron 0.8.1",
  "serde",
@@ -3653,6 +3654,18 @@ dependencies = [
  "log",
  "wasi",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "moonshine-kind"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "83206bab598de2cd9e2061aa85604825aa86ee284ba4e9b6fb216c26f9e488b4"
+dependencies = [
+ "bevy_ecs",
+ "bevy_reflect",
+ "bevy_utils",
+ "disqualified",
 ]
 
 [[package]]
