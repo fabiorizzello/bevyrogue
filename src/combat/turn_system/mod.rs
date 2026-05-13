@@ -587,7 +587,7 @@ pub fn advance_turn_system(
 
     let mut units_ready: Vec<(UnitId, Entity, i32)> = Vec::new();
 
-    for (entity, unit, _, speed_opt, speed_mod_opt, av_opt, stunned, _, _, _, _, _, _, _) in
+    for (entity, unit, _, speed_opt, speed_mod_opt, av_opt, stunned, status_bag_opt, _, _, _, _, _, _) in
         query.iter_mut()
     {
         if stunned.is_some() {
@@ -597,7 +597,11 @@ pub fn advance_turn_system(
         else {
             continue;
         };
-        let av_gain = (speed.0 + speed_mod.0) * AV_PER_SPEED;
+        let chilled_delta = status_bag_opt
+            .as_deref()
+            .map(|b| crate::combat::status_effect::chilled_speed_delta(b, speed.0))
+            .unwrap_or(0);
+        let av_gain = (speed.0 + speed_mod.0 + chilled_delta) * AV_PER_SPEED;
         let old_av = av.0;
         av.advance(av_gain);
         av_event_writer.write(ActionValueUpdated {

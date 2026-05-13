@@ -108,6 +108,12 @@ impl StatusBag {
     }
 }
 
+/// Returns the speed delta for a Chilled unit: `-(base_speed / 5)` (integer division, rounds
+/// toward zero), else 0. Derived read — never mutates SpeedModifier.
+pub fn chilled_speed_delta(bag: &StatusBag, base_speed: i32) -> i32 {
+    if bag.has(&StatusEffectKind::Chilled) { -(base_speed / 5) } else { 0 }
+}
+
 /// Returns the damage amplifier percentage for a given status bag and damage tag.
 /// 115 when Heated+Fire or Chilled+Ice (canon §H.1); 100 otherwise.
 pub fn status_amp_pct(bag: &StatusBag, tag: DamageTag) -> i32 {
@@ -254,6 +260,26 @@ mod tests {
         let mut bag = StatusBag::default();
         bag.apply(StatusEffectKind::Chilled, 2);
         assert_eq!(status_amp_pct(&bag, DamageTag::Ice), 115);
+    }
+
+    #[test]
+    fn chilled_speed_delta_no_status_returns_0() {
+        let bag = StatusBag::default();
+        assert_eq!(chilled_speed_delta(&bag, 100), 0);
+    }
+
+    #[test]
+    fn chilled_speed_delta_chilled_base_100_returns_neg20() {
+        let mut bag = StatusBag::default();
+        bag.apply(StatusEffectKind::Chilled, 2);
+        assert_eq!(chilled_speed_delta(&bag, 100), -20);
+    }
+
+    #[test]
+    fn chilled_speed_delta_chilled_base_80_returns_neg16() {
+        let mut bag = StatusBag::default();
+        bag.apply(StatusEffectKind::Chilled, 2);
+        assert_eq!(chilled_speed_delta(&bag, 80), -16);
     }
 
     #[test]
