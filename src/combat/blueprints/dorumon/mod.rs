@@ -8,6 +8,7 @@ use bevy::prelude::*;
 
 use crate::combat::kernel::CombatKernelRegistry;
 
+pub mod hooks;
 pub mod identity;
 pub mod signals;
 

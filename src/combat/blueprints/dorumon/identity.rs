@@ -5,9 +5,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::combat::events::{CombatEvent, CombatEventKind};
 use crate::combat::kernel::{
-    CombatKernelHook, CombatKernelHookDomain, CombatKernelState, CombatKernelTransition,
-    PredatorLoopBlockedReason, PredatorLoopCapKind, PredatorLoopSignal, PredatorLoopStep,
-    PredatorLoopTransition, TacticalCycleTransition,
+    CombatKernelState, CombatKernelTransition, PredatorLoopBlockedReason, PredatorLoopCapKind,
+    PredatorLoopSignal, PredatorLoopStep, PredatorLoopTransition,
 };
 use crate::combat::types::UnitId;
 
@@ -270,30 +269,6 @@ pub fn apply_predator_loop_transitions_system(
 }
 
 pub struct PredatorLoopHook;
-
-impl CombatKernelHook for PredatorLoopHook {
-    fn domain(&self) -> CombatKernelHookDomain {
-        CombatKernelHookDomain::Shared
-    }
-
-    fn on_transition(
-        &self,
-        transition: &CombatKernelTransition,
-        out: &mut Vec<CombatKernelTransition>,
-    ) {
-        if matches!(
-            transition,
-            CombatKernelTransition::TacticalCycle(TacticalCycleTransition {
-                wrapped_cycle: true,
-                ..
-            })
-        ) {
-            out.push(CombatKernelTransition::PredatorLoop(
-                PredatorLoopTransition::tick(),
-            ));
-        }
-    }
-}
 
 fn apply_build_exploit(
     state: &mut PredatorLoopState,
