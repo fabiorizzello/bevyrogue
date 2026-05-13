@@ -1,13 +1,13 @@
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use super::events::{CombatEvent, CombatEventKind};
-use super::kernel::{
+use crate::combat::events::{CombatEvent, CombatEventKind};
+use crate::combat::kernel::{
     CombatBeatId, CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition,
     CombatTagChangeKind, CombatTagId, CombatTagState, CombatTagTransition, TacticalCycleTransition,
     TwinCoreSignal, TwinCoreTransition,
 };
-use super::types::UnitId;
+use crate::combat::types::UnitId;
 
 pub const TAG_HEATED: &str = "Heated";
 pub const TAG_CHILLED: &str = "Chilled";
