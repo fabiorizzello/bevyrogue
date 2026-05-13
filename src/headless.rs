@@ -200,7 +200,7 @@ fn headless_smoke_tick(
     mut counter: ResMut<TickCounter>,
     mut exit: MessageWriter<AppExit>,
     mut order: ResMut<TurnOrder>,
-    mut turn_advanced: MessageWriter<TurnAdvanced>,
+    _turn_advanced: MessageWriter<TurnAdvanced>,
     mut action_intent: MessageWriter<ActionIntent>,
     mut script: ResMut<CombatScript>,
     asset_server: Res<AssetServer>,

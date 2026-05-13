@@ -372,7 +372,7 @@ pub fn advance_turn_system(
     mut event_writer: MessageWriter<CombatEvent>,
     mut intents_out: MessageWriter<ActionIntent>,
     mut av_event_writer: MessageWriter<ActionValueUpdated>,
-    mut combat_rng: Option<ResMut<CombatRng>>,
+    _combat_rng: Option<ResMut<CombatRng>>,
 ) {
     // === Part 1: Process incoming TurnAdvanced messages ===
     // Collect snapshots first so we can do enemy AI after mutable status tick
@@ -425,7 +425,7 @@ pub fn advance_turn_system(
             continue;
         };
 
-        let mut shock_cancelled = false;
+        let shock_cancelled = false;
         {
             let Ok((
                 _,

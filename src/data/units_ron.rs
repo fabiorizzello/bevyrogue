@@ -1,6 +1,9 @@
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
+// `EnemyCounterplayKind` is re-consumed by integration tests through
+// `bevyrogue::data::units_ron::EnemyCounterplayKind`; the lib alone treats it as unused.
+#[allow(unused_imports)]
 pub use crate::combat::counterplay::{
     EnemyCounterplayKind, ImplementationStatus as EnemyCounterplayStatus,
 };

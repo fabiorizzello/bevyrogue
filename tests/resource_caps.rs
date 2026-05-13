@@ -481,7 +481,7 @@ fn energy_grant_caps_at_round_budget_and_emits_truthful_amounts() {
         ))
         .id();
 
-    let target = app
+    let _target = app
         .world_mut()
         .spawn((
             Unit {
@@ -590,7 +590,7 @@ fn energy_grant_truthfully_clips_at_energy_max() {
         ))
         .id();
 
-    let target = app
+    let _target = app
         .world_mut()
         .spawn((
             Unit {

@@ -13,16 +13,14 @@ use crate::combat::floating::FloatingDamage;
 use crate::combat::kernel::{CombatBeatId, CombatKernelRegistry};
 use crate::combat::log::{ActionLog, LogEntry};
 use crate::combat::resolution::{
-    apply_effects, grant_free_skill_events, resolve_action, target_shape_rejection_reason,
+    apply_effects, resolve_action, target_shape_rejection_reason,
 };
 use crate::combat::rng::CombatRng;
 use crate::combat::sp::{RoundSpTracker, SpPool};
 use crate::combat::state::{CombatPhase, CombatState, InFlightAction, UltEffect};
 use crate::combat::status_effect::{StatusBag, StatusEffectKind};
 use crate::combat::stun::Stunned;
-use crate::combat::team::Team;
 use crate::combat::turn_order::TurnOrder;
-use crate::combat::types::SkillId;
 use crate::combat::unit::{BasicStreak, Ko};
 use crate::data::{
     SkillBookHandle,
@@ -145,7 +143,7 @@ pub(crate) fn step_app(
     state: &mut ResMut<CombatState>,
     sp: &mut ResMut<SpPool>,
     log: &mut ResMut<ActionLog>,
-    turn_order: &mut ResMut<TurnOrder>,
+    _turn_order: &mut ResMut<TurnOrder>,
     time: &Res<Time>,
     event_writer: &mut MessageWriter<CombatEvent>,
     registry: Option<&CombatKernelRegistry>,
@@ -188,7 +186,7 @@ pub(crate) fn step_app(
             attacker_team,
             attacker_unit,
             _attacker_kit,
-            mut attacker_ult,
+            attacker_ult,
             mut defender_tough,
             _attacker_counterplay,
             attacker_ko,
@@ -196,7 +194,7 @@ pub(crate) fn step_app(
             attacker_commander,
             attacker_bag,
             mut attacker_streak,
-            mut attacker_round_flags,
+            attacker_round_flags,
         )) = actors.get_mut(attacker_entity)
         else {
             return;
@@ -456,12 +454,12 @@ pub(crate) fn step_app(
         attacker_team,
         attacker_unit,
         _attacker_kit,
-        mut attacker_ult,
+        attacker_ult,
         _,
         _attacker_counterplay,
         attacker_ko,
         attacker_stunned,
-        attacker_commander,
+        _attacker_commander,
         attacker_bag,
         mut attacker_streak,
         _attacker_round_flags,

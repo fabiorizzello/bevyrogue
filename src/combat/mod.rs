@@ -122,7 +122,5 @@ pub mod floating;
 // ─── Re-exports ──────────────────────────────────────────────────────────────
 // Stable shortcuts for the most-imported types.
 
-pub use round_flags::RoundFlags;
 #[allow(deprecated)]
-pub use status_effect::{StatusBag, StatusEffect, StatusEffectKind};
-pub use toughness::ToughnessCategory;
+pub use status_effect::{StatusBag, StatusEffectKind};

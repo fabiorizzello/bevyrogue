@@ -1,17 +1,15 @@
 use super::*;
 use crate::combat::{
-    StatusBag, StatusEffectKind,
-    events::{CombatEvent, CombatEventKind},
+    events::CombatEvent,
     kit::UnitSkills,
     log::{ActionLog, LogEntry},
-    speed::SpeedModifier,
     team::Team,
     toughness::Toughness,
     types::{Attribute, DamageTag, EvoStage},
     ultimate::UltAccumulationTrigger,
 };
 use crate::data::skills_ron::{
-    Effect, LegalityReasonCode, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
+    Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
     SkillTargeting, TargetLife, TargetShape, TargetSide,
 };
 

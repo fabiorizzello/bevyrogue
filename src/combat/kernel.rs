@@ -1272,7 +1272,7 @@ mod tests {
     #[test]
     fn tactical_cycle_advances_through_phases_and_wraps_cycle() {
         let config = CombatKernelConfig::default();
-        let mut step = TacticalCycleStep::default();
+        let step = TacticalCycleStep::default();
 
         let first = step.advance(&config);
         assert_eq!(first.after.step_in_phase, 1);

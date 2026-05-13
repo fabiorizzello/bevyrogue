@@ -3,19 +3,18 @@ use bevy::prelude::*;
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::holy_support::{
     GRACE_CAP, HolySupportDesignTag, HolySupportHook, HolySupportRejectReason, HolySupportState,
-    HolySupportStep, HolySupportTransition, apply_holy_support_transitions_system,
+    HolySupportStep, HolySupportTransition,
     classify_holy_support_tag, holy_support_design_tag,
 };
 use bevyrogue::combat::kernel::{
-    CombatKernelConfig, CombatKernelRegistry, CombatKernelTransition, CombatTagChangeKind,
-    CombatTagState, CombatTagTransition, HolySupportSignal, TacticalCyclePhase, TacticalCycleStep,
+    CombatKernelRegistry, CombatKernelTransition, CombatTagChangeKind,
+    CombatTagState, CombatTagTransition, TacticalCyclePhase, TacticalCycleStep,
     TacticalCycleTransition,
 };
 use bevyrogue::combat::log::ActionLog;
 use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
 use bevyrogue::combat::sp::SpPool;
 use bevyrogue::combat::state::CombatState;
-use bevyrogue::combat::team::Team;
 use bevyrogue::combat::twin_core::TwinCoreState;
 use bevyrogue::combat::types::UnitId;
 
