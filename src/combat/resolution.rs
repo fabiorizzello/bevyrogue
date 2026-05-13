@@ -196,6 +196,7 @@ pub fn apply_effects(
     defender_is_commander: bool,
     defender_break_sealed: bool,
     defender_status: Option<&StatusBag>,
+    attacker_statuses: Option<&StatusBag>,
 ) -> (ResolutionOutcome, Vec<CombatEventKind>) {
     let mut events = Vec::new();
 
@@ -280,6 +281,9 @@ pub fn apply_effects(
                 base_damage: resolved.base_damage,
                 is_break: false,
             };
+            let attacker_dmg_mult = attacker_statuses
+                .map(|bag| if bag.has(&StatusEffectKind::Blessed) { 1.15_f32 } else { 1.0_f32 })
+                .unwrap_or(1.0_f32);
             let DamageBreakdown {
                 final_damage: amount,
                 tag_mod_pct,
@@ -291,6 +295,7 @@ pub fn apply_effects(
                 defender_unit,
                 &toughness_weaknesses,
                 defender_status,
+                attacker_dmg_mult,
             );
             defender_unit.hp_current -= amount;
             let broke = if can_apply_toughness_damage(defender_team, defender_tough.as_deref()) {

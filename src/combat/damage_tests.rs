@@ -71,6 +71,7 @@ fn matrix_weak_win_no_break() {
             &d,
             &[DamageTag::Fire],
             None,
+            1.0,
         )
         .final_damage,
         139
@@ -82,7 +83,7 @@ fn matrix_weak_win_break() {
     let a = make_unit(Attribute::Vaccine, vec![]);
     let d = make_unit(Attribute::Virus, vec![]);
     assert_eq!(
-        calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[DamageTag::Fire], None).final_damage,
+        calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[DamageTag::Fire], None, 1.0).final_damage,
         278
     );
 }
@@ -98,6 +99,7 @@ fn matrix_weak_tie_no_break() {
             &d,
             &[DamageTag::Fire],
             None,
+            1.0,
         )
         .final_damage,
         125
@@ -109,7 +111,7 @@ fn matrix_weak_tie_break() {
     let a = make_unit(Attribute::Data, vec![]);
     let d = make_unit(Attribute::Data, vec![]);
     assert_eq!(
-        calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[DamageTag::Fire], None).final_damage,
+        calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[DamageTag::Fire], None, 1.0).final_damage,
         250
     );
 }
@@ -125,6 +127,7 @@ fn matrix_weak_lose_no_break() {
             &d,
             &[DamageTag::Fire],
             None,
+            1.0,
         )
         .final_damage,
         109
@@ -136,7 +139,7 @@ fn matrix_weak_lose_break() {
     let a = make_unit(Attribute::Virus, vec![]);
     let d = make_unit(Attribute::Vaccine, vec![]);
     assert_eq!(
-        calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[DamageTag::Fire], None).final_damage,
+        calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[DamageTag::Fire], None, 1.0).final_damage,
         218
     );
 }
@@ -148,7 +151,7 @@ fn matrix_neutral_win_no_break() {
     let a = make_unit(Attribute::Vaccine, vec![]);
     let d = make_unit(Attribute::Virus, vec![]);
     assert_eq!(
-        calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None).final_damage,
+        calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None, 1.0).final_damage,
         111
     );
 }
@@ -158,7 +161,7 @@ fn matrix_neutral_win_break() {
     let a = make_unit(Attribute::Vaccine, vec![]);
     let d = make_unit(Attribute::Virus, vec![]);
     assert_eq!(
-        calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[], None).final_damage,
+        calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[], None, 1.0).final_damage,
         222
     );
 }
@@ -168,7 +171,7 @@ fn matrix_neutral_tie_no_break() {
     let a = make_unit(Attribute::Data, vec![]);
     let d = make_unit(Attribute::Data, vec![]);
     assert_eq!(
-        calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None).final_damage,
+        calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None, 1.0).final_damage,
         100
     );
 }
@@ -178,7 +181,7 @@ fn matrix_neutral_tie_break() {
     let a = make_unit(Attribute::Data, vec![]);
     let d = make_unit(Attribute::Data, vec![]);
     assert_eq!(
-        calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[], None).final_damage,
+        calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[], None, 1.0).final_damage,
         200
     );
 }
@@ -188,7 +191,7 @@ fn matrix_neutral_lose_no_break() {
     let a = make_unit(Attribute::Virus, vec![]);
     let d = make_unit(Attribute::Vaccine, vec![]);
     assert_eq!(
-        calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None).final_damage,
+        calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None, 1.0).final_damage,
         87
     );
 }
@@ -198,7 +201,7 @@ fn matrix_neutral_lose_break() {
     let a = make_unit(Attribute::Virus, vec![]);
     let d = make_unit(Attribute::Vaccine, vec![]);
     assert_eq!(
-        calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[], None).final_damage,
+        calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[], None, 1.0).final_damage,
         174
     );
 }
@@ -210,7 +213,7 @@ fn matrix_resist_win_no_break() {
     let a = make_unit(Attribute::Vaccine, vec![]);
     let d = make_unit(Attribute::Virus, vec![DamageTag::Fire]);
     assert_eq!(
-        calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None).final_damage,
+        calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None, 1.0).final_damage,
         83
     );
 }
@@ -220,7 +223,7 @@ fn matrix_resist_win_break() {
     let a = make_unit(Attribute::Vaccine, vec![]);
     let d = make_unit(Attribute::Virus, vec![DamageTag::Fire]);
     assert_eq!(
-        calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[], None).final_damage,
+        calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[], None, 1.0).final_damage,
         167
     );
 }
@@ -230,7 +233,7 @@ fn matrix_resist_tie_no_break() {
     let a = make_unit(Attribute::Data, vec![]);
     let d = make_unit(Attribute::Data, vec![DamageTag::Fire]);
     assert_eq!(
-        calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None).final_damage,
+        calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None, 1.0).final_damage,
         75
     );
 }
@@ -240,7 +243,7 @@ fn matrix_resist_tie_break() {
     let a = make_unit(Attribute::Data, vec![]);
     let d = make_unit(Attribute::Data, vec![DamageTag::Fire]);
     assert_eq!(
-        calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[], None).final_damage,
+        calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[], None, 1.0).final_damage,
         150
     );
 }
@@ -250,7 +253,7 @@ fn matrix_resist_lose_no_break() {
     let a = make_unit(Attribute::Virus, vec![]);
     let d = make_unit(Attribute::Vaccine, vec![DamageTag::Fire]);
     assert_eq!(
-        calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None).final_damage,
+        calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None, 1.0).final_damage,
         65
     );
 }
@@ -260,7 +263,7 @@ fn matrix_resist_lose_break() {
     let a = make_unit(Attribute::Virus, vec![]);
     let d = make_unit(Attribute::Vaccine, vec![DamageTag::Fire]);
     assert_eq!(
-        calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[], None).final_damage,
+        calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[], None, 1.0).final_damage,
         131
     );
 }
@@ -275,11 +278,11 @@ fn base_damage_zero_yields_zero() {
     let d = make_unit(Attribute::Virus, vec![]);
     // Even with all modifiers active, base=0 always produces 0
     assert_eq!(
-        calculate_damage(&a, &atk(DamageTag::Fire, 0, false), &d, &[DamageTag::Fire], None).final_damage,
+        calculate_damage(&a, &atk(DamageTag::Fire, 0, false), &d, &[DamageTag::Fire], None, 1.0).final_damage,
         0
     );
     assert_eq!(
-        calculate_damage(&a, &atk(DamageTag::Fire, 0, true), &d, &[DamageTag::Fire], None).final_damage,
+        calculate_damage(&a, &atk(DamageTag::Fire, 0, true), &d, &[DamageTag::Fire], None, 1.0).final_damage,
         0
     );
 }
@@ -296,7 +299,7 @@ fn free_attacker_is_neutral_vs_all() {
     ] {
         let d = make_unit(def_attr, vec![]);
         assert_eq!(
-            calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None).final_damage,
+            calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None, 1.0).final_damage,
             100,
             "expected neutral vs {def_attr:?}"
         );
@@ -309,7 +312,7 @@ fn physical_tag_always_neutral_tag_mod() {
     let a = make_unit(Attribute::Data, vec![]);
     let d = make_unit(Attribute::Data, vec![]);
     assert_eq!(
-        calculate_damage(&a, &atk(DamageTag::Physical, 100, false), &d, &[], None).final_damage,
+        calculate_damage(&a, &atk(DamageTag::Physical, 100, false), &d, &[], None, 1.0).final_damage,
         100
     );
 }
@@ -320,7 +323,7 @@ fn resist_and_triangle_lose_stack_multiplicatively() {
     let a = make_unit(Attribute::Virus, vec![]);
     let d = make_unit(Attribute::Vaccine, vec![DamageTag::Fire]);
     assert_eq!(
-        calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None).final_damage,
+        calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None, 1.0).final_damage,
         65
     );
 }

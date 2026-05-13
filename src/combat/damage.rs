@@ -76,10 +76,11 @@ pub struct DamageBreakdown {
 /// Compute final damage from `attacker` landing `attack` on `defender`.
 ///
 /// Formula (v5.3 multiplicative model):
-///   tag_mod        = 1.25 if tag is a weakness, 0.75 if tag is resisted, else 1.0
-///   tri_mod        = triangle_modifiers(attacker.attribute, defender.attribute).dmg_modifier
-///   status_amp_mod = status_amp_pct(defender_status, damage_tag) / 100  (1.15 or 1.0)
-///   damage         = round(base × tag_mod × tri_mod × break_mod × status_amp_mod)
+///   tag_mod           = 1.25 if tag is a weakness, 0.75 if tag is resisted, else 1.0
+///   tri_mod           = triangle_modifiers(attacker.attribute, defender.attribute).dmg_modifier
+///   status_amp_mod    = status_amp_pct(defender_status, damage_tag) / 100  (1.15 or 1.0)
+///   attacker_dmg_mult = 1.15 when attacker has Blessed, else 1.0
+///   damage            = round(base × tag_mod × tri_mod × break_mod × status_amp_mod × attacker_dmg_mult)
 ///
 /// No clamp: the multiplicative model is naturally bounded by the discrete modifier set.
 pub fn calculate_damage(
@@ -88,6 +89,7 @@ pub fn calculate_damage(
     defender: &Unit,
     weaknesses: &[DamageTag],
     defender_status: Option<&StatusBag>,
+    attacker_dmg_mult: f32,
 ) -> DamageBreakdown {
     let tag_mod = if weaknesses.contains(&attack.damage_tag) {
         1.25_f32
@@ -103,7 +105,7 @@ pub fn calculate_damage(
         .unwrap_or(100);
     let amp_mod = amp_pct as f32 / 100.0;
     let final_damage =
-        (attack.base_damage as f32 * tag_mod * tri.dmg_modifier * break_mod * amp_mod).round()
+        (attack.base_damage as f32 * tag_mod * tri.dmg_modifier * break_mod * amp_mod * attacker_dmg_mult).round()
             as i32;
     DamageBreakdown {
         final_damage,

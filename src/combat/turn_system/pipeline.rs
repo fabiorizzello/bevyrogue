@@ -194,7 +194,7 @@ pub(crate) fn step_app(
             attacker_ko,
             attacker_stunned,
             attacker_commander,
-            _,
+            attacker_bag,
             mut attacker_streak,
             mut attacker_round_flags,
         )) = actors.get_mut(attacker_entity)
@@ -290,6 +290,7 @@ pub(crate) fn step_app(
             attacker_commander.is_some(),
             defender_break_sealed,
             None,
+            attacker_bag.as_deref(),
         );
 
         if !outcome.sp_ok {
@@ -461,7 +462,7 @@ pub(crate) fn step_app(
         attacker_ko,
         attacker_stunned,
         attacker_commander,
-        _,
+        attacker_bag,
         mut attacker_streak,
         _attacker_round_flags,
     ) = attacker;
@@ -587,6 +588,7 @@ pub(crate) fn step_app(
         defender_commander.is_some(),
         defender_break_sealed,
         defender_bag.as_deref(),
+        attacker_bag.as_deref(),
     );
 
     if !outcome.sp_ok {
