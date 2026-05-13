@@ -45,3 +45,26 @@ Vedi commit `9340acf` (refactor Agumon) e merge `5d8a23f` per il diff completo.
 - M026 (Tentomon AoE) → dipende M018 → Q9-tentomon as S0
 - M027 (Renamon time-manip) → dipende M018 → Q9-renamon as S0
 - Q10 → dipende tutti Q9
+
+---
+
+## Refactor alignment quick tasks (analisi 2026-05-13)
+
+Aggiunti dopo audit per allineare il codice ai 5 criteri (no dead code, plugin-per-digimon, leggibilità, astrazioni, moonshine-kind). Plan locali in `.gsd/quick/` (gitignored — il riassunto qui è la fonte cross-machine).
+
+| # | Task | Status | Effort | Note |
+|---|------|--------|--------|------|
+| QQ1 | Rimuovere `assets/data/party.ron.bak` (vietato CLAUDE.md) | **OPEN** | trivial | `git rm` + `cargo check` |
+| QQ2 | Audit `#[allow(dead_code)]` — **report only, no bulk delete** | **OPEN** | ~1h | Output: REPORT con classificazione a/b/c, niente edit `src/` |
+| QQ3 | Split `blueprints/dorumon/identity.rs` (510 LOC → identity + hooks) | **OPEN** | ~45min | Pure readability, zero logic delta |
+| QQ4 | Decidere policy `moonshine-kind`: edge-only vs end-to-end | **OPEN — needs user call** | 15min decision + 30min/2h impl | ADR `D-MOONSHINE-*` poi doc o migrazione |
+
+### Out of scope quick (delegato a milestone)
+
+I seguenti problemi emergono dall'analisi ma vivono in M021 per portata e rischio — **non** creare quick task duplicati:
+
+- `CombatKernelTransition` enum con 5 variant per-Digimon hardcoded (`kernel.rs:889-902`) → M021 S02-S06.
+- `ValidationSnapshot` con field nominati `twin_core`/`holy_support`/`predator_loop` (`observability.rs:40`) → M021 (cala con kernel refactor).
+- `RosterEntry` con campi `twin_core`/`holy_support` (`units_ron.rs:95-98`) → M021.
+- `trait DigimonBlueprint` + `BlueprintRegistry` → **D007** già registrata, scope di M021 S02.
+- Rinomina `precision_mind_game` → `kitsune_grace` → durante Q9-renamon (S0 di M027).

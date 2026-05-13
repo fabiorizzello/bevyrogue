@@ -1,7 +1,7 @@
 # Milestone Portfolio — M017 → M029
 
 **Status:** definito, non ancora pianificato (solo M017 sarà aperto via `gsd_plan_milestone`).
-**Ultimo update:** 2026-05-12.
+**Ultimo update:** 2026-05-13.
 **Scopo:** allineare il codice (`src/combat/`, `src/data/`, `src/ui/`) al canon design `docs/future_design_draft/` (round-3) attraverso 13 milestone piccoli e sequenzialmente verificabili. Visual tracer end-to-end Agumon entro M023 — niente "headless first, visual last".
 
 **Vincoli generali:**
@@ -91,6 +91,8 @@ M017 ─→ M018 ─→ M019 ─→ M020 ─┐
 - **S04** Migrate Gabumon (paired Twin Core).
 - **S05** Migrate Dorumon + Tentomon.
 - **S06** Migrate Patamon + Renamon. Rimozione shim. `CombatKernelTransition` Digimon-specific eliminato.
+- **S07** Extension-friendly `RosterEntry`: rimuovere field hard-coded Digimon-specific (`twin_core`, `holy_support`, …) a favore di un blueprint-keyed payload generico. Lo schema roster non deve più conoscere i nomi delle mechanic per essere esteso.
+- **S08** `ValidationSnapshot` field nominati: passare dall'attuale shape inline (con `battery_loop` di default) a una struct con field nominati per blueprint key, popolata dal registry. Stabilizza l'osservabilità per asserzioni di test e log JSON.
 
 **Vincoli (da D008):**
 - `CombatPlugin` non importa `bevy::winit`, `bevy::render`, `bevy_egui`.
