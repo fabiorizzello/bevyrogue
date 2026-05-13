@@ -39,7 +39,7 @@ Upstream surfaces consumed: src/data/skills_ron.rs (TargetShape, validate_skill_
   - Files: `src/data/skills_ron.rs`, `src/combat/resolution.rs`
   - Verify: cargo test resolve_targets 2>&1 | grep -E '(test result|FAILED)' && cargo check 2>&1 | tail -5
 
-- [ ] **T03: Widen the three validation gates to accept Blast and AllEnemies** `est:30m`
+- [x] **T03: Widen the three validation gates to accept Blast and AllEnemies** `est:30m`
   Three sites currently gate non-Single shapes behind UnimplementedTargetShape. Widen each consistently so Blast and AllEnemies pass; Row and SelfOnly remain deferred.
   - Files: `src/data/skills_ron.rs`, `src/combat/resolution.rs`, `src/combat/action_query.rs`
   - Verify: cargo test 2>&1 | tail -20 | grep -E '(test result|FAILED)' && cargo check --features windowed 2>&1 | tail -5
