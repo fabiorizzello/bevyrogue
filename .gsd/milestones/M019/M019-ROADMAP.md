@@ -1,0 +1,29 @@
+# M019: DR pipeline + Heal/Cleanse primitives + PerHop guard
+
+**Vision:** Estendere il kernel combat con tre primitive generiche minimali — damage reduction (BuffKind::DR), heal (% maxHP), cleanse (rimozione N debuff) — senza introdurre regole skill-specifiche nel kernel (P001). Chiudere il debt M018 sul `DamageCurve::PerHop` runtime length guard. Tutte le specificità per-skill (scaling ATK, cleanse selettivo per kind, immunità custom) restano fuori dal kernel e sono deferite a M021 (`trait Skill` + `SkillCtx`).
+
+## Success Criteria
+
+- BuffKind::DR integrato in calculate_damage come step moltiplicativo con ARM/Break, senza cap (somma libera, può portare damage a 0)
+- Effect::Heal { amount_pct_max_hp } applicato in resolution.rs, cap a maxHP, CombatEvent::Healed emesso, skip su unità KO
+- Effect::Cleanse { count: Option<u8> } rimuove N debuff dalla StatusBag rispettando il flag immune già presente sulla StatusEntry; nessuna lista hardcoded di status immuni nel kernel
+- DamageCurve::PerHop guard runtime: se coeffs.len() < hops_planned, fail-fast con event diagnostico o clamp (decisione di slice)
+- Kernel resta franchise-agnostic: nessun nome Digimon, nessun if su skill_id, nessuna regola skill-specifica introdotta in src/combat/
+
+## Slices
+
+- [ ] **S01: BuffKind::DR primitive + damage formula integration** `risk:medium` `depends:[]`
+  > After this: Test integration tests/dr_pipeline.rs dimostra DR singolo, DR×N sommato, DR+ARM combinato, DR durante Break — damage clampato a 0 senza panic, CombatEvent::Damage emesso con amount=0 dove applicabile.
+
+- [ ] **S02: Effect::Heal { amount_pct_max_hp } primitive** `risk:low` `depends:[S01]`
+  > After this: Test integration tests/heal_effect.rs: skill RON con Effect::Heal applicata su Single e AllAllies, cap a maxHP, no-op su KO, CombatEvent::Healed nel JSONL stream.
+
+- [ ] **S03: Effect::Cleanse { count: Option<u8> } primitive** `risk:low` `depends:[S02]`
+  > After this: Test integration tests/cleanse_effect.rs: cleanse count=2 rimuove 2 debuff non-immuni; Blessed (immune) non rimosso; count=None svuota tutti i debuff non-immuni; CombatEvent::Cleansed nel JSONL.
+
+- [ ] **S04: DamageCurve::PerHop runtime length guard (chiude follow-up #3 M018)** `risk:low` `depends:[S03]`
+  > After this: Test tests/perhop_guard.rs: skill con DamageCurve::PerHop di lunghezza < hops_planned produce evento diagnostico (fail-fast o clamp — decisione registrata in DECISIONS.md) senza panic.
+
+## Boundary Map
+
+Not provided.
