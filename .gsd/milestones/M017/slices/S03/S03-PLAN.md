@@ -36,12 +36,12 @@ DamageBreakdown gains `status_amp_pct: i32` field (parity with tag_mod_pct/trian
   - Files: `src/combat/turn_system/mod.rs`, `src/combat/follow_up.rs`
   - Verify: cargo check && cargo test --test combat_coherence && cargo test --test follow_up_chains
 
-- [ ] **T04: Chilled −20% Speed delta at AV-gain site (derived read)** `est:S`
+- [x] **T04: Chilled −20% Speed delta at AV-gain site (derived read)** `est:S`
   Add helper `chilled_speed_delta(bag: &StatusBag, base_speed: i32) -> i32` in `src/combat/status_effect.rs` returning `-(base_speed / 5)` (rounded toward zero, i.e. integer division) when `bag.has(&Chilled)`, else 0. Negative because canon: Chilled slows. Do NOT mutate `SpeedModifier` — derived-read only (avoids stale delta after expiry mid-round). At `src/combat/turn_system/mod.rs:560-570`, extend the AV-gain query tuple to include `Option<&StatusBag>` if not already present, then compute `av_gain = (speed.0 + speed_mod.0 + chilled_speed_delta(bag, speed.0)) * AV_PER_SPEED`. Unit-test the helper in status_effect.rs#tests (3 cases: no bag entry → 0; Chilled present base=100 → −20; Chilled present base=80 → −16). Skills: bevy-ecs-expert, verify-before-complete.
   - Files: `src/combat/status_effect.rs`, `src/combat/turn_system/mod.rs`
   - Verify: cargo check && cargo test combat::status_effect::tests::chilled && cargo test --test combat_coherence
 
-- [ ] **T05: Integration test tests/status_amp_pipeline.rs (slice DoD)** `est:M`
+- [x] **T05: Integration test tests/status_amp_pipeline.rs (slice DoD)** `est:M`
   New integration test file `tests/status_amp_pipeline.rs` covering all S03 DoD scenarios in a single deterministic headless harness. Build minimal apps (no UI, no RNG) and assert: (A) Fire base=100, defender non-Heated, neutral attrs, no weakness → final damage = 100; (B) same with Heated applied → 115; (C) Ice base=100, defender Chilled, neutral attrs → 115; (D) active unit with Heated takes its turn → event stream contains an OnDamageDealt {amount:4, damage_tag: Fire, ..} attributed to that unit. Optional 5th case: Chilled unit AV-gain delta vs control. Use `combat::bootstrap` or direct spawn pattern as in existing `tests/status_*.rs`. Headless first; no `windowed` features. Skills: tdd, verify-before-complete.
   - Files: `tests/status_amp_pipeline.rs`
   - Verify: cargo test --test status_amp_pipeline && cargo test

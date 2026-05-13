@@ -21,10 +21,10 @@
 - [x] **S02: S02** `risk:medium` `depends:[]`
   > After this: Test deterministico: apply Heated(dur=2), re-apply Heated(dur=1), check dur=2. Cleanse rimuove Debuff ma non Buff cleanse-immune.
 
-- [ ] **S03: S03** `risk:medium` `depends:[]`
+- [x] **S03: S03** `risk:medium` `depends:[]`
   > After this: Test `status_amp_pipeline.rs`: stesso colpo fire base 100 → unit non-Heated subisce 100, unit Heated subisce 115. Stesso colpo ice base 100 su Chilled subisce 115. DoT Heated visibile in log a turn-end con 4 dmg.
 
-- [ ] **S04: Paralyzed + Slowed — turn skip + delay-on-apply** `risk:medium` `depends:[S02]`
+- [ ] **S04: S04** `risk:medium` `depends:[]`
   > After this: Test `status_paralyzed_skip.rs`: scenario con seed fisso, 100 turn iterations Paralyzed, skip count nel range deterministico atteso. Test `status_slowed_delay.rs`: applicare Slowed pusha la timeline visibilmente.
 
 - [ ] **S05: Blessed — buff dealt + Ult charge + cleanse-immune** `risk:low` `depends:[S02]`
