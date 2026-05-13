@@ -277,14 +277,17 @@ fn validate_skill_def(skill: &SkillDef) -> Result<(), SkillBookValidationError> 
     let has_revive = skill_has_effect(skill, |effect| matches!(effect, Effect::Revive(_)));
 
     if matches!(skill.implementation, SkillImplementation::Implemented)
-        && skill.targeting.shape != TargetShape::Single
+        && !matches!(
+            skill.targeting.shape,
+            TargetShape::Single | TargetShape::Blast | TargetShape::AllEnemies
+        )
     {
         return Err(validation_error(
             skill,
             SkillBookValidationCategory::Semantic,
             LegalityReasonCode::UnimplementedTargetShape,
             format!(
-                "implemented skills currently support only TargetShape::Single, found {:?}",
+                "implemented skills support Single, Blast, or AllEnemies; found {:?}",
                 skill.targeting.shape
             ),
         ));
@@ -731,11 +734,11 @@ mod tests {
             ..Default::default()
         }]);
 
-        let err = validate_skill_book(&book).expect_err("implemented non-single must fail");
+        let err = validate_skill_book(&book).expect_err("implemented Row shape must fail");
         assert_eq!(err.skill_id, SkillId("wide_impl".into()));
         assert_eq!(err.category, SkillBookValidationCategory::Semantic);
         assert_eq!(err.reason, LegalityReasonCode::UnimplementedTargetShape);
-        assert!(err.detail.contains("TargetShape::Single"));
+        assert!(err.detail.contains("Row"));
     }
 
     #[test]

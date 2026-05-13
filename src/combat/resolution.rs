@@ -239,7 +239,7 @@ fn skill_self_advance(effects: &[Effect]) -> i32 {
 }
 
 pub fn target_shape_is_executable_now(shape: TargetShape) -> bool {
-    matches!(shape, TargetShape::Single)
+    matches!(shape, TargetShape::Single | TargetShape::Blast | TargetShape::AllEnemies)
 }
 
 pub fn target_shape_rejection_reason(shape: TargetShape) -> Option<String> {
