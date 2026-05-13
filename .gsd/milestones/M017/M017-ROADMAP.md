@@ -21,7 +21,7 @@
 - [x] **S02: S02** `risk:medium` `depends:[]`
   > After this: Test deterministico: apply Heated(dur=2), re-apply Heated(dur=1), check dur=2. Cleanse rimuove Debuff ma non Buff cleanse-immune.
 
-- [ ] **S03: Heated + Chilled — damage amp% pipeline + DoT + speed mod** `risk:medium` `depends:[S02]`
+- [ ] **S03: S03** `risk:medium` `depends:[]`
   > After this: Test `status_amp_pipeline.rs`: stesso colpo fire base 100 → unit non-Heated subisce 100, unit Heated subisce 115. Stesso colpo ice base 100 su Chilled subisce 115. DoT Heated visibile in log a turn-end con 4 dmg.
 
 - [ ] **S04: Paralyzed + Slowed — turn skip + delay-on-apply** `risk:medium` `depends:[S02]`
