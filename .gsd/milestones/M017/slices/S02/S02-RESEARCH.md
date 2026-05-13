@@ -98,6 +98,77 @@ Recommendations (not installs):
 
 - The refresh-max-dur math — `u32::max` is fine; the existing `StatusEffect::refresh` at `src/combat/status_effect.rs:35` is the same shape, just moved inside `StatusBag::apply`.
 
+## Call-Site Inventory (Addendum, 2026-05-13)
+
+Exhaustive `rg StatusEffect src/ tests/` results, classified by required action.
+
+### `src/` — migrate to `StatusBag`
+
+| File:Line | Form | Action |
+|---|---|---|
+| `src/combat/status_effect.rs:9-25` | enum + struct definitions | **T01** — keep `StatusEffectKind` enum unchanged; replace `StatusEffect` struct with `StatusInstance` (private) + `StatusBag` (Component). |
+| `src/combat/status_effect.rs:50-138` | inline `#[cfg(test)] mod tests` (RON round-trip) | **T01** — rewrite tests against `StatusBag::apply` / `StatusInstance` shape; the RON round-trip tests can stay if `StatusInstance` derives Serialize/Deserialize, or be replaced by `StatusBag` round-trip. |
+| `src/combat/turn_system/pipeline.rs:21,731` | `use ...StatusEffect;` + `commands.entity(...).insert(StatusEffect { ... })` | **T02** — swap import to `StatusBag`; replace insert with bag-entry-or-default + `apply(kind, dur)`. |
+| `src/combat/turn_system/mod.rs:6,67` | `use StatusEffect;` + `ResolveActorsQuery` type alias query tuple | **T03** — swap import; change query tuple slot to `Option<&'static mut StatusBag>`. |
+| `src/combat/turn_system/mod.rs:369` | inline query tuple in `advance_turn_system` (DISTINCT from `ResolveActorsQuery`) | **T03** — same migration; do not miss this site — it is a separate query, not the type alias. |
+| `src/combat/turn_system/mod.rs:500` | `commands.entity(snap.entity).remove::<StatusEffect>()` | **T03** — delete entirely; bag persists empty after instances expire (cheap, avoids churn on next apply). If the snap-driven removal exists for a specific reason, replace with `bag.tick_all()` already handling expiry. |
+| `src/combat/turn_system/mod.rs:479-485` | match arm covering all 7 `StatusEffectKind` variants in tick | **T03** — preserve totality over enum (placeholder no-op stays for S03-S05). |
+| `src/combat/turn_system/tests.rs:3,136,149,155,162,183,184,193,199,206,234,235,286,287,302,324,325,337-339` | direct `StatusEffect { kind, duration_remaining }` spawns + `app.world().get::<StatusEffect>(...)` assertions | **T04** — rewrite all fixtures through `StatusBag::default().apply(...)`; rewrite assertions to `world.get::<StatusBag>(entity).map(\|b\| b.get_dur(kind))` or `b.has(kind)`. The `Some(&StatusEffect { ... })` pattern at 338 becomes a `bag.get_dur(kind) == Some(N)` check. |
+| `src/combat/follow_up.rs:4,104` | `use StatusEffect;` + `ResolveActorsQuery` slot | **T04** — same migration as T03 query slots; confirmed no `.kind` read access here (pure ownership for downstream systems). |
+| `src/combat/mod.rs:61` | `pub use status_effect::{StatusEffect, StatusEffectKind};` | **T01** — replace `StatusEffect` with `StatusBag` (and optionally `StatusInstance` if other crates need read access). `StatusEffectKind` stays exported. |
+
+### `src/` — INFORMATIONAL, no migration
+
+The following carry `StatusEffectKind` (the enum), NOT the legacy `StatusEffect` component. They do NOT change in S02:
+
+- `src/combat/state.rs:5,44` — `status_to_apply: Option<(StatusEffectKind, u32)>` on `CombatState`. The apply pipeline still extracts a single status per action (first-match-wins, set in `resolution.rs:136`); S02 changes only *how it lands*, not *what is extracted*.
+- `src/combat/resolution.rs:2,136` — `skill_apply_status()` returns `Option<(StatusEffectKind, u32)>`. Unchanged.
+- `src/combat/events.rs:4,50,55,85,88-90` — event payloads carry `StatusEffectKind` only. Note: `events.rs:88` comment says "No StatusEffect component is inserted" — comment text references the old component, can be updated to "no StatusBag instance is inserted" for clarity but not a behavior change.
+- `src/combat/kit.rs:4,41` — `OnStatusApplied(StatusEffectKind)` trigger payload. Unchanged.
+- `src/data/skills_ron.rs:5,182,267,271,508,519,530` — RON schema for `Effect::ApplyStatus { kind, duration }`. Unchanged.
+- `src/combat/observability.rs` — **grep clean, zero matches**. `ValidationSnapshot` does NOT carry per-unit status state in M017; do not chase it.
+
+### `tests/` — files containing `StatusEffect` references
+
+Authoritative list (verified `rg StatusEffect tests/`):
+
+1. `tests/status_accuracy.rs` — 8 references (line 12 import, 60 spawn, 200/242/279 `world.get::<StatusEffect>(...).is_some()/is_none()` lifecycle assertions, 187/229 `OnStatusResisted/OnStatusApplied { kind: ::Paralyzed }`). All lifecycle assertions migrate to `world.get::<StatusBag>(defender).map(\|b\| b.has(Paralyzed))`.
+2. `tests/combat_coherence.rs` — 8 references including a helper at line 410: `fn status_effect_kind(...) -> Option<StatusEffectKind>` that queries `Option<&StatusEffect>`. Rewrite the helper to query `Option<&StatusBag>` and return the first kind (or build a small `statuses_on(entity) -> Vec<StatusEffectKind>` helper). Callers at 926/946/967/981 only assert presence/kind, so a `bag.has(Paralyzed)` predicate works.
+3. `tests/status_effect_apply.rs`, `tests/status_effect_integration.rs`, `tests/status_effect_turn_tick.rs` — **S01 drift, see below**.
+
+### `tests/` — files NOT containing `StatusEffect`
+
+Verified `rg StatusEffect` count = 0:
+
+- `tests/form_identity.rs`
+- `tests/follow_up_chains.rs`
+
+These are **NOT in S02 file scope**. Their inclusion in the previous T05 file list was overcautious — drop them from the file list.
+
+## S01 Drift: legacy test files were migrated, not deleted
+
+`M017-CONTEXT.md` D-section "Test legacy: delete-and-rewrite-fresh" explicitly states:
+
+> I 4 file `tests/status_effect_apply.rs`, `tests/status_effect_turn_tick.rs`, `tests/status_effect_integration.rs`, `tests/status_accuracy.rs` sono cancellati in S01. S02-S05 scrivono test fresh sulla semantica canon.
+
+`S01-SUMMARY.md` shows the files were **migrated to canon names**, not deleted. They still exist on disk. This is a drift between the milestone canon and the executed S01.
+
+S02 must reconcile this. Two reasonable paths:
+
+- **Path A — Honor canon (delete now, write fresh in S02-S05):** In S02 we delete `tests/status_effect_apply.rs`, `tests/status_effect_integration.rs`, `tests/status_effect_turn_tick.rs`, and `tests/status_accuracy.rs`. Then write the three S02 DoD tests (`status_refresh_max_dur.rs`, `status_multi_kind_coexist.rs`, `status_cleanse_policy.rs`) + a fresh `tests/status_accuracy.rs` covering the same accuracy gate behavior (since accuracy is a live mechanic in M017, not a legacy concern). S03-S05 add their semantic tests.
+- **Path B — Migrate in place:** Keep the 4 files, retarget their assertions to `StatusBag`. Lower churn but accumulates legacy test framing that was already supposed to be sunset.
+
+**Recommendation: Path A.** Costs ~20 extra lines per deleted file's rewrite (the accuracy test is the only one with non-redundant coverage; the other three test lifecycle behaviors that the three new S02 DoD tests already cover). The benefit is honoring the canon decision and leaving S02-S05 with a clean test directory shape. **Decision belongs to the planner** — flagging here, not unilateral.
+
+## Bevy 0.18 Component-or-default API (T02 unknown)
+
+The plan as written suggests `EntityCommands::entry::<StatusBag>().or_default()`. Bevy 0.18 added `EntityCommands::entry` (commit 8a3d2c5 in 0.15+), but the exact ergonomics under deferred commands need verification. Two fallback shapes if the API is awkward in a system context:
+
+- **Shape A — query-first:** read `Query<Option<&mut StatusBag>>` in the apply system; on `Some`, call `apply` in place; on `None`, queue `commands.entity(target).insert({ let mut b = StatusBag::default(); b.apply(kind, dur); b })`.
+- **Shape B — bundle in bootstrap:** seed every unit with `StatusBag::default()` at spawn time in `src/combat/bootstrap.rs`. Removes the "create-on-first-apply" branch entirely. Costs one component slot per unit (cheap; the bag is empty until first apply).
+
+**Recommendation: Shape B** — bootstrap-seed eliminates the branch and matches how `RoundFlags`, `BasicStreak`, and other per-unit state are already seeded. T02 becomes a pure `query.get_mut(target)` + `bag.apply(kind, dur)` call, no `commands.insert` branch needed.
+
 ## Sources
 
 - `src/combat/status_effect.rs` (current single-component shape, refresh-max-dur math).
