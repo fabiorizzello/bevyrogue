@@ -84,7 +84,11 @@ pub mod blueprints;
 // migrate each into `blueprints/<digimon>/` so the core stays digimon-agnostic.
 
 /// Twin Core (Agumon): Heat / HeatSink dual builder–spender loop.
-pub mod twin_core;
+///
+/// Lives in `blueprints/agumon/identity.rs` after Q8; this re-export keeps
+/// every legacy `crate::combat::twin_core::*` path resolvable without
+/// touching the ~75 sites that import it.
+pub use blueprints::agumon::identity as twin_core;
 /// Holy support (Patamon): Grace accumulator / Martyr-light spender.
 pub mod holy_support;
 /// Battle loop redesign: Static/Circuit charge and battery payoff state.
