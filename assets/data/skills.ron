@@ -830,7 +830,7 @@
             target_hp_rule: Any,
         ),
         implementation: Deferred(reason: UnimplementedTargetShape),
-        effects: [Damage(amount: 50, target: Row), ToughnessHit(28), TurnAdvance(20)],
+        effects: [Damage(amount: 50, target: Row), ToughnessHit(28), AdvanceTurn(20)],
     ),
     (
         id: SkillId("kyubimon_follow_up"),

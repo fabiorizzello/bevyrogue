@@ -171,10 +171,11 @@ pub enum Effect {
         kind: StatusEffectKind,
         duration: u32,
     },
-    TurnAdvance(i32),
+    AdvanceTurn(u32),
+    DelayTurn(u32),
     /// Grant the attacker N energy (once-per-round gated by RoundFlags.form_identity_used).
     GrantEnergy(i32),
-    /// Advance the attacker's own AV by N percent (self-tempo boost; distinct from TurnAdvance which targets defender).
+    /// Advance the attacker's own AV by N percent (self-tempo boost).
     SelfAdvance(i32),
 }
 
@@ -522,11 +523,20 @@ mod tests {
     }
 
     #[test]
-    fn effect_roundtrip_turn_advance() {
-        let effect = Effect::TurnAdvance(25);
+    fn effect_roundtrip_advance_turn() {
+        let effect = Effect::AdvanceTurn(25);
         let s = ron::to_string(&effect).expect("serialize");
-        assert_eq!(s, "TurnAdvance(25)");
-        let back: Effect = ron::from_str("TurnAdvance(25)").expect("parse");
+        assert_eq!(s, "AdvanceTurn(25)");
+        let back: Effect = ron::from_str("AdvanceTurn(25)").expect("parse");
+        assert_eq!(back, effect);
+    }
+
+    #[test]
+    fn effect_roundtrip_delay_turn() {
+        let effect = Effect::DelayTurn(30);
+        let s = ron::to_string(&effect).expect("serialize");
+        assert_eq!(s, "DelayTurn(30)");
+        let back: Effect = ron::from_str("DelayTurn(30)").expect("parse");
         assert_eq!(back, effect);
     }
 

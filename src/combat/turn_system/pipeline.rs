@@ -356,11 +356,20 @@ pub(crate) fn step_app(
                         reason: reason.clone(),
                     });
                 }
-                CombatEventKind::TurnAdvance {
+                CombatEventKind::AdvanceTurn {
                     target: t_id,
                     amount_pct,
                 } => {
-                    log.push(LogEntry::TurnAdvance {
+                    log.push(LogEntry::AdvanceTurn {
+                        target: *t_id,
+                        amount_pct: *amount_pct,
+                    });
+                }
+                CombatEventKind::DelayTurn {
+                    target: t_id,
+                    amount_pct,
+                } => {
+                    log.push(LogEntry::DelayTurn {
                         target: *t_id,
                         amount_pct: *amount_pct,
                     });
@@ -663,11 +672,20 @@ pub(crate) fn step_app(
                     reason: reason.clone(),
                 });
             }
-            CombatEventKind::TurnAdvance {
+            CombatEventKind::AdvanceTurn {
                 target: t_id,
                 amount_pct,
             } => {
-                log.push(LogEntry::TurnAdvance {
+                log.push(LogEntry::AdvanceTurn {
+                    target: *t_id,
+                    amount_pct: *amount_pct,
+                });
+            }
+            CombatEventKind::DelayTurn {
+                target: t_id,
+                amount_pct,
+            } => {
+                log.push(LogEntry::DelayTurn {
                     target: *t_id,
                     amount_pct: *amount_pct,
                 });
@@ -755,9 +773,9 @@ pub(crate) fn step_app(
                     if is_first_apply_slowed {
                         emit_combat_event(
                             event_writer,
-                            CombatEventKind::TurnAdvance {
+                            CombatEventKind::DelayTurn {
                                 target: target_id,
-                                amount_pct: -30,
+                                amount_pct: 30,
                             },
                             attacker_id,
                             target_id,

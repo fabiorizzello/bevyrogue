@@ -41,7 +41,8 @@ pub struct ResolvedAction {
     pub grant_free_skill_count: usize,
     /// First ApplyStatus effect found in the skill definition; first match wins.
     pub status_to_apply: Option<(StatusEffectKind, u32)>,
-    pub turn_advance_pct: i32,
+    pub advance_pct: u32,
+    pub delay_pct: u32,
     /// Energy to grant the attacker from a GrantEnergy effect (0 = none).
     pub energy_grant: i32,
     /// AV self-advance percent from SelfAdvance effect (targets attacker, not defender).

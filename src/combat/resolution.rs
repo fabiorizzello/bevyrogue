@@ -85,7 +85,8 @@ pub fn resolve_action(
         ult_effect,
         grant_free_skill_count: skill_grant_free_count(&skill.effects),
         status_to_apply: skill_apply_status(&skill.effects),
-        turn_advance_pct: skill_turn_advance(&skill.effects),
+        advance_pct: skill_advance(&skill.effects),
+        delay_pct: skill_delay(&skill.effects),
         energy_grant: skill_grant_energy(&skill.effects),
         self_advance_pct: skill_self_advance(&skill.effects),
         target_shape: skill.targeting.shape,
@@ -141,11 +142,21 @@ fn skill_apply_status(effects: &[Effect]) -> Option<(StatusEffectKind, u32)> {
     })
 }
 
-fn skill_turn_advance(effects: &[Effect]) -> i32 {
+fn skill_advance(effects: &[Effect]) -> u32 {
     effects
         .iter()
         .find_map(|effect| match effect {
-            Effect::TurnAdvance(amount) => Some(*amount),
+            Effect::AdvanceTurn(amount) => Some((*amount).min(50)),
+            _ => None,
+        })
+        .unwrap_or(0)
+}
+
+fn skill_delay(effects: &[Effect]) -> u32 {
+    effects
+        .iter()
+        .find_map(|effect| match effect {
+            Effect::DelayTurn(amount) => Some((*amount).min(50)),
             _ => None,
         })
         .unwrap_or(0)
@@ -360,18 +371,28 @@ pub fn apply_effects(
         skill_id: resolved.skill_id.clone(),
     });
 
-    if resolved.turn_advance_pct != 0 {
-        events.push(CombatEventKind::TurnAdvance {
+    if resolved.advance_pct != 0 {
+        events.push(CombatEventKind::AdvanceTurn {
             target: resolved.target,
-            amount_pct: resolved.turn_advance_pct,
+            amount_pct: resolved.advance_pct,
+        });
+    }
+
+    if resolved.delay_pct != 0 {
+        events.push(CombatEventKind::DelayTurn {
+            target: resolved.target,
+            amount_pct: resolved.delay_pct,
         });
     }
 
     if resolved.self_advance_pct != 0 {
-        events.push(CombatEventKind::TurnAdvance {
-            target: resolved.source,
-            amount_pct: resolved.self_advance_pct,
-        });
+        let capped = (resolved.self_advance_pct.max(0) as u32).min(50);
+        if capped != 0 {
+            events.push(CombatEventKind::AdvanceTurn {
+                target: resolved.source,
+                amount_pct: capped,
+            });
+        }
     }
 
     outcome.sp_ok = true;

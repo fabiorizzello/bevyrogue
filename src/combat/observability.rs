@@ -104,9 +104,13 @@ pub enum ValidationLogEntry {
     ActionFailed {
         reason: String,
     },
-    TurnAdvance {
+    AdvanceTurn {
         target: UnitId,
-        amount_pct: i32,
+        amount_pct: u32,
+    },
+    DelayTurn {
+        target: UnitId,
+        amount_pct: u32,
     },
 }
 
@@ -218,7 +222,11 @@ pub fn capture_validation_snapshot(
             LogEntry::ActionFailed { reason } => ValidationLogEntry::ActionFailed {
                 reason: reason.clone(),
             },
-            LogEntry::TurnAdvance { target, amount_pct } => ValidationLogEntry::TurnAdvance {
+            LogEntry::AdvanceTurn { target, amount_pct } => ValidationLogEntry::AdvanceTurn {
+                target: *target,
+                amount_pct: *amount_pct,
+            },
+            LogEntry::DelayTurn { target, amount_pct } => ValidationLogEntry::DelayTurn {
                 target: *target,
                 amount_pct: *amount_pct,
             },
@@ -801,8 +809,11 @@ fn format_log_entry(entry: &ValidationLogEntry) -> String {
             format!("revive(target={},hp_after={})", target.0, hp_after)
         }
         ValidationLogEntry::ActionFailed { reason } => format!("fail(reason={})", reason),
-        ValidationLogEntry::TurnAdvance { target, amount_pct } => {
+        ValidationLogEntry::AdvanceTurn { target, amount_pct } => {
             format!("advance(target={},amount={})", target.0, amount_pct)
+        }
+        ValidationLogEntry::DelayTurn { target, amount_pct } => {
+            format!("delay(target={},amount={})", target.0, amount_pct)
         }
     }
 }
