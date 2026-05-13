@@ -53,6 +53,8 @@ pub mod toughness;
 pub mod stun;
 /// Buff/debuff con durata; tick a turn end.
 pub mod status_effect;
+/// Damage-reduction bag (`DrBag` + `sum_dr`); generic multiplicative DR primitive.
+pub mod buffs;
 /// SP pool condiviso (cap 5, gen Basic, +2 extra/round). Vedi D038.
 pub mod sp;
 /// Ultimate charge meter + accumulation triggers.

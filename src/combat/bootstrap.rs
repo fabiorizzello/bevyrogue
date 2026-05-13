@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
 use super::av::ActionValue;
+use super::buffs::DrBag;
 use super::enemy_counterplay::EnemyCounterplayKit;
 use super::energy::{Energy, RoundEnergyTracker};
 use super::kit::{FormIdentityKit, UnitSkills};
@@ -160,6 +161,7 @@ pub fn spawn_unit_from_def(commands: &mut Commands, def: &UnitDef) -> Entity {
         ),
         RoundFlags::default(),
         StatusBag::default(),
+        DrBag::default(),
         UltimateCharge::new(
             def.ultimate_trigger,
             def.ultimate_cap,
