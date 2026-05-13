@@ -1,16 +1,16 @@
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
-pub use super::kernel::{
+pub use crate::combat::kernel::{
     HolySupportRejectReason, HolySupportSignal, HolySupportStep, HolySupportTransition,
 };
 
-use super::events::{CombatEvent, CombatEventKind};
-use super::kernel::{
+use crate::combat::events::{CombatEvent, CombatEventKind};
+use crate::combat::kernel::{
     CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition, CombatTagChangeKind,
     CombatTagId, CombatTagState, CombatTagTransition, TacticalCycleTransition,
 };
-use super::types::UnitId;
+use crate::combat::types::UnitId;
 
 pub const GRACE_CAP: u8 = 3;
 

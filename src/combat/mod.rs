@@ -90,7 +90,11 @@ pub mod blueprints;
 /// touching the ~75 sites that import it.
 pub use blueprints::agumon::identity as twin_core;
 /// Holy support (Patamon): Grace accumulator / Martyr-light spender.
-pub mod holy_support;
+///
+/// Lives in `blueprints/patamon/identity.rs` after Q9-patamon; this re-export
+/// keeps every legacy `crate::combat::holy_support::*` path resolvable without
+/// touching existing import sites.
+pub use blueprints::patamon::identity as holy_support;
 /// Battle loop redesign: Static/Circuit charge and battery payoff state.
 pub mod battery_loop;
 /// Predator loop (Exploit / Prey Lock / Berserk) shared kernel seam.
