@@ -1,6 +1,6 @@
 use super::*;
 use crate::combat::{
-    StatusEffect, StatusEffectKind,
+    StatusBag, StatusEffectKind,
     events::{CombatEvent, CombatEventKind},
     kit::UnitSkills,
     log::{ActionLog, LogEntry},
@@ -128,15 +128,14 @@ fn advance_turn_system_burn_clamps_hp_and_expires_OLD() {
         .add_message::<CombatEvent>()
         .add_systems(Update, advance_turn_system);
 
+    let mut bag = StatusBag::default();
+    bag.apply(StatusEffectKind::Heated, 1);
     let entity = app
         .world_mut()
         .spawn((
             unit(1, Attribute::Vaccine, 5),
             Team::Ally,
-            StatusEffect {
-                kind: StatusEffectKind::Heated,
-                duration_remaining: 1,
-            },
+            bag,
         ))
         .id();
     app.world_mut().write_message(TurnAdvanced::of(UnitId(1)));
@@ -146,7 +145,7 @@ fn advance_turn_system_burn_clamps_hp_and_expires_OLD() {
     let unit = app.world().get::<Unit>(entity).expect("unit");
     assert_eq!(unit.hp_current, 5);
     assert!(app.world().get::<Ko>(entity).is_none());
-    assert!(app.world().get::<StatusEffect>(entity).is_none());
+    assert!(app.world().get::<StatusBag>(entity).map_or(true, |b| b.is_empty()));
 
     let events = combat_events(&mut app);
     assert!(events.iter().any(|event| matches!(
@@ -174,23 +173,22 @@ fn advance_turn_system_freeze_updates_and_clears_speed_modifier_OLD() {
         .add_message::<CombatEvent>()
         .add_systems(Update, advance_turn_system);
 
+    let mut bag = StatusBag::default();
+    bag.apply(StatusEffectKind::Chilled, 1);
     let entity = app
         .world_mut()
         .spawn((
             unit(1, Attribute::Vaccine, 100),
             Team::Ally,
             SpeedModifier(99),
-            StatusEffect {
-                kind: StatusEffectKind::Chilled,
-                duration_remaining: 1,
-            },
+            bag,
         ))
         .id();
     app.world_mut().write_message(TurnAdvanced::of(UnitId(1)));
 
     app.update();
 
-    assert!(app.world().get::<StatusEffect>(entity).is_none());
+    assert!(app.world().get::<StatusBag>(entity).map_or(true, |b| b.is_empty()));
 
     let events = combat_events(&mut app);
     assert!(events.iter().any(|event| matches!(
@@ -222,6 +220,8 @@ fn advance_turn_system_shock_zero_percent_does_not_cancel_OLD() {
     order.seed([UnitId(1), UnitId(2)]);
     drop(order);
 
+    let mut bag = StatusBag::default();
+    bag.apply(StatusEffectKind::Paralyzed, 1);
     app.world_mut().spawn((
         unit(1, Attribute::Virus, 100),
         Team::Enemy,
@@ -231,10 +231,7 @@ fn advance_turn_system_shock_zero_percent_does_not_cancel_OLD() {
             ultimate: SkillId("ult".into()),
             follow_up: None,
         },
-        StatusEffect {
-            kind: StatusEffectKind::Paralyzed,
-            duration_remaining: 1,
-        },
+        bag,
     ));
     app.world_mut()
         .spawn((unit(2, Attribute::Vaccine, 100), Team::Ally));
@@ -274,6 +271,8 @@ fn advance_turn_system_shock_full_cancel_emits_action_failed_OLD() {
     order.seed([UnitId(1), UnitId(2)]);
     drop(order);
 
+    let mut bag = StatusBag::default();
+    bag.apply(StatusEffectKind::Paralyzed, 1);
     app.world_mut().spawn((
         unit(1, Attribute::Virus, 100),
         Team::Enemy,
@@ -283,10 +282,7 @@ fn advance_turn_system_shock_full_cancel_emits_action_failed_OLD() {
             ultimate: SkillId("ult".into()),
             follow_up: None,
         },
-        StatusEffect {
-            kind: StatusEffectKind::Paralyzed,
-            duration_remaining: 1,
-        },
+        bag,
     ));
     app.world_mut()
         .spawn((unit(2, Attribute::Vaccine, 100), Team::Ally));
@@ -315,16 +311,15 @@ fn advance_turn_system_stunned_unit_skips_status_tick_OLD() {
         .add_message::<CombatEvent>()
         .add_systems(Update, advance_turn_system);
 
+    let mut bag = StatusBag::default();
+    bag.apply(StatusEffectKind::Heated, 2);
     let entity = app
         .world_mut()
         .spawn((
             unit(1, Attribute::Vaccine, 42),
             Team::Ally,
             Stunned { turns_left: 1 },
-            StatusEffect {
-                kind: StatusEffectKind::Heated,
-                duration_remaining: 2,
-            },
+            bag,
         ))
         .id();
     app.world_mut().write_message(TurnAdvanced::of(UnitId(1)));
@@ -334,11 +329,8 @@ fn advance_turn_system_stunned_unit_skips_status_tick_OLD() {
     let unit = app.world().get::<Unit>(entity).expect("unit");
     assert_eq!(unit.hp_current, 42);
     assert_eq!(
-        app.world().get::<StatusEffect>(entity),
-        Some(&StatusEffect {
-            kind: StatusEffectKind::Heated,
-            duration_remaining: 2,
-        })
+        app.world().get::<StatusBag>(entity).and_then(|b| b.get_dur(&StatusEffectKind::Heated)),
+        Some(2)
     );
     assert!(app.world().get::<Stunned>(entity).is_none());
 }
