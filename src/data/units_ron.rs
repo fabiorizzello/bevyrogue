@@ -267,22 +267,10 @@ mod tests {
         let ids: HashSet<_> = roster.0.iter().map(|unit| unit.id).collect();
         assert_eq!(ids.len(), roster.0.len(), "duplicate unit ids in units.ron");
 
-        // MVP v5.3 Adult forms have 2 active skills (Skill 1 + Skill 2).
-        // Patamon has 2 active skills (basic + revive).
-        // All other Child forms have 1 active skill.
-        let two_skill_names: HashSet<&str> = [
-            "Patamon",
-            "Greymon",
-            "Garurumon",
-            "Kabuterimon",
-            "Kyubimon",
-            "DORUgamon",
-            "Angemon",
-            "Ogremon",
-        ]
-        .into_iter()
-        .collect();
-
+        // MVP v5.3 skill-count invariant — derived from EvoStage rather than
+        // a hand-maintained name list:
+        //   Adult forms (ally or enemy): 2 active skills.
+        //   Child forms: 1, except Patamon which has 2 (basic + revive).
         for unit in &roster.0 {
             assert!(
                 !unit.role_tags.is_empty(),
@@ -294,10 +282,10 @@ mod tests {
                 "missing signature_traits for {}",
                 unit.name
             );
-            let expected_len = if two_skill_names.contains(unit.name.as_str()) {
-                2
-            } else {
-                1
+            let expected_len = match unit.evo_stage {
+                EvoStage::Adult => 2,
+                EvoStage::Child if unit.name == "Patamon" => 2,
+                _ => 1,
             };
             assert_eq!(
                 unit.skill_ids.len(),
@@ -443,19 +431,10 @@ mod tests {
             trigger_types
         );
 
-        // EvoStage and evolves_to constraints (S03)
-        let child_units = [
-            "Agumon", "Gabumon", "Dorumon", "Renamon", "Patamon", "Tentomon",
-        ];
-        let adult_units = [
-            "Greymon",
-            "Garurumon",
-            "Kabuterimon",
-            "Kyubimon",
-            "DORUgamon",
-            "Angemon",
-        ];
-
+        // EvoStage / evolves_to invariant — derived from `team` + `evo_stage`
+        // rather than a hand-maintained name list. Only Child-stage allies
+        // carry an evolution edge in the MVP v5.3 roster; everything else
+        // (Adult forms and enemies) must have zero.
         for unit in &roster.0 {
             assert!(
                 !unit.evo_line.0.is_empty(),
@@ -463,33 +442,18 @@ mod tests {
                 unit.name
             );
 
-            if child_units.contains(&unit.name.as_str()) {
-                assert_eq!(
-                    unit.evo_stage,
-                    EvoStage::Child,
-                    "expected Child stage for {}",
-                    unit.name
-                );
-                assert_eq!(
-                    unit.evolves_to.len(),
-                    1,
-                    "expected exactly 1 evolution for {}",
-                    unit.name
-                );
-            } else if adult_units.contains(&unit.name.as_str()) {
-                assert_eq!(
-                    unit.evo_stage,
-                    EvoStage::Adult,
-                    "expected Adult stage for {}",
-                    unit.name
-                );
-                assert_eq!(
-                    unit.evolves_to.len(),
-                    0,
-                    "expected 0 evolutions for {}",
-                    unit.name
-                );
-            }
+            let expected_evos = match (unit.team, unit.evo_stage) {
+                (Team::Ally, EvoStage::Child) => 1,
+                _ => 0,
+            };
+            assert_eq!(
+                unit.evolves_to.len(),
+                expected_evos,
+                "unexpected evolves_to count for {} ({:?}/{:?})",
+                unit.name,
+                unit.team,
+                unit.evo_stage,
+            );
         }
     }
 
