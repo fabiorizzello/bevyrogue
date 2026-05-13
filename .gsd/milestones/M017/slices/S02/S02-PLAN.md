@@ -33,7 +33,7 @@
   - Files: `tests/status_refresh_max_dur.rs`, `tests/status_multi_kind_coexist.rs`, `tests/status_cleanse_policy.rs`, `tests/status_effect_apply.rs`, `tests/status_effect_integration.rs`, `tests/status_effect_turn_tick.rs`, `tests/status_accuracy.rs`, `tests/follow_up_chains.rs`, `tests/combat_coherence.rs`, `tests/form_identity.rs`
   - Verify: `cargo test --test status_refresh_max_dur`, `cargo test --test status_multi_kind_coexist`, `cargo test --test status_cleanse_policy` all green individually. Full `cargo test` green with 0 ignored.
 
-- [ ] **T06: Smoke + grep guard + SUMMARY**
+- [x] **T06: Smoke + grep guard + SUMMARY**
   - Files: `.gsd/milestones/M017/slices/S02/S02-SUMMARY.md`
   - Verify: Smoke CLI exits 0. Grep guard clean. `cargo test` 0 failed / 0 ignored. SUMMARY.md persisted via `gsd_complete_slice`.
 
