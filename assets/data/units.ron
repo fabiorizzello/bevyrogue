@@ -286,7 +286,7 @@
             action: SkillId("kyubimon_follow_up"),
         )),
         form_identity: Some((
-            trigger: OnStatusApplied(Freeze(speed_reduction: 0)),
+            trigger: OnStatusApplied(Chilled),
             action: SkillId("kyubimon_form_identity"),
         )),
         resists: [],

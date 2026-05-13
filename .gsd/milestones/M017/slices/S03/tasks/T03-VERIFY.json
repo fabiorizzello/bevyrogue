@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T03",
+  "unitId": "M017/S03/T03",
+  "timestamp": 1778663369026,
+  "passed": true,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "cargo check",
+      "exitCode": 0,
+      "durationMs": 176,
+      "verdict": "pass"
+    },
+    {
+      "command": "cargo test --test combat_coherence",
+      "exitCode": 0,
+      "durationMs": 203,
+      "verdict": "pass"
+    },
+    {
+      "command": "cargo test --test follow_up_chains",
+      "exitCode": 0,
+      "durationMs": 186,
+      "verdict": "pass"
+    }
+  ]
+}

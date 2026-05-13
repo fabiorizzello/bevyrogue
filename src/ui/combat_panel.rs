@@ -2,6 +2,8 @@
 use bevy::prelude::*;
 #[cfg(feature = "windowed")]
 use bevy_egui::{EguiContexts, egui};
+#[cfg(feature = "windowed")]
+use moonshine_kind::Instance;
 
 #[cfg(feature = "windowed")]
 use crate::combat::{
@@ -229,8 +231,8 @@ pub fn combat_panel(
     mut action_intent: MessageWriter<ActionIntent>,
     units_q: CombatPanelUnitsQuery,
     floating_q: Query<&FloatingDamage>,
-    unit_entities: Query<Entity, With<Unit>>,
-    floating_entities: Query<Entity, With<FloatingDamage>>,
+    unit_entities: Query<Instance<Unit>>,
+    floating_entities: Query<Instance<FloatingDamage>>,
 ) -> Result {
     #[derive(Clone)]
     struct SkillDisplay {
@@ -844,11 +846,11 @@ HP: {}/{}
         *order = TurnOrder::default();
         log.events.clear();
         *sp = SpPool::default();
-        for entity in &floating_entities {
-            commands.entity(entity).despawn();
+        for floating in &floating_entities {
+            commands.entity(floating.entity()).despawn();
         }
-        for entity in &unit_entities {
-            commands.entity(entity).despawn();
+        for unit in &unit_entities {
+            commands.entity(unit.entity()).despawn();
         }
         asset_server.reload("data/units.ron");
         info!("restart: roster reloaded");

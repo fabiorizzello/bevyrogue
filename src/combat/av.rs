@@ -53,7 +53,7 @@ impl ActionValue {
 /// Message to signal that a unit's Action Value has changed.
 #[derive(Message, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ActionValueUpdated {
-    pub unit_id: Entity,
+    pub unit_entity: Entity,
     pub old_value: i32,
     pub new_value: i32,
 }

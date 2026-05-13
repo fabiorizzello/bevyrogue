@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 use bevyrogue::combat::battery_loop::BatteryLoopState;
 use bevyrogue::combat::blueprints;
-use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::kernel::{
     BatteryLoopTransition, CombatKernelTransition, register_combat_kernel_runtime,
 };

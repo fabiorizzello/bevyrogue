@@ -21,6 +21,7 @@ serde_json = "1"
 ron = "0.8"
 rand = "0.8"
 inquire = "0.7"
+moonshine-kind = "0.4.2"
 
 [features]
 default = []
@@ -28,13 +29,16 @@ default = []
 windowed = ["dep:bevy_egui", "bevy/2d"]
 dev = ["bevy/dynamic_linking"]
 
-[[test]]
-name = "twin_core_roster_contract"
-path = "tests/twin_core_roster_contract.rs"
+[dev-dependencies]
+# Agent-first observability: dump Bevy `Schedule` graphs to .gsd/schedules/*.dot
+# so future agents can read the system ordering without grepping `add_systems` /
+# `.before()` / `.after()` across the codebase. Run with:
+#   cargo run --example dump_schedule
+bevy_mod_debugdump = "0.15"
 
-[[test]]
-name = "twin_core_resolution"
-path = "tests/twin_core_resolution.rs"
+[[example]]
+name = "dump_schedule"
+path = "examples/dump_schedule.rs"
 
 [[test]]
 name = "twin_core_integration"

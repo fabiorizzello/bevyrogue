@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevyrogue::combat::av::{AV_PER_SPEED, ActionValue, ActionValueUpdated, MAX_AV};
+use bevyrogue::combat::av::{ActionValue, ActionValueUpdated, MAX_AV};
 use bevyrogue::combat::speed::Speed;
 use bevyrogue::combat::state::{CombatPhase, CombatState};
 use bevyrogue::combat::stun::Stunned;

@@ -435,7 +435,7 @@ fn kyubimon_freeze_application_self_advances() {
         .resource_mut::<Messages<CombatEvent>>()
         .get_cursor();
 
-    let freeze_skill = kyubimon.skill_ids[0].clone(); // onibidama — applies Freeze
+    let freeze_skill = kyubimon.skill_ids[0].clone(); // onibidama — applies Chilled
     app.world_mut().write_message(ActionIntent::Skill {
         attacker: kyubimon.id,
         skill_id: freeze_skill.clone(),
@@ -450,11 +450,11 @@ fn kyubimon_freeze_application_self_advances() {
     });
     assert!(
         has_self_advance,
-        "Kyubimon should emit TurnAdvance(self, 20%) from Form Identity after Freeze application"
+        "Kyubimon should emit TurnAdvance(self, 20%) from Form Identity after Chilled application"
     );
     assert!(
         form_identity_used(&mut app, kyubimon.id),
-        "form_identity_used should be true after freeze application"
+        "form_identity_used should be true after chilled application"
     );
 
     // Second freeze application in same round must NOT re-trigger

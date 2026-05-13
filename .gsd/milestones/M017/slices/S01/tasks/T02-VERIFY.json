@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T02",
+  "unitId": "M017/S01/T02",
+  "timestamp": 1778602184481,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "cargo check verde. Test di parsing RON esistenti continuano (saranno aggiornati ai nuovi id in T03/T05).",
+      "exitCode": 2,
+      "durationMs": 4,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}

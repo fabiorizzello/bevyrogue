@@ -13,16 +13,14 @@ use crate::combat::floating::FloatingDamage;
 use crate::combat::kernel::{CombatBeatId, CombatKernelRegistry};
 use crate::combat::log::{ActionLog, LogEntry};
 use crate::combat::resolution::{
-    apply_effects, grant_free_skill_events, resolve_action, target_shape_rejection_reason,
+    apply_effects, resolve_action, target_shape_rejection_reason,
 };
 use crate::combat::rng::CombatRng;
 use crate::combat::sp::{RoundSpTracker, SpPool};
 use crate::combat::state::{CombatPhase, CombatState, InFlightAction, UltEffect};
-use crate::combat::status_effect::StatusEffect;
+use crate::combat::status_effect::{StatusBag, StatusEffectKind};
 use crate::combat::stun::Stunned;
-use crate::combat::team::Team;
 use crate::combat::turn_order::TurnOrder;
-use crate::combat::types::SkillId;
 use crate::combat::unit::{BasicStreak, Ko};
 use crate::data::{
     SkillBookHandle,
@@ -145,7 +143,7 @@ pub(crate) fn step_app(
     state: &mut ResMut<CombatState>,
     sp: &mut ResMut<SpPool>,
     log: &mut ResMut<ActionLog>,
-    turn_order: &mut ResMut<TurnOrder>,
+    _turn_order: &mut ResMut<TurnOrder>,
     time: &Res<Time>,
     event_writer: &mut MessageWriter<CombatEvent>,
     registry: Option<&CombatKernelRegistry>,
@@ -188,15 +186,15 @@ pub(crate) fn step_app(
             attacker_team,
             attacker_unit,
             _attacker_kit,
-            mut attacker_ult,
+            attacker_ult,
             mut defender_tough,
             _attacker_counterplay,
             attacker_ko,
             attacker_stunned,
             attacker_commander,
-            _,
+            attacker_bag,
             mut attacker_streak,
-            mut attacker_round_flags,
+            attacker_round_flags,
         )) = actors.get_mut(attacker_entity)
         else {
             return;
@@ -289,6 +287,8 @@ pub(crate) fn step_app(
             streak_ref,
             attacker_commander.is_some(),
             defender_break_sealed,
+            None,
+            attacker_bag.as_deref(),
         );
 
         if !outcome.sp_ok {
@@ -454,13 +454,13 @@ pub(crate) fn step_app(
         attacker_team,
         attacker_unit,
         _attacker_kit,
-        mut attacker_ult,
+        attacker_ult,
         _,
         _attacker_counterplay,
         attacker_ko,
         attacker_stunned,
-        attacker_commander,
-        _,
+        _attacker_commander,
+        attacker_bag,
         mut attacker_streak,
         _attacker_round_flags,
     ) = attacker;
@@ -475,7 +475,7 @@ pub(crate) fn step_app(
         defender_ko,
         _,
         defender_commander,
-        _,
+        mut defender_bag,
         _,
         mut defender_round_flags,
     ) = defender;
@@ -585,6 +585,8 @@ pub(crate) fn step_app(
         streak_ref,
         defender_commander.is_some(),
         defender_break_sealed,
+        defender_bag.as_deref(),
+        attacker_bag.as_deref(),
     );
 
     if !outcome.sp_ok {
@@ -728,10 +730,21 @@ pub(crate) fn step_app(
                     None => CombatRng::from_seed(42).roll_pct(threshold),
                 };
                 if passes {
-                    commands.entity(target_entity).insert(StatusEffect {
-                        kind: kind.clone(),
-                        duration_remaining: duration,
-                    });
+                    // Check first-apply before bag.apply() mutates it.
+                    let is_first_apply_slowed = matches!(kind, StatusEffectKind::Slowed)
+                        && defender_bag
+                            .as_deref()
+                            .map_or(true, |b| !b.has(&StatusEffectKind::Slowed));
+                    if let Some(ref mut bag) = defender_bag {
+                        bag.apply(kind.clone(), duration);
+                    } else {
+                        // Fallback: bag not yet in world — insert fresh bag with the status.
+                        // This should not occur post-bootstrap seeding, but guards against
+                        // units spawned without StatusBag (e.g. test fixtures).
+                        let mut fresh = StatusBag::default();
+                        fresh.apply(kind.clone(), duration);
+                        commands.entity(target_entity).insert(fresh);
+                    }
                     emit_combat_event(
                         event_writer,
                         CombatEventKind::OnStatusApplied { kind },
@@ -739,6 +752,18 @@ pub(crate) fn step_app(
                         target_id,
                         inflight.follow_up_depth,
                     );
+                    if is_first_apply_slowed {
+                        emit_combat_event(
+                            event_writer,
+                            CombatEventKind::TurnAdvance {
+                                target: target_id,
+                                amount_pct: -30,
+                            },
+                            attacker_id,
+                            target_id,
+                            inflight.follow_up_depth,
+                        );
+                    }
                 } else {
                     emit_combat_event(
                         event_writer,
