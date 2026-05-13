@@ -44,7 +44,7 @@ Slowed delay path goes through canonical `TurnAdvance` event → `apply_turn_adv
   - Files: `tests/status_slowed_delay.rs`
   - Verify: cargo test --test status_slowed_delay
 
-- [ ] **T05: Full-suite verification and grep guard** `est:S`
+- [x] **T05: Full-suite verification and grep guard** `est:S`
   Run the full headless verification: `cargo check`, `cargo test` (entire integration suite). Confirm zero failures, zero ignored. Re-run the S01 grep guard: ensure no occurrences of `Burn|Freeze|Shock|DeepFreeze` in `src/` and `tests/` outside the reserved-variant declarations in `src/combat/status_effect.rs` and `src/data/skills_ron.rs`. Capture exit codes and a brief evidence summary into the task verification record. Pure verification task — no source files modified.
   - Verify: cargo check && cargo test && grep -rn -E 'Burn|Freeze|Shock|DeepFreeze' src/ tests/ | grep -v 'reserved' | wc -l
 

@@ -24,10 +24,10 @@
 - [x] **S03: S03** `risk:medium` `depends:[]`
   > After this: Test `status_amp_pipeline.rs`: stesso colpo fire base 100 → unit non-Heated subisce 100, unit Heated subisce 115. Stesso colpo ice base 100 su Chilled subisce 115. DoT Heated visibile in log a turn-end con 4 dmg.
 
-- [ ] **S04: S04** `risk:medium` `depends:[]`
+- [x] **S04: S04** `risk:medium` `depends:[]`
   > After this: Test `status_paralyzed_skip.rs`: scenario con seed fisso, 100 turn iterations Paralyzed, skip count nel range deterministico atteso. Test `status_slowed_delay.rs`: applicare Slowed pusha la timeline visibilmente.
 
-- [ ] **S05: Blessed — buff dealt + Ult charge + cleanse-immune** `risk:low` `depends:[S02]`
+- [ ] **S05: S05** `risk:low` `depends:[]`
   > After this: Test `status_blessed_offensive.rs`: unit Blessed colpisce → dmg ×1.15. Test `status_blessed_ult_charge.rs`: unit Blessed esegue azione → +1 Ult charge oltre baseline. Test `status_blessed_cleanse_immune.rs`: cleanse non rimuove Blessed.
 
 - [ ] **S06: Observability — canon JSONL log + ValidationSnapshot** `risk:low` `depends:[S01,S02,S03,S04,S05]`
