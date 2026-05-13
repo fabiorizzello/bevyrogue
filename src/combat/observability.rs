@@ -18,6 +18,7 @@ use crate::combat::{
     predator_loop::{PredatorLoopSnapshot, PredatorLoopState},
     sp::SpPool,
     state::{CombatPhase, CombatState},
+    status_effect::{StatusBag, StatusEffectKind},
     stun::Stunned,
     team::Team,
     toughness::{DamageKind, Toughness, visible_toughness},
@@ -110,6 +111,12 @@ pub enum ValidationLogEntry {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ValidationStatusSnapshot {
+    pub kind: StatusEffectKind,
+    pub duration_remaining: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ValidationToughnessSnapshot {
     pub current: i32,
     pub max: i32,
@@ -129,6 +136,7 @@ pub struct ValidationUnitSnapshot {
     pub ultimate_cap: i32,
     pub ko: bool,
     pub stun_turns: u32,
+    pub statuses: Vec<ValidationStatusSnapshot>,
 }
 
 #[allow(clippy::enum_variant_names)]
@@ -224,9 +232,10 @@ pub fn capture_validation_snapshot(
         Option<&UltimateCharge>,
         Option<&Ko>,
         Option<&Stunned>,
+        Option<&StatusBag>,
     )>();
     let mut units = Vec::new();
-    for (unit, team, toughness, ultimate, ko, stunned) in units_query.iter(world) {
+    for (unit, team, toughness, ultimate, ko, stunned, bag) in units_query.iter(world) {
         let team = team
             .copied()
             .ok_or(ValidationSnapshotError::MissingTeam { unit: unit.id })?;
@@ -248,6 +257,18 @@ pub fn capture_validation_snapshot(
                 broken: view.broken,
             });
 
+        let mut statuses: Vec<ValidationStatusSnapshot> = bag
+            .map(|b| {
+                b.iter()
+                    .map(|inst| ValidationStatusSnapshot {
+                        kind: inst.kind.clone(),
+                        duration_remaining: inst.duration_remaining,
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+        statuses.sort_by_key(|s| status_kind_ord(&s.kind));
+
         units.push(ValidationUnitSnapshot {
             id: unit.id,
             team,
@@ -259,6 +280,7 @@ pub fn capture_validation_snapshot(
             ultimate_cap: ultimate.cap,
             ko: ko.is_some(),
             stun_turns: stunned.map_or(0, |state| state.turns_left),
+            statuses,
         });
     }
     units.sort_by_key(|unit| unit.id.0);
@@ -806,7 +828,7 @@ fn format_unit(unit: &ValidationUnitSnapshot) -> String {
         .unwrap_or_else(|| "N/A".to_string());
 
     format!(
-        "id={},team={:?},hp={}/{},tough={},ult={}/{}/{},ko={},stun={}",
+        "id={},team={:?},hp={}/{},tough={},ult={}/{}/{},ko={},stun={},statuses={}",
         unit.id.0,
         unit.team,
         unit.hp_current,
@@ -817,7 +839,29 @@ fn format_unit(unit: &ValidationUnitSnapshot) -> String {
         unit.ultimate_cap,
         unit.ko,
         unit.stun_turns,
+        format_statuses(&unit.statuses),
     )
+}
+
+fn format_statuses(statuses: &[ValidationStatusSnapshot]) -> String {
+    let joined = statuses
+        .iter()
+        .map(|s| format!("{:?}({})", s.kind, s.duration_remaining))
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
+}
+
+fn status_kind_ord(kind: &StatusEffectKind) -> u8 {
+    match kind {
+        StatusEffectKind::Heated => 0,
+        StatusEffectKind::Chilled => 1,
+        StatusEffectKind::Paralyzed => 2,
+        StatusEffectKind::Slowed => 3,
+        StatusEffectKind::Blessed => 4,
+        StatusEffectKind::Burn => 5,
+        StatusEffectKind::Shock => 6,
+    }
 }
 
 fn format_weaknesses(weaknesses: &[DamageTag]) -> String {

@@ -27,10 +27,10 @@
 - [x] **S04: S04** `risk:medium` `depends:[]`
   > After this: Test `status_paralyzed_skip.rs`: scenario con seed fisso, 100 turn iterations Paralyzed, skip count nel range deterministico atteso. Test `status_slowed_delay.rs`: applicare Slowed pusha la timeline visibilmente.
 
-- [ ] **S05: S05** `risk:low` `depends:[]`
+- [x] **S05: S05** `risk:low` `depends:[]`
   > After this: Test `status_blessed_offensive.rs`: unit Blessed colpisce → dmg ×1.15. Test `status_blessed_ult_charge.rs`: unit Blessed esegue azione → +1 Ult charge oltre baseline. Test `status_blessed_cleanse_immune.rs`: cleanse non rimuove Blessed.
 
-- [ ] **S06: Observability — canon JSONL log + ValidationSnapshot** `risk:low` `depends:[S01,S02,S03,S04,S05]`
+- [ ] **S06: S06** `risk:low` `depends:[]`
   > After this: Scripted scenario CLI: applica Heated + Chilled + Paralyzed + Slowed + Blessed su units diversi → JSONL log analizzato via grep test, zero match su vocabolario legacy. ValidationSnapshot.statuses_per_unit deterministico in test fixture.
 
 ## Boundary Map
