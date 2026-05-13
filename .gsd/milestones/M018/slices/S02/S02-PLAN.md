@@ -34,7 +34,7 @@ Upstream surfaces consumed: src/data/skills_ron.rs (TargetShape, validate_skill_
   - Files: `src/combat/unit.rs`, `src/combat/bootstrap.rs`, `tests/slot_index_tiebreak.rs`
   - Verify: cargo test --test slot_index_tiebreak 2>&1 | grep -E '(test result|FAILED)' && cargo check 2>&1 | tail -5
 
-- [ ] **T02: Add Blast variant + pure resolve_targets() helper with table-driven tests** `est:1h`
+- [x] **T02: Add Blast variant + pure resolve_targets() helper with table-driven tests** `est:1h`
   Extend TargetShape with a Blast variant in src/data/skills_ron.rs. Treat the roadmap label 'AoE(All)' as a DSL alias for the existing AllEnemies variant — do NOT add a new variant (avoid wide diff across 11 deferred skills). Document the alias in the slice SUMMARY when T05 lands.
   - Files: `src/data/skills_ron.rs`, `src/combat/resolution.rs`
   - Verify: cargo test resolve_targets 2>&1 | grep -E '(test result|FAILED)' && cargo check 2>&1 | tail -5
