@@ -16,7 +16,7 @@
 - [x] **S01: S01** `risk:high` `depends:[]`
   > After this: Test headless deterministici per cap/clamp boundary + regressione Slowed (M017) che continua a funzionare con la nuova primitive. CLI scenario advance/delay print AV gauge step-by-step.
 
-- [ ] **S02: S02** `risk:med` `depends:[]`
+- [x] **S02: S02** `risk:med` `depends:[]`
   > After this: CLI scenario scripted con Blast (target primario + spillover adiacenti slot_index ±1) e AoE(All), ordine di applicazione damage stabile su 10 run. JSONL log mostra target list per ogni hit.
 
 - [ ] **S03: TargetShape: Bounce(N) path-dependent chain con tie-break** `risk:high` `depends:[S02]`
