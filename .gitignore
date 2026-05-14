@@ -53,6 +53,7 @@ tmp/
 .gsd/gsd.db*
 .gsd/completed-units.json
 .gsd/STATE.md
+.gsd/state-manifest.json
 .gsd/milestones/**/continue.md
 .gsd/milestones/**/*-CONTINUE.md
 .gsd/CODEBASE.md
