@@ -34,7 +34,7 @@ Tutti i call-site di `CombatEvent` emit (~50) aggiornati per accettare/propagare
   - Files: `src/combat/api/mod.rs`, `src/combat/api/intent.rs`, `src/combat/api/registry.rs`, `src/combat/api/signal.rs`, `src/combat/api/clock.rs`, `src/combat/api/rng.rs`, `src/combat/mod.rs`
   - Verify: cargo check (headless) + cargo check --features windowed puliti. rg 'use bevy::winit|use bevy::render|use bevy_egui' src/combat/api/ → 0. cargo test --lib api::registry::tests e cargo test --lib api::rng::tests verdi. rg 'pub mod api' src/combat/mod.rs → 1.
 
-- [ ] **T02: SkillCtx<'a> + intent_applier dispatcher (DealDamage canary wired)** `est:M`
+- [x] **T02: SkillCtx<'a> + intent_applier dispatcher (DealDamage canary wired)** `est:M`
   Aggiungere SkillCtx + dispatcher Intent. In S01 il dispatcher è scheletro: route per variant esiste, ma solo DealDamage è wired al damage system esistente come canary. Altre variant: log::warn! + delega alla code-path attuale. SkillCtxMode {DryRun, Execute, Preview} (Default=Execute). SkillCtx<'a> con caster, primary_target, cast_id, pending VecDeque<Intent>. Resource IntentQueue + system intent_applier exclusive. Test canary tests/intent_applier_canary.rs: spawn 2 unit, enqueue DealDamage, tick, asserisce HP ridotto + CombatEvent::OnDamageDealt + cast_id propagato (finalizzato dopo T03).
   - Files: `src/combat/api/skill_ctx.rs`, `src/combat/api/applier.rs`, `src/combat/api/mod.rs`, `tests/intent_applier_canary.rs`
   - Verify: cargo check (headless + windowed) puliti. cargo test --test intent_applier_canary verde (finalizzato dopo T03). rg 'fn intent_applier' src/combat/api/applier.rs → 1. rg 'use bevy::winit|use bevy::render|use bevy_egui' src/combat/api/skill_ctx.rs src/combat/api/applier.rs → 0.
