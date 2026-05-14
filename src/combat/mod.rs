@@ -106,8 +106,12 @@ pub mod jsonl_logger;
 /// Floating damage numbers (component spawnato a hit, decaduto da `decay_floating_damage`).
 pub mod floating;
 
+/// Bevy `Plugin` wrapper for the full combat runtime (M021).
+pub mod plugin;
+
 // ─── Re-exports ──────────────────────────────────────────────────────────────
 // Stable shortcuts for the most-imported types.
 
+pub use plugin::CombatPlugin;
 #[allow(deprecated)]
 pub use status_effect::{StatusBag, StatusEffectKind};

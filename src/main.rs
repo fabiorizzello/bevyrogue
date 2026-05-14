@@ -10,6 +10,7 @@ mod headless;
 #[cfg(feature = "windowed")]
 mod windowed;
 
+use combat::CombatPlugin;
 use combat::av::ActionValueUpdated;
 use combat::events::CombatEvent;
 use combat::floating::decay_floating_damage;
@@ -52,16 +53,14 @@ fn main() -> AppExit {
         .init_resource::<ActionLog>()
         .init_resource::<CombatState>()
         .init_resource::<UltGainQueue>()
-        .init_resource::<combat::api::intent::CastIdGen>()
         .add_message::<TurnAdvanced>()
         .add_message::<ActionIntent>()
         .add_message::<FollowUpIntent>()
         .add_message::<FollowUpTrace>()
         .add_message::<CombatEvent>()
         .add_message::<ActionValueUpdated>()
-        .add_systems(Update, decay_floating_damage);
-
-    combat::kernel::register_combat_kernel_runtime(&mut app);
+        .add_systems(Update, decay_floating_damage)
+        .add_plugins(CombatPlugin);
 
     #[cfg(not(feature = "windowed"))]
     headless::register_combat_systems(&mut app);

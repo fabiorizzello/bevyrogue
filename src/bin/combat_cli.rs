@@ -20,10 +20,9 @@ use bevyrogue::combat::follow_up::{
     follow_up_listener_system, form_identity_listener_system, resolve_follow_up_action_system,
 };
 use bevyrogue::combat::jsonl_logger::jsonl_logger_system;
-use bevyrogue::combat::kernel::register_combat_kernel_runtime;
+use bevyrogue::CombatPlugin;
 use bevyrogue::combat::log::ActionLog;
 use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
-use bevyrogue::combat::rng::CombatRng;
 use bevyrogue::combat::sp::SpPool;
 use bevyrogue::combat::state::{CombatPhase, CombatState};
 use bevyrogue::combat::turn_order::{TurnAdvanced, TurnOrder};
@@ -1179,7 +1178,6 @@ fn main() -> AppExit {
     .init_resource::<ActionLog>()
     .init_resource::<CombatState>()
     .init_resource::<UltGainQueue>()
-    .init_resource::<CombatRng>()
     .init_resource::<PlayerActed>()
     .insert_resource(IsInteractive(is_terminal))
     .insert_resource(SelectedAllies(selected_ids))
@@ -1198,7 +1196,7 @@ fn main() -> AppExit {
         .init_resource::<CliProofState>();
     }
 
-    register_combat_kernel_runtime(&mut app);
+    app.add_plugins(CombatPlugin);
 
     app.add_systems(
         Update,
