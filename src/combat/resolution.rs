@@ -268,6 +268,7 @@ pub fn resolve_action(
         base_damage: skill_base_damage(&skill.effects),
         toughness_damage: skill_toughness_hit(&skill.effects),
         revive_pct: skill_revive_pct(&skill.effects),
+        heal_pct: skill_heal_pct(&skill.effects),
         sp_cost: skill.sp_cost,
         ult_effect,
         grant_free_skill_count: skill_grant_free_count(&skill.effects),
@@ -346,6 +347,16 @@ fn skill_revive_pct(effects: &[Effect]) -> i32 {
         .iter()
         .find_map(|effect| match effect {
             Effect::Revive(pct) => Some(*pct),
+            _ => None,
+        })
+        .unwrap_or(0)
+}
+
+fn skill_heal_pct(effects: &[Effect]) -> u32 {
+    effects
+        .iter()
+        .find_map(|effect| match effect {
+            Effect::Heal { amount_pct_max_hp, .. } => Some(*amount_pct_max_hp),
             _ => None,
         })
         .unwrap_or(0)
@@ -545,6 +556,32 @@ pub fn apply_damage_only(
     (outcome, events)
 }
 
+/// Apply heal to a single target. KO targets are silently skipped (no event emitted).
+/// Returns per-target events only: OnHealed. Caller hoists resource consumption.
+pub fn apply_heal_only(
+    resolved: &ResolvedAction,
+    defender_unit: &mut Unit,
+) -> (ResolutionOutcome, Vec<CombatEventKind>) {
+    if defender_unit.is_ko() {
+        return (ResolutionOutcome { sp_ok: true, ..ResolutionOutcome::default() }, vec![]);
+    }
+
+    let hp_max = defender_unit.hp_max as i64;
+    let hp_current = defender_unit.hp_current as i64;
+    let pct = resolved.heal_pct as i64;
+    // Floor division: (hp_max * pct) / 100; capped so hp_current does not exceed hp_max.
+    let raw = (hp_max * pct) / 100;
+    let healed = raw.min(hp_max - hp_current).max(0) as i32;
+    defender_unit.hp_current += healed;
+    let hp_after = defender_unit.hp_current;
+
+    let mut outcome = ResolutionOutcome::default();
+    outcome.amount = healed;
+    outcome.sp_ok = true;
+    outcome.succeeded = true;
+    (outcome, vec![CombatEventKind::OnHealed { amount: healed, hp_after }])
+}
+
 pub fn apply_effects(
     resolved: &ResolvedAction,
     attacker_unit: &Unit,
@@ -578,7 +615,12 @@ pub fn apply_effects(
         return (ResolutionOutcome::default(), events);
     }
 
-    if resolved.revive_pct > 0 {
+    // Heal no-op on KO: sp_ok=true, no event, no SP consumed (resources not yet spent here).
+    if resolved.heal_pct > 0 {
+        if defender_unit.is_ko() {
+            return (ResolutionOutcome { sp_ok: true, ..ResolutionOutcome::default() }, events);
+        }
+    } else if resolved.revive_pct > 0 {
         if !defender_unit.is_ko() {
             events.push(CombatEventKind::OnActionFailed {
                 reason: "Target is not KO".to_string(),
@@ -627,7 +669,11 @@ pub fn apply_effects(
 
     let mut outcome = ResolutionOutcome::default();
 
-    if resolved.revive_pct > 0 {
+    if resolved.heal_pct > 0 {
+        let (heal_outcome, heal_events) = apply_heal_only(resolved, defender_unit);
+        outcome.amount = heal_outcome.amount;
+        events.extend(heal_events);
+    } else if resolved.revive_pct > 0 {
         defender_unit.revive(resolved.revive_pct);
         let hp_after = defender_unit.hp_current;
         events.push(CombatEventKind::OnRevive { hp_after });

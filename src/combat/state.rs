@@ -35,6 +35,7 @@ pub struct ResolvedAction {
     pub base_damage: i32,
     pub toughness_damage: i32,
     pub revive_pct: i32,
+    pub heal_pct: u32,
     pub sp_cost: i32,
     pub ult_effect: UltEffect,
     /// Number of ally free-basic casts to grant after this action resolves (from GrantFreeSkill effect).
