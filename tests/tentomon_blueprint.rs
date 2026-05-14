@@ -17,6 +17,7 @@ fn base_action() -> ResolvedAction {
         base_damage: 10,
         toughness_damage: 5,
         revive_pct: 0,
+        heal_pct: 0,
         sp_cost: 0,
         ult_effect: UltEffect::None,
         grant_free_skill_count: 0,

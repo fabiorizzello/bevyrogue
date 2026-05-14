@@ -65,6 +65,7 @@ fn damage_action(tag: DamageTag, base: i32) -> ResolvedAction {
         base_damage: base,
         toughness_damage: 0,
         revive_pct: 0,
+        heal_pct: 0,
         sp_cost: 0,
         ult_effect: UltEffect::None,
         grant_free_skill_count: 0,

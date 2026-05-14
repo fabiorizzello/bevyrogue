@@ -163,6 +163,7 @@ fn custom_signal_rejects_unknown_patamon_variant() {
             base_damage: 1,
             toughness_damage: 0,
             revive_pct: 0,
+            heal_pct: 0,
             sp_cost: 0,
             ult_effect: UltEffect::None,
             grant_free_skill_count: 0,

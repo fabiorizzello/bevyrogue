@@ -61,6 +61,7 @@ fn basic_action(base_damage: i32) -> ResolvedAction {
         base_damage,
         toughness_damage: 0,
         revive_pct: 0,
+        heal_pct: 0,
         sp_cost: 0,
         ult_effect: UltEffect::GainFromBasic,
         grant_free_skill_count: 0,

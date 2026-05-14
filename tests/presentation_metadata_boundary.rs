@@ -371,6 +371,7 @@ fn presentation_metadata_does_not_change_action_query_or_resolved_action() {
             base_damage: 23,
             toughness_damage: 11,
             revive_pct: 0,
+            heal_pct: 0,
             sp_cost: 2,
             ult_effect: UltEffect::None,
             grant_free_skill_count: 0,
