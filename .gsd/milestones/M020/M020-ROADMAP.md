@@ -12,10 +12,10 @@
 
 ## Slices
 
-- [ ] **S01: S01** `risk:low` `depends:[]`
+- [x] **S01: S01** `risk:low` `depends:[]`
   > After this: cargo test passa con un nuovo test che verifica UltimateUsed emesso e un test che verifica UnitDied porta i campi corretti
 
-- [ ] **S02: Rimozione shim pub use legacy (twin_core / holy_support / predator_loop)** `risk:low` `depends:[S01]`
+- [x] **S02: S02** `risk:low` `depends:[]`
   > After this: cargo test passa; grep ricorsivo mostra zero occorrenze di combat::twin_core, combat::holy_support, combat::predator_loop fuori dai file blueprint stessi
 
 ## Boundary Map
