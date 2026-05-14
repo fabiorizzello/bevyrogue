@@ -1228,6 +1228,64 @@ Audit completo delle aree funzionali che il combat deve supportare. Surface API 
 
 ---
 
+## 18. Gap dalla stesura roster v0 (fit-check)
+
+Stesura completa delle **18 active skill + 6 passive** del roster v0 contro l'API target — vedi `M021-ROSTER-FIT-DRAFT.md`. La stesura ha confermato che:
+
+1. **Niente kernel pollution.** Tutte le 24 ability vivono sotto `blueprints/<x>/` (+ mini-plugin `twin_core`). Zero menzione Digimon-specific nel kernel target.
+2. **`Intent` canon di §5.7 copre 22/24 ability senza estensioni.** Le 2 estensioni richieste (`ApplyBuff`, `ApplyStatus { mode }`) sono incrementali.
+3. **AbilityBuilder regge in 8–25 LOC/skill.** Ergonomia confermata sulla carta; validare in S07 con Tohakken+Petit Thunder fixture.
+4. **Modifier pipeline è load-bearing**: 3/6 passive sono pure Modifier (`twin_core_fire/ice`, `holy_aegis`). Senza ModifierCondition ricco (G3) il design crolla.
+5. **Hooks via filter enum + Custom escape hatch** copre tutti i listener canon.
+
+### 18.1 Gap rilevati
+
+| ID | Sintomo | Severità | Slice | Decisione |
+|---|---|---|---|---|
+| **G1** | `StatusApplyMode { Stack, Refresh, MaxOf }` su `Intent::ApplyStatus` — StatusBag.apply oggi fa silent max(old,new), Heated/Chilled servono Stack | alta | **S05** | **D016** |
+| **G2** | Heated decay -1/turno = generico tick canon, nessun gap | bassa (doc) | — | — |
+| **G3** | `ModifierCondition` canon list ricco: `SourceUnit/SourceTag/TargetHasStatus/TargetIsAlly/Pipeline + All/Any/Not` | alta | **S07** | **D017** |
+| **G4** | `Blessed` ha intrinsic effects (+15% dmg, +1 Ult/action) — pattern simmetrico per Heated/Chilled; serve `StatusDef::intrinsic_modifiers: Vec<ModifierTemplate>` data-driven | alta | **S05** | **D018** |
+| **G5** | `BuffKind` taxonomy separata da `StatusEffectKind` (DR self di Gabumon/Tentomon); `Intent::ApplyBuff { kind, stack_mode }` con `BuffStackMode { MaxReplace, ProcOnce, Additive }` — 4/6 Digimon lo richiedono | alta | **S05** | **D019** |
+| **G6** | `on_final_hop` per Bounce: Tentomon `petit_thunder` applica Paralyzed solo all'hit finale, non a ogni hop | media | **S07** | **D020** |
+| **G7** | "Random target" canon → re-tipizzare come `LowestHpPctAlive` deterministico (Tentomon ult). Aggiornare design draft, nessuna API change | bassa (doc) | — | — |
+| **G8** | `BuffStackMode::ProcOnce` per block reaction one-shot (Battery Loop) | media | **S05** | co-chiude G5/D019 |
+| **G9** | `EventFilter::{All, Any, Not, Custom}` per filtri compositi (kitsune_grace not-self, fur_cloak source-is-owner) | media | **S04** | **D021** |
+| **G10** | Predator state lifecycle Enter/Exit via signal layer-double — già coperto da D006/D008, confermare in S03 con test mismatch panic | bassa (doc) | S03 | — |
+| **G11** | Snapshot query posizionali (`ctx.adjacents`, `ctx.adj_lowest_hp_pct`) basate su `SlotIndex(u8)` | bassa | S06 | — |
+| **G12** | StatusInstance `applied_by: Option<UnitId>` + `ModifierCondition::TargetHasStatusFrom` — future-proof Twin Core quando il roster cresce | bassa (future-proof) | S05 opzionale | **D022** candidata |
+| **G13** | `AbilityCategory::FollowUp` distinta (Dorumon `dash_metal_chain`, Agumon `agumon_follow_up`) — kernel-skipped legality, no input picker UI | bassa (doc) | — | — |
+| **G14** | Plugin asimmetria flat→dir per Gabumon/Renamon/Tentomon — già implicito nella roadmap S10/S12/S13 | bassa (struct) | S10/S12/S13 | — |
+| **G15** | `consume_on_skill_cast` meta-flag su StatusDef (EnhancedNext pattern) — nessuna skill v0 lo attiva, mantenuto come campo opzionale | bassa (future-proof) | — | — |
+| **G16** | Snapshot owner queries (`is_owner`, `iter_alive_owners`, `iter_alive_units_with_owner`) — documentare lista canon §5.10 | bassa (doc) | S06 | — |
+
+### 18.2 Bilancio
+
+- **5 gap ad alta severità** (G1/G3/G4/G5 + parziale G8) — chiudibili dentro S04–S07 senza alterare la struttura della roadmap, ma **bloccanti** per la migration completa (G4 in particolare: senza intrinsic modifier sui status, `Blessed` di Renamon non si esprime senza coupling).
+- **3 gap media severità** (G6/G8/G9) — chiusibili come Decisioni durante S04–S07.
+- **8 gap bassa severità** — doc / future-proof / strutturali già pianificati.
+
+### 18.3 Impatto sulla roadmap M021
+
+| Modifica | Slice | Note |
+|---|---|---|
+| **Espandere S05** con `StatusApplyMode`, `BuffKind`, `BuffStackMode`, intrinsic status modifiers | S05 | Sostanziale: porta `Intent` da ~17 a ~18 variant + cresce StatusDef |
+| **Espandere S07** con `on_final_hop` Bounce builder + ModifierCondition canon list completa | S07 | Ergonomia builder + condition expressivity |
+| **Espandere S04** con `EventFilter::{All, Any, Not, Custom}` combinatori | S04 | Senza, 3 passive (kitsune_grace, fur_cloak, battery_loop) non si esprimono |
+| **Aggiungere intrinsic modifier pipeline** alla `modifier_aggregator` (raccoglie da Ability + da Status attivi) | S04 | Conseguenza di D018; pipeline aggregation deve scoprire entrambe le fonti |
+
+### 18.4 Validazione finale (post-fit-check)
+
+- [x] Stesura completa di 18 active + 6 passive contro API target M021
+- [x] 16 gap identificati, severità classificata
+- [x] 5 Decisioni proposte D016–D021 (+ D022 candidata)
+- [x] Roadmap S04/S05/S07 cresce di portata ma struttura invariata
+- [x] Conferma: kernel digimon-free è raggiungibile col design corrente + le 5 chiusure
+
+**Verdetto post-fit-check**: M021 GO confermato. Aprire D016–D021 prima di S04. D022 da decidere user-side (now-or-later).
+
+---
+
 **Fonti citate**:
 - [Bevy 0.17→0.18 migration guide](https://bevy.org/learn/migration-guides/0-17-to-0-18/)
 - [Bevy 0.16→0.17 migration guide](https://bevy.org/learn/migration-guides/0-16-to-0-17/) (Event/Message rename)
