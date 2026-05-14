@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevyrogue::combat::{
     events::{CombatEvent, CombatEventKind},
     floating::FloatingDamage,
-    holy_support::HolySupportState,
+    blueprints::patamon::HolySupportState,
     kernel::{
         CombatKernelTransition, HolySupportTransition, PrecisionMindGameTransition,
         PrecisionWindowKind, TwinCoreTransition, register_combat_kernel_runtime,
@@ -12,7 +12,7 @@ use bevyrogue::combat::{
         ValidationStatusSnapshot, capture_validation_snapshot, format_validation_snapshot,
     },
     precision_mind_game::PrecisionMindGameState,
-    predator_loop::PredatorLoopState,
+    blueprints::dorumon::PredatorLoopState,
     sp::SpPool,
     state::{CombatPhase, CombatState},
     status_effect::{StatusBag, StatusEffectKind},
@@ -20,7 +20,7 @@ use bevyrogue::combat::{
     team::Team,
     toughness::{DamageKind, Toughness},
     turn_order::TurnOrder,
-    twin_core::TwinCoreState,
+    blueprints::agumon::TwinCoreState,
     types::{Attribute, DamageTag, EvoStage, UnitId},
     ultimate::{UltAccumulationTrigger, UltimateCharge},
     unit::{Ko, Unit},

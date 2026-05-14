@@ -38,7 +38,10 @@ pub enum CombatEventKind {
     OnBreak {
         damage_tag: DamageTag,
     },
-    OnKO,
+    UnitDied {
+        status_remaining: Vec<StatusEffectKind>,
+        heated_remaining: u32,
+    },
     OnRevive {
         hp_after: i32,
     },
@@ -73,6 +76,11 @@ pub enum CombatEventKind {
     UltGain {
         unit_id: UnitId,
         amount: i32,
+    },
+    /// Emitted once per cast when an ultimate is spent (UltEffect::Reset). Distinct from
+    /// UltGain — enables downstream listeners to observe spend without reconstructing state.
+    UltimateUsed {
+        unit_id: UnitId,
     },
     /// Emitted for the defender on every non-revive hit (companion of OnDamageDealt).
     OnHitTaken {

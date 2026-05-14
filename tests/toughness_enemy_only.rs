@@ -205,7 +205,7 @@ fn enemy_attack_damages_ally_without_breaking_or_stunning() {
     assert!(
         !events
             .iter()
-            .any(|event| matches!(event.kind, CombatEventKind::OnKO)),
+            .any(|event| matches!(event.kind, CombatEventKind::UnitDied { .. })),
         "ally should survive the hit"
     );
     assert!(

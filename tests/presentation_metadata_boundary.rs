@@ -4,7 +4,7 @@ use bevyrogue::combat::{
         ActionQueryKind, CombatQuerySnapshot, UnitQuerySnapshot, query_action_affordance,
     },
     events::{CombatEvent, CombatEventKind},
-    holy_support::{HolySupportState, HolySupportTransition},
+    blueprints::patamon::{HolySupportState, HolySupportTransition},
     kernel::{CombatBeatId, CombatKernelTransition, register_combat_kernel_runtime},
     kit::UnitSkills,
     log::ActionLog,

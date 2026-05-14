@@ -1,5 +1,5 @@
-# M021: M021 - Skill trait + SkillCtx + Blueprint trait + Plugin self-registration
+# M021: M021: M021 - Skill trait + SkillCtx + Blueprint trait + Plugin self-registration
 
-**Vision:** 
+**Vision:** ## Slices
 
 ## Slices

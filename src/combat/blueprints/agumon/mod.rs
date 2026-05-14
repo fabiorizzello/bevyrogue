@@ -13,6 +13,12 @@ use crate::combat::kernel::CombatKernelRegistry;
 pub mod identity;
 pub mod signals;
 
+pub use identity::{
+    TAG_CHILLED, TAG_DEEP_CRACK, TAG_HEATED, TAG_MELTDOWN_CRACK, TAG_PRIMED, TAG_THERMAL_SPARK,
+    TwinCoreDesignTag, TwinCoreHook, TwinCoreState,
+    apply_twin_core_transitions_system, classify_twin_core_tag,
+    twin_core_added_tag_transition, twin_core_design_tag, twin_core_design_tag_name,
+};
 pub use signals::{OWNER, dispatch};
 
 pub struct AgumonPlugin;

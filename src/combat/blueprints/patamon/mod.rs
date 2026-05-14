@@ -11,6 +11,13 @@ use crate::combat::kernel::CombatKernelRegistry;
 pub mod identity;
 pub mod signals;
 
+pub use identity::{
+    GRACE_CAP, TAG_GRACE, TAG_MARTYR_LIGHT,
+    HolySupportDesignTag, HolySupportHook, HolySupportRejectReason, HolySupportSnapshot,
+    HolySupportState, HolySupportStep, HolySupportTransition,
+    apply_holy_support_transitions_system, classify_holy_support_tag,
+    holy_support_added_tag_transition, holy_support_design_tag, holy_support_design_tag_name,
+};
 pub use signals::{OWNER, dispatch};
 
 pub struct PatamonPlugin;

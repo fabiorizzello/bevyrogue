@@ -485,7 +485,8 @@ pub fn advance_turn_system(
                     if unit.hp_current <= 0 {
                         emit_combat_event(
                             &mut event_writer,
-                            CombatEventKind::OnKO,
+                            // No StatusBag in scope at stun-damage site; payload left empty.
+                            CombatEventKind::UnitDied { status_remaining: vec![], heated_remaining: 0 },
                             active_id,
                             active_id,
                             0,

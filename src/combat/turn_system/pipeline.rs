@@ -455,7 +455,7 @@ pub(crate) fn step_app(
                             damage_tag: *damage_tag,
                         });
                     }
-                    CombatEventKind::OnKO => {
+                    CombatEventKind::UnitDied { .. } => {
                         commands.entity(def_entity).insert(Ko);
                         log.push(LogEntry::Ko { target: def_id });
                         if **att_team_val != *def_team_val {
@@ -632,6 +632,15 @@ pub(crate) fn step_app(
                     unit_id: attacker_id,
                     amount: ult_delta,
                 },
+                attacker_id,
+                attacker_id,
+                inflight.follow_up_depth,
+            );
+        }
+        if matches!(inflight.action.ult_effect, UltEffect::Reset) {
+            emit_combat_event(
+                event_writer,
+                CombatEventKind::UltimateUsed { unit_id: attacker_id },
                 attacker_id,
                 attacker_id,
                 inflight.follow_up_depth,
@@ -972,7 +981,7 @@ pub(crate) fn step_app(
                             damage_tag: *damage_tag,
                         });
                     }
-                    CombatEventKind::OnKO => {
+                    CombatEventKind::UnitDied { .. } => {
                         commands.entity(def_entity).insert(Ko);
                         log.push(LogEntry::Ko { target: def_id });
                         // Emit OnEnemyKill (attacker vs enemy team).
@@ -1148,6 +1157,15 @@ pub(crate) fn step_app(
                     unit_id: attacker_id,
                     amount: ult_delta,
                 },
+                attacker_id,
+                attacker_id,
+                inflight.follow_up_depth,
+            );
+        }
+        if matches!(inflight.action.ult_effect, UltEffect::Reset) {
+            emit_combat_event(
+                event_writer,
+                CombatEventKind::UltimateUsed { unit_id: attacker_id },
                 attacker_id,
                 attacker_id,
                 inflight.follow_up_depth,
@@ -1354,7 +1372,7 @@ pub(crate) fn step_app(
                         damage_tag: *damage_tag,
                     });
                 }
-                CombatEventKind::OnKO => {
+                CombatEventKind::UnitDied { .. } => {
                     commands.entity(target_entity).insert(Ko);
                     log.push(LogEntry::Ko { target: target_id });
                 }
@@ -1431,6 +1449,15 @@ pub(crate) fn step_app(
                     inflight.follow_up_depth,
                 );
             }
+        }
+        if matches!(inflight.action.ult_effect, UltEffect::Reset) {
+            emit_combat_event(
+                event_writer,
+                CombatEventKind::UltimateUsed { unit_id: attacker_id },
+                attacker_id,
+                attacker_id,
+                inflight.follow_up_depth,
+            );
         }
 
         if outcome.succeeded && inflight.action.energy_grant > 0 {
@@ -1687,7 +1714,7 @@ pub(crate) fn step_app(
                     damage_tag: *damage_tag,
                 });
             }
-            CombatEventKind::OnKO => {
+            CombatEventKind::UnitDied { .. } => {
                 commands.entity(target_entity).insert(Ko);
                 log.push(LogEntry::Ko { target: target_id });
                 if *attacker_team != *defender_team {
@@ -1867,6 +1894,15 @@ pub(crate) fn step_app(
                 inflight.follow_up_depth,
             );
         }
+    }
+    if matches!(inflight.action.ult_effect, UltEffect::Reset) {
+        emit_combat_event(
+            event_writer,
+            CombatEventKind::UltimateUsed { unit_id: attacker_id },
+            attacker_id,
+            attacker_id,
+            inflight.follow_up_depth,
+        );
     }
 
     if outcome.succeeded && inflight.action.energy_grant > 0 {
