@@ -52,6 +52,8 @@ pub struct ResolvedAction {
     pub custom_signals: Vec<SkillCustomSignal>,
     /// Per-hop damage curve (relevant for `TargetShape::Bounce`; `Constant` for all other shapes).
     pub damage_curve: DamageCurve,
+    /// Outer None = not a cleanse skill; Some(inner) = cleanse with that count (None = remove all).
+    pub cleanse_count: Option<Option<u8>>,
 }
 
 #[derive(Debug, Clone)]

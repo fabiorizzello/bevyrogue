@@ -75,6 +75,46 @@ impl StatusBag {
         expired
     }
 
+    /// Remove up to `count` debuff-classified instances ordered duration-DESC, insertion-idx-ASC
+    /// tiebreak. `None` removes all debuffs. Buff-classified entries (e.g. Blessed) are never
+    /// touched. Returns the removed kinds in selection order.
+    pub fn cleanse_n(&mut self, count: Option<u8>) -> Vec<StatusEffectKind> {
+        use std::cmp::Reverse;
+
+        // Build (original_idx, kind, duration) for every debuff entry.
+        let mut candidates: Vec<(usize, StatusEffectKind, u32)> = self
+            .0
+            .iter()
+            .enumerate()
+            .filter(|(_, inst)| classify_buff_kind(&inst.kind) == BuffKind::Debuff)
+            .map(|(idx, inst)| (idx, inst.kind.clone(), inst.duration_remaining))
+            .collect();
+
+        // Stable sort: duration DESC, then original idx ASC as tiebreak.
+        candidates.sort_by_key(|(idx, _, dur)| (Reverse(*dur), *idx));
+
+        let limit = count.map(|c| c as usize).unwrap_or(usize::MAX);
+        candidates.truncate(limit);
+
+        let kinds: Vec<StatusEffectKind> =
+            candidates.iter().map(|(_, kind, _)| kind.clone()).collect();
+
+        // Collect sorted removal indices for O(log n) membership check.
+        let mut remove_idxs: Vec<usize> = candidates.iter().map(|(idx, _, _)| *idx).collect();
+        remove_idxs.sort_unstable();
+
+        // Rebuild the bag, preserving non-removed entries in their original order.
+        let old = std::mem::take(&mut self.0);
+        self.0 = old
+            .into_iter()
+            .enumerate()
+            .filter(|(idx, _)| remove_idxs.binary_search(idx).is_err())
+            .map(|(_, inst)| inst)
+            .collect();
+
+        kinds
+    }
+
     /// Remove every Debuff-classified instance; returns kinds removed. Blessed survives.
     pub fn cleanse_debuffs(&mut self) -> Vec<StatusEffectKind> {
         let mut removed = Vec::new();
@@ -278,6 +318,81 @@ mod tests {
         let mut bag = StatusBag::default();
         bag.apply(StatusEffectKind::Chilled, 2);
         assert_eq!(chilled_speed_delta(&bag, 80), -16);
+    }
+
+    // ── cleanse_n tests ──────────────────────────────────────────────────────
+
+    #[test]
+    fn cleanse_n_orders_by_duration_desc() {
+        let mut bag = StatusBag::default();
+        bag.apply(StatusEffectKind::Heated, 1);   // idx 0, dur 1
+        bag.apply(StatusEffectKind::Slowed, 3);   // idx 1, dur 3
+        bag.apply(StatusEffectKind::Paralyzed, 2); // idx 2, dur 2
+        let removed = bag.cleanse_n(Some(2));
+        // Should remove Slowed (dur 3) and Paralyzed (dur 2) first
+        assert_eq!(removed, vec![StatusEffectKind::Slowed, StatusEffectKind::Paralyzed]);
+        assert!(bag.has(&StatusEffectKind::Heated));
+        assert!(!bag.has(&StatusEffectKind::Slowed));
+        assert!(!bag.has(&StatusEffectKind::Paralyzed));
+    }
+
+    #[test]
+    fn cleanse_n_idx_asc_tiebreak_on_equal_duration() {
+        let mut bag = StatusBag::default();
+        bag.apply(StatusEffectKind::Heated, 2);    // idx 0, dur 2
+        bag.apply(StatusEffectKind::Slowed, 2);    // idx 1, dur 2
+        bag.apply(StatusEffectKind::Paralyzed, 2); // idx 2, dur 2
+        let removed = bag.cleanse_n(Some(2));
+        // duration all equal → insertion idx ASC: idx 0 (Heated) then idx 1 (Slowed)
+        assert_eq!(removed, vec![StatusEffectKind::Heated, StatusEffectKind::Slowed]);
+        assert!(!bag.has(&StatusEffectKind::Heated));
+        assert!(!bag.has(&StatusEffectKind::Slowed));
+        assert!(bag.has(&StatusEffectKind::Paralyzed));
+    }
+
+    #[test]
+    fn cleanse_n_none_removes_all_non_immune() {
+        let mut bag = StatusBag::default();
+        bag.apply(StatusEffectKind::Heated, 1);
+        bag.apply(StatusEffectKind::Chilled, 2);
+        bag.apply(StatusEffectKind::Blessed, 5);
+        let removed = bag.cleanse_n(None);
+        assert_eq!(removed.len(), 2);
+        assert!(removed.contains(&StatusEffectKind::Heated));
+        assert!(removed.contains(&StatusEffectKind::Chilled));
+        assert!(bag.has(&StatusEffectKind::Blessed));
+        assert!(!bag.has(&StatusEffectKind::Heated));
+        assert!(!bag.has(&StatusEffectKind::Chilled));
+    }
+
+    #[test]
+    fn cleanse_n_some_zero_is_noop() {
+        let mut bag = StatusBag::default();
+        bag.apply(StatusEffectKind::Heated, 3);
+        bag.apply(StatusEffectKind::Slowed, 2);
+        let removed = bag.cleanse_n(Some(0));
+        assert!(removed.is_empty());
+        assert!(bag.has(&StatusEffectKind::Heated));
+        assert!(bag.has(&StatusEffectKind::Slowed));
+    }
+
+    #[test]
+    fn cleanse_n_blessed_never_removed() {
+        let mut bag = StatusBag::default();
+        bag.apply(StatusEffectKind::Blessed, 10);
+        let removed = bag.cleanse_n(None);
+        assert!(removed.is_empty());
+        assert!(bag.has(&StatusEffectKind::Blessed));
+    }
+
+    #[test]
+    fn cleanse_n_count_exceeds_available_removes_all_without_panic() {
+        let mut bag = StatusBag::default();
+        bag.apply(StatusEffectKind::Heated, 2);
+        bag.apply(StatusEffectKind::Slowed, 1);
+        let removed = bag.cleanse_n(Some(10));
+        assert_eq!(removed.len(), 2);
+        assert!(bag.is_empty());
     }
 
     #[test]

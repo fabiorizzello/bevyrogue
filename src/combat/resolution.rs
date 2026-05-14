@@ -280,6 +280,7 @@ pub fn resolve_action(
         target_shape: skill.targeting.shape,
         custom_signals: skill.custom_signals.clone(),
         damage_curve: skill_damage_curve(&skill.effects),
+        cleanse_count: skill_cleanse_count(&skill.effects),
     })
 }
 
@@ -418,6 +419,15 @@ fn skill_self_advance(effects: &[Effect]) -> i32 {
             _ => None,
         })
         .unwrap_or(0)
+}
+
+/// Returns `Some(count)` when the skill carries `Effect::Cleanse`, else `None`.
+/// The inner `Option<u8>` is the count field from the effect (None = remove all).
+fn skill_cleanse_count(effects: &[Effect]) -> Option<Option<u8>> {
+    effects.iter().find_map(|effect| match effect {
+        Effect::Cleanse { count, .. } => Some(*count),
+        _ => None,
+    })
 }
 
 pub fn target_shape_is_executable_now(shape: TargetShape) -> bool {
@@ -580,6 +590,24 @@ pub fn apply_heal_only(
     outcome.sp_ok = true;
     outcome.succeeded = true;
     (outcome, vec![CombatEventKind::OnHealed { amount: healed, hp_after }])
+}
+
+/// Apply cleanse to a single target. KO targets are silently skipped (no event emitted).
+/// Caller must ensure `action.cleanse_count` is `Some(_)` before calling this.
+pub(crate) fn apply_cleanse_only(
+    action: &ResolvedAction,
+    bag: &mut StatusBag,
+    defender_alive: bool,
+) -> (ResolutionOutcome, Vec<CombatEventKind>) {
+    if !defender_alive {
+        return (ResolutionOutcome { sp_ok: true, ..ResolutionOutcome::default() }, vec![]);
+    }
+    let inner_count = action
+        .cleanse_count
+        .expect("apply_cleanse_only called on action without cleanse_count");
+    let kinds = bag.cleanse_n(inner_count);
+    let outcome = ResolutionOutcome { sp_ok: true, succeeded: true, ..ResolutionOutcome::default() };
+    (outcome, vec![CombatEventKind::OnCleansed { kinds }])
 }
 
 pub fn apply_effects(
