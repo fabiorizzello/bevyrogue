@@ -1,3 +1,4 @@
+use bevyrogue::combat::api::intent::CastId;
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::kernel::{
     PredatorLoopBlockedReason, PredatorLoopCapKind, PredatorLoopSignal,
@@ -271,6 +272,7 @@ fn predator_loop_event_and_snapshot_surfaces_are_serializable_and_readable() {
         source: target,
         target,
         follow_up_depth: 0,
+        cast_id: CastId::ROOT,
     };
     let json = serde_json::to_string(&event).expect("serialize predator event");
     assert!(json.contains("PredatorLoopResolved"));

@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevyrogue::combat::api::intent::CastId;
 use bevyrogue::combat::{
     bootstrap::{EncounterPreset, SelectionRequest, apply_composition, bootstrap_encounter},
     events::{CombatEvent, CombatEventKind},
@@ -209,12 +210,14 @@ fn s_m006_roster_smoke_deterministic() {
         source: UnitId(0),
         target: UnitId(0),
         follow_up_depth: 0,
+        cast_id: CastId::ROOT,
     });
     app.world_mut().write_message(CombatEvent {
         kind: CombatEventKind::TurnOrderSeeded { unit_ids: preview },
         source: UnitId(0),
         target: UnitId(0),
         follow_up_depth: 0,
+        cast_id: CastId::ROOT,
     });
     // One tick to flush bootstrap events into the log.
     app.update();

@@ -3,6 +3,7 @@
 use bevy::prelude::*;
 
 use crate::combat::{
+    api::intent::CastId,
     events::{CombatEvent, CombatEventKind},
     team::Team,
     unit::Unit,
@@ -136,6 +137,7 @@ pub fn ult_accumulation_system(
                     source: unit.id,
                     target: unit.id,
                     follow_up_depth: 0,
+                    cast_id: CastId::ROOT,
                 });
             }
         }
@@ -242,6 +244,7 @@ mod tests {
             source,
             target,
             follow_up_depth: 0,
+            cast_id: CastId::ROOT,
         }
     }
 
@@ -251,6 +254,7 @@ mod tests {
             source,
             target,
             follow_up_depth: 0,
+            cast_id: CastId::ROOT,
         }
     }
 
@@ -262,6 +266,7 @@ mod tests {
             source,
             target: source,
             follow_up_depth: depth,
+            cast_id: CastId::ROOT,
         }
     }
 
@@ -271,6 +276,7 @@ mod tests {
             source,
             target,
             follow_up_depth: 0,
+            cast_id: CastId::ROOT,
         }
     }
 

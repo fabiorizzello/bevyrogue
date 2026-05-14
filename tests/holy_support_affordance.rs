@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevyrogue::combat::api::intent::CastId;
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::blueprints::patamon::{
     HolySupportRejectReason, HolySupportState, HolySupportStep, HolySupportTransition,
@@ -41,6 +42,7 @@ fn emit_holy_transition(app: &mut App, transition: HolySupportTransition) {
         source: UnitId(1),
         target: UnitId(1),
         follow_up_depth: 0,
+        cast_id: CastId::ROOT,
     });
     app.update();
 }

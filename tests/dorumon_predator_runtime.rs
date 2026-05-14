@@ -1,5 +1,6 @@
 use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::blueprints;
+use bevyrogue::combat::api::intent::CastId;
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::kernel::{
     register_combat_kernel_runtime, CombatKernelTransition, PredatorLoopTransition,
@@ -138,6 +139,7 @@ fn dorumon_runtime_transitions_flow_through_canonical_predator_events() {
             source: action.source,
             target: action.target,
             follow_up_depth: 0,
+            cast_id: CastId::ROOT,
         });
     }
 

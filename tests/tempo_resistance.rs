@@ -99,6 +99,7 @@ fn advance_does_not_exceed_2x_max_av() {
 use bevy::ecs::message::Messages;
 use bevyrogue::combat::av::ActionValueUpdated;
 use bevyrogue::combat::bootstrap::spawn_unit_from_def;
+use bevyrogue::combat::api::intent::CastId;
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::state::CombatState;
 use bevyrogue::combat::team::Team;
@@ -164,6 +165,7 @@ fn system_applies_delay_with_resistance_via_combat_event() {
             source: uid(1),
             target: uid(10),
             follow_up_depth: 0,
+            cast_id: CastId::ROOT,
         },
     );
     app.update();
@@ -184,6 +186,7 @@ fn system_applies_delay_with_resistance_via_combat_event() {
             source: uid(1),
             target: uid(10),
             follow_up_depth: 0,
+            cast_id: CastId::ROOT,
         },
     );
     app.update();
@@ -209,6 +212,7 @@ fn system_applies_advance_without_touching_resistance_stack() {
             source: uid(1),
             target: uid(11),
             follow_up_depth: 0,
+            cast_id: CastId::ROOT,
         },
     );
     app.update();
@@ -383,6 +387,7 @@ fn boss_scenario_three_slow_hits_show_resistance_curve() {
             source: uid(1),
             target: boss_id,
             follow_up_depth: 0,
+            cast_id: CastId::ROOT,
         },
     );
     app.update();
@@ -411,6 +416,7 @@ fn boss_scenario_three_slow_hits_show_resistance_curve() {
             source: uid(1),
             target: boss_id,
             follow_up_depth: 0,
+            cast_id: CastId::ROOT,
         },
     );
     app.update();
@@ -439,6 +445,7 @@ fn boss_scenario_three_slow_hits_show_resistance_curve() {
             source: uid(1),
             target: boss_id,
             follow_up_depth: 0,
+            cast_id: CastId::ROOT,
         },
     );
     app.update();

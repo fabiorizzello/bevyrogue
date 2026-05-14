@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+use bevyrogue::combat::api::intent::CastId;
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::kernel::{
     CombatBeatId, CombatKernelRegistry, CombatKernelTransition, CombatTagChangeKind,
@@ -115,6 +116,7 @@ fn pump_kernel_transition(
             source,
             target,
             follow_up_depth: 0,
+            cast_id: CastId::ROOT,
         });
     }
 

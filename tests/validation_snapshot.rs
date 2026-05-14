@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevyrogue::combat::api::intent::CastId;
 use bevyrogue::combat::{
     events::{CombatEvent, CombatEventKind},
     floating::FloatingDamage,
@@ -195,6 +196,7 @@ fn runtime_registration_applies_all_kernel_transition_domains() {
             source: UnitId(1),
             target: UnitId(2),
             follow_up_depth: 0,
+            cast_id: CastId::ROOT,
         });
     }
 

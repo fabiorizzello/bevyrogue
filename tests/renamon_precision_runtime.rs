@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 use bevyrogue::combat::blueprints;
+use bevyrogue::combat::api::intent::CastId;
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::kernel::{PrecisionWindowKind, PrecisionCommitment, PrecisionReveal, PrecisionOutcome, register_combat_kernel_runtime};
 use bevyrogue::combat::kit::UnitSkills;
@@ -108,6 +109,7 @@ fn renamon_precision_loop_runtime_proof() {
             source: renamon_id,
             target: target_id,
             follow_up_depth: 0,
+            cast_id: CastId::ROOT,
         });
     }
 
@@ -128,6 +130,7 @@ fn renamon_precision_loop_runtime_proof() {
             source: renamon_id,
             target: target_id,
             follow_up_depth: 0,
+            cast_id: CastId::ROOT,
         });
     }
 
@@ -147,6 +150,7 @@ fn renamon_precision_loop_runtime_proof() {
             source: renamon_id,
             target: target_id,
             follow_up_depth: 0,
+            cast_id: CastId::ROOT,
         });
     }
 
@@ -166,6 +170,7 @@ fn renamon_precision_loop_runtime_proof() {
             source: renamon_id,
             target: target_id,
             follow_up_depth: 0,
+            cast_id: CastId::ROOT,
         });
     }
 

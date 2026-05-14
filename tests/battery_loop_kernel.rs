@@ -4,6 +4,7 @@ use bevyrogue::combat::battery_loop::{
     BATTERY_ENERGY_GRANT, BatteryLoopState, apply_battery_loop_transition,
     apply_battery_loop_transitions_system,
 };
+use bevyrogue::combat::api::intent::CastId;
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::kernel::{
     BatteryLoopBlockedReason, BatteryLoopChargeKind, BatteryLoopSignal, BatteryLoopStep,
@@ -26,6 +27,7 @@ fn emit_kernel_transition(app: &mut App, transition: CombatKernelTransition) {
         source: UnitId(1),
         target: UnitId(1),
         follow_up_depth: 0,
+        cast_id: CastId::ROOT,
     });
     app.update();
 }

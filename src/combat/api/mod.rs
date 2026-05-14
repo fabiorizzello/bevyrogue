@@ -26,7 +26,7 @@ pub mod skill_ctx;
 // Stable re-exports for the most-imported types.
 pub use applier::IntentQueue;
 pub use clock::Clock;
-pub use intent::{CastId, Intent};
+pub use intent::{CastId, CastIdGen, Intent};
 pub use registry::{
     AiUtilityExt, CueExt, ExtPoint, ExtRegistries, FormulaExt, HookExt, PredicateExt, Registry,
     SelectorExt, TickExt,

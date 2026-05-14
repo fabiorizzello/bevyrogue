@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 use bevyrogue::combat::blueprints;
+use bevyrogue::combat::api::intent::CastId;
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::blueprints::patamon::{HolySupportState, HolySupportTransition};
 use bevyrogue::combat::kernel::{CombatKernelRegistry, CombatKernelTransition};
@@ -92,6 +93,7 @@ fn emit_transitions(
                 source,
                 target,
                 follow_up_depth: 0,
+                cast_id: CastId::ROOT,
             });
         }
     }

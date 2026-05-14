@@ -12,6 +12,7 @@ use moonshine_kind::Instance;
 use crate::combat::bootstrap::{
     EncounterPreset, SelectionRequest, apply_composition, bootstrap_encounter,
 };
+use crate::combat::api::intent::CastId;
 use crate::combat::events::{CombatEvent, CombatEventKind};
 use crate::combat::follow_up::{
     follow_up_listener_system, form_identity_listener_system, resolve_follow_up_action_system,
@@ -254,6 +255,7 @@ fn headless_smoke_tick(
                         tamer_id: pcfg.tamer_id,
                     },
                     follow_up_depth: 0,
+                    cast_id: CastId::ROOT,
                 });
                 bootstrap.combat_events.write(CombatEvent {
                     source: UnitId(0),
@@ -262,6 +264,7 @@ fn headless_smoke_tick(
                         unit_ids: order.next_unit.map(|id| vec![id]).unwrap_or_default(),
                     },
                     follow_up_depth: 0,
+                    cast_id: CastId::ROOT,
                 });
             }
             Err(err) => {

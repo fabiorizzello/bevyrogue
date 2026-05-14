@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
+use crate::combat::api::intent::CastId;
 use crate::combat::events::{CombatEvent, CombatEventKind};
 use crate::combat::kernel::{
     CombatKernelState, CombatKernelTransition, PredatorLoopBlockedReason, PredatorLoopCapKind,
@@ -262,6 +263,7 @@ pub fn apply_predator_loop_transitions_system(
             source,
             target,
             follow_up_depth,
+            cast_id: CastId::ROOT,
         });
 
         debug!("PredatorLoopResolved {:?}", applied);

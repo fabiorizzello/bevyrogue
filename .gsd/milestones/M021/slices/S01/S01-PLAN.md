@@ -39,7 +39,7 @@ Tutti i call-site di `CombatEvent` emit (~50) aggiornati per accettare/propagare
   - Files: `src/combat/api/skill_ctx.rs`, `src/combat/api/applier.rs`, `src/combat/api/mod.rs`, `tests/intent_applier_canary.rs`
   - Verify: cargo check (headless + windowed) puliti. cargo test --test intent_applier_canary verde (finalizzato dopo T03). rg 'fn intent_applier' src/combat/api/applier.rs → 1. rg 'use bevy::winit|use bevy::render|use bevy_egui' src/combat/api/skill_ctx.rs src/combat/api/applier.rs → 0.
 
-- [ ] **T03: CastId propagation in CombatEvent + pipeline::step_app + emit sites** `est:L`
+- [x] **T03: CastId propagation in CombatEvent + pipeline::step_app + emit sites** `est:L`
   Aggiungere cast_id: CastId come campo di CombatEvent e propagarlo da pipeline::step_app a tutti i call-site emit (~50). Emit pre-cast usano CastId::ROOT. CastIdGen Resource monotonic. Aggiorna tutti i call-site CombatEvent {...} via rg. Aggiorna test pattern-match con .. rest. Test tests/cast_id_propagation.rs: (a) eventi durante cast condividono cast_id; (b) cast-scoped ≠ ROOT; (c) eventi pre-cast = ROOT.
   - Files: `src/combat/events.rs`, `src/combat/api/intent.rs`, `src/combat/turn_system/pipeline.rs`, `src/combat/turn_system/mod.rs`, `src/combat/follow_up.rs`, `src/combat/damage.rs`, `src/combat/resolution.rs`, `src/combat/status_effect.rs`, `src/combat/stun.rs`, `src/combat/toughness.rs`, `src/combat/ultimate.rs`, `src/combat/sp.rs`, `src/combat/kernel.rs`, `src/combat/jsonl_logger.rs`, `tests/cast_id_propagation.rs`
   - Verify: cargo check (headless + windowed) puliti. cargo test full suite (~74) verde. rg 'CombatEvent \{' src/ | rg -v 'cast_id' → 0. cargo test --test cast_id_propagation verde (3 assertion). JSONL output contiene cast_id su ogni evento.

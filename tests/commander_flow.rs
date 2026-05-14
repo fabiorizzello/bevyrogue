@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevyrogue::combat::types::{Attribute, EvoStage};
+use bevyrogue::combat::api::intent::CastId;
 use bevyrogue::combat::{
     events::{CombatEvent, CombatEventKind},
     state::CombatState,
@@ -150,6 +151,7 @@ fn ally_offensive_event_charges_commander_ultimate() {
         source: UnitId(1),
         target: UnitId(99),
         follow_up_depth: 0,
+        cast_id: CastId::ROOT,
     });
 
     app.update();
@@ -199,6 +201,7 @@ fn enemy_offensive_event_does_not_charge_commander_ultimate() {
         source: UnitId(2),
         target: UnitId(1),
         follow_up_depth: 0,
+        cast_id: CastId::ROOT,
     });
 
     app.update();

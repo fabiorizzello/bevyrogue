@@ -12,6 +12,7 @@ use bevyrogue::combat::bootstrap::{
     EncounterPreset, SelectionRequest, apply_composition, bootstrap_encounter,
 };
 use bevyrogue::combat::enemy_counterplay::EnemyCounterplayKit;
+use bevyrogue::combat::api::intent::CastId;
 use bevyrogue::combat::events::CombatEvent;
 use bevyrogue::combat::events::CombatEventKind;
 use bevyrogue::combat::follow_up::{FollowUpIntent, FollowUpTrace};
@@ -165,6 +166,7 @@ fn bootstrap_system(
                     tamer_id: UnitId(0),
                 },
                 follow_up_depth: 0,
+                cast_id: CastId::ROOT,
             });
             combat_events.write(CombatEvent {
                 source: UnitId(0),
@@ -173,6 +175,7 @@ fn bootstrap_system(
                     unit_ids: order.next_unit.map(|id| vec![id]).unwrap_or_default(),
                 },
                 follow_up_depth: 0,
+                cast_id: CastId::ROOT,
             });
             // AV system: advance_turn_system handles initial turn selection automatically.
         }

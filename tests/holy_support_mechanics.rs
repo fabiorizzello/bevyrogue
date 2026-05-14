@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+use bevyrogue::combat::api::intent::CastId;
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::blueprints::patamon::{
     GRACE_CAP, HolySupportDesignTag, HolySupportHook, HolySupportRejectReason, HolySupportState,
@@ -37,6 +38,7 @@ fn queue_kernel_transition(app: &mut App, transition: CombatKernelTransition) {
             source: UnitId(1),
             target: UnitId(2),
             follow_up_depth: 0,
+            cast_id: CastId::ROOT,
         });
     }
 }

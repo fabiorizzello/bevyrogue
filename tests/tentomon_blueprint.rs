@@ -107,6 +107,7 @@ fn integration_blueprint_to_kernel_state() {
         .push(signal("tentomon", "build_static_charge", 1));
 
     let transitions = blueprints::transitions_for_action(&action);
+    use bevyrogue::combat::api::intent::CastId;
     use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
     for transition in transitions {
         app.world_mut().write_message(CombatEvent {
@@ -114,6 +115,7 @@ fn integration_blueprint_to_kernel_state() {
             source: action.source,
             target: action.target,
             follow_up_depth: 0,
+            cast_id: CastId::ROOT,
         });
     }
 
