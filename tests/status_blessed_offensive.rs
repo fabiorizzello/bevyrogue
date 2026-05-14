@@ -97,6 +97,7 @@ fn run_apply(base_damage: i32, attacker_bag: Option<&StatusBag>) -> i32 {
         false,
         None,
         attacker_bag,
+        None,
     );
 
     events

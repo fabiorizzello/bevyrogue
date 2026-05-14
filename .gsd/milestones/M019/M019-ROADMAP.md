@@ -1,4 +1,4 @@
-# M019: DR pipeline + Heal/Cleanse primitives + PerHop guard
+# M019: M019: DR pipeline + Heal/Cleanse primitives + PerHop guard
 
 **Vision:** Estendere il kernel combat con tre primitive generiche minimali — damage reduction (BuffKind::DR), heal (% maxHP), cleanse (rimozione N debuff) — senza introdurre regole skill-specifiche nel kernel (P001). Chiudere il debt M018 sul `DamageCurve::PerHop` runtime length guard. Tutte le specificità per-skill (scaling ATK, cleanse selettivo per kind, immunità custom) restano fuori dal kernel e sono deferite a M021 (`trait Skill` + `SkillCtx`).
 
@@ -12,7 +12,7 @@
 
 ## Slices
 
-- [ ] **S01: BuffKind::DR primitive + damage formula integration** `risk:medium` `depends:[]`
+- [ ] **S01: S01** `risk:medium` `depends:[]`
   > After this: Test integration tests/dr_pipeline.rs dimostra DR singolo, DR×N sommato, DR+ARM combinato, DR durante Break — damage clampato a 0 senza panic, CombatEvent::Damage emesso con amount=0 dove applicabile.
 
 - [ ] **S02: Effect::Heal { amount_pct_max_hp } primitive** `risk:low` `depends:[S01]`
@@ -23,6 +23,8 @@
 
 - [ ] **S04: DamageCurve::PerHop runtime length guard (chiude follow-up #3 M018)** `risk:low` `depends:[S03]`
   > After this: Test tests/perhop_guard.rs: skill con DamageCurve::PerHop di lunghezza < hops_planned produce evento diagnostico (fail-fast o clamp — decisione registrata in DECISIONS.md) senza panic.
+
+## Boundary Map
 
 ## Boundary Map
 

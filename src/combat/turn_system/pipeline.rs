@@ -59,7 +59,7 @@ pub(crate) fn step_declaration(
     let (_entity, kit) =
         actors
             .iter()
-            .find_map(|(entity, _, unit, kit, _, _, _, _, _, _, _, _, _, _)| {
+            .find_map(|(entity, _, unit, kit, _, _, _, _, _, _, _, _, _, _, _)| {
                 if unit.id == attacker_id {
                     Some((entity, kit))
                 } else {
@@ -163,18 +163,10 @@ pub(crate) fn step_app(
     let target_id = inflight.action.target;
 
     let attacker_entity = actors.iter().find_map(|(entity, _, unit, ..)| {
-        if unit.id == attacker_id {
-            Some(entity)
-        } else {
-            None
-        }
+        if unit.id == attacker_id { Some(entity) } else { None }
     });
     let target_entity = actors.iter().find_map(|(entity, _, unit, ..)| {
-        if unit.id == target_id {
-            Some(entity)
-        } else {
-            None
-        }
+        if unit.id == target_id { Some(entity) } else { None }
     });
     let (Some(attacker_entity), Some(target_entity)) = (attacker_entity, target_entity) else {
         return;
@@ -193,7 +185,7 @@ pub(crate) fn step_app(
         let snapshot = {
             let entries = actors
                 .iter()
-                .map(|(_, team, unit, _, _, _, _, ko, _, _, _, _, _, slot)| {
+                .map(|(_, team, unit, _, _, _, _, ko, _, _, _, _, _, slot, _)| {
                     let alive = ko.is_none() && unit.hp_current > 0;
                     let hp_per_mille = if unit.hp_max > 0 {
                         ((unit.hp_current.max(0) as u64 * 1000) / unit.hp_max as u64) as u32
@@ -235,6 +227,7 @@ pub(crate) fn step_app(
                 _,
                 _,
                 mut att_streak_opt,
+                _,
                 _,
                 _,
             )) = actors.get_mut(attacker_entity)
@@ -354,7 +347,7 @@ pub(crate) fn step_app(
                 continue;
             };
 
-            let (_, att_team_val, att_unit_val, _, _, _, _, _, _, _, att_bag_val, _, _, _) =
+            let (_, att_team_val, att_unit_val, _, _, _, _, _, _, _, att_bag_val, _, _, _, _) =
                 &att_row;
             let (
                 _,
@@ -371,6 +364,7 @@ pub(crate) fn step_app(
                 _,
                 ref mut def_flags_val,
                 _,
+                ref mut def_dr_val,
             ) = def_row;
 
             let hp_before = def_unit_val.hp_current;
@@ -388,6 +382,7 @@ pub(crate) fn step_app(
                 defender_break_sealed,
                 def_bag_val.as_deref(),
                 att_bag_val.as_deref(),
+                def_dr_val.as_deref(),
             );
 
             for kind in core_events {
@@ -501,6 +496,7 @@ pub(crate) fn step_app(
                 _,
                 att_bag_opt,
                 mut att_streak_opt,
+                _,
                 _,
                 _,
             )) = actors.get_mut(attacker_entity)
@@ -664,6 +660,7 @@ pub(crate) fn step_app(
                 mut att_streak_opt,
                 _,
                 _,
+                _,
             )) = actors.get_mut(attacker_entity)
             else {
                 return;
@@ -781,7 +778,7 @@ pub(crate) fn step_app(
             let snapshot = {
                 let entries = actors
                     .iter()
-                    .map(|(_, team, unit, _, _, _, _, ko, _, _, _, _, _, slot)| {
+                    .map(|(_, team, unit, _, _, _, _, ko, _, _, _, _, _, slot, _)| {
                         let alive = ko.is_none() && unit.hp_current > 0;
                         let hp_per_mille = if unit.hp_max > 0 {
                             ((unit.hp_current.max(0) as u64 * 1000) / unit.hp_max as u64) as u32
@@ -844,7 +841,7 @@ pub(crate) fn step_app(
                 continue;
             };
 
-            let (_, _att_team_val, att_unit_val, _, _, _, _, _, _, _, att_bag_val, _, _, _) =
+            let (_, _att_team_val, att_unit_val, _, _, _, _, _, _, _, att_bag_val, _, _, _, _) =
                 &att_row;
             let (
                 _,
@@ -861,6 +858,7 @@ pub(crate) fn step_app(
                 _,
                 ref mut def_flags_val,
                 _,
+                ref mut _def_dr_val2,
             ) = def_row;
 
             let hp_before = def_unit_val.hp_current;
@@ -878,6 +876,7 @@ pub(crate) fn step_app(
                 defender_break_sealed,
                 _def_bag_val.as_deref(),
                 att_bag_val.as_deref(),
+                _def_dr_val2.as_deref(),
             );
 
             for kind in core_events {
@@ -990,6 +989,7 @@ pub(crate) fn step_app(
                 _,
                 att_bag_opt,
                 mut att_streak_opt,
+                _,
                 _,
                 _,
             )) = actors.get_mut(attacker_entity)
@@ -1148,6 +1148,7 @@ pub(crate) fn step_app(
             mut attacker_streak,
             attacker_round_flags,
             _attacker_slot,
+            _attacker_dr,
         )) = actors.get_mut(attacker_entity)
         else {
             return;
@@ -1242,6 +1243,7 @@ pub(crate) fn step_app(
             defender_break_sealed,
             None,
             attacker_bag.as_deref(),
+            None, // self-target: no defender DrBag
         );
 
         if !outcome.sp_ok {
@@ -1426,6 +1428,7 @@ pub(crate) fn step_app(
         mut attacker_streak,
         _attacker_round_flags,
         _attacker_slot,
+        _attacker_dr,
     ) = attacker;
     let (
         _,
@@ -1442,6 +1445,7 @@ pub(crate) fn step_app(
         _,
         mut defender_round_flags,
         _defender_slot,
+        mut defender_dr,
     ) = defender;
 
     if attacker_stunned.is_some() {
@@ -1551,6 +1555,7 @@ pub(crate) fn step_app(
         defender_break_sealed,
         defender_bag.as_deref(),
         attacker_bag.as_deref(),
+        defender_dr.as_deref(),
     );
 
     if !outcome.sp_ok {

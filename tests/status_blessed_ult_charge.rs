@@ -102,6 +102,7 @@ fn run(resolved: &ResolvedAction, attacker_bag: Option<&StatusBag>) -> i32 {
         false,
         None,
         attacker_bag,
+        None,
     );
 
     ult.current - before
@@ -135,6 +136,7 @@ fn run_ult_action(attacker_bag: Option<&StatusBag>) -> i32 {
         false,
         None,
         attacker_bag,
+        None,
     );
 
     ult.current

@@ -1,4 +1,5 @@
 use crate::combat::av::{AV_PER_SPEED, ActionValue, ActionValueUpdated, MAX_AV};
+use crate::combat::buffs::DrBag;
 use crate::combat::enemy_ai;
 use crate::combat::resistance::{self, TempoResistance};
 use crate::combat::rng::CombatRng;
@@ -67,6 +68,7 @@ pub(crate) type ResolveActorsQuery<'w, 's> = Query<
         Option<&'static mut BasicStreak>,
         Option<&'static mut RoundFlags>,
         Option<&'static SlotIndex>,
+        Option<&'static mut DrBag>,
     ),
 >;
 
@@ -200,6 +202,7 @@ pub fn resolve_action_system(
                         ko,
                         stunned,
                         commander,
+                        _,
                         _,
                         _,
                         _,
@@ -365,6 +368,7 @@ pub fn advance_turn_system(
             Option<&Commander>,
             Option<&mut RoundFlags>,
             Option<&mut RoundEnergyTracker>,
+            Option<&mut DrBag>,
         ),
         Without<Ko>,
     >,
@@ -395,7 +399,7 @@ pub fn advance_turn_system(
     let snapshots: Vec<Snap> = query
         .iter_mut()
         .map(
-            |(entity, unit, team, _, _, _, stunned, status_bag, skills, ult, toughness, commander, _, _)| {
+            |(entity, unit, team, _, _, _, stunned, status_bag, skills, ult, toughness, commander, _, _, _)| {
                 Snap {
                     entity,
                     id: unit.id,
@@ -444,6 +448,7 @@ pub fn advance_turn_system(
                 _,
                 mut round_flags_opt,
                 mut round_energy_tracker_opt,
+                mut dr_bag_opt,
             )) = query.get_mut(snap.entity)
             else {
                 continue;
@@ -578,6 +583,11 @@ pub fn advance_turn_system(
                 }
                 // Do NOT remove the bag component — it persists empty and is re-used on next apply.
             }
+
+            // Tick DrBag: decrement durations and drop expired DR instances.
+            if let Some(ref mut dr) = dr_bag_opt {
+                dr.tick_all();
+            }
         } // mutable borrow released
 
         // Enemy AI: emit ActionIntent for enemy units whose action wasn't cancelled
@@ -624,7 +634,7 @@ pub fn advance_turn_system(
 
     let mut units_ready: Vec<(UnitId, Entity, i32)> = Vec::new();
 
-    for (entity, unit, _, speed_opt, speed_mod_opt, av_opt, stunned, status_bag_opt, _, _, _, _, _, _) in
+    for (entity, unit, _, speed_opt, speed_mod_opt, av_opt, stunned, status_bag_opt, _, _, _, _, _, _, _) in
         query.iter_mut()
     {
         if stunned.is_some() {
@@ -655,7 +665,7 @@ pub fn advance_turn_system(
 
     if let Some((unit_id_ready, entity_ready, _)) = units_ready.first() {
         if turn_order.active_unit.is_none() {
-            let Ok((_, _, _, _, _, Some(mut av), _, _, _, _, _, _, _, _)) =
+            let Ok((_, _, _, _, _, Some(mut av), _, _, _, _, _, _, _, _, _)) =
                 query.get_mut(*entity_ready)
             else {
                 return;

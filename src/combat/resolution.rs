@@ -2,6 +2,7 @@ use std::collections::HashSet;
 
 use crate::combat::{
     StatusEffectKind,
+    buffs::DrBag,
     damage::{AttackContext, DamageBreakdown, calculate_damage},
     status_effect::StatusBag,
     events::CombatEventKind,
@@ -426,6 +427,7 @@ pub fn apply_damage_only(
     defender_break_sealed: bool,
     defender_status: Option<&StatusBag>,
     attacker_statuses: Option<&StatusBag>,
+    defender_dr: Option<&DrBag>,
 ) -> (ResolutionOutcome, Vec<CombatEventKind>) {
     if defender_is_commander {
         return (
@@ -482,6 +484,7 @@ pub fn apply_damage_only(
             &toughness_weaknesses,
             defender_status,
             attacker_dmg_mult,
+            defender_dr,
         );
         defender_unit.hp_current -= amount;
         let broke = if can_apply_toughness_damage(defender_team, defender_tough.as_deref()) {
@@ -541,6 +544,7 @@ pub fn apply_effects(
     defender_break_sealed: bool,
     defender_status: Option<&StatusBag>,
     attacker_statuses: Option<&StatusBag>,
+    defender_dr: Option<&DrBag>,
 ) -> (ResolutionOutcome, Vec<CombatEventKind>) {
     let mut events = Vec::new();
 
@@ -633,6 +637,7 @@ pub fn apply_effects(
                 tag_mod_pct,
                 triangle_mod_pct,
                 status_amp_pct: _status_amp_pct,
+                ..
             } = calculate_damage(
                 attacker_unit,
                 &attack,
@@ -640,6 +645,7 @@ pub fn apply_effects(
                 &toughness_weaknesses,
                 defender_status,
                 attacker_dmg_mult,
+                defender_dr,
             );
             defender_unit.hp_current -= amount;
             let broke = if can_apply_toughness_damage(defender_team, defender_tough.as_deref()) {
@@ -976,6 +982,7 @@ mod tests {
             false,
             None,
             None,
+            None,
         );
 
         assert!(outcome.sp_ok);
@@ -1026,6 +1033,7 @@ mod tests {
             false,
             None,
             None,
+            None,
         );
 
         assert!(outcome.sp_ok);
@@ -1070,6 +1078,7 @@ mod tests {
             false,
             None,
             None,
+            None,
         );
 
         assert!(!outcome.sp_ok);
@@ -1105,6 +1114,7 @@ mod tests {
             &mut BasicStreak::default(),
             false,
             false,
+            None,
             None,
             None,
         );
@@ -1148,6 +1158,7 @@ mod tests {
             false,
             None,
             None,
+            None,
         );
 
         assert!(!outcome.broke);
@@ -1185,6 +1196,7 @@ mod tests {
             &mut BasicStreak::default(),
             false,
             false,
+            None,
             None,
             None,
         );
@@ -1225,6 +1237,7 @@ mod tests {
             &mut BasicStreak::default(),
             false,
             false,
+            None,
             None,
             None,
         );
@@ -1270,6 +1283,7 @@ mod tests {
             false,
             None,
             None,
+            None,
         );
 
         assert!(outcome.sp_ok);
@@ -1312,6 +1326,7 @@ mod tests {
             &mut BasicStreak::default(),
             false,
             false,
+            None,
             None,
             None,
         );
@@ -1403,6 +1418,7 @@ mod tests {
             false,
             None,
             None,
+            None,
         );
 
         assert_eq!(defender.hp_current, 50); // No change
@@ -1449,6 +1465,7 @@ mod tests {
             false,
             None,
             None,
+            None,
         );
         apply_effects(
             &basic_resolved,
@@ -1462,6 +1479,7 @@ mod tests {
             &mut streak,
             false,
             false,
+            None,
             None,
             None,
         );
@@ -1488,6 +1506,7 @@ mod tests {
             &mut streak,
             false,
             false,
+            None,
             None,
             None,
         );
@@ -1532,6 +1551,7 @@ mod tests {
             false,
             None,
             None,
+            None,
         );
 
         assert_eq!(sp.current, 0, "Adult paid full 3 SP, no discount");
@@ -1573,6 +1593,7 @@ mod tests {
             false,
             None,
             None,
+            None,
         );
 
         assert!(outcome.sp_ok);
@@ -1611,6 +1632,7 @@ mod tests {
             &mut streak,
             false,
             false,
+            None,
             None,
             None,
         );
@@ -1663,6 +1685,7 @@ mod tests {
             &mut streak,
             false,
             false,
+            None,
             None,
             None,
         );

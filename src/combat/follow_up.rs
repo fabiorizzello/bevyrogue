@@ -9,6 +9,7 @@ use crate::combat::{
         FollowUpConfig, FollowUpTrigger, FormIdentityConfig, FormIdentityKit, FormIdentityTrigger,
         UnitSkills,
     },
+    buffs::DrBag,
     stun::Stunned,
     team::Team,
     turn_system::{ActionIntent, emit_combat_beat, emit_combat_event, step_app, step_declaration},
@@ -105,6 +106,7 @@ type ResolveActorsQuery<'w, 's> = Query<
         Option<&'static mut BasicStreak>,
         Option<&'static mut RoundFlags>,
         Option<&'static SlotIndex>,
+        Option<&'static mut DrBag>,
     ),
 >;
 
@@ -588,7 +590,7 @@ pub fn resolve_follow_up_action_system(
         );
 
         if intent.origin_kind == FollowUpOriginKind::FormIdentity {
-            for (_, _, unit, _, _, _, _, _, _, _, _, _, mut round_flags, _) in actors.iter_mut() {
+            for (_, _, unit, _, _, _, _, _, _, _, _, _, mut round_flags, _, _) in actors.iter_mut() {
                 if unit.id == intent.attacker {
                     if let Some(ref mut flags) = round_flags {
                         flags.form_identity_used = true;

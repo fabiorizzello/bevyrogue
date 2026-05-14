@@ -1,4 +1,5 @@
 use crate::combat::{
+    buffs::{DrBag, sum_dr},
     status_effect::{StatusBag, status_amp_pct},
     types::{Attribute, DamageTag},
     unit::Unit,
@@ -71,6 +72,9 @@ pub struct DamageBreakdown {
     pub triangle_mod_pct: i32,
     /// Status amplification as integer percentage: 115 (Heated+Fire or Chilled+Ice), 100 otherwise.
     pub status_amp_pct: i32,
+    /// DR mitigation as integer percentage: 0 = no DR, 30 = 30% reduction (0.70 multiplier).
+    /// Derived from `sum_dr(defender_dr)` clamped to [0, 1] via `(1.0 - sum).max(0.0)`.
+    pub dr_reduction_pct: i32,
 }
 
 /// Compute final damage from `attacker` landing `attack` on `defender`.
@@ -80,9 +84,10 @@ pub struct DamageBreakdown {
 ///   tri_mod           = triangle_modifiers(attacker.attribute, defender.attribute).dmg_modifier
 ///   status_amp_mod    = status_amp_pct(defender_status, damage_tag) / 100  (1.15 or 1.0)
 ///   attacker_dmg_mult = 1.15 when attacker has Blessed, else 1.0
-///   damage            = round(base × tag_mod × tri_mod × break_mod × status_amp_mod × attacker_dmg_mult)
+///   dr_mod            = (1.0 - sum_dr(defender_dr)).max(0.0)  — multiplicative mitigation
+///   damage            = round(base × tag_mod × tri_mod × break_mod × status_amp_mod × attacker_dmg_mult × dr_mod).max(0)
 ///
-/// No clamp: the multiplicative model is naturally bounded by the discrete modifier set.
+/// DR is applied as a final multiplicative step; the result is floored to 0 (non-negative).
 pub fn calculate_damage(
     attacker: &Unit,
     attack: &AttackContext,
@@ -90,6 +95,7 @@ pub fn calculate_damage(
     weaknesses: &[DamageTag],
     defender_status: Option<&StatusBag>,
     attacker_dmg_mult: f32,
+    defender_dr: Option<&DrBag>,
 ) -> DamageBreakdown {
     let tag_mod = if weaknesses.contains(&attack.damage_tag) {
         1.25_f32
@@ -104,14 +110,24 @@ pub fn calculate_damage(
         .map(|bag| status_amp_pct(bag, attack.damage_tag))
         .unwrap_or(100);
     let amp_mod = amp_pct as f32 / 100.0;
-    let final_damage =
-        (attack.base_damage as f32 * tag_mod * tri.dmg_modifier * break_mod * amp_mod * attacker_dmg_mult).round()
-            as i32;
+    let dr_sum = sum_dr(defender_dr);
+    let dr_mod = (1.0_f32 - dr_sum).max(0.0_f32);
+    let final_damage = (attack.base_damage as f32
+        * tag_mod
+        * tri.dmg_modifier
+        * break_mod
+        * amp_mod
+        * attacker_dmg_mult
+        * dr_mod)
+        .round()
+        .max(0.0) as i32;
+    let dr_reduction_pct = (dr_sum.min(1.0) * 100.0).round() as i32;
     DamageBreakdown {
         final_damage,
         tag_mod_pct: (tag_mod * 100.0).round() as i32,
         triangle_mod_pct: (tri.dmg_modifier * 100.0).round() as i32,
         status_amp_pct: amp_pct,
+        dr_reduction_pct,
     }
 }
 
@@ -191,6 +207,7 @@ mod tests {
                 &[DamageTag::Fire],
                 None,
                 1.0,
+                None,
             )
             .final_damage,
             139
@@ -202,7 +219,7 @@ mod tests {
         let a = make_unit(Attribute::Vaccine, vec![]);
         let d = make_unit(Attribute::Virus, vec![]);
         assert_eq!(
-            calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[DamageTag::Fire], None, 1.0).final_damage,
+            calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[DamageTag::Fire], None, 1.0, None).final_damage,
             278
         );
     }
@@ -219,6 +236,7 @@ mod tests {
                 &[DamageTag::Fire],
                 None,
                 1.0,
+                None,
             )
             .final_damage,
             125
@@ -230,7 +248,7 @@ mod tests {
         let a = make_unit(Attribute::Data, vec![]);
         let d = make_unit(Attribute::Data, vec![]);
         assert_eq!(
-            calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[DamageTag::Fire], None, 1.0).final_damage,
+            calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[DamageTag::Fire], None, 1.0, None).final_damage,
             250
         );
     }
@@ -247,6 +265,7 @@ mod tests {
                 &[DamageTag::Fire],
                 None,
                 1.0,
+                None,
             )
             .final_damage,
             109
@@ -258,7 +277,7 @@ mod tests {
         let a = make_unit(Attribute::Virus, vec![]);
         let d = make_unit(Attribute::Vaccine, vec![]);
         assert_eq!(
-            calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[DamageTag::Fire], None, 1.0).final_damage,
+            calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[DamageTag::Fire], None, 1.0, None).final_damage,
             218
         );
     }
@@ -270,7 +289,7 @@ mod tests {
         let a = make_unit(Attribute::Vaccine, vec![]);
         let d = make_unit(Attribute::Virus, vec![]);
         assert_eq!(
-            calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None, 1.0).final_damage,
+            calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None, 1.0, None).final_damage,
             111
         );
     }
@@ -280,7 +299,7 @@ mod tests {
         let a = make_unit(Attribute::Vaccine, vec![]);
         let d = make_unit(Attribute::Virus, vec![]);
         assert_eq!(
-            calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[], None, 1.0).final_damage,
+            calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[], None, 1.0, None).final_damage,
             222
         );
     }
@@ -290,7 +309,7 @@ mod tests {
         let a = make_unit(Attribute::Data, vec![]);
         let d = make_unit(Attribute::Data, vec![]);
         assert_eq!(
-            calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None, 1.0).final_damage,
+            calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None, 1.0, None).final_damage,
             100
         );
     }
@@ -300,7 +319,7 @@ mod tests {
         let a = make_unit(Attribute::Data, vec![]);
         let d = make_unit(Attribute::Data, vec![]);
         assert_eq!(
-            calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[], None, 1.0).final_damage,
+            calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[], None, 1.0, None).final_damage,
             200
         );
     }
@@ -310,7 +329,7 @@ mod tests {
         let a = make_unit(Attribute::Virus, vec![]);
         let d = make_unit(Attribute::Vaccine, vec![]);
         assert_eq!(
-            calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None, 1.0).final_damage,
+            calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None, 1.0, None).final_damage,
             87
         );
     }
@@ -320,7 +339,7 @@ mod tests {
         let a = make_unit(Attribute::Virus, vec![]);
         let d = make_unit(Attribute::Vaccine, vec![]);
         assert_eq!(
-            calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[], None, 1.0).final_damage,
+            calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[], None, 1.0, None).final_damage,
             174
         );
     }
@@ -332,7 +351,7 @@ mod tests {
         let a = make_unit(Attribute::Vaccine, vec![]);
         let d = make_unit(Attribute::Virus, vec![DamageTag::Fire]);
         assert_eq!(
-            calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None, 1.0).final_damage,
+            calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None, 1.0, None).final_damage,
             83
         );
     }
@@ -342,7 +361,7 @@ mod tests {
         let a = make_unit(Attribute::Vaccine, vec![]);
         let d = make_unit(Attribute::Virus, vec![DamageTag::Fire]);
         assert_eq!(
-            calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[], None, 1.0).final_damage,
+            calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[], None, 1.0, None).final_damage,
             167
         );
     }
@@ -352,7 +371,7 @@ mod tests {
         let a = make_unit(Attribute::Data, vec![]);
         let d = make_unit(Attribute::Data, vec![DamageTag::Fire]);
         assert_eq!(
-            calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None, 1.0).final_damage,
+            calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None, 1.0, None).final_damage,
             75
         );
     }
@@ -362,7 +381,7 @@ mod tests {
         let a = make_unit(Attribute::Data, vec![]);
         let d = make_unit(Attribute::Data, vec![DamageTag::Fire]);
         assert_eq!(
-            calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[], None, 1.0).final_damage,
+            calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[], None, 1.0, None).final_damage,
             150
         );
     }
@@ -372,7 +391,7 @@ mod tests {
         let a = make_unit(Attribute::Virus, vec![]);
         let d = make_unit(Attribute::Vaccine, vec![DamageTag::Fire]);
         assert_eq!(
-            calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None, 1.0).final_damage,
+            calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None, 1.0, None).final_damage,
             65
         );
     }
@@ -382,7 +401,7 @@ mod tests {
         let a = make_unit(Attribute::Virus, vec![]);
         let d = make_unit(Attribute::Vaccine, vec![DamageTag::Fire]);
         assert_eq!(
-            calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[], None, 1.0).final_damage,
+            calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[], None, 1.0, None).final_damage,
             131
         );
     }
@@ -397,11 +416,11 @@ mod tests {
         let d = make_unit(Attribute::Virus, vec![]);
         // Even with all modifiers active, base=0 always produces 0
         assert_eq!(
-            calculate_damage(&a, &atk(DamageTag::Fire, 0, false), &d, &[DamageTag::Fire], None, 1.0).final_damage,
+            calculate_damage(&a, &atk(DamageTag::Fire, 0, false), &d, &[DamageTag::Fire], None, 1.0, None).final_damage,
             0
         );
         assert_eq!(
-            calculate_damage(&a, &atk(DamageTag::Fire, 0, true), &d, &[DamageTag::Fire], None, 1.0).final_damage,
+            calculate_damage(&a, &atk(DamageTag::Fire, 0, true), &d, &[DamageTag::Fire], None, 1.0, None).final_damage,
             0
         );
     }
@@ -418,7 +437,7 @@ mod tests {
         ] {
             let d = make_unit(def_attr, vec![]);
             assert_eq!(
-                calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None, 1.0).final_damage,
+                calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None, 1.0, None).final_damage,
                 100,
                 "expected neutral vs {def_attr:?}"
             );
@@ -431,7 +450,7 @@ mod tests {
         let a = make_unit(Attribute::Data, vec![]);
         let d = make_unit(Attribute::Data, vec![]);
         assert_eq!(
-            calculate_damage(&a, &atk(DamageTag::Physical, 100, false), &d, &[], None, 1.0).final_damage,
+            calculate_damage(&a, &atk(DamageTag::Physical, 100, false), &d, &[], None, 1.0, None).final_damage,
             100
         );
     }
@@ -442,8 +461,54 @@ mod tests {
         let a = make_unit(Attribute::Virus, vec![]);
         let d = make_unit(Attribute::Vaccine, vec![DamageTag::Fire]);
         assert_eq!(
-            calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None, 1.0).final_damage,
+            calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None, 1.0, None).final_damage,
             65
         );
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // DR integration tests
+    // ──────────────────────────────────────────────────────────────────────────
+
+    #[test]
+    fn dr_30pct_reduces_damage_multiplicatively() {
+        // base=100, neutral, dr=0.30 → factor=0.70 → 70
+        use crate::combat::buffs::DrBag;
+        let a = make_unit(Attribute::Data, vec![]);
+        let d = make_unit(Attribute::Data, vec![]);
+        let mut bag = DrBag::default();
+        bag.apply(0.30, 2);
+        let bd = calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None, 1.0, Some(&bag));
+        assert_eq!(bd.final_damage, 70);
+        assert_eq!(bd.dr_reduction_pct, 30);
+    }
+
+    #[test]
+    fn dr_100pct_floors_damage_to_zero() {
+        // sum_dr=1.0 → factor=0.0 → 0
+        use crate::combat::buffs::DrBag;
+        let a = make_unit(Attribute::Data, vec![]);
+        let d = make_unit(Attribute::Data, vec![]);
+        let mut bag = DrBag::default();
+        bag.apply(1.0, 1);
+        assert_eq!(
+            calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None, 1.0, Some(&bag)).final_damage,
+            0
+        );
+    }
+
+    #[test]
+    fn dr_over_100pct_still_floors_to_zero() {
+        // unclamped sum > 1.0 → factor=max(0,<0)=0 → damage=0
+        use crate::combat::buffs::DrBag;
+        let a = make_unit(Attribute::Data, vec![]);
+        let d = make_unit(Attribute::Data, vec![]);
+        let mut bag = DrBag::default();
+        bag.apply(0.6, 1);
+        bag.apply(0.6, 1);
+        let bd = calculate_damage(&a, &atk(DamageTag::Fire, 100, false), &d, &[], None, 1.0, Some(&bag));
+        assert_eq!(bd.final_damage, 0);
+        // dr_reduction_pct is capped at 100 for display purposes
+        assert_eq!(bd.dr_reduction_pct, 100);
     }
 }
