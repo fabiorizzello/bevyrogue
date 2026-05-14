@@ -24,7 +24,7 @@ use bevyrogue::combat::{
     team::Team,
     turn_order::{TurnAdvanced, TurnOrder},
     turn_system::{ActionIntent, advance_turn_system},
-    twin_core::TwinCoreState,
+    blueprints::agumon::TwinCoreState,
     types::{Attribute, EvoStage, UnitId},
     ultimate::{UltAccumulationTrigger, UltimateCharge},
     unit::Unit,

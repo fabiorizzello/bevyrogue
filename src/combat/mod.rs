@@ -80,30 +80,8 @@ pub mod counterplay;
 /// Per-Digimon blueprint routing from RON custom signals into generic kernel transitions.
 pub mod blueprints;
 
-// ─── Identity passives ───────────────────────────────────────────────────────
-// One module per Digimon identity that reacts to `CombatEvent`s. Aim is to
-// migrate each into `blueprints/<digimon>/` so the core stays digimon-agnostic.
-
-/// Twin Core (Agumon): Heat / HeatSink dual builder–spender loop.
-///
-/// Lives in `blueprints/agumon/identity.rs` after Q8; this re-export keeps
-/// every legacy `crate::combat::twin_core::*` path resolvable without
-/// touching the ~75 sites that import it.
-pub use blueprints::agumon::identity as twin_core;
-/// Holy support (Patamon): Grace accumulator / Martyr-light spender.
-///
-/// Lives in `blueprints/patamon/identity.rs` after Q9-patamon; this re-export
-/// keeps every legacy `crate::combat::holy_support::*` path resolvable without
-/// touching existing import sites.
-pub use blueprints::patamon::identity as holy_support;
 /// Battle loop redesign: Static/Circuit charge and battery payoff state.
 pub mod battery_loop;
-/// Predator loop (Dorumon): Exploit / Prey Lock / Berserk builder–spender.
-///
-/// Lives in `blueprints/dorumon/identity.rs` after Q9-dorumon; this re-export
-/// keeps every legacy `crate::combat::predator_loop::*` path resolvable
-/// without touching existing import sites.
-pub use blueprints::dorumon::identity as predator_loop;
 /// Precision mind game (Renamon): exploit weakness / Kitsune Grace stacks.
 pub mod precision_mind_game;
 

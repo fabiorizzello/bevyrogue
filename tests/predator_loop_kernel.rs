@@ -6,7 +6,7 @@ use bevyrogue::combat::kernel::{
 use bevyrogue::combat::observability::{
     ValidationSnapshot, ValidationTwinCoreSnapshot, format_validation_snapshot,
 };
-use bevyrogue::combat::predator_loop::{PredatorLoopSnapshot, PredatorLoopState};
+use bevyrogue::combat::blueprints::dorumon::{PredatorLoopSnapshot, PredatorLoopState};
 use bevyrogue::combat::state::CombatPhase;
 use bevyrogue::combat::types::UnitId;
 

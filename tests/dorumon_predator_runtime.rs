@@ -6,7 +6,7 @@ use bevyrogue::combat::kernel::{
 };
 use bevyrogue::combat::log::ActionLog;
 use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
-use bevyrogue::combat::predator_loop::PredatorLoopState;
+use bevyrogue::combat::blueprints::dorumon::PredatorLoopState;
 use bevyrogue::combat::sp::SpPool;
 use bevyrogue::combat::state::{CombatState, ResolvedAction, UltEffect};
 use bevyrogue::combat::team::Team;

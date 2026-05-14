@@ -6,7 +6,7 @@ use bevyrogue::combat::kernel::{
     CombatTagState, CombatTagTransition, TacticalCyclePhase, TacticalCycleStep,
     TacticalCycleTransition, TwinCoreSignal,
 };
-use bevyrogue::combat::twin_core::{
+use bevyrogue::combat::blueprints::agumon::{
     TwinCoreDesignTag, TwinCoreHook, TwinCoreState, apply_twin_core_transitions_system,
     twin_core_design_tag,
 };

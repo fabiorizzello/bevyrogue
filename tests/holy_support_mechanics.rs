@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
-use bevyrogue::combat::holy_support::{
+use bevyrogue::combat::blueprints::patamon::{
     GRACE_CAP, HolySupportDesignTag, HolySupportHook, HolySupportRejectReason, HolySupportState,
     HolySupportStep, HolySupportTransition,
     classify_holy_support_tag, holy_support_design_tag,
@@ -15,7 +15,7 @@ use bevyrogue::combat::log::ActionLog;
 use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
 use bevyrogue::combat::sp::SpPool;
 use bevyrogue::combat::state::CombatState;
-use bevyrogue::combat::twin_core::TwinCoreState;
+use bevyrogue::combat::blueprints::agumon::TwinCoreState;
 use bevyrogue::combat::types::UnitId;
 
 fn app_with_holy_support() -> App {

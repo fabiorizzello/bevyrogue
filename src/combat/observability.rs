@@ -7,7 +7,7 @@ use crate::combat::{
     av::ActionValue,
     battery_loop::BatteryLoopState,
     floating::FloatingDamage,
-    holy_support::HolySupportSnapshot,
+    blueprints::patamon::HolySupportSnapshot,
     kernel::{
         BatteryLoopBlockedReason, BatteryLoopTransition, PrecisionCommitment,
         PrecisionMindGamePhase, PrecisionMindGameTransition, PrecisionOutcome, PrecisionReveal,
@@ -15,7 +15,7 @@ use crate::combat::{
     },
     log::{ActionLog, LogEntry},
     precision_mind_game::PrecisionMindGameSnapshot,
-    predator_loop::{PredatorLoopSnapshot, PredatorLoopState},
+    blueprints::dorumon::{PredatorLoopSnapshot, PredatorLoopState},
     sp::SpPool,
     state::{CombatPhase, CombatState},
     status_effect::{StatusBag, StatusEffectKind},
@@ -297,10 +297,10 @@ pub fn capture_validation_snapshot(
     let floating_live = floating_query.iter(world).count();
 
     let twin_core = world
-        .get_resource::<crate::combat::twin_core::TwinCoreState>()
+        .get_resource::<crate::combat::blueprints::agumon::TwinCoreState>()
         .ok_or(ValidationSnapshotError::MissingResource("TwinCoreState"))?;
     let holy_support = world
-        .get_resource::<crate::combat::holy_support::HolySupportState>()
+        .get_resource::<crate::combat::blueprints::patamon::HolySupportState>()
         .map(HolySupportSnapshot::from);
     let predator_loop = world
         .get_resource::<PredatorLoopState>()
@@ -438,7 +438,7 @@ fn format_predator_loop_snapshot(snapshot: Option<&PredatorLoopSnapshot>) -> Str
 }
 
 fn format_predator_targets(
-    targets: &[crate::combat::predator_loop::PredatorTargetSnapshot],
+    targets: &[crate::combat::blueprints::dorumon::PredatorTargetSnapshot],
 ) -> String {
     let joined = targets
         .iter()

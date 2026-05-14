@@ -12,6 +12,12 @@ pub mod hooks;
 pub mod identity;
 pub mod signals;
 
+pub use identity::{
+    DEFAULT_BERSERK_STRAIN_THRESHOLD, DEFAULT_EXPLOIT_CAP, DEFAULT_PREY_LOCK_DURATION,
+    PredatorLockState, PredatorLoopDesignTag, PredatorLoopHook, PredatorLoopRequestKind,
+    PredatorLoopSnapshot, PredatorLoopState, PredatorTargetSnapshot, PredatorTargetState,
+    apply_predator_loop_transition, apply_predator_loop_transitions_system,
+};
 pub use signals::{OWNER, dispatch};
 
 pub struct DorumonPlugin;

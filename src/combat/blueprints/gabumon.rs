@@ -1,6 +1,6 @@
 use crate::combat::kernel::CombatKernelTransition;
 use crate::combat::state::ResolvedAction;
-use crate::combat::twin_core::{TwinCoreDesignTag, twin_core_added_tag_transition};
+use crate::combat::blueprints::agumon::{TwinCoreDesignTag, twin_core_added_tag_transition};
 use crate::data::skills_ron::SkillCustomSignal;
 
 use super::{CustomSignalDispatchError, amount_payload};
