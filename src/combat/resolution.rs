@@ -594,7 +594,7 @@ pub fn apply_heal_only(
 
 /// Apply cleanse to a single target. KO targets are silently skipped (no event emitted).
 /// Caller must ensure `action.cleanse_count` is `Some(_)` before calling this.
-pub(crate) fn apply_cleanse_only(
+pub fn apply_cleanse_only(
     action: &ResolvedAction,
     bag: &mut StatusBag,
     defender_alive: bool,

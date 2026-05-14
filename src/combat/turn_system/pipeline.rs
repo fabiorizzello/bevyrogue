@@ -13,8 +13,8 @@ use crate::combat::floating::FloatingDamage;
 use crate::combat::kernel::{CombatBeatId, CombatKernelRegistry};
 use crate::combat::log::{ActionLog, LogEntry};
 use crate::combat::resolution::{
-    apply_damage_only, apply_effects, apply_heal_only, compute_hop_damage, resolve_action,
-    resolve_targets, select_bounce_hop, target_shape_rejection_reason,
+    apply_cleanse_only, apply_damage_only, apply_effects, apply_heal_only, compute_hop_damage,
+    resolve_action, resolve_targets, select_bounce_hop, target_shape_rejection_reason,
 };
 use crate::combat::resolution::{TargetEntry, TargetableSnapshot};
 use crate::combat::rng::CombatRng;
@@ -337,15 +337,31 @@ pub(crate) fn step_app(
                 continue;
             };
 
-            // AllAllies heal fan-out: only the defender unit is needed; skip self-exclude.
+            // AllAllies fan-out: heal or cleanse — only the defender unit/bag is needed.
             if inflight.action.target_shape == TargetShape::AllAllies {
-                let Ok((_, _, mut def_unit, _, _, _, _, _, _, _, _, _, _, _, _)) =
+                let Ok((_, _, mut def_unit, _, _, _, _, def_ko, _, _, mut def_bag, _, _, _, _)) =
                     actors.get_mut(def_entity)
                 else {
                     continue;
                 };
-                let (_outcome, heal_events) = apply_heal_only(&inflight.action, &mut def_unit);
-                for kind in heal_events {
+                let dispatch_events: Vec<CombatEventKind> = if inflight.action.heal_pct > 0 {
+                    let (_outcome, evs) = apply_heal_only(&inflight.action, &mut def_unit);
+                    evs
+                } else if inflight.action.cleanse_count.is_some() {
+                    let defender_alive = def_ko.is_none() && def_unit.hp_current > 0;
+                    if let Some(ref mut bag) = def_bag {
+                        let (_outcome, evs) =
+                            apply_cleanse_only(&inflight.action, &mut **bag, defender_alive);
+                        evs
+                    } else if defender_alive {
+                        vec![CombatEventKind::OnCleansed { kinds: vec![] }]
+                    } else {
+                        vec![]
+                    }
+                } else {
+                    vec![]
+                };
+                for kind in dispatch_events {
                     emit_combat_event(
                         event_writer,
                         kind,
@@ -1164,7 +1180,7 @@ pub(crate) fn step_app(
             attacker_ko,
             attacker_stunned,
             attacker_commander,
-            attacker_bag,
+            mut attacker_bag,
             mut attacker_streak,
             attacker_round_flags,
             _attacker_slot,
@@ -1422,6 +1438,27 @@ pub(crate) fn step_app(
         }
 
         if outcome.succeeded {
+            if inflight.action.cleanse_count.is_some() {
+                let defender_alive = !outcome.ko;
+                let cleanse_events = if let Some(ref mut bag) = attacker_bag {
+                    let (_co, evs) =
+                        apply_cleanse_only(&inflight.action, &mut **bag, defender_alive);
+                    evs
+                } else if defender_alive {
+                    vec![CombatEventKind::OnCleansed { kinds: vec![] }]
+                } else {
+                    vec![]
+                };
+                for kind in cleanse_events {
+                    emit_combat_event(
+                        event_writer,
+                        kind,
+                        inflight.action.source,
+                        target_id,
+                        inflight.follow_up_depth,
+                    );
+                }
+            }
             dispatch_blueprint_transitions(inflight, log, event_writer, registry);
         }
 
@@ -1771,6 +1808,24 @@ pub(crate) fn step_app(
                         inflight.follow_up_depth,
                     );
                 }
+            }
+        }
+        if inflight.action.cleanse_count.is_some() && !outcome.ko {
+            let cleanse_events = if let Some(ref mut bag) = defender_bag {
+                let (_co, evs) =
+                    apply_cleanse_only(&inflight.action, &mut **bag, true);
+                evs
+            } else {
+                vec![CombatEventKind::OnCleansed { kinds: vec![] }]
+            };
+            for kind in cleanse_events {
+                emit_combat_event(
+                    event_writer,
+                    kind,
+                    inflight.action.source,
+                    target_id,
+                    inflight.follow_up_depth,
+                );
             }
         }
     }
