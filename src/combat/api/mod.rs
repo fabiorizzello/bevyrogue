@@ -15,13 +15,16 @@
 //! No `use bevy::winit`, `use bevy::render`, or `use bevy_egui` in this module
 //! tree. All types here must be usable in headless builds.
 
+pub mod applier;
 pub mod clock;
 pub mod intent;
 pub mod registry;
 pub mod rng;
 pub mod signal;
+pub mod skill_ctx;
 
 // Stable re-exports for the most-imported types.
+pub use applier::IntentQueue;
 pub use clock::Clock;
 pub use intent::{CastId, Intent};
 pub use registry::{
@@ -30,3 +33,4 @@ pub use registry::{
 };
 pub use rng::CastRng;
 pub use signal::SignalBus;
+pub use skill_ctx::{SkillCtx, SkillCtxMode};
