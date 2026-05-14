@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::combat::{
-    StatusEffect,
+    StatusBag,
     energy::{Energy, RoundEnergyTracker},
     events::{ActionIntentKind, CombatEvent, CombatEventKind},
     kernel::{CombatBeatId, CombatKernelRegistry},
@@ -9,11 +9,12 @@ use crate::combat::{
         FollowUpConfig, FollowUpTrigger, FormIdentityConfig, FormIdentityKit, FormIdentityTrigger,
         UnitSkills,
     },
+    buffs::DrBag,
     stun::Stunned,
     team::Team,
     turn_system::{ActionIntent, emit_combat_beat, emit_combat_event, step_app, step_declaration},
     types::{Attribute, DamageTag, SkillId, UnitId},
-    unit::{BasicStreak, Commander, Ko, Unit},
+    unit::{BasicStreak, Commander, Ko, SlotIndex, Unit},
 };
 use crate::combat::{
     log::ActionLog, round_flags::RoundFlags, sp::SpPool, state::CombatState, toughness::Toughness,
@@ -101,9 +102,11 @@ type ResolveActorsQuery<'w, 's> = Query<
         Option<&'static Ko>,
         Option<&'static Stunned>,
         Option<&'static Commander>,
-        Option<&'static mut StatusEffect>,
+        Option<&'static mut StatusBag>,
         Option<&'static mut BasicStreak>,
         Option<&'static mut RoundFlags>,
+        Option<&'static SlotIndex>,
+        Option<&'static mut DrBag>,
     ),
 >;
 
@@ -587,7 +590,7 @@ pub fn resolve_follow_up_action_system(
         );
 
         if intent.origin_kind == FollowUpOriginKind::FormIdentity {
-            for (_, _, unit, _, _, _, _, _, _, _, _, _, mut round_flags) in actors.iter_mut() {
+            for (_, _, unit, _, _, _, _, _, _, _, _, _, mut round_flags, _, _) in actors.iter_mut() {
                 if unit.id == intent.attacker {
                     if let Some(ref mut flags) = round_flags {
                         flags.form_identity_used = true;
@@ -600,5 +603,384 @@ pub fn resolve_follow_up_action_system(
 }
 
 #[cfg(test)]
-#[path = "follow_up_tests.rs"]
-mod follow_up_tests;
+mod tests {
+    use super::*;
+    use bevy::{
+        ecs::message::MessageCursor,
+        prelude::{App, Entity, Messages, Update},
+    };
+
+    use crate::combat::{
+        events::CombatEventKind,
+        log::{ActionLog, LogEntry},
+        sp::SpPool,
+        state::CombatState,
+        team::Team,
+        toughness::Toughness,
+        turn_order::TurnOrder,
+        turn_system::resolve_action_system,
+        types::{Attribute, DamageTag, EvoStage},
+        ultimate::{UltAccumulationTrigger, UltimateCharge},
+    };
+    use crate::data::{
+        SkillBookHandle,
+        skills_ron::{
+            Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
+            SkillTargeting, TargetLife, TargetShape, TargetSide,
+        },
+    };
+
+    fn unit(id: u32, attribute: Attribute, hp_max: i32, hp_current: i32) -> Unit {
+        Unit {
+            id: UnitId(id),
+            name: format!("Unit{id}"),
+            hp_max,
+            hp_current,
+            attribute,
+            resists: vec![],
+            evo_stage: EvoStage::Adult,
+        }
+    }
+
+    fn skill(id: &str, damage_tag: DamageTag, damage: i32, toughness_damage: i32) -> SkillDef {
+        SkillDef {
+            id: SkillId(id.into()),
+            name: id.into(),
+            damage_tag,
+            sp_cost: 0,
+            targeting: SkillTargeting {
+                shape: TargetShape::Single,
+                side: TargetSide::Enemy,
+                life: TargetLife::Alive,
+                self_rule: SelfTargetRule::Forbid,
+                ..Default::default()
+            },
+            implementation: SkillImplementation::Implemented,
+            effects: vec![
+                Effect::Damage {
+                    amount: damage,
+                    target: TargetShape::Single,
+                    per_hop: Default::default(),
+                },
+                Effect::ToughnessHit(toughness_damage),
+            ],
+
+            custom_signals: vec![],
+            animation_sequence: None,
+            qte: None,
+            ..Default::default()
+        }
+    }
+
+    fn cursor(app: &mut App) -> MessageCursor<CombatEvent> {
+        app.world_mut()
+            .resource_mut::<Messages<CombatEvent>>()
+            .get_cursor()
+    }
+
+    fn drain(cursor: &mut MessageCursor<CombatEvent>, app: &App) -> Vec<CombatEvent> {
+        cursor
+            .read(app.world().resource::<Messages<CombatEvent>>())
+            .cloned()
+            .collect()
+    }
+
+    fn setup_app(book: SkillBook) -> App {
+        let mut app = App::new();
+        app.init_resource::<CombatState>()
+            .init_resource::<TurnOrder>()
+            .init_resource::<SpPool>()
+            .init_resource::<ActionLog>()
+            .init_resource::<Time>()
+            .add_message::<ActionIntent>()
+            .add_message::<FollowUpIntent>()
+            .add_message::<FollowUpTrace>()
+            .add_message::<CombatEvent>()
+            .add_systems(
+                Update,
+                (
+                    resolve_action_system,
+                    follow_up_listener_system,
+                    resolve_follow_up_action_system,
+                )
+                    .chain(),
+            );
+
+        let mut assets = Assets::<SkillBook>::default();
+        let handle = assets.add(book);
+        app.insert_resource(assets);
+        app.insert_resource(SkillBookHandle(handle));
+        app
+    }
+
+    fn spawn_combatant(
+        app: &mut App,
+        unit: Unit,
+        team: Team,
+        toughness_max: i32,
+        weaknesses: Vec<DamageTag>,
+        skills: UnitSkills,
+    ) -> Entity {
+        app.world_mut()
+            .spawn((
+                unit,
+                team,
+                Toughness::new(toughness_max, weaknesses),
+                UltimateCharge {
+                    current: 0,
+                    trigger: 100,
+                    cap: 150,
+                    trigger_type: UltAccumulationTrigger::OnBasicAttack,
+                    charge_per_event: 25,
+                },
+                skills,
+            ))
+            .id()
+    }
+
+    #[test]
+    fn follow_up_break_event_resolves_same_update() {
+        let mut app = setup_app(SkillBook(vec![
+            skill("breaker", DamageTag::Fire, 8, 10),
+            skill("ally_follow_up", DamageTag::Light, 6, 3),
+            skill("enemy_basic", DamageTag::Ice, 4, 0),
+        ]));
+
+        spawn_combatant(
+            &mut app,
+            unit(1, Attribute::Vaccine, 100, 100),
+            Team::Ally,
+            40,
+            vec![],
+            UnitSkills {
+                basic: SkillId("breaker".into()),
+                skills: vec![SkillId("breaker".into())],
+                ultimate: SkillId("breaker".into()),
+                follow_up: None,
+            },
+        );
+        spawn_combatant(
+            &mut app,
+            unit(2, Attribute::Data, 90, 90),
+            Team::Ally,
+            35,
+            vec![],
+            UnitSkills {
+                basic: SkillId("ally_follow_up".into()),
+                skills: vec![SkillId("ally_follow_up".into())],
+                ultimate: SkillId("ally_follow_up".into()),
+                follow_up: Some(FollowUpConfig {
+                    trigger: FollowUpTrigger::OnEnemyBreak,
+                    action: SkillId("ally_follow_up".into()),
+                }),
+            },
+        );
+        spawn_combatant(
+            &mut app,
+            unit(4, Attribute::Virus, 100, 100),
+            Team::Enemy,
+            5,
+            vec![DamageTag::Fire],
+            UnitSkills {
+                basic: SkillId("enemy_basic".into()),
+                skills: vec![SkillId("enemy_basic".into())],
+                ultimate: SkillId("enemy_basic".into()),
+                follow_up: None,
+            },
+        );
+
+        let mut event_cursor = cursor(&mut app);
+        app.world_mut().write_message(ActionIntent::Skill {
+            attacker: UnitId(1),
+            skill_id: SkillId("breaker".into()),
+            target: UnitId(4),
+        });
+
+        app.update();
+
+        let events = drain(&mut event_cursor, &app);
+        assert!(events.iter().any(|event| {
+            event.follow_up_depth == 1 && event.source == UnitId(2) && event.target == UnitId(4)
+        }));
+
+        let hits: Vec<(UnitId, UnitId)> = app
+            .world()
+            .resource::<ActionLog>()
+            .events
+            .iter()
+            .filter_map(|entry| match entry {
+                LogEntry::BasicHit {
+                    attacker, target, ..
+                } => Some((*attacker, *target)),
+                _ => None,
+            })
+            .collect();
+        assert!(hits.contains(&(UnitId(1), UnitId(4))));
+        assert!(hits.contains(&(UnitId(2), UnitId(4))));
+    }
+
+    #[test]
+    fn follow_up_low_hp_event_targets_alive_enemy() {
+        let mut app = setup_app(SkillBook(vec![
+            skill("enemy_hit", DamageTag::Dark, 15, 0),
+            skill("renamon_follow_up", DamageTag::Light, 7, 2),
+        ]));
+
+        spawn_combatant(
+            &mut app,
+            unit(1, Attribute::Data, 100, 40),
+            Team::Ally,
+            30,
+            vec![],
+            UnitSkills {
+                basic: SkillId("enemy_hit".into()),
+                skills: vec![SkillId("enemy_hit".into())],
+                ultimate: SkillId("enemy_hit".into()),
+                follow_up: None,
+            },
+        );
+        spawn_combatant(
+            &mut app,
+            unit(2, Attribute::Data, 90, 90),
+            Team::Ally,
+            30,
+            vec![],
+            UnitSkills {
+                basic: SkillId("renamon_follow_up".into()),
+                skills: vec![SkillId("renamon_follow_up".into())],
+                ultimate: SkillId("renamon_follow_up".into()),
+                follow_up: Some(FollowUpConfig {
+                    trigger: FollowUpTrigger::OnAllyLowHp,
+                    action: SkillId("renamon_follow_up".into()),
+                }),
+            },
+        );
+        spawn_combatant(
+            &mut app,
+            unit(4, Attribute::Virus, 100, 100),
+            Team::Enemy,
+            30,
+            vec![],
+            UnitSkills {
+                basic: SkillId("enemy_hit".into()),
+                skills: vec![SkillId("enemy_hit".into())],
+                ultimate: SkillId("enemy_hit".into()),
+                follow_up: None,
+            },
+        );
+
+        let mut event_cursor = cursor(&mut app);
+        app.world_mut().write_message(ActionIntent::Skill {
+            attacker: UnitId(4),
+            skill_id: SkillId("enemy_hit".into()),
+            target: UnitId(1),
+        });
+
+        app.update();
+
+        let events = drain(&mut event_cursor, &app);
+        assert!(events.iter().any(|event| {
+            matches!(event.kind, CombatEventKind::OnAllyLowHp)
+                && event.follow_up_depth == 0
+                && event.target == UnitId(1)
+        }));
+        assert!(events.iter().any(|event| {
+            event.follow_up_depth == 1 && event.source == UnitId(2) && event.target == UnitId(4)
+        }));
+    }
+
+    #[test]
+    fn follow_up_reports_ineligible_reasons() {
+        let roster = vec![
+            FollowerSnapshot {
+                id: UnitId(1),
+                team: Team::Ally,
+                hp_current: 100,
+                follow_up: Some(FollowUpConfig {
+                    trigger: FollowUpTrigger::OnEnemyBreak,
+                    action: SkillId("follow_up".into()),
+                }),
+                is_ko: false,
+                is_stunned: false,
+            },
+            FollowerSnapshot {
+                id: UnitId(2),
+                team: Team::Enemy,
+                hp_current: 100,
+                follow_up: Some(FollowUpConfig {
+                    trigger: FollowUpTrigger::OnEnemyBreak,
+                    action: SkillId("follow_up".into()),
+                }),
+                is_ko: false,
+                is_stunned: false,
+            },
+            FollowerSnapshot {
+                id: UnitId(3),
+                team: Team::Ally,
+                hp_current: 0,
+                follow_up: Some(FollowUpConfig {
+                    trigger: FollowUpTrigger::OnEnemyBreak,
+                    action: SkillId("follow_up".into()),
+                }),
+                is_ko: true,
+                is_stunned: false,
+            },
+            FollowerSnapshot {
+                id: UnitId(4),
+                team: Team::Ally,
+                hp_current: 100,
+                follow_up: Some(FollowUpConfig {
+                    trigger: FollowUpTrigger::OnEnemyBreak,
+                    action: SkillId("follow_up".into()),
+                }),
+                is_ko: false,
+                is_stunned: true,
+            },
+            FollowerSnapshot {
+                id: UnitId(5),
+                team: Team::Ally,
+                hp_current: 100,
+                follow_up: Some(FollowUpConfig {
+                    trigger: FollowUpTrigger::OnEnemyKill,
+                    action: SkillId("follow_up".into()),
+                }),
+                is_ko: false,
+                is_stunned: false,
+            },
+            FollowerSnapshot {
+                id: UnitId(6),
+                team: Team::Enemy,
+                hp_current: 100,
+                follow_up: None,
+                is_ko: false,
+                is_stunned: false,
+            },
+        ];
+
+        let root_break = CombatEvent {
+            kind: CombatEventKind::OnBreak {
+                damage_tag: DamageTag::Fire,
+            },
+            source: UnitId(1),
+            target: UnitId(6),
+            follow_up_depth: 0,
+        };
+
+        assert_eq!(
+            evaluate_follow_up(&roster[1], &root_break, &roster),
+            Err(FollowUpSkipReason::WrongTeam)
+        );
+        assert_eq!(
+            evaluate_follow_up(&roster[2], &root_break, &roster),
+            Err(FollowUpSkipReason::FollowerKo)
+        );
+        assert_eq!(
+            evaluate_follow_up(&roster[3], &root_break, &roster),
+            Err(FollowUpSkipReason::FollowerStunned)
+        );
+        assert_eq!(
+            evaluate_follow_up(&roster[4], &root_break, &roster),
+            Err(FollowUpSkipReason::TriggerMismatch)
+        );
+    }
+}

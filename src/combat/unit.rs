@@ -4,7 +4,6 @@ use super::types::{Attribute, DamageTag, EvoStage, UnitId};
 
 #[derive(Component, Debug, Clone)]
 pub struct Unit {
-    #[allow(dead_code)]
     pub id: UnitId,
     pub name: String,
     pub hp_max: i32,
@@ -49,6 +48,11 @@ impl Unit {
 pub struct Commander;
 
 // Used by S06/T02.
-#[allow(dead_code)]
 #[derive(Component, Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct Ko;
+
+/// Per-team slot index assigned at spawn time (insertion order in apply_composition).
+/// Stable across the encounter — never mutated, survives Revive.
+/// (Team, SlotIndex) together give global uniqueness.
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct SlotIndex(pub u8);

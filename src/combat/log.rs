@@ -29,9 +29,13 @@ pub enum LogEntry {
     ActionFailed {
         reason: String,
     },
-    TurnAdvance {
+    AdvanceTurn {
         target: UnitId,
-        amount_pct: i32,
+        amount_pct: u32,
+    },
+    DelayTurn {
+        target: UnitId,
+        amount_pct: u32,
     },
 }
 

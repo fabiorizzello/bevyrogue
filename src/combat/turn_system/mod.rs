@@ -1,9 +1,10 @@
 use crate::combat::av::{AV_PER_SPEED, ActionValue, ActionValueUpdated, MAX_AV};
+use crate::combat::buffs::DrBag;
 use crate::combat::enemy_ai;
 use crate::combat::resistance::{self, TempoResistance};
 use crate::combat::rng::CombatRng;
 use crate::combat::{
-    StatusEffect,
+    StatusBag,
     action_query::{ActionQueryKind, build_snapshot_from_ecs, query_intent_legality},
     enemy_counterplay::EnemyCounterplayKit,
     energy::{Energy, RoundEnergyTracker},
@@ -19,11 +20,11 @@ use crate::combat::{
     status_effect::StatusEffectKind,
     stun::Stunned,
     team::Team,
-    toughness::Toughness,
+    toughness::{DamageKind, Toughness},
     turn_order::{TurnAdvanced, TurnOrder},
-    types::{SkillId, UnitId},
+    types::{DamageTag, SkillId, UnitId},
     ultimate::UltimateCharge,
-    unit::{BasicStreak, Commander, Ko, Unit},
+    unit::{BasicStreak, Commander, Ko, SlotIndex, Unit},
 };
 use crate::data::{SkillBookHandle, skills_ron::SkillBook};
 use bevy::prelude::*;
@@ -32,7 +33,6 @@ pub const TICK_AV_AMOUNT: i32 = 1000; // Arbitrary tick amount for AV accumulati
 // this could be based on a fixed percentage or smallest speed denominator.
 // Using 1000 for now to ensure multiple units can cross MAX_AV without too many sub-ticks.
 
-#[allow(dead_code)]
 #[derive(Message, Debug, Clone, PartialEq, Eq)]
 pub enum ActionIntent {
     Basic {
@@ -64,9 +64,11 @@ pub(crate) type ResolveActorsQuery<'w, 's> = Query<
         Option<&'static Ko>,
         Option<&'static Stunned>,
         Option<&'static Commander>,
-        Option<&'static mut StatusEffect>,
+        Option<&'static mut StatusBag>,
         Option<&'static mut BasicStreak>,
         Option<&'static mut RoundFlags>,
+        Option<&'static SlotIndex>,
+        Option<&'static mut DrBag>,
     ),
 >;
 
@@ -74,15 +76,6 @@ pub(super) fn set_phase(state: &mut CombatState, next: CombatPhase) {
     if state.phase != next {
         debug!("phase: {:?} -> {:?}", state.phase, next);
         state.phase = next;
-    }
-}
-
-#[allow(dead_code)]
-fn intent_label(intent: &ActionIntent) -> &'static str {
-    match intent {
-        ActionIntent::Basic { .. } => "Basic",
-        ActionIntent::Skill { .. } => "Skill",
-        ActionIntent::Ultimate { .. } => "Ultimate",
     }
 }
 
@@ -209,6 +202,8 @@ pub fn resolve_action_system(
                         ko,
                         stunned,
                         commander,
+                        _,
+                        _,
                         _,
                         _,
                         _,
@@ -366,13 +361,14 @@ pub fn advance_turn_system(
             Option<&SpeedModifier>,
             Option<&mut ActionValue>,
             Option<&mut Stunned>,
-            Option<&mut StatusEffect>,
+            Option<&mut StatusBag>,
             Option<&UnitSkills>,
             Option<&UltimateCharge>,
             Option<&Toughness>,
             Option<&Commander>,
             Option<&mut RoundFlags>,
             Option<&mut RoundEnergyTracker>,
+            Option<&mut DrBag>,
         ),
         Without<Ko>,
     >,
@@ -382,7 +378,7 @@ pub fn advance_turn_system(
     mut event_writer: MessageWriter<CombatEvent>,
     mut intents_out: MessageWriter<ActionIntent>,
     mut av_event_writer: MessageWriter<ActionValueUpdated>,
-    mut combat_rng: Option<ResMut<CombatRng>>,
+    _combat_rng: Option<ResMut<CombatRng>>,
 ) {
     // === Part 1: Process incoming TurnAdvanced messages ===
     // Collect snapshots first so we can do enemy AI after mutable status tick
@@ -391,6 +387,7 @@ pub fn advance_turn_system(
         id: UnitId,
         team: Team,
         is_stunned: bool,
+        is_paralyzed: bool,
         hp_current: i32,
         hp_max: i32,
         toughness_current: i32,
@@ -402,12 +399,16 @@ pub fn advance_turn_system(
     let snapshots: Vec<Snap> = query
         .iter_mut()
         .map(
-            |(entity, unit, team, _, _, _, stunned, _, skills, ult, toughness, commander, _, _)| {
+            |(entity, unit, team, _, _, _, stunned, status_bag, skills, ult, toughness, commander, _, _, _)| {
                 Snap {
                     entity,
                     id: unit.id,
                     team: *team,
                     is_stunned: stunned.is_some(),
+                    is_paralyzed: status_bag
+                        .as_ref()
+                        .map(|b| b.has(&StatusEffectKind::Paralyzed))
+                        .unwrap_or(false),
                     hp_current: unit.hp_current,
                     hp_max: unit.hp_max,
                     toughness_current: toughness.map(|t| t.current).unwrap_or(0),
@@ -430,7 +431,7 @@ pub fn advance_turn_system(
             continue;
         };
 
-        let mut shock_cancelled = false;
+        let shock_cancelled = false;
         {
             let Ok((
                 _,
@@ -440,13 +441,14 @@ pub fn advance_turn_system(
                 _,
                 _,
                 stunned_opt,
-                status_opt,
+                mut status_opt,
                 _,
                 _,
                 _,
                 _,
                 mut round_flags_opt,
                 mut round_energy_tracker_opt,
+                mut dr_bag_opt,
             )) = query.get_mut(snap.entity)
             else {
                 continue;
@@ -462,6 +464,36 @@ pub fn advance_turn_system(
                 tracker.reset();
             }
 
+            // Heated DoT: 4 HP Fire damage, bypasses stun (canon §H.1).
+            // Runs unconditionally before stun-skip so Heated+Stunned units still burn.
+            if let Some(ref bag) = status_opt {
+                if bag.has(&StatusEffectKind::Heated) && unit.hp_current > 0 {
+                    unit.hp_current = (unit.hp_current - 4).max(0);
+                    emit_combat_event(
+                        &mut event_writer,
+                        CombatEventKind::OnDamageDealt {
+                            amount: 4,
+                            kind: DamageKind::Normal,
+                            damage_tag: DamageTag::Fire,
+                            tag_mod_pct: 100,
+                            triangle_mod_pct: 100,
+                        },
+                        active_id,
+                        active_id,
+                        0,
+                    );
+                    if unit.hp_current <= 0 {
+                        emit_combat_event(
+                            &mut event_writer,
+                            CombatEventKind::OnKO,
+                            active_id,
+                            active_id,
+                            0,
+                        );
+                    }
+                }
+            }
+
             if let Some(mut s) = stunned_opt {
                 if s.tick() {
                     commands.entity(snap.entity).remove::<Stunned>();
@@ -471,76 +503,95 @@ pub fn advance_turn_system(
                 continue;
             }
 
-            if let Some(mut se) = status_opt {
-                let kind = se.kind.clone();
-                let mut deep_freeze_skips_action = false;
-                match &kind {
-                    StatusEffectKind::Burn { damage_per_turn } => {
-                        unit.hp_current = (unit.hp_current - damage_per_turn).max(1);
+            // Paralyzed: always skip action dispatch (canon §H.1). Bag is ticked so
+            // duration decrements; OnStatusTick + OnStatusExpired fire as normal.
+            if snap.is_paralyzed {
+                if let Some(ref mut bag) = status_opt {
+                    for inst in bag.iter() {
+                        let turns_left = inst.duration_remaining.saturating_sub(1);
+                        emit_combat_event(
+                            &mut event_writer,
+                            CombatEventKind::OnStatusTick {
+                                kind: inst.kind.clone(),
+                                turns_left,
+                            },
+                            active_id,
+                            active_id,
+                            0,
+                        );
                     }
-                    StatusEffectKind::Freeze { speed_reduction } => {
-                        commands
-                            .entity(snap.entity)
-                            .insert(SpeedModifier(-speed_reduction.abs()));
-                    }
-                    StatusEffectKind::Shock { cancel_chance_pct } => {
-                        let cancelled = match &mut combat_rng {
-                            Some(r) => r.roll_pct(*cancel_chance_pct as i32),
-                            None => CombatRng::from_seed(42).roll_pct(*cancel_chance_pct as i32),
-                        };
-                        if cancelled {
-                            shock_cancelled = true;
-                            emit_combat_event(
-                                &mut event_writer,
-                                CombatEventKind::OnActionFailed {
-                                    reason: "Shock".to_string(),
-                                },
-                                active_id,
-                                active_id,
-                                0,
-                            );
-                        }
-                    }
-                    StatusEffectKind::DeepFreeze => {
-                        // DeepFreeze is currently the deterministic hard-skip variant: it consumes the
-                        // unit's active turn like a stun while still ticking and expiring through the
-                        // shared status-effect lifecycle.
-                        deep_freeze_skips_action = true;
+                    let expired = bag.tick_all();
+                    for kind in expired {
+                        emit_combat_event(
+                            &mut event_writer,
+                            CombatEventKind::OnStatusExpired { kind },
+                            active_id,
+                            active_id,
+                            0,
+                        );
                     }
                 }
-                let expired = se.tick();
-                let turns_left = se.duration_remaining;
                 emit_combat_event(
                     &mut event_writer,
-                    CombatEventKind::OnStatusTick {
-                        kind: kind.clone(),
-                        turns_left,
-                    },
+                    CombatEventKind::OnActionFailed { reason: "paralyzed".to_string() },
                     active_id,
                     active_id,
                     0,
                 );
-                if expired {
-                    commands.entity(snap.entity).remove::<StatusEffect>();
+                drop(status_opt);
+                drop(unit);
+                continue;
+            }
+
+            if let Some(mut bag) = status_opt {
+                // Per-status semantics (DoT, speed delta, cancel probability, ult boost)
+                // are implemented in S03–S05. This is the v0 lifecycle skeleton only.
+                // Emit OnStatusTick for every still-active instance before ticking.
+                for inst in bag.iter() {
+                    // Totality check — all 7 variants covered; no-op in v0.
+                    match &inst.kind {
+                        StatusEffectKind::Heated
+                        | StatusEffectKind::Chilled
+                        | StatusEffectKind::Paralyzed
+                        | StatusEffectKind::Slowed
+                        | StatusEffectKind::Blessed
+                        | StatusEffectKind::Burn
+                        | StatusEffectKind::Shock => {}
+                    }
+                    // turns_left after this tick = current - 1 (clamped to 0).
+                    let turns_left = inst.duration_remaining.saturating_sub(1);
                     emit_combat_event(
                         &mut event_writer,
-                        CombatEventKind::OnStatusExpired { kind: kind.clone() },
+                        CombatEventKind::OnStatusTick {
+                            kind: inst.kind.clone(),
+                            turns_left,
+                        },
                         active_id,
                         active_id,
                         0,
                     );
-                    if matches!(kind, StatusEffectKind::Freeze { .. }) {
-                        commands.entity(snap.entity).remove::<SpeedModifier>();
-                    }
                 }
-                if deep_freeze_skips_action {
-                    continue;
+                let expired = bag.tick_all();
+                for kind in expired {
+                    emit_combat_event(
+                        &mut event_writer,
+                        CombatEventKind::OnStatusExpired { kind },
+                        active_id,
+                        active_id,
+                        0,
+                    );
                 }
+                // Do NOT remove the bag component — it persists empty and is re-used on next apply.
+            }
+
+            // Tick DrBag: decrement durations and drop expired DR instances.
+            if let Some(ref mut dr) = dr_bag_opt {
+                dr.tick_all();
             }
         } // mutable borrow released
 
         // Enemy AI: emit ActionIntent for enemy units whose action wasn't cancelled
-        if snap.team == Team::Enemy && !shock_cancelled && !snap.is_stunned {
+        if snap.team == Team::Enemy && !shock_cancelled && !snap.is_stunned && !snap.is_paralyzed {
             let fallback_skills;
             let skills_ref: &UnitSkills = if let Some(s) = snap.skills.as_ref() {
                 s
@@ -583,7 +634,7 @@ pub fn advance_turn_system(
 
     let mut units_ready: Vec<(UnitId, Entity, i32)> = Vec::new();
 
-    for (entity, unit, _, speed_opt, speed_mod_opt, av_opt, stunned, _, _, _, _, _, _, _) in
+    for (entity, unit, _, speed_opt, speed_mod_opt, av_opt, stunned, status_bag_opt, _, _, _, _, _, _, _) in
         query.iter_mut()
     {
         if stunned.is_some() {
@@ -593,11 +644,15 @@ pub fn advance_turn_system(
         else {
             continue;
         };
-        let av_gain = (speed.0 + speed_mod.0) * AV_PER_SPEED;
+        let chilled_delta = status_bag_opt
+            .as_deref()
+            .map(|b| crate::combat::status_effect::chilled_speed_delta(b, speed.0))
+            .unwrap_or(0);
+        let av_gain = (speed.0 + speed_mod.0 + chilled_delta) * AV_PER_SPEED;
         let old_av = av.0;
         av.advance(av_gain);
         av_event_writer.write(ActionValueUpdated {
-            unit_id: entity,
+            unit_entity: entity,
             old_value: old_av,
             new_value: av.0,
         });
@@ -610,7 +665,7 @@ pub fn advance_turn_system(
 
     if let Some((unit_id_ready, entity_ready, _)) = units_ready.first() {
         if turn_order.active_unit.is_none() {
-            let Ok((_, _, _, _, _, Some(mut av), _, _, _, _, _, _, _, _)) =
+            let Ok((_, _, _, _, _, Some(mut av), _, _, _, _, _, _, _, _, _)) =
                 query.get_mut(*entity_ready)
             else {
                 return;
@@ -628,9 +683,9 @@ pub fn advance_turn_system(
     }
 }
 
-/// Processes `CombatEvent::TurnAdvance` messages and applies the corresponding AV delta
-/// to the target unit, factoring in `TempoResistance` for negative (Delay) amounts.
-pub fn apply_turn_advance_system(
+/// Processes `CombatEvent::AdvanceTurn` and `DelayTurn` messages, applying the
+/// corresponding AV delta via the T01 pure-logic primitives.
+pub fn apply_av_ops_system(
     mut events: MessageReader<crate::combat::events::CombatEvent>,
     mut units: Query<(
         &crate::combat::unit::Unit,
@@ -640,14 +695,24 @@ pub fn apply_turn_advance_system(
 ) {
     use crate::combat::events::CombatEventKind;
     for event in events.read() {
-        let CombatEventKind::TurnAdvance { target, amount_pct } = &event.kind else {
-            continue;
-        };
-        for (unit, mut av, mut res) in &mut units {
-            if unit.id == *target {
-                resistance::apply_av_change(&mut av, res.as_deref_mut(), *amount_pct);
-                break;
+        match &event.kind {
+            CombatEventKind::AdvanceTurn { target, amount_pct } => {
+                for (unit, mut av, _) in &mut units {
+                    if unit.id == *target {
+                        resistance::apply_advance(&mut av, *amount_pct);
+                        break;
+                    }
+                }
             }
+            CombatEventKind::DelayTurn { target, amount_pct } => {
+                for (unit, mut av, mut res) in &mut units {
+                    if unit.id == *target {
+                        resistance::apply_delay(&mut av, *amount_pct, res.as_deref_mut());
+                        break;
+                    }
+                }
+            }
+            _ => {}
         }
     }
 }

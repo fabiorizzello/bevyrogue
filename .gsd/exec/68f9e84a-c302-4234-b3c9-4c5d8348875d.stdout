@@ -1,4 +1,0 @@
-verify=0 battery=0 norun=101
-verify_tail: M015 failure ledger verification passed.
-battery_tail: 
-norun_tail: error: could not compile `bevyrogue` (test "resource_caps") due to 4 previous errors; 2 warnings emitted

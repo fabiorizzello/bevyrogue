@@ -79,7 +79,7 @@ fn s08_boundary_turn_advance_and_action_intent() {
 
     use bevyrogue::data::SkillBookHandle;
     use bevyrogue::data::skills_ron::{
-        Effect, LegalityReasonCode, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
+        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
         SkillTargeting, TargetLife, TargetShape, TargetSide,
     };
     let mut assets = Assets::<SkillBook>::default();
@@ -100,6 +100,7 @@ fn s08_boundary_turn_advance_and_action_intent() {
             Effect::Damage {
                 amount: 50,
                 target: TargetShape::Single,
+            per_hop: Default::default(),
             },
             Effect::ToughnessHit(20),
         ],
@@ -199,7 +200,7 @@ fn s08_ultimate_interrupt_flow() {
 
     use bevyrogue::data::SkillBookHandle;
     use bevyrogue::data::skills_ron::{
-        Effect, LegalityReasonCode, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
+        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
         SkillTargeting, TargetLife, TargetShape, TargetSide,
     };
     let mut assets = Assets::<SkillBook>::default();
@@ -221,6 +222,7 @@ fn s08_ultimate_interrupt_flow() {
                 Effect::Damage {
                     amount: 50,
                     target: TargetShape::Single,
+                per_hop: Default::default(),
                 },
                 Effect::ToughnessHit(20),
             ],
@@ -246,6 +248,7 @@ fn s08_ultimate_interrupt_flow() {
                 Effect::Damage {
                     amount: 10,
                     target: TargetShape::Single,
+                per_hop: Default::default(),
                 },
                 Effect::ToughnessHit(5),
             ],

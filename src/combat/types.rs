@@ -9,7 +9,6 @@ pub enum Attribute {
 }
 
 // S02 damage.rs consumes DamageTag in tests; binary integration pending S03+.
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 pub enum DamageTag {
     #[default]
@@ -25,7 +24,6 @@ pub enum DamageTag {
 pub struct UnitId(pub u32);
 
 // Produce-and-freeze for S02+ (skill references in Unit)
-#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 pub struct SkillId(pub String);
 

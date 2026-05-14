@@ -1,4 +1,0 @@
-ERROR: missing required ledger section for 'UnitDef drift': '### Broad `UnitDef` fixture constructor drift'
-ERROR: verification snapshot missing a fail classification marker
-ERROR: missing S05 ledger proof marker for 'S06 no-run owner': 'S06 / broad fixture repair slice'
-ERROR: missing ledger marker for 'SkillDef fixture drift': 'missing fields animation_sequence, custom_signals and qte'

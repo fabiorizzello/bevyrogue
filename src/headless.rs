@@ -7,6 +7,7 @@ use std::{collections::VecDeque, time::Duration};
 
 use bevy::app::ScheduleRunnerPlugin;
 use bevy::prelude::*;
+use moonshine_kind::Instance;
 
 use crate::combat::bootstrap::{
     EncounterPreset, SelectionRequest, apply_composition, bootstrap_encounter,
@@ -26,7 +27,7 @@ use crate::combat::team::Team;
 use crate::combat::toughness::{Toughness, visible_toughness};
 use crate::combat::turn_order::{TurnAdvanced, TurnOrder};
 use crate::combat::turn_system::{
-    ActionIntent, advance_turn_system, apply_turn_advance_system, check_victory_system,
+    ActionIntent, advance_turn_system, apply_av_ops_system, check_victory_system,
     resolve_action_system,
 };
 use crate::combat::types::UnitId;
@@ -138,7 +139,7 @@ pub fn register_combat_systems(app: &mut App) {
             resolve_follow_up_action_system,
             ult_accumulation_system,
             flush_ult_gain_system,
-            apply_turn_advance_system,
+            apply_av_ops_system,
             advance_turn_system,
             check_victory_system,
             jsonl_logger_system,
@@ -199,14 +200,14 @@ fn headless_smoke_tick(
     mut counter: ResMut<TickCounter>,
     mut exit: MessageWriter<AppExit>,
     mut order: ResMut<TurnOrder>,
-    mut turn_advanced: MessageWriter<TurnAdvanced>,
+    _turn_advanced: MessageWriter<TurnAdvanced>,
     mut action_intent: MessageWriter<ActionIntent>,
     mut script: ResMut<CombatScript>,
     asset_server: Res<AssetServer>,
     mut combat_state: ResMut<CombatState>,
     mut sp: ResMut<SpPool>,
     mut log: ResMut<ActionLog>,
-    unit_entities: Query<Entity, With<Unit>>,
+    unit_entities: Query<Instance<Unit>>,
     units: HeadlessUnitsQuery,
     mut bootstrap: BootstrapParams,
 ) {
@@ -334,8 +335,8 @@ fn headless_smoke_tick(
                         let _ = script.pop();
                         debug!("script step: ReloadAssets");
                         asset_server.reload("data/units.ron");
-                        for entity in &unit_entities {
-                            commands.entity(entity).despawn();
+                        for unit in &unit_entities {
+                            commands.entity(unit.entity()).despawn();
                         }
                         *order = TurnOrder::default();
                         combat_state.reset();

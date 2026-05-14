@@ -31,7 +31,7 @@ use bevyrogue::combat::{
 use bevyrogue::data::{
     SkillBookHandle,
     skills_ron::{
-        Effect, LegalityReasonCode, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
+        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
         SkillTargeting, TargetLife, TargetShape, TargetSide,
     },
 };
@@ -58,6 +58,7 @@ fn fire_skill() -> SkillDef {
             Effect::Damage {
                 amount: 100,
                 target: TargetShape::Single,
+            per_hop: Default::default(),
             },
             Effect::ToughnessHit(0),
         ],

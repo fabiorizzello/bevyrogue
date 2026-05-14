@@ -1,7 +1,0 @@
-
-running 2 tests
-test combat::bootstrap::tests::test_spawn_non_commander ... ok
-test combat::bootstrap::tests::test_spawn_commander ... ok
-
-test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 138 filtered out; finished in 0.00s
-

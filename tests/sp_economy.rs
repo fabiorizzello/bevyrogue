@@ -22,7 +22,7 @@ use bevyrogue::combat::{
 use bevyrogue::data::{
     SkillBookHandle,
     skills_ron::{
-        Effect, LegalityReasonCode, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
+        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
         SkillTargeting, TargetLife, TargetShape, TargetSide,
     },
 };
@@ -69,6 +69,7 @@ fn build_app() -> App {
             effects: vec![Effect::Damage {
                 amount: 8,
                 target: TargetShape::Single,
+            per_hop: Default::default(),
             }],
 
             custom_signals: vec![],
@@ -91,6 +92,7 @@ fn build_app() -> App {
             effects: vec![Effect::Damage {
                 amount: 16,
                 target: TargetShape::Single,
+            per_hop: Default::default(),
             }],
 
             custom_signals: vec![],
@@ -113,6 +115,7 @@ fn build_app() -> App {
             effects: vec![Effect::Damage {
                 amount: 18,
                 target: TargetShape::Single,
+            per_hop: Default::default(),
             }],
 
             custom_signals: vec![],
@@ -154,6 +157,7 @@ fn build_app() -> App {
             effects: vec![Effect::Damage {
                 amount: 9999,
                 target: TargetShape::Single,
+            per_hop: Default::default(),
             }],
 
             custom_signals: vec![],
@@ -285,7 +289,7 @@ fn s_m008_s05_sp_economy_20_turn_regression() {
         &mut sp_history,
     );
     {
-        let turn_order = app.world().resource::<TurnOrder>();
+        let _turn_order = app.world().resource::<TurnOrder>();
         let victim_unit = app
             .world()
             .get::<Unit>(victim)
@@ -370,7 +374,7 @@ fn s_m008_s05_sp_economy_20_turn_regression() {
         &mut sp_history,
     );
     {
-        let turn_order = app.world().resource::<TurnOrder>();
+        let _turn_order = app.world().resource::<TurnOrder>();
         let victim_unit = app
             .world()
             .get::<Unit>(victim)

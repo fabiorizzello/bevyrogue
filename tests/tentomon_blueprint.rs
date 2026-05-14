@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 use bevyrogue::combat::battery_loop::BatteryLoopState;
 use bevyrogue::combat::blueprints;
-use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::kernel::{
     BatteryLoopTransition, CombatKernelTransition, register_combat_kernel_runtime,
 };
@@ -18,15 +17,19 @@ fn base_action() -> ResolvedAction {
         base_damage: 10,
         toughness_damage: 5,
         revive_pct: 0,
+        heal_pct: 0,
         sp_cost: 0,
         ult_effect: UltEffect::None,
         grant_free_skill_count: 0,
         status_to_apply: None,
-        turn_advance_pct: 0,
+        advance_pct: 0,
+        delay_pct: 0,
         energy_grant: 0,
         self_advance_pct: 0,
         target_shape: TargetShape::Single,
         custom_signals: Vec::new(),
+        damage_curve: Default::default(),
+        cleanse_count: None,
     }
 }
 

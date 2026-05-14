@@ -5,9 +5,7 @@
 
 use bevy::prelude::*;
 use bevyrogue::combat::av::{ActionValue, MAX_AV};
-use bevyrogue::combat::resistance::{
-    MIN_ACTION_THRESHOLD_AV, TempoResistance, apply_av_change, compute_av_change,
-};
+use bevyrogue::combat::resistance::{TempoResistance, apply_advance, apply_delay};
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Pure-logic tests (no Bevy app)
@@ -25,16 +23,14 @@ fn tempo_resistance_multiplier_curve() {
     assert_eq!(r.multiplier(), 0.25, "hit 3+ stays at 25%");
 }
 
-/// Parameterised: each successive Delay on the same unit gets attenuated.
+/// Each successive Delay on the same unit gets attenuated via TempoResistance.
 #[test]
 fn three_consecutive_delays_show_diminishing_returns() {
+    let mut av = ActionValue(MAX_AV); // 10000 — enough headroom to avoid floor clamp
     let mut r = TempoResistance::default();
-    // -20% of MAX_AV (10000) = -2000 raw
-    let d1 = compute_av_change(-20, Some(&r)); // 100% → -2000
-    r.record_delay_hit();
-    let d2 = compute_av_change(-20, Some(&r)); // 50%  → -1000
-    r.record_delay_hit();
-    let d3 = compute_av_change(-20, Some(&r)); // 25%  → -500
+    let d1 = apply_delay(&mut av, 20, Some(&mut r)); // 100% → -2000
+    let d2 = apply_delay(&mut av, 20, Some(&mut r)); // 50%  → -1000
+    let d3 = apply_delay(&mut av, 20, Some(&mut r)); // 25%  → -500
 
     assert_eq!(d1, -2000, "first delay: 100%");
     assert_eq!(d2, -1000, "second delay: 50%");
@@ -42,64 +38,62 @@ fn three_consecutive_delays_show_diminishing_returns() {
 }
 
 #[test]
-fn compute_av_change_advance_bypasses_resistance() {
-    // Positive advance is unaffected even at max resistance stack
-    let r = TempoResistance { hit_count: 99 };
-    assert_eq!(
-        compute_av_change(20, Some(&r)),
-        2000,
-        "advance ignores resistance"
-    );
+fn advance_bypasses_resistance_stack() {
+    // apply_advance has no resistance param — always full strength
+    let mut av = ActionValue(0);
+    let delta = apply_advance(&mut av, 20);
+    assert_eq!(delta, 2000, "advance ignores resistance");
 }
 
 #[test]
-fn compute_av_change_no_resistance_component() {
-    // Without a TempoResistance component, delays are full-strength
-    assert_eq!(compute_av_change(-30, None), -3000);
+fn delay_without_resistance_full_strength() {
+    let mut av = ActionValue(MAX_AV); // 10000
+    let delta = apply_delay(&mut av, 30, None);
+    assert_eq!(delta, -3000);
 }
 
 #[test]
-fn apply_av_change_records_hit_and_updates_av() {
+fn apply_delay_records_hit_and_updates_av() {
     let mut av = ActionValue(MAX_AV / 2); // 5000
     let mut r = TempoResistance::default();
 
-    let delta = apply_av_change(&mut av, Some(&mut r), -20); // -2000 (100%)
+    let delta = apply_delay(&mut av, 20, Some(&mut r)); // -2000 (100%)
     assert_eq!(delta, -2000);
     assert_eq!(av.0, 3000);
     assert_eq!(r.hit_count, 1, "resistance stack advanced after delay");
 
-    let delta2 = apply_av_change(&mut av, Some(&mut r), -20); // -1000 (50%)
+    let delta2 = apply_delay(&mut av, 20, Some(&mut r)); // -1000 (50%)
     assert_eq!(delta2, -1000);
     assert_eq!(av.0, 2000);
     assert_eq!(r.hit_count, 2);
 }
 
 #[test]
-fn apply_av_change_clamps_to_min_action_threshold() {
-    // Massive delay: -200% = -20000, but floor is -MIN_ACTION_THRESHOLD_AV = -15000
-    let mut av = ActionValue(0);
+fn delay_clamps_to_floor_zero() {
+    // Floor is 0 (not negative), regardless of how large the delay pct is.
+    let mut av = ActionValue(1000);
     let mut r = TempoResistance::default();
-    apply_av_change(&mut av, Some(&mut r), -200);
-    assert_eq!(av.0, -MIN_ACTION_THRESHOLD_AV, "AV clamped to floor");
+    apply_delay(&mut av, 50, Some(&mut r)); // 50% cap → 5000 > 1000 → clamped to 0
+    assert_eq!(av.0, 0, "AV clamped to floor 0");
 }
 
 #[test]
-fn apply_av_change_clamps_without_resistance_too() {
-    let mut av = ActionValue(0);
-    apply_av_change(&mut av, None, -200); // raw -20000 → clamped
-    assert_eq!(av.0, -MIN_ACTION_THRESHOLD_AV);
+fn delay_clamps_to_floor_zero_without_resistance() {
+    let mut av = ActionValue(500);
+    apply_delay(&mut av, 50, None); // 5000 > 500 → clamped to 0
+    assert_eq!(av.0, 0, "floor 0 applies without resistance too");
 }
 
 #[test]
-fn apply_av_change_advance_does_not_exceed_max_av() {
-    let mut av = ActionValue(MAX_AV - 500);
-    let delta = apply_av_change(&mut av, None, 20); // +2000, but cap at MAX_AV
-    assert_eq!(av.0, MAX_AV);
+fn advance_does_not_exceed_2x_max_av() {
+    let mut av = ActionValue(MAX_AV * 2 - 500); // 19500
+    let delta = apply_advance(&mut av, 20); // +2000, but ceil at 2*MAX_AV
+    assert_eq!(av.0, MAX_AV * 2);
     assert_eq!(delta, 500, "delta clamped to headroom");
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Bevy integration: apply_turn_advance_system wires CombatEvent → ActionValue
+// Bevy integration: apply_av_ops_system wires CombatEvent → ActionValue
 // ──────────────────────────────────────────────────────────────────────────────
 
 use bevy::ecs::message::Messages;
@@ -109,7 +103,7 @@ use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::state::CombatState;
 use bevyrogue::combat::team::Team;
 use bevyrogue::combat::turn_order::{TurnAdvanced, TurnOrder};
-use bevyrogue::combat::turn_system::{ActionIntent, apply_turn_advance_system};
+use bevyrogue::combat::turn_system::{ActionIntent, apply_av_ops_system};
 use bevyrogue::combat::types::UnitId;
 use bevyrogue::combat::unit::Unit;
 
@@ -126,7 +120,7 @@ fn setup_app() -> App {
     app.add_message::<ActionValueUpdated>();
     app.add_message::<CombatEvent>();
     app.add_message::<ActionIntent>();
-    app.add_systems(Update, apply_turn_advance_system);
+    app.add_systems(Update, apply_av_ops_system);
     app
 }
 
@@ -163,9 +157,9 @@ fn system_applies_delay_with_resistance_via_combat_event() {
     send_combat_event(
         &mut app,
         CombatEvent {
-            kind: CombatEventKind::TurnAdvance {
+            kind: CombatEventKind::DelayTurn {
                 target: uid(10),
-                amount_pct: -20,
+                amount_pct: 20,
             },
             source: uid(1),
             target: uid(10),
@@ -183,9 +177,9 @@ fn system_applies_delay_with_resistance_via_combat_event() {
     send_combat_event(
         &mut app,
         CombatEvent {
-            kind: CombatEventKind::TurnAdvance {
+            kind: CombatEventKind::DelayTurn {
                 target: uid(10),
-                amount_pct: -20,
+                amount_pct: 20,
             },
             source: uid(1),
             target: uid(10),
@@ -208,7 +202,7 @@ fn system_applies_advance_without_touching_resistance_stack() {
     send_combat_event(
         &mut app,
         CombatEvent {
-            kind: CombatEventKind::TurnAdvance {
+            kind: CombatEventKind::AdvanceTurn {
                 target: uid(11),
                 amount_pct: 20,
             },
@@ -353,7 +347,7 @@ fn ally_spawn_has_no_tempo_resistance_component() {
 
 /// Three consecutive Delay events on a boss show 100→50→25% attenuation end-to-end.
 ///
-/// This is the full pipeline: spawn_unit_from_def → CombatEvent bus → apply_turn_advance_system.
+/// This is the full pipeline: spawn_unit_from_def → CombatEvent bus → apply_av_ops_system.
 #[test]
 fn boss_scenario_three_slow_hits_show_resistance_curve() {
     let mut app = App::new();
@@ -364,7 +358,7 @@ fn boss_scenario_three_slow_hits_show_resistance_curve() {
     app.add_message::<ActionValueUpdated>();
     app.add_message::<CombatEvent>();
     app.add_message::<ActionIntent>();
-    app.add_systems(Update, apply_turn_advance_system);
+    app.add_systems(Update, apply_av_ops_system);
 
     // Spawn boss from def — TempoResistance should be inserted automatically.
     let def = devimon_def();
@@ -378,13 +372,13 @@ fn boss_scenario_three_slow_hits_show_resistance_curve() {
 
     let boss_id = uid(101);
 
-    // Hit 1: 100% of -20% = -2000 → AV 5000 → 3000
+    // Hit 1: 100% of 20% = -2000 → AV 5000 → 3000
     send_combat_event(
         &mut app,
         CombatEvent {
-            kind: CombatEventKind::TurnAdvance {
+            kind: CombatEventKind::DelayTurn {
                 target: boss_id,
-                amount_pct: -20,
+                amount_pct: 20,
             },
             source: uid(1),
             target: boss_id,
@@ -406,13 +400,13 @@ fn boss_scenario_three_slow_hits_show_resistance_curve() {
         1
     );
 
-    // Hit 2: 50% of -20% = -1000 → AV 3000 → 2000
+    // Hit 2: 50% of 20% = -1000 → AV 3000 → 2000
     send_combat_event(
         &mut app,
         CombatEvent {
-            kind: CombatEventKind::TurnAdvance {
+            kind: CombatEventKind::DelayTurn {
                 target: boss_id,
-                amount_pct: -20,
+                amount_pct: 20,
             },
             source: uid(1),
             target: boss_id,
@@ -434,13 +428,13 @@ fn boss_scenario_three_slow_hits_show_resistance_curve() {
         2
     );
 
-    // Hit 3: 25% of -20% = -500 → AV 2000 → 1500
+    // Hit 3: 25% of 20% = -500 → AV 2000 → 1500
     send_combat_event(
         &mut app,
         CombatEvent {
-            kind: CombatEventKind::TurnAdvance {
+            kind: CombatEventKind::DelayTurn {
                 target: boss_id,
-                amount_pct: -20,
+                amount_pct: 20,
             },
             source: uid(1),
             target: boss_id,

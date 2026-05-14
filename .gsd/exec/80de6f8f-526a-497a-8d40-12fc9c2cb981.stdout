@@ -1,4 +1,0 @@
-skills 72 shapes {'Single': 59, 'Row': 6}
-revive [('patamon_revive', 'effects: [Revive(25)],'), ('first_aid', 'effects: [Revive(15)],'), ('angemon_ult', 'effects: [Damage(amount: 48, target: Row), ToughnessHit(28), Revive(20)],')]
-mixed [('angemon_ult', 'effects: [Damage(amount: 48, target: Row), ToughnessHit(28), Revive(20)],')]
-no_damage [('patamon_revive', 'effects: [Revive(25)],'), ('first_aid', 'effects: [Revive(15)],'), ('greymon_form_identity', 'effects: [GrantEnergy(5)],'), ('garurumon_form_identity', 'effects: [GrantEnergy(5)],'), ('kabuterimon_form_identity', 'effects: [GrantEnergy(5)],'), ('kyubimon_form_identity', 'effects: [SelfAdvance(20)],'), ('dorugamon_form_identity', 'effects: [ToughnessHit(10)],')]

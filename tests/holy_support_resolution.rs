@@ -129,6 +129,9 @@ fn patamon_ult_builds_grace_through_the_blueprint_kernel_path() {
         &mut streak,
         false,
         false,
+        None,
+        None,
+        None,
     );
 
     assert!(outcome.succeeded);

@@ -89,11 +89,15 @@ pub enum CombatEventKind {
     OnStatusResisted {
         kind: StatusEffectKind,
     },
-    /// Evolves the combat architecture with a multi-phase lifecycle.
-    /// introduced in M010/S01.
-    TurnAdvance {
+    /// Pull a unit's turn forward by amount_pct% of MAX_AV.
+    AdvanceTurn {
         target: UnitId,
-        amount_pct: i32,
+        amount_pct: u32,
+    },
+    /// Push a unit's turn back by amount_pct% of MAX_AV (TempoResistance applies).
+    DelayTurn {
+        target: UnitId,
+        amount_pct: u32,
     },
     /// Emitted at the start of action processing, before any effects are applied.
     OnActionDeclared {
@@ -127,6 +131,17 @@ pub enum CombatEventKind {
     EnergyGained {
         unit_id: UnitId,
         amount: i32,
+    },
+    /// Emitted once per successful Heal application; amount is the actual HP restored
+    /// (capped at hp_max). Silently suppressed on KO targets (no event emitted).
+    OnHealed {
+        amount: i32,
+        hp_after: i32,
+    },
+    /// Emitted once per Cleanse application per target (including no-op cleanses where
+    /// kinds is empty, mirroring OnHealed amount=0).
+    OnCleansed {
+        kinds: Vec<StatusEffectKind>,
     },
 }
 

@@ -10,7 +10,7 @@ mod headless;
 #[cfg(feature = "windowed")]
 mod windowed;
 
-use combat::av::{ActionValue, ActionValueUpdated};
+use combat::av::ActionValueUpdated;
 use combat::events::CombatEvent;
 use combat::floating::decay_floating_damage;
 use combat::follow_up::{FollowUpIntent, FollowUpTrace};
@@ -22,7 +22,6 @@ use combat::turn_system::ActionIntent;
 use combat::ultimate::UltGainQueue;
 
 // Used by S03+ turn state transitions
-#[allow(dead_code)]
 #[derive(States, Default, Debug, Clone, Eq, PartialEq, Hash)]
 enum AppState {
     #[default]

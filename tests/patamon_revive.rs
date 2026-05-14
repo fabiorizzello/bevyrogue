@@ -15,7 +15,7 @@ use bevyrogue::combat::{
 use bevyrogue::data::{
     SkillBookHandle,
     skills_ron::{
-        Effect, LegalityReasonCode, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
+        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
         SkillTargeting, TargetLife, TargetShape, TargetSide,
     },
 };
@@ -65,6 +65,7 @@ fn build_app() -> App {
             effects: vec![Effect::Damage {
                 amount: 9999,
                 target: TargetShape::Single,
+                per_hop: Default::default(),
             }],
 
             custom_signals: vec![],

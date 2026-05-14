@@ -1,13 +1,12 @@
 use bevy::prelude::Resource;
 
-use crate::data::skills_ron::{SkillCustomSignal, TargetShape};
+use crate::data::skills_ron::{DamageCurve, SkillCustomSignal, TargetShape};
 
 use super::status_effect::StatusEffectKind;
 use super::team::Team;
 use super::types::{DamageTag, SkillId, UnitId};
 
 // Used by S06/T02.
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CombatPhase {
     /// AV system is ticking; no unit has been selected yet.
@@ -36,19 +35,25 @@ pub struct ResolvedAction {
     pub base_damage: i32,
     pub toughness_damage: i32,
     pub revive_pct: i32,
+    pub heal_pct: u32,
     pub sp_cost: i32,
     pub ult_effect: UltEffect,
     /// Number of ally free-basic casts to grant after this action resolves (from GrantFreeSkill effect).
     pub grant_free_skill_count: usize,
     /// First ApplyStatus effect found in the skill definition; first match wins.
     pub status_to_apply: Option<(StatusEffectKind, u32)>,
-    pub turn_advance_pct: i32,
+    pub advance_pct: u32,
+    pub delay_pct: u32,
     /// Energy to grant the attacker from a GrantEnergy effect (0 = none).
     pub energy_grant: i32,
     /// AV self-advance percent from SelfAdvance effect (targets attacker, not defender).
     pub self_advance_pct: i32,
     pub target_shape: TargetShape,
     pub custom_signals: Vec<SkillCustomSignal>,
+    /// Per-hop damage curve (relevant for `TargetShape::Bounce`; `Constant` for all other shapes).
+    pub damage_curve: DamageCurve,
+    /// Outer None = not a cleanse skill; Some(inner) = cleanse with that count (None = remove all).
+    pub cleanse_count: Option<Option<u8>>,
 }
 
 #[derive(Debug, Clone)]
@@ -59,7 +64,6 @@ pub struct InFlightAction {
 }
 
 // Used by S06/T02.
-#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CombatState {
     pub phase: CombatPhase,
@@ -79,11 +83,12 @@ impl Default for CombatState {
 
 impl CombatState {
     // Used by S06/T02.
-    #[allow(dead_code)]
     pub fn reset(&mut self) {
         *self = Self::default();
     }
 
+    // kept for: M020 reactive bus (UnitDied taxonomy) + M023 phase-strip
+    // observability; exercised by unit tests in this module.
     #[allow(dead_code)]
     pub fn update_terminal_state(&mut self, ally_alive: bool, enemy_alive: bool) {
         if self.winner.is_some() {

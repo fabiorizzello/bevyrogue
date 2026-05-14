@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T03",
+  "unitId": "M019/S02/T03",
+  "timestamp": 1778748542574,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "cargo test --test heal_effect — all 5 cases pass. cargo test (full suite) — green, no regression in dr_pipeline.rs or other integration tests. cargo check — green.",
+      "exitCode": 2,
+      "durationMs": 2,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}

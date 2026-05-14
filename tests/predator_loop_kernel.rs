@@ -1,6 +1,6 @@
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::kernel::{
-    CombatKernelState, PredatorLoopBlockedReason, PredatorLoopCapKind, PredatorLoopSignal,
+    PredatorLoopBlockedReason, PredatorLoopCapKind, PredatorLoopSignal,
     PredatorLoopStep, PredatorLoopTransition,
 };
 use bevyrogue::combat::observability::{

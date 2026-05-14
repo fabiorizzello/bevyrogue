@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T03",
+  "unitId": "M019/S03/T03",
+  "timestamp": 1778750342688,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "cargo test --test cleanse_effect — all 8 cases pass deterministically. cargo test — full integration suite green (heal_effect.rs, dr_pipeline.rs, follow_up_triggers.rs, status_blessed_offensive.rs, validation_snapshot.rs unaffected). cargo check clean.",
+      "exitCode": 2,
+      "durationMs": 3,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}
