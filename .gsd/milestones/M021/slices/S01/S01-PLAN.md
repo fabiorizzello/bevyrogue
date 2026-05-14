@@ -44,7 +44,7 @@ Tutti i call-site di `CombatEvent` emit (~50) aggiornati per accettare/propagare
   - Files: `src/combat/events.rs`, `src/combat/api/intent.rs`, `src/combat/turn_system/pipeline.rs`, `src/combat/turn_system/mod.rs`, `src/combat/follow_up.rs`, `src/combat/damage.rs`, `src/combat/resolution.rs`, `src/combat/status_effect.rs`, `src/combat/stun.rs`, `src/combat/toughness.rs`, `src/combat/ultimate.rs`, `src/combat/sp.rs`, `src/combat/kernel.rs`, `src/combat/jsonl_logger.rs`, `tests/cast_id_propagation.rs`
   - Verify: cargo check (headless + windowed) puliti. cargo test full suite (~74) verde. rg 'CombatEvent \{' src/ | rg -v 'cast_id' → 0. cargo test --test cast_id_propagation verde (3 assertion). JSONL output contiene cast_id su ogni evento.
 
-- [ ] **T04: CombatPlugin extract — Bevy Plugin wrapper + Resource init + lib re-export** `est:M`
+- [x] **T04: CombatPlugin extract — Bevy Plugin wrapper + Resource init + lib re-export** `est:M`
   Spostare logica di register_combat_kernel_runtime in impl Plugin for CombatPlugin, montare Resource framework (ExtRegistries, SignalBus, Clock, CombatRng seed 0xDEADBEEF, IntentQueue, CastIdGen), registrare intent_applier exclusive, esporre CombatPlugin da lib.rs, aggiornare main.rs + bin/combat_cli.rs. Verifica rg import vietati e sposta dietro #[cfg(feature="windowed")] o in src/windowed.rs se trovati.
   - Files: `src/combat/plugin.rs`, `src/combat/mod.rs`, `src/lib.rs`, `src/main.rs`, `src/bin/combat_cli.rs`
   - Verify: rg 'use bevy::winit|use bevy::render|use bevy_egui' src/combat/ --glob '!blueprints/**' → 0. cargo check (headless + windowed) puliti. cargo run headless boot OK. rg 'CombatPlugin' src/lib.rs → ≥1. rg 'add_plugins.*CombatPlugin' src/main.rs → 1. rg 'register_combat_kernel_runtime' src/main.rs → 0.
