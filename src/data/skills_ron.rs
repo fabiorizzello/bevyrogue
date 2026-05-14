@@ -121,6 +121,8 @@ pub enum LegalityReasonCode {
     ChargedTelegraphDeferred,
     EnemyTraitDeferred,
     EnergyCapReached,
+    /// A skill carries two effect kinds that are mutually exclusive in v0 (e.g. Heal + Cleanse).
+    MixedEffectKinds,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -233,6 +235,13 @@ pub enum Effect {
     /// Capped at hp_max; no-ops silently on KO targets.
     Heal {
         amount_pct_max_hp: u32,
+        target: TargetShape,
+    },
+    /// Remove up to `count` non-immune debuffs from an ally's StatusBag (None = remove all).
+    /// `target` must be an ally-side shape (Single, SelfOnly, AllAllies).
+    /// Cannot coexist with Effect::Heal in the same skill (deferred to M021).
+    Cleanse {
+        count: Option<u8>,
         target: TargetShape,
     },
 }
@@ -523,6 +532,38 @@ fn validate_skill_def(skill: &SkillDef) -> Result<(), SkillBookValidationError> 
                 _ => {}
             }
         }
+    }
+
+    for effect in &skill.effects {
+        if let Effect::Cleanse { target, .. } = effect {
+            match target {
+                TargetShape::Bounce { .. }
+                | TargetShape::AllEnemies
+                | TargetShape::Blast => {
+                    return Err(validation_error(
+                        skill,
+                        SkillBookValidationCategory::Semantic,
+                        LegalityReasonCode::WrongSide,
+                        format!(
+                            "Cleanse effect may not target enemy-side shapes; found {:?}",
+                            target
+                        ),
+                    ));
+                }
+                _ => {}
+            }
+        }
+    }
+
+    let has_heal = skill.effects.iter().any(|e| matches!(e, Effect::Heal { .. }));
+    let has_cleanse = skill.effects.iter().any(|e| matches!(e, Effect::Cleanse { .. }));
+    if has_heal && has_cleanse {
+        return Err(validation_error(
+            skill,
+            SkillBookValidationCategory::Semantic,
+            LegalityReasonCode::MixedEffectKinds,
+            "Heal and Cleanse may not coexist in the same skill (deferred to M021)".to_string(),
+        ));
     }
 
     Ok(())

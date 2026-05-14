@@ -138,6 +138,11 @@ pub enum CombatEventKind {
         amount: i32,
         hp_after: i32,
     },
+    /// Emitted once per Cleanse application per target (including no-op cleanses where
+    /// kinds is empty, mirroring OnHealed amount=0).
+    OnCleansed {
+        kinds: Vec<StatusEffectKind>,
+    },
 }
 
 #[derive(Message, Debug, Clone, PartialEq, Eq, serde::Serialize)]
