@@ -46,16 +46,25 @@ pub trait Ability: Send + Sync + 'static {
 ```
 
 ```rust
-// src/combat/api/intent.rs (sintesi rilevante — chain semantics §5.6)
-pub enum OnHit {
-    Heal       { who: UnitId, amount_pct_max_hp: u32 },
-    GainSp     { side: Team, amount: i32 },
-    ApplyStatus{ kind: StatusEffectKind, stacks_or_dur: u8, mode: StatusApplyMode },
-    EnqueueFollowUp { skill: AbilityId, target: TargetResolver },
-    BlueprintSignal { owner: BlueprintId, signal: &'static str, payload: BlueprintPayload },
+// src/combat/api/hook.rs (D023 — chain hook come fn Rust, niente enum dichiarativi)
+//
+// Pattern unificato con i passive BlueprintListener (D009): ogni hook è una closure
+// `(event, ctx) → ctx.enqueue(Intent...)`. Il kernel emette HitEvent/KillEvent/MissEvent/
+// FinalHopEvent per il deal corrente e li route alle closure registrate sull'Ability.
+// Niente `enum OnHit`, niente `enum OnKill`, niente `enum OnFinalHop`.
+pub type ChainHook<E> = Arc<dyn Fn(&E, &mut SkillCtx) + Send + Sync>;
+
+pub struct ChainHooks {
+    pub on_hit:        Option<ChainHook<HitEvent>>,
+    pub on_kill:       Option<ChainHook<KillEvent>>,
+    pub on_miss:       Option<ChainHook<MissEvent>>,
+    pub on_final_hop:  Option<ChainHook<FinalHopEvent>>,  // chiude G6 in forma hook
 }
-pub enum OnKill { /* idem di OnHit */ }
-pub enum OnMiss { /* subset */ }
+
+pub struct HitEvent       { pub caster: UnitId, pub target: UnitId, pub damage: u32, pub hop_idx: u8, pub tag: DamageTag, pub cast_id: CastId }
+pub struct KillEvent      { pub caster: UnitId, pub target: UnitId, pub overkill: u32, pub cast_id: CastId }
+pub struct MissEvent      { pub caster: UnitId, pub target: UnitId, pub reason: MissReason, pub cast_id: CastId }
+pub struct FinalHopEvent  { pub caster: UnitId, pub last_target: UnitId, pub hops_done: u8, pub cast_id: CastId }
 
 pub enum StatusApplyMode { Stack, Refresh, MaxOf }  // §G1
 
@@ -67,6 +76,8 @@ pub enum TargetResolver {
     // ...
 }
 ```
+
+**Dry-run preview (D024).** `SkillCtx` espone `mode: SkillCtxMode { Live, DryRun }`. In `Live`, `ctx.enqueue(Intent)` finisce nella coda kernel real-cast. In `DryRun`, finisce in un buffer locale ritornato a `query_skill_preview` (D004). Le **stesse** hook fn girano in entrambi i mode: zero divergenza preview ↔ esecuzione anche per skill con branching (Agumon detonate condizionale, Dorumon chain Predator-only, Tentomon Bounce final-hop).
 
 ---
 
@@ -162,10 +173,14 @@ pub fn sharp_claws() -> Arc<dyn Ability> {
             ctx.deal(target.primary())
                 .damage(t.base_dmg)
                 .tag(DamageTag::Fire)
-                .on_hit(OnHit::ApplyStatus {
-                    kind: StatusEffectKind::Heated,
-                    stacks_or_dur: t.heated_apply,
-                    mode: StatusApplyMode::Stack,  // +1 per call, cap a 6 lato Status def
+                .on_hit(move |ev: &HitEvent, ctx| {
+                    // Hook fn (D023): kernel emette HitEvent, hook enqueue Intent.
+                    ctx.enqueue(Intent::ApplyStatus {
+                        target: ev.target,
+                        kind: StatusEffectKind::Heated,
+                        stacks_or_dur: t.heated_apply,
+                        mode: StatusApplyMode::Stack,  // +1 per call, cap a 6 lato Status def
+                    });
                 })
                 .done();
         })
@@ -198,10 +213,13 @@ pub fn baby_flame() -> Arc<dyn Ability> {
                 .damage(t.base_dmg)
                 .tag(DamageTag::Fire)
                 .toughness_hit(t.toughness_hit)
-                .on_hit(OnHit::ApplyStatus {
-                    kind: StatusEffectKind::Heated,
-                    stacks_or_dur: t.heated_apply,
-                    mode: StatusApplyMode::Stack,
+                .on_hit(move |ev: &HitEvent, ctx| {
+                    ctx.enqueue(Intent::ApplyStatus {
+                        target: ev.target,
+                        kind: StatusEffectKind::Heated,
+                        stacks_or_dur: t.heated_apply,
+                        mode: StatusApplyMode::Stack,
+                    });
                 })
                 .done();
         })
@@ -209,7 +227,7 @@ pub fn baby_flame() -> Arc<dyn Ability> {
 }
 ```
 
-### 2.5 `baby_burner` — Ult (single primary + splash adj + OnKill→Detonate Heated)
+### 2.5 `baby_burner` — Ult (single primary + splash adj + on_kill→Detonate Heated)
 
 ```rust
 pub fn baby_burner() -> Arc<dyn Ability> {
@@ -225,23 +243,27 @@ pub fn baby_burner() -> Arc<dyn Ability> {
 
             // Snapshot frozen: leggo Heated stacks pre-skill (sopravvive al kill primary).
             let stacks = ctx.status_stacks(primary, StatusEffectKind::Heated);
+            let per_stack_dmg = t.detonate_per_stack;
 
-            // Primary hit con OnKill→Detonate (blueprint signal owner=agumon).
+            // Primary hit con hook on_kill → BlueprintSignal detonate.
+            // La closure cattura `stacks` e `per_stack_dmg` dallo snapshot pre-skill.
             ctx.deal(primary)
                 .damage(t.primary_dmg)
                 .tag(DamageTag::Fire)
-                .on_kill(OnKill::BlueprintSignal {
-                    owner: BlueprintId::AGUMON,
-                    signal: "detonate_heated",
-                    payload: BlueprintPayload::new(DetonatePayload {
-                        primary,
-                        stacks,
-                        per_stack_dmg: t.detonate_per_stack,
-                    }),
+                .on_kill(move |ev: &KillEvent, ctx| {
+                    ctx.enqueue(Intent::BlueprintSignal {
+                        owner: BlueprintId::AGUMON,
+                        signal: "detonate_heated",
+                        payload: BlueprintPayload::new(DetonatePayload {
+                            primary: ev.target,
+                            stacks,
+                            per_stack_dmg,
+                        }),
+                    });
                 })
                 .done();
 
-            // Splash adj (50% del primary_dmg) — non OnHit chain, è un fan-out indipendente.
+            // Splash adj (50% del primary_dmg) — non chain hook, è un fan-out indipendente.
             for adj in ctx.adjacents(primary) {
                 ctx.deal(adj)
                     .damage(t.primary_dmg * t.splash_pct as i32 / 100)
@@ -253,13 +275,15 @@ pub fn baby_burner() -> Arc<dyn Ability> {
 }
 
 // Handler del signal — registrato dal AgumonPlugin (interno al blueprint, kernel-opaque).
+// Resta funzione Rust pura: legge payload, enqueue Intent. Niente enum dichiarativi.
 fn handle_detonate(payload: &DetonatePayload, ctx: &mut HookCtx) {
     for adj in ctx.adjacents(payload.primary) {
         ctx.enqueue(Intent::DealDamage {
             target: adj,
             base: payload.stacks as i32 * payload.per_stack_dmg,
             tag: DamageTag::Fire,
-            on_hit: None, on_miss: None, on_kill: None, curve_hop: None,
+            chain_hooks: ChainHooks::none(),  // detonate non innesca ulteriori hook
+            curve_hop: None,
         });
     }
 }
@@ -339,10 +363,13 @@ pub fn claw_attack() -> Arc<dyn Ability> {
             ctx.deal(target.primary())
                 .damage(t.base_dmg)
                 .tag(DamageTag::Ice)
-                .on_hit(OnHit::ApplyStatus {
-                    kind: StatusEffectKind::Chilled,
-                    stacks_or_dur: t.chilled_apply,
-                    mode: StatusApplyMode::Stack,
+                .on_hit(move |ev: &HitEvent, ctx| {
+                    ctx.enqueue(Intent::ApplyStatus {
+                        target: ev.target,
+                        kind: StatusEffectKind::Chilled,
+                        stacks_or_dur: t.chilled_apply,
+                        mode: StatusApplyMode::Stack,
+                    });
                 })
                 .done();
         })
@@ -369,10 +396,13 @@ pub fn gabumon_shot() -> Arc<dyn Ability> {
                 .damage(t.base_dmg)
                 .tag(DamageTag::Ice)
                 .toughness_hit(t.toughness_hit)
-                .on_hit(OnHit::ApplyStatus {
-                    kind: StatusEffectKind::Chilled,
-                    stacks_or_dur: t.chilled_apply_primary,
-                    mode: StatusApplyMode::Stack,
+                .on_hit(move |ev: &HitEvent, ctx| {
+                    ctx.enqueue(Intent::ApplyStatus {
+                        target: ev.target,
+                        kind: StatusEffectKind::Chilled,
+                        stacks_or_dur: t.chilled_apply_primary,
+                        mode: StatusApplyMode::Stack,
+                    });
                 })
                 .done();
 
@@ -409,10 +439,13 @@ pub fn blue_cyclone() -> Arc<dyn Ability> {
             ctx.deal(primary)
                 .damage(t.primary_dmg)
                 .tag(DamageTag::Ice)
-                .on_hit(OnHit::ApplyStatus {
-                    kind: StatusEffectKind::Slowed,
-                    stacks_or_dur: t.slowed_dur,
-                    mode: StatusApplyMode::Refresh,
+                .on_hit(move |ev: &HitEvent, ctx| {
+                    ctx.enqueue(Intent::ApplyStatus {
+                        target: ev.target,
+                        kind: StatusEffectKind::Slowed,
+                        stacks_or_dur: t.slowed_dur,
+                        mode: StatusApplyMode::Refresh,
+                    });
                 })
                 .done();
 
@@ -538,7 +571,7 @@ pub fn bite() -> Arc<dyn Ability> {
 }
 ```
 
-### 4.3 `dash_metal` — Skill (threshold scaling + OnKill→Chain in Predator state)
+### 4.3 `dash_metal` — Skill (threshold scaling + on_kill→Chain in Predator state)
 
 ```rust
 pub fn dash_metal() -> Arc<dyn Ability> {
@@ -556,28 +589,32 @@ pub fn dash_metal() -> Arc<dyn Ability> {
             // Scaling threshold: ×2 damage se primary HP <50%.
             let base = if hp_pct < 50 { t.base_dmg * 2 } else { t.base_dmg };
 
-            // OnKill→Chain armato solo in Predator state, 1 chain max.
+            // Hook on_kill condizionato a Predator state. Decisione presa dal corpo
+            // della closure, non dichiarata via enum — vantaggio D023: branching
+            // libero, kernel invariante. Chain cap a 1 (skill virtuale dash_metal_chain
+            // non porta proprio on_kill).
             let predator_active = ctx
                 .blueprint_state::<PredatorLoopState>()
                 .map_or(false, |s| s.active);
 
-            let on_kill = if predator_active {
-                Some(OnKill::EnqueueFollowUp {
-                    skill: AbilityId::DORUMON_DASH_METAL_CHAIN,
-                    target: TargetResolver::LowestHpPctAlive {
-                        scope: TeamScope::Enemy,
-                        exclude: vec![primary],  // §6 D1: exclude primary appena ucciso
-                    },
-                })
-            } else {
-                None
-            };
+            let mut deal = ctx.deal(primary).damage(base).tag(DamageTag::Dark);
 
-            ctx.deal(primary)
-                .damage(base)
-                .tag(DamageTag::Dark)
-                .on_kill_maybe(on_kill)
-                .done();
+            if predator_active {
+                deal = deal.on_kill(move |ev: &KillEvent, ctx| {
+                    // LowestHpPctAlive escludendo il primary appena ucciso.
+                    let next_target = ctx
+                        .lowest_hp_pct_alive(SideFilter::Enemy)
+                        .filter(|u| *u != ev.target);
+                    if let Some(t) = next_target {
+                        ctx.enqueue(Intent::EnqueueFollowUp {
+                            skill: AbilityId::DORUMON_DASH_METAL_CHAIN,
+                            target: TargetResolver::Fixed(t),
+                        });
+                    }
+                });
+            }
+
+            deal.done();
         })
         .build()
 }
@@ -623,13 +660,15 @@ pub fn metal_cannon() -> Arc<dyn Ability> {
             ctx.deal(primary)
                 .damage(base)
                 .tag(DamageTag::Dark)
-                .on_hit(OnHit::BlueprintSignal {
-                    owner: BlueprintId::DORUMON,
-                    signal: "predator_force_enter",
-                    payload: BlueprintPayload::new(PredatorEnterPayload {
-                        tracked: primary,
-                        forced: true,
-                    }),
+                .on_hit(move |ev: &HitEvent, ctx| {
+                    ctx.enqueue(Intent::BlueprintSignal {
+                        owner: BlueprintId::DORUMON,
+                        signal: "predator_force_enter",
+                        payload: BlueprintPayload::new(PredatorEnterPayload {
+                            tracked: ev.target,
+                            forced: true,
+                        }),
+                    });
                 })
                 .done();
         })
@@ -725,7 +764,7 @@ pub fn hard_claw() -> Arc<dyn Ability> {
 }
 ```
 
-### 5.3 `petit_thunder` — Skill (Bounce(3) + OnFinalHop→Paralyzed + DR self)
+### 5.3 `petit_thunder` — Skill (Bounce(3) + on_final_hop→Paralyzed + DR self)
 
 ```rust
 pub fn petit_thunder() -> Arc<dyn Ability> {
@@ -745,10 +784,15 @@ pub fn petit_thunder() -> Arc<dyn Ability> {
                 .selector(BounceSelector::LowestHpAlive { exclude_self: true })
                 .damage_curve(DamageCurve::PerHop(vec![t.dmg_hop1, t.dmg_hop2, t.dmg_hop3]))
                 .tag(DamageTag::Electric)
-                .on_final_hop(OnFinalHop::ApplyStatus {     // ← gap §G6
-                    kind: StatusEffectKind::Paralyzed,
-                    stacks_or_dur: t.paralyzed_dur,
-                    mode: StatusApplyMode::Refresh,
+                .on_final_hop(move |ev: &FinalHopEvent, ctx| {
+                    // Hook fn (D023): closure su FinalHopEvent — kernel chiama solo
+                    // sull'ultimo hop, niente discriminazione data-driven. Chiude G6.
+                    ctx.enqueue(Intent::ApplyStatus {
+                        target: ev.last_target,
+                        kind: StatusEffectKind::Paralyzed,
+                        stacks_or_dur: t.paralyzed_dur,
+                        mode: StatusApplyMode::Refresh,
+                    });
                 })
                 .done();
 
@@ -1097,6 +1141,8 @@ pub fn kitsune_grace() -> Arc<dyn Ability> {
 
 Punti dove la stesura ha rivelato un gap rispetto all'API target di `M021-RESEARCH.md` §5. Ogni gap va valutato e o (a) chiuso aggiornando il RESEARCH, o (b) descoped esplicitamente.
 
+> **Nota strutturale post-stesura (D023 + D024).** La prima draft di questa stesura usava `enum OnHit { ApplyStatus, Heal, GainSp, BlueprintSignal, EnqueueFollowUp }` (più gemelli `OnKill`/`OnMiss`/`OnFinalHop`) come record dichiarativo per gli effetti side-chain. La revisione ha rilevato un'**inconsistenza** con D009: i `BlueprintListener` passive sono già fn Rust `(Event, Ctx)→Vec<Intent>`, ma i chain hook erano enum match. D023 promuove **tutti** i chain hook (`on_cast`, `on_hit`, `on_kill`, `on_miss`, `on_final_hop`) a hook fn coerenti col pattern listener. D024 introduce `SkillCtx::Mode { Live, DryRun }` per consentire preview UI/AI delle stesse fn senza side-effect. Tutti i campioni in §2–§7 sono stati riscritti col pattern hook fn. La struttura dei gap restanti (G1, G3–G16) non cambia: continuano a riguardare dati (`StatusApplyMode`, `BuffKind`, `ModifierCondition`, `EventFilter`), non più la forma delle hook.
+
 ### G1 — `StatusApplyMode`: Stack vs Refresh vs MaxOf
 
 **Sintomo.** Heated/Chilled si **stackano** (+1 per call, cap 6, decay -1/turno). Status canon `Slowed`/`Paralyzed` si **refreshano** (durata = max(old, new)). `Blessed` idem refresh.
@@ -1152,13 +1198,13 @@ Conseguenza: il modifier pipeline va consultato anche per **status-intrinsic**, 
 
 ---
 
-### G6 — `OnFinalHop` per Bounce: applicare effetto solo all'ultimo hop
+### G6 — `on_final_hop` per Bounce: applicare effetto solo all'ultimo hop
 
-**Sintomo.** Tentomon `petit_thunder` Bounce(3) deve applicare `Paralyzed` **solo all'hit finale**, non a ogni hop. L'`OnHit` enum di §5.6 si applica a ogni hit del DealDamage; non discrimina "ultimo hop". Da memory: «DamageCurve::PerHop runtime length guard». DamageCurve già sa quale hop è in corso.
+**Sintomo.** Tentomon `petit_thunder` Bounce(3) deve applicare `Paralyzed` **solo all'hit finale**, non a ogni hop. Un hook generico `on_hit` viene chiamato per ogni hit del DealDamage; non discrimina "ultimo hop". Da memory: «DamageCurve::PerHop runtime length guard». DamageCurve già sa quale hop è in corso.
 
-**Proposta.** Estendere chain enum del Bounce con `on_final_hop: Option<OnHit>` (variant separato dal generico `on_hit`). Oppure aggiungere `OnHit::ConditionalHop { hop_idx: HopFilter, then: Box<OnHit> }`. Preferenza: `on_final_hop` esplicito al builder (`.on_final_hop(OnFinalHop::ApplyStatus(...))`) — più scopribile.
+**Proposta (post-D023).** Capability slot `on_final_hop: Option<ChainHook<FinalHopEvent>>` come fratello di `on_hit`/`on_kill`/`on_miss` (vedi §0). Il kernel emette un solo `FinalHopEvent` al completamento della chain e route alla closure registrata. Niente enum dichiarativo, niente discriminazione data-driven dentro `on_hit`. La closure capta tuning da snapshot frozen come tutti gli altri hook.
 
-**Decisione.** Chiudere come **D020** prima di S07 (Bounce builder). Pattern raro (1/24 skill) ma serve, e codifica una semantica "ultimo hop" che AI/UI tooltip già vorranno mostrare.
+**Decisione.** Chiudere come **D020** prima di S07 (Bounce builder), con il vincolo aggiuntivo che `on_final_hop` è **hook fn coerente** con D023, non un campo enum. Pattern raro (1/24 skill) ma serve, e codifica una semantica "ultimo hop" che AI/UI tooltip già vorranno mostrare via dry-run (D024).
 
 ---
 
@@ -1224,7 +1270,7 @@ Conseguenza: il modifier pipeline va consultato anche per **status-intrinsic**, 
 
 ### G13 — `FollowUp` ability come ability separata (Dorumon dash_metal_chain)
 
-**Sintomo.** Dorumon `OnKill::EnqueueFollowUp { skill: DASH_METAL_CHAIN }` richiede una **seconda skill registrata** che faccia il chain damage. Pattern già in canon (`agumon_follow_up` "Spitfire"). OK.
+**Sintomo.** Dorumon `on_kill(|ev, ctx| ctx.enqueue(Intent::EnqueueFollowUp { skill: DASH_METAL_CHAIN, ... }))` richiede una **seconda skill registrata** che faccia il chain damage. Pattern già in canon (`agumon_follow_up` "Spitfire"). OK.
 
 **Decisione.** Documentare nel CONTEXT che FollowUp ability è una `AbilityCategory::FollowUp` distinta, legality kernel-skipped, non in input picker UI. Pattern noto.
 
@@ -1263,7 +1309,7 @@ Conseguenza: il modifier pipeline va consultato anche per **status-intrinsic**, 
 | G3 — ModifierCondition canon list | **alta** | S07 | D017 |
 | G4 — Blessed intrinsic effects | **alta** | S05 | D018 |
 | G5 — BuffKind separato | **alta** | S05 | D019 |
-| G6 — OnFinalHop Bounce | media | S07 | D020 |
+| G6 — on_final_hop Bounce (hook fn, vedi D023) | media | S07 | D020 |
 | G7 — Random→deterministic selector | bassa (doc) | — | nessuna |
 | G8 — BuffStackMode::ProcOnce | media | S05 | (co-chiude G5/D019) |
 | G9 — EventFilter combinatori | media | S04 | D021 |
@@ -1275,22 +1321,23 @@ Conseguenza: il modifier pipeline va consultato anche per **status-intrinsic**, 
 | G15 — consume_on_skill_cast | bassa (future-proof) | — | nessuna |
 | G16 — Snapshot owner queries | bassa (doc) | S06 | nessuna |
 
-**Bilancio.** 5 gap ad alta severità + 1 candidata D022 future-proof. Tutti chiudibili dentro S04–S07 senza alterare la struttura della roadmap. Nessuno richiede di smontare slice già pianificate.
+**Bilancio.** 5 gap ad alta severità + 1 candidata D022 future-proof. Tutti chiudibili dentro S04–S07 senza alterare la struttura della roadmap. Nessuno richiede di smontare slice già pianificate. **Inoltre** la revisione hook ha già chiuso D023 (hook fn vs enum) e D024 (`SkillCtx::Mode { Live, DryRun }`) — questi non sono gap del roster ma decisioni architetturali pre-S01 abilitate dalla stesura.
 
 **Punti positivi confermati dalla stesura.**
 
 1. **Niente kernel pollution.** Tutte le 24 ability scritte vivono sotto `blueprints/<x>/` (più `blueprints/twin_core/`). Zero menzione di Twin Core/Predator/Holy/Battery/Kitsune nel kernel target.
 2. **`Intent` canon di §5.7 copre 22/24 ability senza estensioni.** Le 2 estensioni (`ApplyBuff`, `ApplyStatus { mode }`) sono incrementali, non strutturali.
-3. **AbilityBuilder ergonomia** regge: ogni skill sta in 8-25 linee, leggibili. Niente impl boilerplate.
-4. **Snapshot frozen + `ctx.enqueue` produce ordering deterministico** anche per chain (Gabumon echo, Agumon detonate, Dorumon chain).
+3. **AbilityBuilder ergonomia** regge: ogni skill sta in 10-30 linee, leggibili. Hook fn aggiungono ~3-5 linee per chain vs enum dichiarativo, in cambio di branching libero in-closure (Dorumon Predator-only chain, Agumon detonate condizionale).
+4. **Snapshot frozen + `ctx.enqueue` produce ordering deterministico** anche per chain (Gabumon echo, Agumon detonate, Dorumon chain). Le closure catturano per `move` valori già letti dallo snapshot pre-skill (Heated stacks, hp_pct), garantendo invarianza nel resto del cast.
 5. **Modifier pipeline è il vero load-bearing**: 3/6 passive sono pure Modifier (`twin_core_fire`, `twin_core_ice`, `holy_aegis`). Senza ModifierCondition ricco (G3) il design crolla.
-6. **Hooks via filter enum + Custom escape hatch** copre tutti i listener canon (`fur_cloak` source-filter, `kitsune_grace` not-self, `battery_loop` dual-path, `predator_loop` HP-threshold + UnitDied).
+6. **Hook unification post-D023**: passive listener, per-deal chain hook, on-final-hop sono tutti la stessa forma `(event, ctx) → ctx.enqueue`. Zero match enum nel kernel, zero variant da estendere quando arrivano nuovi side-effect. Preview UI/AI via dry-run (D024) gira gli **stessi** hook su buffer locale, eliminando per costruzione il problema "preview diverge da execute" sui rami condizionali.
 
 ---
 
 ## 10. Prossimi passi
 
-1. Propagare i **5 gap ad alta severità** (G1/G3/G4/G5 + parziale G8/G9) come Decisioni `D016`–`D021` in `.gsd/DECISIONS.md`, e annotare la lista in `M021-RESEARCH.md` §18.
-2. Aggiornare la roadmap S04–S07 con i requisiti di chiusura gap (extension canon per Intent/Modifier/Buff).
-3. Validare il fit con utente: l'AbilityBuilder ergonomia è accettabile alla stesura o si vuole iterare?
-4. (Opzionale) Convertire questa stesura in test fixture sintetiche per S07 (proof AbilityBuilder copertura) — già richiesto dalla roadmap.
+1. **Fatto** — D023 (hook fn) + D024 (`SkillCtx::Mode`) persistite in `.gsd/DECISIONS.md`. Stesura aggiornata coerentemente.
+2. Propagare i **5 gap ad alta severità** (G1/G3/G4/G5 + parziale G8/G9) come Decisioni `D016`–`D021` in `.gsd/DECISIONS.md`, e annotare la lista in `M021-RESEARCH.md` §18. D020 va scritta con il vincolo "hook fn coerente con D023".
+3. Aggiornare la roadmap S04–S07 con i requisiti di chiusura gap (extension canon per Intent/Modifier/Buff) **e** per il pattern hook fn (`ChainHooks`, `HitEvent`/`KillEvent`/`MissEvent`/`FinalHopEvent`, `SkillCtxMode`).
+4. Validare il fit con utente: l'AbilityBuilder ergonomia post-hook è accettabile o si vuole iterare?
+5. (Opzionale) Convertire questa stesura in test fixture sintetiche per S07 (proof AbilityBuilder copertura) — già richiesto dalla roadmap.
