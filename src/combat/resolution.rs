@@ -311,7 +311,7 @@ pub fn skill_damage_curve(effects: &[Effect]) -> DamageCurve {
 /// - `Constant`: always returns `base_damage`.
 /// - `Falloff { pct }`: hop k = `base_damage * pct^k / 100^k`, i.e. applies `pct/100` repeatedly
 ///   starting from hop 0. Floored at 1 when `base_damage > 0`.
-/// - `PerHop(v)`: returns `v[k]`. Panics in debug if `k >= v.len()`; in release clamps to last.
+/// - `PerHop(v)`: returns `v[k]`. Clamps index to last element if `k >= v.len()`; returns 0 if empty.
 pub fn compute_hop_damage(base_damage: i32, curve: &DamageCurve, hop: usize) -> i32 {
     match curve {
         DamageCurve::Constant => base_damage,

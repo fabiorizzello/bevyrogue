@@ -27,7 +27,7 @@ use crate::combat::types::{EvoStage, UnitId};
 use crate::combat::unit::{BasicStreak, Ko, SlotIndex};
 use crate::data::{
     SkillBookHandle,
-    skills_ron::{RepeatPolicy, SkillBook, TargetShape},
+    skills_ron::{DamageCurve, RepeatPolicy, SkillBook, TargetShape},
 };
 use std::collections::HashSet;
 
@@ -809,7 +809,30 @@ pub(crate) fn step_app(
             })
             .unwrap_or(crate::combat::team::Team::Enemy);
 
-        for hop_k in 0..(hops as usize) {
+        // Pre-loop guard: PerHop curve shorter than hops_planned.
+        // Emits OnActionFailed once and clamps the loop to v.len() so the action
+        // still resolves the hops it has coefficients for (D001: kernel never panics).
+        let clamped_hops = if let DamageCurve::PerHop(v) = curve {
+            let n = v.len();
+            let h = hops as usize;
+            if n < h {
+                let reason = format!("DamageCurve::PerHop length {n} < hops_planned {h}");
+                emit_combat_event(
+                    event_writer,
+                    CombatEventKind::OnActionFailed { reason },
+                    attacker_id,
+                    target_id,
+                    inflight.follow_up_depth,
+                );
+                n
+            } else {
+                h
+            }
+        } else {
+            hops as usize
+        };
+
+        for hop_k in 0..clamped_hops {
             // Rebuild snapshot each hop so that KOs from previous hops are reflected.
             let snapshot = {
                 let entries = actors
