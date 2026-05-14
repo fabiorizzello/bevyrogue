@@ -18,10 +18,10 @@
 - [x] **S02: S02** `risk:low` `depends:[]`
   > After this: Test integration tests/heal_effect.rs: skill RON con Effect::Heal applicata su Single e AllAllies, cap a maxHP, no-op su KO, CombatEvent::Healed nel JSONL stream.
 
-- [ ] **S03: S03** `risk:low` `depends:[]`
+- [x] **S03: S03** `risk:low` `depends:[]`
   > After this: Test integration tests/cleanse_effect.rs: cleanse count=2 rimuove 2 debuff non-immuni; Blessed (immune) non rimosso; count=None svuota tutti i debuff non-immuni; CombatEvent::Cleansed nel JSONL.
 
-- [ ] **S04: DamageCurve::PerHop runtime length guard (chiude follow-up #3 M018)** `risk:low` `depends:[S03]`
+- [x] **S04: S04** `risk:low` `depends:[]`
   > After this: Test tests/perhop_guard.rs: skill con DamageCurve::PerHop di lunghezza < hops_planned produce evento diagnostico (fail-fast o clamp — decisione registrata in DECISIONS.md) senza panic.
 
 ## Boundary Map

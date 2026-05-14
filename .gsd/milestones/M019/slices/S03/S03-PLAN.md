@@ -31,7 +31,7 @@ Cleanse is wired at the same pipeline mutation site as status_to_apply (Single/S
   - Files: `src/combat/status_effect.rs`, `src/combat/state.rs`, `src/combat/resolution.rs`
   - Verify: cargo check --tests clean. cargo test --lib runs the inline #[cfg(test)] mod tests for cleanse_n — all ordering / tiebreak / count edge cases pass. Full integration suite (cargo test) remains green since apply_cleanse_only is not yet reachable from the pipeline.
 
-- [ ] **T03: Pipeline wiring (Single/SelfOnly + AllAllies fan-out) + tests/cleanse_effect.rs integration suite** `est:M`
+- [x] **T03: Pipeline wiring (Single/SelfOnly + AllAllies fan-out) + tests/cleanse_effect.rs integration suite** `est:M`
   Wire apply_cleanse_only into the pipeline and add the integration test file. Two pipeline sites and one new test file.
   - Files: `src/combat/turn_system/pipeline.rs`, `src/combat/follow_up.rs`, `tests/cleanse_effect.rs`
   - Verify: cargo test --test cleanse_effect — all 8 cases pass deterministically. cargo test — full integration suite green (heal_effect.rs, dr_pipeline.rs, follow_up_triggers.rs, status_blessed_offensive.rs, validation_snapshot.rs unaffected). cargo check clean.
