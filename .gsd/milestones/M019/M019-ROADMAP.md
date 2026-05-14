@@ -15,10 +15,10 @@
 - [x] **S01: S01** `risk:medium` `depends:[]`
   > After this: Test integration tests/dr_pipeline.rs dimostra DR singolo, DR×N sommato, DR+ARM combinato, DR durante Break — damage clampato a 0 senza panic, CombatEvent::Damage emesso con amount=0 dove applicabile.
 
-- [ ] **S02: S02** `risk:low` `depends:[]`
+- [x] **S02: S02** `risk:low` `depends:[]`
   > After this: Test integration tests/heal_effect.rs: skill RON con Effect::Heal applicata su Single e AllAllies, cap a maxHP, no-op su KO, CombatEvent::Healed nel JSONL stream.
 
-- [ ] **S03: Effect::Cleanse { count: Option<u8> } primitive** `risk:low` `depends:[S02]`
+- [ ] **S03: S03** `risk:low` `depends:[]`
   > After this: Test integration tests/cleanse_effect.rs: cleanse count=2 rimuove 2 debuff non-immuni; Blessed (immune) non rimosso; count=None svuota tutti i debuff non-immuni; CombatEvent::Cleansed nel JSONL.
 
 - [ ] **S04: DamageCurve::PerHop runtime length guard (chiude follow-up #3 M018)** `risk:low` `depends:[S03]`
