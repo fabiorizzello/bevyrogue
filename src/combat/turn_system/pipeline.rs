@@ -6,6 +6,8 @@
 
 use bevy::prelude::*;
 
+use crate::combat::api::intent::CastId;
+
 use crate::combat::damage::triangle_modifiers;
 use crate::combat::energy::{Energy, EnergyGainSource, RoundEnergyTracker};
 use crate::combat::events::{CombatEvent, CombatEventKind};
@@ -92,6 +94,7 @@ pub(crate) fn step_declaration(
             action.source,
             action.target,
             follow_up_depth,
+            CastId::ROOT,
         );
         return None;
     }
@@ -110,6 +113,7 @@ fn dispatch_blueprint_transitions(
     log: &mut ResMut<ActionLog>,
     event_writer: &mut MessageWriter<CombatEvent>,
     registry: Option<&CombatKernelRegistry>,
+    cast_id: CastId,
 ) {
     match crate::combat::blueprints::transitions_for_action_checked(&inflight.action) {
         Ok(transitions) => {
@@ -121,6 +125,7 @@ fn dispatch_blueprint_transitions(
                     inflight.action.source,
                     inflight.action.target,
                     inflight.follow_up_depth,
+                    cast_id,
                 );
             }
         }
@@ -135,6 +140,7 @@ fn dispatch_blueprint_transitions(
                 inflight.action.source,
                 inflight.action.target,
                 inflight.follow_up_depth,
+                cast_id,
             );
         }
     }
@@ -154,6 +160,7 @@ pub(crate) fn step_app(
     actors: &mut ResolveActorsQuery,
     rng: &mut Option<ResMut<CombatRng>>,
     energy_q: &mut Query<(&mut Energy, Option<&mut RoundEnergyTracker>)>,
+    cast_id: CastId,
 ) {
     if inflight.interrupted {
         return;
@@ -247,6 +254,7 @@ pub(crate) fn step_app(
                     attacker_id,
                     target_id,
                     inflight.follow_up_depth,
+                    cast_id,
                 );
                 set_phase(state, CombatPhase::WaitingAction);
                 return;
@@ -263,6 +271,7 @@ pub(crate) fn step_app(
                     attacker_id,
                     target_id,
                     inflight.follow_up_depth,
+                    cast_id,
                 );
                 set_phase(state, CombatPhase::WaitingAction);
                 return;
@@ -298,6 +307,7 @@ pub(crate) fn step_app(
                     attacker_id,
                     target_id,
                     inflight.follow_up_depth,
+                    cast_id,
                 );
                 set_phase(state, CombatPhase::WaitingAction);
                 return;
@@ -312,6 +322,7 @@ pub(crate) fn step_app(
                     attacker_id,
                     target_id,
                     inflight.follow_up_depth,
+                    cast_id,
                 );
                 set_phase(state, CombatPhase::WaitingAction);
                 return;
@@ -327,6 +338,7 @@ pub(crate) fn step_app(
             attacker_id,
             target_id,
             inflight.follow_up_depth,
+            cast_id,
         );
 
         for &def_id in &target_ids {
@@ -368,6 +380,7 @@ pub(crate) fn step_app(
                         inflight.action.source,
                         def_id,
                         inflight.follow_up_depth,
+                        cast_id,
                     );
                 }
                 continue;
@@ -465,6 +478,7 @@ pub(crate) fn step_app(
                                 attacker_id,
                                 def_id,
                                 inflight.follow_up_depth,
+                                cast_id,
                             );
                         }
                     }
@@ -476,6 +490,7 @@ pub(crate) fn step_app(
                     inflight.action.source,
                     def_id,
                     inflight.follow_up_depth,
+                    cast_id,
                 );
 
                 if let Some(amount) = hit_taken_amount {
@@ -485,6 +500,7 @@ pub(crate) fn step_app(
                         attacker_id,
                         def_id,
                         inflight.follow_up_depth,
+                        cast_id,
                     );
                     emit_combat_beat(
                         event_writer,
@@ -493,6 +509,7 @@ pub(crate) fn step_app(
                         attacker_id,
                         def_id,
                         inflight.follow_up_depth,
+                        cast_id,
                     );
                 }
             }
@@ -513,6 +530,7 @@ pub(crate) fn step_app(
                     def_id,
                     def_id,
                     inflight.follow_up_depth,
+                    cast_id,
                 );
             }
         }
@@ -583,6 +601,7 @@ pub(crate) fn step_app(
             attacker_id,
             target_id,
             inflight.follow_up_depth,
+            cast_id,
         );
 
         if inflight.action.advance_pct != 0 {
@@ -595,6 +614,7 @@ pub(crate) fn step_app(
                 attacker_id,
                 target_id,
                 inflight.follow_up_depth,
+                cast_id,
             );
         }
         if inflight.action.delay_pct != 0 {
@@ -607,6 +627,7 @@ pub(crate) fn step_app(
                 attacker_id,
                 target_id,
                 inflight.follow_up_depth,
+                cast_id,
             );
         }
         if inflight.action.self_advance_pct != 0 {
@@ -621,6 +642,7 @@ pub(crate) fn step_app(
                     attacker_id,
                     attacker_id,
                     inflight.follow_up_depth,
+                    cast_id,
                 );
             }
         }
@@ -635,6 +657,7 @@ pub(crate) fn step_app(
                 attacker_id,
                 attacker_id,
                 inflight.follow_up_depth,
+                cast_id,
             );
         }
         if matches!(inflight.action.ult_effect, UltEffect::Reset) {
@@ -644,6 +667,7 @@ pub(crate) fn step_app(
                 attacker_id,
                 attacker_id,
                 inflight.follow_up_depth,
+                cast_id,
             );
         }
 
@@ -669,12 +693,13 @@ pub(crate) fn step_app(
                         attacker_id,
                         attacker_id,
                         inflight.follow_up_depth,
+                        cast_id,
                     );
                 }
             }
         }
 
-        dispatch_blueprint_transitions(inflight, log, event_writer, registry);
+        dispatch_blueprint_transitions(inflight, log, event_writer, registry, cast_id);
         set_phase(state, CombatPhase::WaitingAction);
         return;
     }
@@ -723,6 +748,7 @@ pub(crate) fn step_app(
                     attacker_id,
                     target_id,
                     inflight.follow_up_depth,
+                    cast_id,
                 );
                 set_phase(state, CombatPhase::WaitingAction);
                 return;
@@ -739,6 +765,7 @@ pub(crate) fn step_app(
                     attacker_id,
                     target_id,
                     inflight.follow_up_depth,
+                    cast_id,
                 );
                 set_phase(state, CombatPhase::WaitingAction);
                 return;
@@ -774,6 +801,7 @@ pub(crate) fn step_app(
                     attacker_id,
                     target_id,
                     inflight.follow_up_depth,
+                    cast_id,
                 );
                 set_phase(state, CombatPhase::WaitingAction);
                 return;
@@ -788,6 +816,7 @@ pub(crate) fn step_app(
                     attacker_id,
                     target_id,
                     inflight.follow_up_depth,
+                    cast_id,
                 );
                 set_phase(state, CombatPhase::WaitingAction);
                 return;
@@ -802,6 +831,7 @@ pub(crate) fn step_app(
             attacker_id,
             target_id,
             inflight.follow_up_depth,
+            cast_id,
         );
 
         // Phase 2: per-hop damage loop.
@@ -832,6 +862,7 @@ pub(crate) fn step_app(
                     attacker_id,
                     target_id,
                     inflight.follow_up_depth,
+                    cast_id,
                 );
                 n
             } else {
@@ -991,6 +1022,7 @@ pub(crate) fn step_app(
                             attacker_id,
                             def_id,
                             inflight.follow_up_depth,
+                            cast_id,
                         );
                     }
                     _ => {}
@@ -1001,6 +1033,7 @@ pub(crate) fn step_app(
                     inflight.action.source,
                     def_id,
                     inflight.follow_up_depth,
+                    cast_id,
                 );
 
                 if let Some(amount) = hit_taken_amount {
@@ -1010,6 +1043,7 @@ pub(crate) fn step_app(
                         attacker_id,
                         def_id,
                         inflight.follow_up_depth,
+                        cast_id,
                     );
                     emit_combat_beat(
                         event_writer,
@@ -1018,6 +1052,7 @@ pub(crate) fn step_app(
                         attacker_id,
                         def_id,
                         inflight.follow_up_depth,
+                        cast_id,
                     );
                 }
             }
@@ -1038,6 +1073,7 @@ pub(crate) fn step_app(
                     def_id,
                     def_id,
                     inflight.follow_up_depth,
+                    cast_id,
                 );
             }
         } // end hop loop
@@ -1108,6 +1144,7 @@ pub(crate) fn step_app(
             attacker_id,
             target_id,
             inflight.follow_up_depth,
+            cast_id,
         );
 
         if inflight.action.advance_pct != 0 {
@@ -1120,6 +1157,7 @@ pub(crate) fn step_app(
                 attacker_id,
                 target_id,
                 inflight.follow_up_depth,
+                cast_id,
             );
         }
         if inflight.action.delay_pct != 0 {
@@ -1132,6 +1170,7 @@ pub(crate) fn step_app(
                 attacker_id,
                 target_id,
                 inflight.follow_up_depth,
+                cast_id,
             );
         }
         if inflight.action.self_advance_pct != 0 {
@@ -1146,6 +1185,7 @@ pub(crate) fn step_app(
                     attacker_id,
                     attacker_id,
                     inflight.follow_up_depth,
+                    cast_id,
                 );
             }
         }
@@ -1160,6 +1200,7 @@ pub(crate) fn step_app(
                 attacker_id,
                 attacker_id,
                 inflight.follow_up_depth,
+                cast_id,
             );
         }
         if matches!(inflight.action.ult_effect, UltEffect::Reset) {
@@ -1169,6 +1210,7 @@ pub(crate) fn step_app(
                 attacker_id,
                 attacker_id,
                 inflight.follow_up_depth,
+                cast_id,
             );
         }
 
@@ -1194,12 +1236,13 @@ pub(crate) fn step_app(
                         attacker_id,
                         attacker_id,
                         inflight.follow_up_depth,
+                        cast_id,
                     );
                 }
             }
         }
 
-        dispatch_blueprint_transitions(inflight, log, event_writer, registry);
+        dispatch_blueprint_transitions(inflight, log, event_writer, registry, cast_id);
         set_phase(state, CombatPhase::WaitingAction);
         return;
     }
@@ -1243,6 +1286,7 @@ pub(crate) fn step_app(
                 attacker_id,
                 target_id,
                 inflight.follow_up_depth,
+                cast_id,
             );
             set_phase(state, CombatPhase::WaitingAction);
             return;
@@ -1259,6 +1303,7 @@ pub(crate) fn step_app(
                 attacker_id,
                 target_id,
                 inflight.follow_up_depth,
+                cast_id,
             );
             set_phase(state, CombatPhase::WaitingAction);
             return;
@@ -1275,6 +1320,7 @@ pub(crate) fn step_app(
                 attacker_id,
                 target_id,
                 inflight.follow_up_depth,
+                cast_id,
             );
             set_phase(state, CombatPhase::WaitingAction);
             return;
@@ -1288,6 +1334,7 @@ pub(crate) fn step_app(
             attacker_id,
             target_id,
             inflight.follow_up_depth,
+            cast_id,
         );
         let Some(mut attacker_ult) = attacker_ult else {
             return;
@@ -1332,6 +1379,7 @@ pub(crate) fn step_app(
                 attacker_id,
                 target_id,
                 inflight.follow_up_depth,
+                cast_id,
             );
             set_phase(state, CombatPhase::WaitingAction);
             return;
@@ -1414,6 +1462,7 @@ pub(crate) fn step_app(
                 inflight.action.source,
                 inflight.action.target,
                 inflight.follow_up_depth,
+                cast_id,
             );
 
             if let Some(amount) = hit_taken_amount {
@@ -1423,6 +1472,7 @@ pub(crate) fn step_app(
                     attacker_id,
                     target_id,
                     inflight.follow_up_depth,
+                    cast_id,
                 );
                 emit_combat_beat(
                     event_writer,
@@ -1431,6 +1481,7 @@ pub(crate) fn step_app(
                     attacker_id,
                     target_id,
                     inflight.follow_up_depth,
+                    cast_id,
                 );
             }
         }
@@ -1447,6 +1498,7 @@ pub(crate) fn step_app(
                     attacker_id,
                     attacker_id,
                     inflight.follow_up_depth,
+                    cast_id,
                 );
             }
         }
@@ -1457,6 +1509,7 @@ pub(crate) fn step_app(
                 attacker_id,
                 attacker_id,
                 inflight.follow_up_depth,
+                cast_id,
             );
         }
 
@@ -1482,6 +1535,7 @@ pub(crate) fn step_app(
                         attacker_id,
                         attacker_id,
                         inflight.follow_up_depth,
+                        cast_id,
                     );
                 }
             }
@@ -1506,10 +1560,11 @@ pub(crate) fn step_app(
                         inflight.action.source,
                         target_id,
                         inflight.follow_up_depth,
+                        cast_id,
                     );
                 }
             }
-            dispatch_blueprint_transitions(inflight, log, event_writer, registry);
+            dispatch_blueprint_transitions(inflight, log, event_writer, registry, cast_id);
         }
 
         set_phase(state, CombatPhase::WaitingAction);
@@ -1567,6 +1622,7 @@ pub(crate) fn step_app(
             attacker_id,
             target_id,
             inflight.follow_up_depth,
+            cast_id,
         );
         set_phase(state, CombatPhase::WaitingAction);
         return;
@@ -1583,6 +1639,7 @@ pub(crate) fn step_app(
             attacker_id,
             target_id,
             inflight.follow_up_depth,
+            cast_id,
         );
         set_phase(state, CombatPhase::WaitingAction);
         return;
@@ -1599,6 +1656,7 @@ pub(crate) fn step_app(
             attacker_id,
             target_id,
             inflight.follow_up_depth,
+            cast_id,
         );
         set_phase(state, CombatPhase::WaitingAction);
         return;
@@ -1615,6 +1673,7 @@ pub(crate) fn step_app(
             attacker_id,
             target_id,
             inflight.follow_up_depth,
+            cast_id,
         );
         set_phase(state, CombatPhase::WaitingAction);
         return;
@@ -1642,6 +1701,7 @@ pub(crate) fn step_app(
         attacker_id,
         target_id,
         inflight.follow_up_depth,
+        cast_id,
     );
     let mut sp_tracker = RoundSpTracker::default();
     let defender_break_sealed = defender_round_flags
@@ -1674,6 +1734,7 @@ pub(crate) fn step_app(
             attacker_id,
             target_id,
             inflight.follow_up_depth,
+            cast_id,
         );
         set_phase(state, CombatPhase::WaitingAction);
         return;
@@ -1724,6 +1785,7 @@ pub(crate) fn step_app(
                         attacker_id,
                         target_id,
                         inflight.follow_up_depth,
+                        cast_id,
                     );
                 }
             }
@@ -1765,6 +1827,7 @@ pub(crate) fn step_app(
             inflight.action.source,
             inflight.action.target,
             inflight.follow_up_depth,
+            cast_id,
         );
 
         if let Some(amount) = hit_taken_amount {
@@ -1774,6 +1837,7 @@ pub(crate) fn step_app(
                 attacker_id,
                 target_id,
                 inflight.follow_up_depth,
+                cast_id,
             );
             emit_combat_beat(
                 event_writer,
@@ -1782,6 +1846,7 @@ pub(crate) fn step_app(
                 attacker_id,
                 target_id,
                 inflight.follow_up_depth,
+                cast_id,
             );
         }
     }
@@ -1802,6 +1867,7 @@ pub(crate) fn step_app(
             target_id,
             target_id,
             inflight.follow_up_depth,
+            cast_id,
         );
     }
 
@@ -1836,6 +1902,7 @@ pub(crate) fn step_app(
                         attacker_id,
                         target_id,
                         inflight.follow_up_depth,
+                        cast_id,
                     );
                     if is_first_apply_slowed {
                         emit_combat_event(
@@ -1847,6 +1914,7 @@ pub(crate) fn step_app(
                             attacker_id,
                             target_id,
                             inflight.follow_up_depth,
+                            cast_id,
                         );
                     }
                 } else {
@@ -1856,6 +1924,7 @@ pub(crate) fn step_app(
                         attacker_id,
                         target_id,
                         inflight.follow_up_depth,
+                        cast_id,
                     );
                 }
             }
@@ -1875,6 +1944,7 @@ pub(crate) fn step_app(
                     inflight.action.source,
                     target_id,
                     inflight.follow_up_depth,
+                    cast_id,
                 );
             }
         }
@@ -1892,6 +1962,7 @@ pub(crate) fn step_app(
                 attacker_id,
                 attacker_id,
                 inflight.follow_up_depth,
+                cast_id,
             );
         }
     }
@@ -1902,6 +1973,7 @@ pub(crate) fn step_app(
             attacker_id,
             attacker_id,
             inflight.follow_up_depth,
+            cast_id,
         );
     }
 
@@ -1927,13 +1999,14 @@ pub(crate) fn step_app(
                     attacker_id,
                     attacker_id,
                     inflight.follow_up_depth,
+                    cast_id,
                 );
             }
         }
     }
 
     if outcome.succeeded {
-            dispatch_blueprint_transitions(inflight, log, event_writer, registry);
+            dispatch_blueprint_transitions(inflight, log, event_writer, registry, cast_id);
     }
 
     set_phase(state, CombatPhase::WaitingAction);

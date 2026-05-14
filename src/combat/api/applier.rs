@@ -4,7 +4,7 @@ use bevy::log;
 use bevy::prelude::*;
 
 use crate::combat::{
-    api::intent::Intent,
+    api::intent::{CastId, Intent},
     damage::{AttackContext, calculate_damage},
     events::{CombatEvent, CombatEventKind},
     toughness::{DamageKind, Toughness},
@@ -43,9 +43,9 @@ pub fn intent_applier(world: &mut World) {
                 target,
                 amount,
                 tag,
-                ..
+                cast_id,
             } => {
-                apply_deal_damage(world, source, target, amount, tag);
+                apply_deal_damage(world, source, target, amount, tag, cast_id);
             }
             other => {
                 log::warn!("intent_applier: unimplemented intent variant {:?}", other);
@@ -67,6 +67,7 @@ fn apply_deal_damage(
     target: UnitId,
     base_damage: i32,
     tag: DamageTag,
+    cast_id: CastId,
 ) {
     // Snapshot all units to avoid aliased world borrows during calculation.
     let snapshot: Vec<UnitSnapshot> = {
@@ -120,5 +121,6 @@ fn apply_deal_damage(
             source,
             target,
             follow_up_depth: 0,
+            cast_id,
         });
 }

@@ -1,5 +1,7 @@
 use std::num::NonZeroU32;
 
+use bevy::prelude::Resource;
+
 use crate::combat::{
     status_effect::StatusEffectKind,
     types::{DamageTag, SkillId, UnitId},
@@ -9,12 +11,37 @@ use crate::combat::{
 ///
 /// `ROOT` is reserved for root-level actions that are not part of a cast chain.
 /// All other values are allocated by `pipeline::step_app` (S02+).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct CastId(pub NonZeroU32);
 
 impl CastId {
     // SAFETY: 1 is non-zero.
     pub const ROOT: Self = Self(unsafe { NonZeroU32::new_unchecked(1) });
+}
+
+/// Monotonic counter that allocates unique `CastId` values for each cast pipeline invocation.
+///
+/// `ROOT` (value 1) is reserved; the first allocated id is 2.
+/// Register with `.init_resource::<CastIdGen>()` in any app that runs the combat pipeline.
+#[derive(Debug, Resource)]
+pub struct CastIdGen(u32);
+
+impl Default for CastIdGen {
+    fn default() -> Self {
+        Self(1) // next() adds 1 → first issued id is 2, leaving 1 for ROOT
+    }
+}
+
+impl CastIdGen {
+    /// Allocate the next unique `CastId`. Never returns ROOT.
+    pub fn next(&mut self) -> CastId {
+        self.0 = self.0.saturating_add(1);
+        // If we somehow hit 1 again (impossible with saturating_add from 1), skip it.
+        if self.0 == 1 {
+            self.0 = 2;
+        }
+        CastId(NonZeroU32::new(self.0).expect("CastIdGen: counter saturated at 0"))
+    }
 }
 
 /// Closed enum of every mutation the kernel may apply to combat state.

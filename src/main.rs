@@ -52,6 +52,7 @@ fn main() -> AppExit {
         .init_resource::<ActionLog>()
         .init_resource::<CombatState>()
         .init_resource::<UltGainQueue>()
+        .init_resource::<combat::api::intent::CastIdGen>()
         .add_message::<TurnAdvanced>()
         .add_message::<ActionIntent>()
         .add_message::<FollowUpIntent>()

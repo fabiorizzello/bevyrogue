@@ -1,3 +1,4 @@
+use crate::combat::api::intent::{CastId, CastIdGen};
 use crate::combat::av::{AV_PER_SPEED, ActionValue, ActionValueUpdated, MAX_AV};
 use crate::combat::buffs::DrBag;
 use crate::combat::enemy_ai;
@@ -85,6 +86,7 @@ pub(crate) fn emit_combat_event(
     source: UnitId,
     target: UnitId,
     follow_up_depth: u8,
+    cast_id: CastId,
 ) {
     debug!(
         target: "combat.events",
@@ -99,6 +101,7 @@ pub(crate) fn emit_combat_event(
         source,
         target,
         follow_up_depth,
+        cast_id,
     });
 }
 
@@ -109,6 +112,7 @@ pub(crate) fn emit_kernel_transition(
     source: UnitId,
     target: UnitId,
     follow_up_depth: u8,
+    cast_id: CastId,
 ) {
     let transitions = registry
         .map(|registry| registry.dispatch(transition.clone()))
@@ -121,6 +125,7 @@ pub(crate) fn emit_kernel_transition(
             source,
             target,
             follow_up_depth,
+            cast_id,
         );
     }
 }
@@ -132,6 +137,7 @@ pub(crate) fn emit_combat_beat(
     source: UnitId,
     target: UnitId,
     follow_up_depth: u8,
+    cast_id: CastId,
 ) {
     emit_combat_event(
         event_writer,
@@ -139,6 +145,7 @@ pub(crate) fn emit_combat_beat(
         source,
         target,
         follow_up_depth,
+        cast_id,
     );
     emit_kernel_transition(
         event_writer,
@@ -147,6 +154,7 @@ pub(crate) fn emit_combat_beat(
         source,
         target,
         follow_up_depth,
+        cast_id,
     );
 }
 
@@ -165,6 +173,7 @@ pub fn resolve_action_system(
     mut actors: ResolveActorsQuery,
     mut combat_rng: Option<ResMut<CombatRng>>,
     mut energy_q: Query<(&mut Energy, Option<&mut RoundEnergyTracker>)>,
+    mut cast_id_gen: Option<ResMut<CastIdGen>>,
 ) {
     if let Some(intent) = intents.read().next() {
         let (actor_id, target_id, query_kind) = match intent {
@@ -245,6 +254,7 @@ pub fn resolve_action_system(
                     source: actor_id,
                     target: target_id,
                     follow_up_depth: 0,
+                    cast_id: CastId::ROOT,
                 });
                 return;
             }
@@ -277,6 +287,7 @@ pub fn resolve_action_system(
             inflight.action.source,
             inflight.action.target,
             0,
+            CastId::ROOT,
         );
         emit_combat_beat(
             &mut event_writer,
@@ -285,6 +296,7 @@ pub fn resolve_action_system(
             inflight.action.source,
             inflight.action.target,
             0,
+            CastId::ROOT,
         );
         emit_combat_event(
             &mut event_writer,
@@ -292,6 +304,7 @@ pub fn resolve_action_system(
             inflight.action.source,
             inflight.action.target,
             0,
+            CastId::ROOT,
         );
         emit_combat_beat(
             &mut event_writer,
@@ -300,7 +313,13 @@ pub fn resolve_action_system(
             inflight.action.source,
             inflight.action.target,
             0,
+            CastId::ROOT,
         );
+
+        let action_cast_id = cast_id_gen
+            .as_deref_mut()
+            .map(|g| g.next())
+            .unwrap_or(CastId::ROOT);
 
         pipeline::step_app(
             &mut commands,
@@ -315,6 +334,7 @@ pub fn resolve_action_system(
             &mut actors,
             &mut combat_rng,
             &mut energy_q,
+            action_cast_id,
         );
 
         emit_combat_event(
@@ -323,6 +343,7 @@ pub fn resolve_action_system(
             inflight.action.source,
             inflight.action.target,
             0,
+            CastId::ROOT,
         );
         emit_combat_beat(
             &mut event_writer,
@@ -331,6 +352,7 @@ pub fn resolve_action_system(
             inflight.action.source,
             inflight.action.target,
             0,
+            CastId::ROOT,
         );
         emit_combat_event(
             &mut event_writer,
@@ -338,6 +360,7 @@ pub fn resolve_action_system(
             inflight.action.source,
             inflight.action.target,
             0,
+            CastId::ROOT,
         );
         emit_combat_beat(
             &mut event_writer,
@@ -346,6 +369,7 @@ pub fn resolve_action_system(
             inflight.action.source,
             inflight.action.target,
             0,
+            CastId::ROOT,
         );
     }
 }
@@ -481,6 +505,7 @@ pub fn advance_turn_system(
                         active_id,
                         active_id,
                         0,
+                        CastId::ROOT,
                     );
                     if unit.hp_current <= 0 {
                         emit_combat_event(
@@ -490,6 +515,7 @@ pub fn advance_turn_system(
                             active_id,
                             active_id,
                             0,
+                            CastId::ROOT,
                         );
                     }
                 }
@@ -519,6 +545,7 @@ pub fn advance_turn_system(
                             active_id,
                             active_id,
                             0,
+                            CastId::ROOT,
                         );
                     }
                     let expired = bag.tick_all();
@@ -529,6 +556,7 @@ pub fn advance_turn_system(
                             active_id,
                             active_id,
                             0,
+                            CastId::ROOT,
                         );
                     }
                 }
@@ -538,6 +566,7 @@ pub fn advance_turn_system(
                     active_id,
                     active_id,
                     0,
+                    CastId::ROOT,
                 );
                 drop(status_opt);
                 drop(unit);
@@ -570,6 +599,7 @@ pub fn advance_turn_system(
                         active_id,
                         active_id,
                         0,
+                        CastId::ROOT,
                     );
                 }
                 let expired = bag.tick_all();
@@ -580,6 +610,7 @@ pub fn advance_turn_system(
                         active_id,
                         active_id,
                         0,
+                        CastId::ROOT,
                     );
                 }
                 // Do NOT remove the bag component — it persists empty and is re-used on next apply.

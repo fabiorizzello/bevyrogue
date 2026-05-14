@@ -2,6 +2,7 @@ use bevy::prelude::Message;
 
 use crate::combat::{
     StatusEffectKind,
+    api::intent::CastId,
     toughness::DamageKind,
     types::{DamageTag, SkillId, UnitId},
 };
@@ -162,4 +163,9 @@ pub struct CombatEvent {
     /// D046: chain bounding lives in the data (stack/cooldown/once-per-round flags),
     /// not in the engine. The listener does not suppress based on this value.
     pub follow_up_depth: u8,
+    /// Unique identifier for the cast pipeline invocation that produced this event.
+    /// `CastId::ROOT` (value 1) for lifecycle events outside a cast (status ticks,
+    /// victory checks, pre-cast declaration/preapp). All events emitted within a
+    /// single `step_app` call share the same non-ROOT `cast_id`.
+    pub cast_id: CastId,
 }
