@@ -132,6 +132,12 @@ pub enum CombatEventKind {
         unit_id: UnitId,
         amount: i32,
     },
+    /// Emitted once per successful Heal application; amount is the actual HP restored
+    /// (capped at hp_max). Silently suppressed on KO targets (no event emitted).
+    OnHealed {
+        amount: i32,
+        hp_after: i32,
+    },
 }
 
 #[derive(Message, Debug, Clone, PartialEq, Eq, serde::Serialize)]

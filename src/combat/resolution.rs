@@ -92,6 +92,16 @@ pub fn resolve_targets(
 
     match shape {
         TargetShape::Single | TargetShape::Row | TargetShape::SelfOnly => vec![primary],
+        TargetShape::AllAllies => {
+            let caster_team = primary_entry.team;
+            let mut targets: Vec<&TargetEntry> = snapshot
+                .entries
+                .iter()
+                .filter(|e| e.team == caster_team && e.alive)
+                .collect();
+            targets.sort_by_key(|e| e.slot_index);
+            targets.iter().map(|e| e.id).collect()
+        }
         TargetShape::Blast => {
             let team = primary_entry.team;
             let slot = primary_entry.slot_index;
@@ -402,7 +412,12 @@ fn skill_self_advance(effects: &[Effect]) -> i32 {
 pub fn target_shape_is_executable_now(shape: TargetShape) -> bool {
     matches!(
         shape,
-        TargetShape::Single | TargetShape::Blast | TargetShape::AllEnemies | TargetShape::Bounce { .. }
+        TargetShape::Single
+            | TargetShape::Blast
+            | TargetShape::AllEnemies
+            | TargetShape::SelfOnly
+            | TargetShape::AllAllies
+            | TargetShape::Bounce { .. }
     )
 }
 

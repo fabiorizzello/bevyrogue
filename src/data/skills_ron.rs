@@ -33,6 +33,8 @@ pub enum TargetShape {
     Row,
     AllEnemies,
     SelfOnly,
+    /// All alive units on the caster's own team (ally side), slot_index ascending.
+    AllAllies,
     /// Chaining bounce: hits up to `hops` targets in sequence, re-resolving the selector
     /// each hop. Chain stops early if no valid target is found.
     Bounce {
@@ -226,6 +228,13 @@ pub enum Effect {
     GrantEnergy(i32),
     /// Advance the attacker's own AV by N percent (self-tempo boost).
     SelfAdvance(i32),
+    /// Restore HP to one or more allies. `amount_pct_max_hp` is a percentage of the target's
+    /// hp_max (1–100). `target` must be an ally-side shape (Single, SelfOnly, AllAllies).
+    /// Capped at hp_max; no-ops silently on KO targets.
+    Heal {
+        amount_pct_max_hp: u32,
+        target: TargetShape,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -341,6 +350,8 @@ fn validate_skill_def(skill: &SkillDef) -> Result<(), SkillBookValidationError> 
             TargetShape::Single
                 | TargetShape::Blast
                 | TargetShape::AllEnemies
+                | TargetShape::SelfOnly
+                | TargetShape::AllAllies
                 | TargetShape::Bounce { .. }
         )
     }
@@ -353,7 +364,7 @@ fn validate_skill_def(skill: &SkillDef) -> Result<(), SkillBookValidationError> 
             SkillBookValidationCategory::Semantic,
             LegalityReasonCode::UnimplementedTargetShape,
             format!(
-                "implemented skills support Single, Blast, AllEnemies, or Bounce{{hops>=1}}; found {:?}",
+                "implemented skills support Single, Blast, AllEnemies, SelfOnly, AllAllies, or Bounce{{hops>=1}}; found {:?}",
                 skill.targeting.shape
             ),
         ));
@@ -490,6 +501,27 @@ fn validate_skill_def(skill: &SkillDef) -> Result<(), SkillBookValidationError> 
                 LegalityReasonCode::UnimplementedTargetShape,
                 "target-shape deferrals must not claim single-target execution",
             ));
+        }
+    }
+
+    for effect in &skill.effects {
+        if let Effect::Heal { target, .. } = effect {
+            match target {
+                TargetShape::Bounce { .. }
+                | TargetShape::AllEnemies
+                | TargetShape::Blast => {
+                    return Err(validation_error(
+                        skill,
+                        SkillBookValidationCategory::Semantic,
+                        LegalityReasonCode::WrongSide,
+                        format!(
+                            "Heal effect may not target enemy-side shapes; found {:?}",
+                            target
+                        ),
+                    ));
+                }
+                _ => {}
+            }
         }
     }
 
