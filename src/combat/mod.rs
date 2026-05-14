@@ -6,6 +6,13 @@
 //! only (Rust does not enforce it), but the buckets below act as a hint for
 //! agents and humans navigating the 30+ files in this crate root.
 
+// ─── Framework API (M021) ────────────────────────────────────────────────────
+// Generic kernel primitives: Intent, Registry<E>, SignalBus, Clock, CastRng.
+// No Digimon-specific names. No bevy::winit / bevy::render / bevy_egui imports.
+
+/// M021 framework primitives: Intent, ExtPoint+Registry, SignalBus, Clock, CastRng.
+pub mod api;
+
 // ─── Core kernel & primitives ────────────────────────────────────────────────
 // Shared vocabulary used by every other module.
 
