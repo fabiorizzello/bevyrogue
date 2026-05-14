@@ -12,7 +12,7 @@
 
 ## Slices
 
-- [ ] **S01: Nuovi eventi reactive bus: UltimateUsed + UnitDied payload** `risk:low` `depends:[]`
+- [ ] **S01: S01** `risk:low` `depends:[]`
   > After this: cargo test passa con un nuovo test che verifica UltimateUsed emesso e un test che verifica UnitDied porta i campi corretti
 
 - [ ] **S02: Rimozione shim pub use legacy (twin_core / holy_support / predator_loop)** `risk:low` `depends:[S01]`
