@@ -1110,3 +1110,131 @@ Pass di verifica eseguito in parallelo (2 Explore agents) per validare i claim d
 | `turn_system/pipeline.rs` esiste | ✓ + aggiunta | ~67 KB, 4-beat già implementato — **aggiunto §1.7** |
 
 **Conclusione**: 8/14 claim PASS al primo passaggio, 6/14 drift corretti chirurgicamente. Sostanza intatta — l'analisi macro-aree (§2), il design Fascia A (§5), il capability matrix (§6), e le Q (§14) rimangono validi. La correzione più importante: l'anti-pattern §7.6 (shim) è già stato spento in M020 e va trattato come "done", non come work-item di M021.
+
+---
+
+## 17. Reality-check finale post-decisioni (2026-05-14)
+
+Pass eseguito dopo persistenza di D008–D015 e scrittura della roadmap. Tre agenti in parallelo: (a) Explore su codice attuale vs decisioni, (b) ricerca online su pattern Bevy 0.18 + skill engine in Rust, (c) recap esaustivo delle macro-aree funzionali combat. Risultati distillati: **3 BLOCKER strutturali**, **4 ATTRITI**, **11 scoperte inattese**, mappatura **35 aree funzionali**. Nessuna decisione richiede revoca; tre richiedono micro-prep prima di S01.
+
+### 17.1 BLOCKER (richiedono prep strutturale prima/dentro S01-S02)
+
+| # | Decisione | Hallazgo | Mitigazione proposta |
+|---|---|---|---|
+| **B1** | **D009** (AbilityHook cast-scoped) | `cast_id` non esiste nel codebase (zero match). `CombatEvent` non porta discriminator cast. ~50 callsites di emit chiamano senza scope. | **S01-T01** (extract CombatPlugin) deve atomicamente aggiungere `cast_id: CastId(NonZeroU32)` a `CombatEvent` e propagarlo da `resolution.rs`. Tracking origin: in `pipeline::step_app` quando si emette `ResolvedAction`, assegnare `cast_id = next_id()` e propagarlo nel context. Costo: 1 task aggiuntivo a S01, ~50 callsites in compile-error guide. |
+| **B2** | **D010** (Ult instant cast) | Oggi `ActionIntent::Ultimate` passa dallo stesso `advance_turn_system` pipeline di Skill/Basic; non c'è separazione semantica. Renderlo istantaneo richiede o (a) duplicare la pipeline per fare 2 cast in 1 tick, o (b) inserire un by-pass nello state machine post-Ult. | **Spostato S-A3 → S-A1**: la separazione "Ult ≠ turn-consuming" diventa **precondition** del CombatPlugin extraction. Senza di essa, S-A4 (hook dispatch) non può funzionare perché Ult-as-action contamina il `cast_id` lifecycle. Aggiungere `TacticalCyclePhase::UltInstant` come variant transition + bypass turn advance. |
+| **B3** | **D011** (turn-phase order 5-step) | L'ordine attuale in `advance_turn_system` (turn_system/mod.rs:469–630) è: Heated DoT tick → Stun check → Paralysis + status tick → Snapshot → Skill select. **Manca** uno step "turn-start passive trigger" dopo il tick e prima dello snapshot. KO resolution è implicita ("skip se Ko"), non esplicita. | **S-A4** (hook/listener dispatch) deve introdurre lo step esplicito "Apply turn-start hooks via `BlueprintListener::on(OnTurnStart)`" tra status tick e snapshot. Refactor di `advance_turn_system` in fasi nominate (`PreTurnTick`, `PostTickKoResolve`, `TurnStartHooks`, `PostHooksKoResolve`, `Snapshot`, `SelectAction`) — non solo riordinare codice, ma esporre le fasi come `SystemSet` Bevy. |
+
+### 17.2 ATTRITI (manageable con prep tattica)
+
+| # | Decisione | Hallazgo | Mitigazione |
+|---|---|---|---|
+| **A1** | **D008** (Intent::BlueprintSignal double-layer) | `CombatKernelTransition` enum ha 5 variant Digimon-specific hardcoded (`TwinCore`, `BatteryLoop`, `HolySupport`, `PredatorLoop`, `PrecisionMindGame`) a `kernel.rs:890–902`. Il drop di queste è il **success criterion** di M021. | Aggiungere variant `CombatKernelTransition::Blueprint { owner: BlueprintId, payload: Box<dyn BlueprintSignalPayload> }`, deprecare le 5 variant in S-A5, rimuoverle in S-B4 (kernel digimon-free). |
+| **A2** | **D013** (listener ordering) | Bevy `MessageWriter/MessageReader` è FIFO per insertion order, **non** per priority. Per ottenere (initiative DESC, slot ASC, team_id ASC) servirà un sort esplicito dei listener prima dell'invocazione. | Il dispatcher hook (S-A4) tiene `Vec<HookEntry { weight: HookWeight, hook: ... }>` e ordina prima del drain. `HookWeight = (initiative, slot, team_id)` tuple ordering canonico. |
+| **A3** | **D015-Q5** (drop enum Effect) | ~60 occorrenze in 24 skill canon, più `apply_effects()` (resolution.rs) come matchbox su variant. Più heavy del previsto. | Migrazione spalmata su S-A5 → S-B3, con gate `rg "enum Effect"` = 0 a fine S-A8 (vedi roadmap). Aggiunto a §7.4 come "anti-pattern principale da abbattere". |
+| **A4** | **D015-Q2** (BlueprintState: Component + Reflect) | Nessun blueprint component attuale implementa `#[derive(Reflect)]`. `TwinCoreState`, `BatteryLoopState`, `PrecisionMindGameState` sono Resource senza Reflect. | S-A2 (state extraction) aggiunge `#[derive(Reflect)]` a tutti i blueprint state component. Costo: 5 tipi × 1 riga. Bevy 0.17+ ha **auto-registration via `reflect_auto_register`** quindi il `register_type` esplicito è ridondante per scopo reflection — resta solo come gate validation. |
+
+### 17.3 Scoperte inattese (rilevanti, non blocker)
+
+#### Codice attuale
+1. **Asimmetria blueprint plugins** — Agumon/Dorumon/Patamon sono `Plugin` (struct + `impl Plugin`); Gabumon/Renamon/Tentomon sono file flat con solo dispatcher. **S-B2 deve omogeneizzare verso il pattern Plugin uniforme prima di applicare `trait Blueprint`**.
+2. **`CustomSignalPayload` RON layer** (skills_ron.rs:260) è il bridge corrente tra enum Effect e signal dispatcher — sarà deprecato da `Intent::BlueprintSignal`. Aggiungere riga di migrazione a S-A8.
+3. **JSONL non incatena transition blueprint** — `jsonl_logger.rs` legge `CombatEvent` ma non `CombatKernelTransition`. La D008 (double-layer routing) **richiede** che JSONL aggiunga subscription al transition stream. Aggiunto come T-jsonl-transition a S-A4.
+
+#### Pattern Bevy 0.18
+4. **`AppExtStates` è il modello canonico** per "register typed entity atomico". `register_blueprint::<B>(app)` dovrebbe seguire la stessa shape: extension trait su `App`, generic, chainante `register_type::<B::State>() + init_resource + insert nel registry`. Vedi `bevy::state::prelude::AppExtStates`.
+5. **`#[require(BlueprintState)]` > runtime registration** — issue Bevy [#16406](https://github.com/bevyengine/bevy/issues/16406), [#16645](https://github.com/bevyengine/bevy/issues/16645) confermano bug noti su required components runtime. Preferire `#[require]` static su `BlueprintMarker`.
+6. **Event → Message rename in Bevy 0.17** — la nomenclatura "CombatEvent" della roadmap va verificata: in Bevy 0.18 `Event` = trigger observer, `Message` = buffered queue (vecchio `Event`). Probabilmente il nostro `CombatEvent` è semanticamente un `Message`. Non è un bug, ma onboarding debt se non documentato.
+7. **`bevy-trait-query` è 10× più lento** delle query concrete (81 µs vs 8 µs). **NON usare nell'hot path damage calc**. Per blueprint lookup: `HashMap<BlueprintId, ...>` su `Resource` frozen-after-startup.
+
+#### Pattern Rust skill engine (progetti reali)
+8. **Veloren preferisce data struct + ECS system** — `Attack` è una struct (non trait), risolta da sistemi dedicati. Funziona su MMO con centinaia di skill. **Domanda implicita**: il nostro `trait Ability` è necessario per ~30 skill, o `enum Ability` + match nel kernel basta? Decisione D015-Q5 (drop enum Effect) implica trait → non ri-aprire, ma flag per post-MVP review.
+9. **bracket-lib usa Component marker = Intent** — `WantsToMelee`, `WantsToMove` come Component, drenati da system. Pattern identico al nostro `Intent` ma component-based. Trade-off: ECS-native ma esplode in N component types per N intent variant. **La nostra scelta `enum Intent` resta valida**.
+10. **`typetag` + `Send + Sync`** — confermato che la libreria de-facto per `Box<dyn Trait>` serializzabili ha [limitazione documentata](https://github.com/serde-rs/serde/issues/384) con `Send + Sync`. Se M0xx aggiunge "save mid-combat", `Box<dyn BlueprintSnapshot>` richiede `serde_flexitos` o tag manuali. **D008 (JSONL output-only) è safe**, ma annotare nel CODEBASE.md.
+
+#### Architetturali
+11. **`enum Intent` rischia mega-funzione** — con ~17 variant + `Box<dyn Any>` payload, l'`intent_applier` diventa un mega-match. Considerare split per family (`DamageIntent`, `StatusIntent`, `ResourceIntent`, `BlueprintIntent`) con sotto-dispatcher. **Da decidere in S-A5**.
+
+### 17.4 Recap macro-aree combat (35 aree mappate)
+
+Audit completo delle aree funzionali che il combat deve supportare. Surface API attuale + target post-M021 per ognuna. Mantiene allineamento sul "cosa deve essere estendibile da blueprint vs cosa resta kernel-core".
+
+**Kernel-core (stabile, non blueprint-extensible)**:
+1. Turn order & AV (`turn_order.rs`, `av.rs`, `turn_system/mod.rs`)
+2. Speed & Tempo modifiers (`speed.rs`, `resistance.rs`)
+3. Damage breakdown (`damage.rs`)
+4. Toughness & Break (`toughness.rs`)
+5. Stun & CC (`stun.rs`)
+6. Skill resolution pipeline (`resolution.rs`, `turn_system/mod.rs`)
+7. Target shape & Bounce (`resolution.rs`)
+8. Bootstrap & encounter spawn (`bootstrap.rs`)
+9. Event bus + Action log (`events.rs`, `log.rs`)
+10. JSONL logger (`jsonl_logger.rs`)
+11. RNG centralization (`rng.rs`)
+12. Unit/types/team core (`unit.rs`, `types.rs`, `team.rs`)
+13. Action query & affordance (`action_query.rs`)
+14. Round flags (`round_flags.rs`)
+15. Tempo resistance (`resistance.rs`)
+16. Kit & skill config (`kit.rs`)
+17. Enemy AI (`enemy_ai.rs`)
+18. Enemy counterplay (`enemy_counterplay.rs`, `counterplay.rs`)
+19. Floating numbers UI (`floating.rs`)
+20. Observability snapshots (`observability.rs`)
+
+**Blueprint-extensible (post-M021 via trait Ability / trait Blueprint / hook)**:
+21. SP pool & resource (`sp.rs`)
+22. Ultimate charge & accumulation (`ultimate.rs`)
+23. Status effects & ticks (`status_effect.rs`)
+24. Damage reduction & buffs (`buffs.rs`)
+25. Follow-up reactions (`follow_up.rs`)
+26. Form identity (`kit.rs`, `follow_up.rs`)
+27. Energy system (`energy.rs`)
+28. Custom signal dispatch (`blueprints/mod.rs`, `blueprints/*/signals.rs`)
+29. Twin Core - Agumon (`kernel.rs` partial, `blueprints/agumon/signals.rs`)
+30. Predator Loop - Dorumon (`blueprints/dorumon/`)
+31. Holy Support - Patamon (`blueprints/patamon/`)
+32. Battery Loop - Tentomon (`battery_loop.rs`, `blueprints/tentomon.rs`)
+33. Precision Mind Game - Renamon (`precision_mind_game.rs`, `blueprints/renamon.rs`)
+34. Kernel registry & hooks (`kernel.rs`)
+35. Skill custom signal payload (`skills_ron.rs`)
+
+**Coupling Digimon-specifico nel kernel (4 punti da abbattere)**:
+- C1. **5 variant `CombatKernelTransition` hardcoded** (`kernel.rs:890–902`) → diventeranno `CombatKernelTransition::Blueprint { owner, payload }` generico
+- C2. **`observability.rs` mescola snapshot blueprint-specific** (5 sub-snapshot) → optional injection via hook registry
+- C3. **`blueprints/mod.rs` router centralizzato di custom signal** → per-blueprint plugin registration in `CombatKernelRegistry`
+- C4. **Bootstrap inserisce Resource per-blueprint** in `register_combat_kernel_runtime()` (kernel.rs:1067–1093) → plugin-driven registration via `trait Blueprint`
+
+### 17.5 Impatto sulla roadmap M021
+
+| Modifica richiesta | Slice | Note |
+|---|---|---|
+| Aggiungere `cast_id: CastId` a `CombatEvent` + propagazione 50 callsites | **S01** | Task atomico nel CombatPlugin extraction; senza non funziona S-A4 |
+| Spostare "Ult instant cast" da S-A3 a **S01** o **S-A1** | **S01/S-A1** | Precondition di tutto il resto: Ult-as-action contamina il `cast_id` lifecycle |
+| Refactor `advance_turn_system` in fasi nominate (SystemSet) | **S-A4** | 5 SystemSet espliciti, con turn-start hook injection point |
+| Sort esplicito listener per `(initiative, slot, team_id)` | **S-A4** | `HookWeight` tuple, drain ordinato |
+| `#[derive(Reflect)]` su 5 blueprint state component | **S-A2** | 5 righe; auto-registration Bevy 0.17 fa il resto |
+| Omogeneizzare Gabumon/Renamon/Tentomon a pattern Plugin | **S-B2** | Pre-requisito per applicare `trait Blueprint` uniformemente |
+| JSONL subscribe a `CombatKernelTransition` stream | **S-A4** | Senza, D008 (double-layer) non chiude il loop sull'osservabilità |
+
+### 17.6 Validazione finale per kickoff S01
+
+- [x] Tutte le decisioni D008–D015 sono **applicabili**, con prep tattica documentata sopra
+- [x] Tre blocker (cast_id, Ult instant, turn-phase order) hanno mitigazione concreta
+- [x] Nessuna decisione richiede revoca o ri-discussione
+- [x] Roadmap richiede 3 aggiustamenti minori (S01 espanso, S-A4 con SystemSet refactor, S-B2 con omogeneizzazione plugin) — non ridisegno
+- [x] 35 macro-aree mappate, 4 punti di coupling Digimon-specifico identificati come obiettivo principale del refactor
+
+**Verdetto**: M021 è **GO** per S01 con i tre aggiustamenti sopra. Nessun blocker richiede ulteriore discussione di design.
+
+---
+
+**Fonti citate**:
+- [Bevy 0.17→0.18 migration guide](https://bevy.org/learn/migration-guides/0-17-to-0-18/)
+- [Bevy 0.16→0.17 migration guide](https://bevy.org/learn/migration-guides/0-16-to-0-17/) (Event/Message rename)
+- [AppExtStates](https://docs.rs/bevy/latest/bevy/state/prelude/trait.AppExtStates.html)
+- [Bevy required components](https://docs.rs/bevy/latest/bevy/prelude/trait.Component.html)
+- [bevy-trait-query benchmarks](https://docs.rs/bevy-trait-query/latest/bevy_trait_query/)
+- [Veloren combat module](https://docs.veloren.net/veloren_common/combat/index.html)
+- [Roguelike Tutorial in Rust (intent pattern)](https://bfnightly.bracketproductions.com/chapter_1.html)
+- [typetag](https://github.com/dtolnay/typetag), [serde_flexitos](https://crates.io/crates/serde_flexitos)
+- Bevy issues [#16406](https://github.com/bevyengine/bevy/issues/16406), [#16645](https://github.com/bevyengine/bevy/issues/16645) (required components bugs)
