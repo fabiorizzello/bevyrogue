@@ -1,2 +1,0 @@
-ERROR: missing required ledger section for 'UnitDef drift': '### Broad `UnitDef` fixture constructor drift'
-ERROR: missing S05 ledger proof marker for 'S06 baseline boundary': 'do not treat it as final full-suite baseline closure'
