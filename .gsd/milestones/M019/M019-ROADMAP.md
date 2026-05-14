@@ -12,10 +12,10 @@
 
 ## Slices
 
-- [ ] **S01: S01** `risk:medium` `depends:[]`
+- [x] **S01: S01** `risk:medium` `depends:[]`
   > After this: Test integration tests/dr_pipeline.rs dimostra DR singolo, DR×N sommato, DR+ARM combinato, DR durante Break — damage clampato a 0 senza panic, CombatEvent::Damage emesso con amount=0 dove applicabile.
 
-- [ ] **S02: Effect::Heal { amount_pct_max_hp } primitive** `risk:low` `depends:[S01]`
+- [ ] **S02: S02** `risk:low` `depends:[]`
   > After this: Test integration tests/heal_effect.rs: skill RON con Effect::Heal applicata su Single e AllAllies, cap a maxHP, no-op su KO, CombatEvent::Healed nel JSONL stream.
 
 - [ ] **S03: Effect::Cleanse { count: Option<u8> } primitive** `risk:low` `depends:[S02]`

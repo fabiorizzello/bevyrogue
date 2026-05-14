@@ -25,7 +25,7 @@
   - Files: `src/combat/resolution.rs`, `src/combat/turn_system/mod.rs`
   - Verify: cargo check && cargo test --test status_blessed_offensive && cargo test --test damage_breakdown_log
 
-- [ ] **T04: Integration tests: tests/dr_pipeline.rs**
+- [x] **T04: Integration tests: tests/dr_pipeline.rs**
   - Files: `tests/dr_pipeline.rs`
   - Verify: cargo test --test dr_pipeline && cargo test
 
