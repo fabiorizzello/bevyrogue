@@ -69,6 +69,7 @@ fn basic_resolved() -> ResolvedAction {
         target_shape: TargetShape::Single,
         custom_signals: vec![],
         damage_curve: Default::default(),
+        cleanse_count: None,
     }
 }
 

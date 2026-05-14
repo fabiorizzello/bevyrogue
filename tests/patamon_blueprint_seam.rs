@@ -175,6 +175,7 @@ fn custom_signal_rejects_unknown_patamon_variant() {
             target_shape: TargetShape::Single,
             custom_signals: skill.custom_signals.clone(),
             damage_curve: Default::default(),
+            cleanse_count: None,
         },
     )
     .expect_err("unknown custom signal rejected");

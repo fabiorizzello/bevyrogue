@@ -26,7 +26,7 @@ Cleanse is wired at the same pipeline mutation site as status_to_apply (Single/S
   - Files: `src/data/skills_ron.rs`, `src/combat/events.rs`, `src/combat/resolution.rs`, `src/combat/follow_up.rs`
   - Verify: cargo check --tests must be clean (0 errors). cargo test --test validation_snapshot must still pass. No Effect::Cleanse handling wired yet, so existing tests cannot regress.
 
-- [ ] **T02: StatusBag::cleanse_n + apply_cleanse_only + ResolvedAction.cleanse_count + extractor** `est:M`
+- [x] **T02: StatusBag::cleanse_n + apply_cleanse_only + ResolvedAction.cleanse_count + extractor** `est:M`
   Implement the cleanse primitive end-to-end except for pipeline dispatch. Steps:
   - Files: `src/combat/status_effect.rs`, `src/combat/state.rs`, `src/combat/resolution.rs`
   - Verify: cargo check --tests clean. cargo test --lib runs the inline #[cfg(test)] mod tests for cleanse_n — all ordering / tiebreak / count edge cases pass. Full integration suite (cargo test) remains green since apply_cleanse_only is not yet reachable from the pipeline.

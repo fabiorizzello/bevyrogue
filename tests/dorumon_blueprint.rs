@@ -25,6 +25,7 @@ fn base_action() -> ResolvedAction {
         target_shape: bevyrogue::data::skills_ron::TargetShape::Single,
         custom_signals: Vec::new(),
         damage_curve: Default::default(),
+        cleanse_count: None,
     }
 }
 
