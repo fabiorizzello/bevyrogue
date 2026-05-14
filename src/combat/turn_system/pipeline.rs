@@ -637,6 +637,15 @@ pub(crate) fn step_app(
                 inflight.follow_up_depth,
             );
         }
+        if matches!(inflight.action.ult_effect, UltEffect::Reset) {
+            emit_combat_event(
+                event_writer,
+                CombatEventKind::UltimateUsed { unit_id: attacker_id },
+                attacker_id,
+                attacker_id,
+                inflight.follow_up_depth,
+            );
+        }
 
         if inflight.action.energy_grant > 0 {
             if let Ok((mut energy, mut tracker)) = energy_q.get_mut(attacker_entity) {
@@ -1153,6 +1162,15 @@ pub(crate) fn step_app(
                 inflight.follow_up_depth,
             );
         }
+        if matches!(inflight.action.ult_effect, UltEffect::Reset) {
+            emit_combat_event(
+                event_writer,
+                CombatEventKind::UltimateUsed { unit_id: attacker_id },
+                attacker_id,
+                attacker_id,
+                inflight.follow_up_depth,
+            );
+        }
 
         if inflight.action.energy_grant > 0 {
             if let Ok((mut energy, mut tracker)) = energy_q.get_mut(attacker_entity) {
@@ -1431,6 +1449,15 @@ pub(crate) fn step_app(
                     inflight.follow_up_depth,
                 );
             }
+        }
+        if matches!(inflight.action.ult_effect, UltEffect::Reset) {
+            emit_combat_event(
+                event_writer,
+                CombatEventKind::UltimateUsed { unit_id: attacker_id },
+                attacker_id,
+                attacker_id,
+                inflight.follow_up_depth,
+            );
         }
 
         if outcome.succeeded && inflight.action.energy_grant > 0 {
@@ -1867,6 +1894,15 @@ pub(crate) fn step_app(
                 inflight.follow_up_depth,
             );
         }
+    }
+    if matches!(inflight.action.ult_effect, UltEffect::Reset) {
+        emit_combat_event(
+            event_writer,
+            CombatEventKind::UltimateUsed { unit_id: attacker_id },
+            attacker_id,
+            attacker_id,
+            inflight.follow_up_depth,
+        );
     }
 
     if outcome.succeeded && inflight.action.energy_grant > 0 {

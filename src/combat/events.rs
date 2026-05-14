@@ -74,6 +74,11 @@ pub enum CombatEventKind {
         unit_id: UnitId,
         amount: i32,
     },
+    /// Emitted once per cast when an ultimate is spent (UltEffect::Reset). Distinct from
+    /// UltGain — enables downstream listeners to observe spend without reconstructing state.
+    UltimateUsed {
+        unit_id: UnitId,
+    },
     /// Emitted for the defender on every non-revive hit (companion of OnDamageDealt).
     OnHitTaken {
         amount: i32,
