@@ -13,8 +13,8 @@ use crate::combat::floating::FloatingDamage;
 use crate::combat::kernel::{CombatBeatId, CombatKernelRegistry};
 use crate::combat::log::{ActionLog, LogEntry};
 use crate::combat::resolution::{
-    apply_damage_only, apply_effects, compute_hop_damage, resolve_action, resolve_targets,
-    select_bounce_hop, target_shape_rejection_reason,
+    apply_damage_only, apply_effects, apply_heal_only, compute_hop_damage, resolve_action,
+    resolve_targets, select_bounce_hop, target_shape_rejection_reason,
 };
 use crate::combat::resolution::{TargetEntry, TargetableSnapshot};
 use crate::combat::rng::CombatRng;
@@ -172,10 +172,10 @@ pub(crate) fn step_app(
         return;
     };
 
-    // === MULTI-TARGET PATH (Blast / AllEnemies) ===
+    // === MULTI-TARGET PATH (Blast / AllEnemies / AllAllies) ===
     if matches!(
         inflight.action.target_shape,
-        TargetShape::Blast | TargetShape::AllEnemies
+        TargetShape::Blast | TargetShape::AllEnemies | TargetShape::AllAllies
     ) {
         // Phase 0: build entity→id map and snapshot (read-only pass, released before mut borrows)
         let actor_pairs: Vec<(Entity, UnitId)> = actors
@@ -336,6 +336,26 @@ pub(crate) fn step_app(
             else {
                 continue;
             };
+
+            // AllAllies heal fan-out: only the defender unit is needed; skip self-exclude.
+            if inflight.action.target_shape == TargetShape::AllAllies {
+                let Ok((_, _, mut def_unit, _, _, _, _, _, _, _, _, _, _, _, _)) =
+                    actors.get_mut(def_entity)
+                else {
+                    continue;
+                };
+                let (_outcome, heal_events) = apply_heal_only(&inflight.action, &mut def_unit);
+                for kind in heal_events {
+                    emit_combat_event(
+                        event_writer,
+                        kind,
+                        inflight.action.source,
+                        def_id,
+                        inflight.follow_up_depth,
+                    );
+                }
+                continue;
+            }
 
             if def_entity == attacker_entity {
                 continue;
