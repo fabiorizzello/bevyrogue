@@ -1,74 +1,110 @@
-# M021 — Skill trait + SkillCtx + Blueprint trait + Plugin self-registration
+# M021 — Kernel framework + Timeline FSM + Registry<E>
 
 ## Obiettivo
 
-Consolidare l'extension pattern del kernel su due fronti che ora viaggiano insieme:
+Sostituire l'attuale schema "enum `Effect` data-driven + plugin Digimon hardcoded nel kernel" con un **framework piatto e generico** in cui:
 
-1. **Skill API**: passare da enum `Effect` data-driven (v0, M017→M020) a `trait Skill::resolve(&mut SkillCtx, &Params)` in Rust, con split netto query (read-only) / enqueue `Intent` (write-deferred). Vedi **D010**.
-2. **Blueprint API + plugin split**: formalizzare `trait Blueprint` + `BlueprintRegistry` + `CombatPlugin` separation (scope storico M021 da portfolio). Vedi **D007 + D008**.
+1. Il kernel espone solo primitive: `Intent` come unica mutazione, `SkillCtx` come unico contesto, `CompiledTimeline` come unica forma di "skill", `Registry<E: ExtPoint>` come unica forma di "extension axis", `SignalBus` come bus reattivo, `Clock` con due modalità (HeadlessAuto / Windowed).
+2. Una skill è **una graph data** (`CompiledTimeline`) che referenzia fn-by-id su 7 assi (`hook`, `selector`, `predicate`, `formula`, `tick`, `ai_utility`, `cue`). Niente trait per skill, niente enum effect.
+3. Un blueprint Digimon è **un solo modulo + un solo `register(reg: &mut ExtRegistries)`**. Nessun trait `Blueprint`, nessun registry separato per blueprint, nessun nome Digimon nel kernel.
+4. La skilltree è **context immutabile per il run**, letta dai `predicate` di edge-gate; talenti che abilitano/disabilitano branch sono runtime-gate (D033), non patch compile-time (D027 demoted).
 
-I due refactor condividono lo stesso modulo target (`src/combat/blueprints/`, `src/combat/resolution.rs`, kernel surface) e lo stesso vincolo (kernel unico esecutore, P001). Tenerli separati in milestone diversi raddoppierebbe il churn sul kernel surface — meglio un unico milestone di refactor che consegna entrambi i contract stabili pre-roster.
+Il framework è validato da spike standalone (33/33 verde, 4 pattern architettonicamente distinti: Loop+skilltree-gate, blueprint-state mutabile, cross-blueprint identity filter, RNG-gated edge).
 
 ## Scope
 
-### Fascia A — Skill trait + SkillCtx (nuovo, post-M018)
+### Foundation framework
 
-- **A1. Design `SkillCtx`**: API read-only query (`predict_damage`, `adjacents`, `can_target`, `next_adjacent_alive`, `sp_available`, `alive_enemies`, `unit_state`, `peek_pending`, …) + API write-deferred enqueue (`ctx.enqueue(Intent::…)`). Single source di verità per *cosa* una skill può chiedere e produrre.
-- **A2. Design `Intent` enum**: varianti minime canon (`DealDamage`, `ApplyStatus`, `FollowUp`, `AdvanceTurn`, `DelayTurn`, `Heal`, `Cleanse`, …). Lista chiusa, crescibile.
-- **A3. `trait Skill`**: `fn id(&self) -> SkillId; fn resolve(&self, ctx: &mut SkillCtx, params: &Params);` + `SkillRegistry` resource Bevy.
-- **A4. Kernel `Intent` resolver**: pipeline che drena la coda `Intent` post-resolve della skill, applica via il damage/status/turn-order esistente. Niente duplicazione formula.
-- **A5. Migrate skill esistenti**: Bounce (S03 M018, già selector-tipizzato), Blast, AoE, Single, Heal, Cleanse, status applies → tutte sotto `trait Skill`. Drop di `enum Effect` quando vuoto.
-- **A6. RON ridotto**: `skills.ron` tiene solo `id`, numeri (dmg, hops, sp_cost, scaling), `target_shape` base, tag. Niente logica. `units.ron` invariato (è già numeri).
-- **A7. Test pattern**: ogni skill = test `assert_eq!(ctx.drain_intents(), expected)`. Test integration esistenti restano verdi (re-cablati sui nuovi tipi).
+- **F1. Intent canon**: enum chiuso, ~18 varianti (DealDamage, ApplyStatus, ApplyBuff, AdvanceTurn, DelayTurn, EnqueueFollowUp, BlueprintSignal{owner, payload}, SetBlueprintState{actor, key, value, cast_id}, Reject, …). `intent_applier` FIFO drena la coda e route per variante; nessuna mutazione kernel-side fuori da `intent_applier`.
+- **F2. `SkillCtx<'a>`**: contesto skill con accessor read-only (`adjacents`, `predict_damage`, `unit_state`, `alive_enemies`, `peek_pending`, `blueprint_state(actor, key)`, `identity_of(unit)`, `cast_hit_set()`, `skilltree(actor)`, `rng_u32(cast_id, beat, hop, salt)`) + `enqueue(Intent)`. Mode tri-stato: `DryRun / Execute / Preview` (D024), invariante `DryRun ≡ Execute` su Intent stream.
+- **F3. `ExtPoint` + `Registry<E>` + `ExtRegistries`**: pattern unificato `id → fn` per ogni asse. ~3 righe per nuovo asse (marker struct + impl ExtPoint + campo aggregato). Lookup via `&'static str`. Built-in fns registrati dal kernel coprono la maggioranza canon (primary, all_enemies, adjacent_to_primary, lowest_hp_pct, atk_scaling, dot_tick, has_target_alive, …).
+- **F4. Timeline FSM**: `CompiledTimeline = Vec<Beat> + Vec<BeatEdge>`. `BeatKind::{Impact { hook, selector, presentation }, Loop { body, exit_when }, CastStart, CastEnd}`. `BeatRunner` con `LoopFrame` (single-level v0) emette `BeatEvent { cast_id, beat, hop_index, caster, primary_target, beat_targets }` per ogni step. `validate_timeline_refs` ricorsiva (incl. `Loop.body` ed `exit_when`) a `App::finish()`.
+- **F5. `SignalBus` + `PassiveRunner`**: bus globale per signal cross-blueprint enum-chiusi (D028, validation a `App::finish()`). Passive Digimon sono `CompiledTimeline` listener-driven (un `PassiveRunner` separato per FSM passive — Renamon `kitsune_grace`, Gabumon `fur_cloak`, Tentomon `battery_loop`).
+- **F6. Skilltree immutable**: `SkillTree { unlocked, ranks }` come Component per-unit immutabile per il run. Predicate gates leggono via `ctx.skilltree(actor)`. Sblocchi tra encounter (Slay-the-Spire-style), mai in-cast.
+- **F7. Two-clock model**: `HeadlessAuto` (test) consuma BeatEvent immediato; `Windowed` (gioco) stalla su `Presentation::Cue(CueId)` finché animation completa, poi avanza. Invariante (D026): stesso Intent stream prodotto dai due path.
+- **F8. RON → `CompiledTimeline` compiler**: load-time. `skills.ron` v2 = numeri/tag + grafo di beat con string id verso le registry. Typo nel RON = errore al boot. `units.ron` invariato (è già numeri).
 
-### Fascia B — Blueprint trait + plugin split (scope storico portfolio)
+### Plugin & lifecycle
 
-- **B1.** Estrarre `CombatPlugin` da `register_combat_kernel_runtime` (refactor `main.rs` + `headless.rs` + `windowed.rs` a composizione plugin). Zero cambio di logica. Vedi D008.
-- **B2.** `trait Blueprint` + `BlueprintRegistry` resource + dispatcher generico in `src/combat/blueprints/api.rs`. Vedi D007.
-- **B3.** Migrate Agumon plugin al nuovo trait + self-registration (shim per gli altri 5).
-- **B4.** Migrate Gabumon (paired Twin Core).
-- **B5.** Migrate Dorumon + Tentomon.
-- **B6.** Migrate Patamon + Renamon. Rimozione shim. `CombatKernelTransition` Digimon-specific eliminato. Migration delle 5 famiglie enum (`TwinCoreSignal`, `BatteryLoopTransition`, `HolyAegisTransition`, `KitsuneGraceTransition`, `PredatorLoopState`) dentro `kernel.rs`.
-- **B7.** Extension-friendly `RosterEntry`: rimuovere field hard-coded Digimon-specific (`twin_core`, `holy_support`, …) a favore di blueprint-keyed payload generico.
-- **B8.** `ValidationSnapshot` field nominati per blueprint key, popolata dal registry.
+- **P1. `CombatPlugin` extract**: separazione da `register_combat_kernel_runtime`. Vincolo: nessun import `bevy::winit`/`bevy::render`/`bevy_egui` nel plugin core (verificato da `cargo check`).
+- **P2. `cast_id: CastId(NonZeroU32)`**: aggiunto a `CombatEvent` + `BeatEvent` + propagato da `pipeline::step_app` a tutti i call-site (D009 precondition).
+- **P3. Ult instant cast**: separazione `TacticalCyclePhase::UltInstant` come bypass turn advance (D010 precondition).
+- **P4. Turn-phase 5-step**: `PreTurnTick → PostTickKoResolve → TurnStartHooks → PostHooksKoResolve → BuildFreshSnapshot → SelectActionAndCast` come `SystemSet` Bevy espliciti (D011).
 
-### Ordine slice
+### Migration
 
-Fascia B1–B2 prima (plugin split + Blueprint trait) — abilita injection pulita di `SkillRegistry`. Poi A1–A6 (Skill trait + Intent + migrate skills) — ortogonale ai blueprint, gira sul kernel ripulito. Poi B3–B6 a coppie (blueprint migration sfrutta `SkillCtx`/`Intent` per accodare follow-up senza toccare il kernel). Chiusura con B7–B8 (cleanup roster/snapshot).
+- **M1. Built-in extension fns**: kernel registra il set canonico (selector, predicate, formula, tick) prima della migration skill, così le skill canon si esprimono in RON+grafo senza blueprint code aggiuntivo.
+- **M2. Migrate 18 active skill canon** → `CompiledTimeline` in `skills.ron`. Drop `enum Effect`, drop `apply_effects()` in `resolution.rs`. Bounce → `BeatKind::Loop` con `exit_when` (sostituisce `MultiHitOnKO::*` policy).
+- **M3. Migrate 6 passive canon** come `PassiveRunner` driven da `SignalBus`. Modifier pipeline aggregator (intrinsic-modifier dei status + Ability modifier + Buff modifier) con `ModifierCondition` ricco (D017, D018) e `EventFilter::{All, Any, Not, Custom}` (D021).
+- **M4. Migrate 6 blueprint Digimon** = 6 moduli `src/combat/blueprints/<x>/` con un solo `register(reg)`. Mini-plugin `twin_core` per shared-mechanic Agumon↔Gabumon (D005). Niente trait `Blueprint`.
+- **M5. Cleanup kernel**: rimozione delle 5 variant Digimon-specific da `CombatKernelTransition` (`TwinCore`, `BatteryLoop`, `HolySupport`, `PredatorLoop`, `PrecisionMindGame`) e dei sub-snapshot in `observability.rs`. Sostituiti da `CombatKernelTransition::Blueprint { owner, payload }` generico.
+
+### Consumers
+
+- **C1. UI/AI riscritti via `SkillCtx::Mode::Preview`**: `query_skill_preview` chiama il runner in `Preview` (no-apply) e legge l'`Intent` stream prodotto; `combat_panel.rs` consuma direttamente, `predict_damage` UI-side rimosso. AI scoring usa helper esterno sullo stesso stream.
+- **C2. `RosterEntry` blueprint-keyed payload**: `UnitDef` perde field hardcoded Digimon-specific (`twin_core`, `holy_support`, …). Ogni blueprint dichiara la propria validation rule via fn registrata in `Registry<ValidationExt>`.
+- **C3. `ValidationSnapshot` field-from-registry**: popolata da `ExtRegistries` iter. Aggiungere un Digimon non richiede edit a `units_ron.rs`.
 
 ## Vincoli
 
-- **P001**: kernel resta unico esecutore. Skill produce `Intent`, kernel risolve. Blueprint produce signals/follow-up via `ctx.enqueue`, mai mutazione diretta.
-- **D008**: `CombatPlugin` non importa `bevy::winit`, `bevy::render`, `bevy_egui`. `cargo check` (no feature) verifica il confinamento.
-- **Determinismo**: tests headless restano deterministici. `Intent` order definito da resolve order; nessuna dipendenza da `HashMap` iteration.
-- **Test esistenti verdi a ogni slice.** Migration incrementale, non big-bang. Le skill già migrate convivono con quelle ancora su `Effect` durante la transizione (registry doppio temporaneo, rimosso a fine A5).
-- **No data-DSL Turing-completo**, no scripting embedded (Rhai/Rune): D010.
+- **P001 (Kernel generico, K001 in KNOWLEDGE)**: il kernel non menziona mai nomi di Digimon. `rg "TwinCore|BatteryLoop|HolySupport|PredatorLoop|PrecisionMindGame|KitsuneGrace" src/combat/` → 0 righe a fine M021 (escluse le subdir `blueprints/`).
+- **Intent come unica mutazione**: hooks/predicate/formula/tick **non mutano stato direttamente**. Producono `Intent` via `ctx.enqueue(...)`. Il kernel li applica nel pipeline. Replay-reconstructible end-to-end.
+- **Determinismo (I1)**: stesso input ⇒ stesso `Intent` stream. RNG seeded via `(rng_seed, cast_id, beat, hop_index, salt)`. Nessun `HashMap` iteration order leak, nessun wall-clock.
+- **DryRun ≡ Execute (I2 / D024)**: il runner in `DryRun` produce lo stesso Intent stream di `Execute`, senza applicare. UI/AI usano questo path.
+- **Signal-gating Windowed (I3 / D026)**: la timeline FSM stalla solo su `Presentation::Cue`, mai su altri beat. Intent stream end-of-cast identico tra HeadlessAuto e Windowed.
+- **Validation strict a boot (I5 / D031)**: ogni id referenziato da `CompiledTimeline` (hook, selector, predicate, cue, `Loop.exit_when`) deve risolvere in `ExtRegistries`. Mancanza = errore a `App::finish()`, mai a runtime.
+- **Skilltree immutabile per il run (D033)**: nessun `Intent` muta lo skilltree in-cast. Sblocchi avvengono tra encounter.
+- **Headless first**: `CombatPlugin` gira senza feature `windowed`. Gating `#[cfg(feature = "windowed")]` solo per egui/winit.
+- **No-DSL / no-scripting**: niente Turing-completeness in RON, niente Rhai/Rune (D010 originale). Logica vive in fn Rust registrate.
 
 ## Demo
 
-- 6 plugin auto-registrati, dispatcher Blueprint generico, `CombatKernelTransition` Digimon-specific rimosso.
-- Tutte le skill canon (Bounce, Blast, AoE, Heal, Cleanse, status apply) eseguite via `trait Skill` su `SkillCtx`; `enum Effect` rimosso.
-- `skills.ron` contiene solo numeri/tag.
-- Test integration suite verde end-to-end senza modifiche di shape pubbliche oltre tipo skill.
+A milestone closed:
+
+- `rg "TwinCore|BatteryLoop|HolySupport|PredatorLoop|PrecisionMindGame|KitsuneGrace" src/combat/` (escluse `blueprints/`) → 0 righe.
+- `rg "enum Effect" src/data/skills_ron.rs` → 0 righe; `skills.ron` contiene solo numeri + grafo + string id.
+- 24 skill canon eseguono via `CompiledTimeline` su `SkillCtx`; suite `tests/` (74+) verde end-to-end.
+- 6 passive canon eseguono via `PassiveRunner` su `SignalBus`.
+- 6 blueprint Digimon = 6 file `src/combat/blueprints/<x>/mod.rs` + 6 dir RON `assets/data/digimon/<x>/`. Nessun codice Digimon-specific altrove.
+- JSONL contiene `CombatKernelTransition::Blueprint { owner, payload }` per ogni `BlueprintSignal` round-trip su encounter scriptato.
+- Aggiungere un Digimon nuovo (test scriptato) tocca solo `src/combat/blueprints/<new>/` + `assets/data/digimon/<new>/`.
+- `cargo run --features windowed` smoke su un encounter completo: comportamento indistinguibile dal pre-refactor.
 
 ## Riferimenti
 
-- **D007** — Blueprint API: trait Blueprint + BlueprintRegistry + plugin self-registration.
-- **D008** — `CombatPlugin` separation headless/windowed.
-- **D010** — Skill API: `trait Skill` + `SkillCtx` (query/enqueue split). Pre-M021.
-- **K-P001** — Kernel generico, specifiche fuori dal kernel (aggiornato con `SkillCtx`/`Intent` rule).
-- **`M021-RESEARCH.md`** — audit kernel↔digimon coupling, target architecture (`trait Blueprint` + opaque `BlueprintTransition`), slicing originale S01–S08 = B1–B8 di questo CONTEXT.
-- **SP2 INTERFACE-OPTIONS** — spike Blueprint API.
-- **SP-skill-dsl-coverage** — `.gsd/spikes/spike-skill-dsl-coverage/` — 24/24 skill canon Effect-expressible; conferma curva pattern chiusa.
-- **M020 §entry portfolio** — rimanda esplicitamente le 5 famiglie enum Digimon-specific alla migration di M021 S05–S06 (qui rinumerate B5–B6).
+- **D005** — Shared-mechanic mini-plugin (Twin Core paired).
+- **D008** — `CombatKernelTransition::Blueprint { owner, payload }` come unica variant blueprint-side (le 5 Digimon-specific eliminate).
+- **D009** — `cast_id` su `CombatEvent` + `BeatEvent` (precondition cast-scoped hooks).
+- **D010** — Ult instant cast (precondition turn-phase order).
+- **D011** — Turn-phase 5-step esplicito come `SystemSet`.
+- **D017** — `ModifierCondition` canon list ricco.
+- **D018** — `StatusDef::intrinsic_modifiers` data-driven (Blessed/Heated/Chilled symmetry).
+- **D021** — `EventFilter::{All, Any, Not, Custom}` per listener compositi.
+- **D023** — Hook come fn-by-id registrato (no trait object).
+- **D024** — `SkillCtxMode { DryRun, Execute, Preview }`.
+- **D025** — Timeline FSM strato esplicito (`CompiledTimeline`).
+- **D026** — Two-clock model (`HeadlessAuto` / `Windowed`).
+- **D028** — Signal taxonomy enum chiuso, registrato a `App::finish()`.
+- **D029** — `next_from` first-passing edge + fallback unconditional invariant.
+- **D030** — Selector come fn-by-id registrato (mirror di D023).
+- **D031** — Pattern unificato `Registry<E: ExtPoint>` (7 assi).
+- **D032** — Un solo modulo + un solo `register()` per Digimon.
+- **D033** — Skilltree immutable runtime context + `BeatKind::Loop` + `BeatEvent.hop_index` option A.
+- **D027** — *Demoted post-spike*: compile-time `TimelinePatchOp` resta disponibile solo per topology rewrite non rappresentabili come edge-gate; non sul critical path v0.
+- **D034** *(pending)* — `Intent::SetBlueprintState` come canonical write-path per state per-unit-per-key.
+- **K001 / P001** — Kernel generico, specifiche fuori dal kernel.
+- **Spike `M021-timeline-fsm`** — 33/33 verde, `FINDINGS.md` con 17 finding + 4 pattern fixture (Loop+skilltree-gate / blueprint-state mutabile / cross-blueprint identity filter / RNG-gated edge).
+- **`M021-RESEARCH.md`** — capability matrix, design surface, gap analysis.
 
 ## Dipendenze
 
-- **Richiede chiuso**: M018 (foundation primitive shape: Blast/AoE/Bounce + selectors), M019 (DR pipeline), M020 (reactive bus uniforme + shim removal kernel-side).
-- **Sblocca**: M022 (asset pipeline, ortogonale ma può partire in parallelo), M023+ (visual stack), M024–M028 (roster identity migration — nascono direttamente sopra `trait Skill` + `trait Blueprint`, niente debito).
+- **Richiede chiuso**: M018 (target shape, Bounce, selectors), M019 (DR pipeline), M020 (reactive bus uniforme + shim removal kernel-side).
+- **Sblocca**: M022 (asset pipeline, ortogonale), M023+ (visual stack), M024–M028 (nuovi roster — nascono direttamente sopra il framework, niente debito strutturale).
 
 ## Non-scope (deferred)
 
-- Escape hatch modding via scripting embedded → post-1.0.
-- Stack-aware status numerici (Heated × N DoT scaling) → resta differito (D009).
-- Hot-reload skill logic → non richiesto (vincolo utente esplicito: logica in Rust).
+- Multi-level `BeatKind::Loop` nesting (v0 single-level basta — verificato sul roster v0).
+- Scripting embedded / hot-reload skill logic (vincolo utente esplicito, post-1.0).
+- Stack-aware status numerici (Heated × N DoT scaling) — D009 deferred storico, indipendente da M021.
+- `Intent::SetSkillTree` (skilltree mutabile in-cast) — esplicitamente fuori scope (D033).
+- Passive `PassiveRunner` con timeline ramificate complesse → v0 ammette grafi line-shaped; ramificazione cross-signal differita.
