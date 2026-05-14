@@ -455,7 +455,7 @@ pub(crate) fn step_app(
                             damage_tag: *damage_tag,
                         });
                     }
-                    CombatEventKind::OnKO => {
+                    CombatEventKind::UnitDied { .. } => {
                         commands.entity(def_entity).insert(Ko);
                         log.push(LogEntry::Ko { target: def_id });
                         if **att_team_val != *def_team_val {
@@ -981,7 +981,7 @@ pub(crate) fn step_app(
                             damage_tag: *damage_tag,
                         });
                     }
-                    CombatEventKind::OnKO => {
+                    CombatEventKind::UnitDied { .. } => {
                         commands.entity(def_entity).insert(Ko);
                         log.push(LogEntry::Ko { target: def_id });
                         // Emit OnEnemyKill (attacker vs enemy team).
@@ -1372,7 +1372,7 @@ pub(crate) fn step_app(
                         damage_tag: *damage_tag,
                     });
                 }
-                CombatEventKind::OnKO => {
+                CombatEventKind::UnitDied { .. } => {
                     commands.entity(target_entity).insert(Ko);
                     log.push(LogEntry::Ko { target: target_id });
                 }
@@ -1714,7 +1714,7 @@ pub(crate) fn step_app(
                     damage_tag: *damage_tag,
                 });
             }
-            CombatEventKind::OnKO => {
+            CombatEventKind::UnitDied { .. } => {
                 commands.entity(target_entity).insert(Ko);
                 log.push(LogEntry::Ko { target: target_id });
                 if *attacker_team != *defender_team {

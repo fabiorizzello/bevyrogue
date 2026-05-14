@@ -248,7 +248,7 @@ fn s09_event_stream_observes_all_variants() {
             .iter()
             .any(|k| matches!(k, CombatEventKind::OnBreak { .. }))
     );
-    assert!(kinds.iter().any(|k| matches!(k, CombatEventKind::OnKO)));
+    assert!(kinds.iter().any(|k| matches!(k, CombatEventKind::UnitDied { .. })));
     assert!(
         kinds
             .iter()
@@ -265,7 +265,7 @@ fn s09_event_stream_observes_all_variants() {
         CombatEventKind::OnSkillCast { .. }
             | CombatEventKind::OnDamageDealt { .. }
             | CombatEventKind::OnBreak { .. }
-            | CombatEventKind::OnKO
+            | CombatEventKind::UnitDied { .. }
             | CombatEventKind::OnAllyLowHp
             | CombatEventKind::OnEnemyKill
             | CombatEventKind::UltGain { .. }

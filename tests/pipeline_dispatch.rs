@@ -250,7 +250,7 @@ fn lifecycle_root_action_emits_4_events_in_order() {
             e.kind,
             CombatEventKind::OnDamageDealt { .. }
                 | CombatEventKind::OnBreak { .. }
-                | CombatEventKind::OnKO
+                | CombatEventKind::UnitDied { .. }
         )
     });
     assert!(
@@ -265,7 +265,7 @@ fn lifecycle_root_action_emits_4_events_in_order() {
                 e.kind,
                 CombatEventKind::OnDamageDealt { .. }
                     | CombatEventKind::OnBreak { .. }
-                    | CombatEventKind::OnKO
+                    | CombatEventKind::UnitDied { .. }
             )
     });
     assert!(

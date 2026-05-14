@@ -38,7 +38,10 @@ pub enum CombatEventKind {
     OnBreak {
         damage_tag: DamageTag,
     },
-    OnKO,
+    UnitDied {
+        status_remaining: Vec<StatusEffectKind>,
+        heated_remaining: u32,
+    },
     OnRevive {
         hp_after: i32,
     },

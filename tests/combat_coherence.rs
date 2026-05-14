@@ -448,7 +448,9 @@ fn trace_kind_json(kind: &CombatEventKind) -> String {
         CombatEventKind::OnBreak { damage_tag } => {
             format!("{{\"kind\":\"OnBreak\",\"element\":\"{:?}\"}}", damage_tag)
         }
-        CombatEventKind::OnKO => "{\"kind\":\"OnKO\"}".to_string(),
+        CombatEventKind::UnitDied { status_remaining, heated_remaining } => {
+            format!("{{\"kind\":\"UnitDied\",\"status_remaining\":{:?},\"heated_remaining\":{}}}", status_remaining, heated_remaining)
+        }
         CombatEventKind::OnRevive { hp_after } => {
             format!("{{\"kind\":\"OnRevive\",\"hp_after\":{}}}", hp_after)
         }

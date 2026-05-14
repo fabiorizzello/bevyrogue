@@ -450,9 +450,21 @@ pub fn target_shape_rejection_reason(shape: TargetShape) -> Option<String> {
     }
 }
 
+/// Build `UnitDied` payload fields from an optional defender StatusBag snapshot.
+fn ko_payload(bag: Option<&StatusBag>) -> (Vec<StatusEffectKind>, u32) {
+    match bag {
+        Some(b) => {
+            let status_remaining = b.iter().map(|inst| inst.kind.clone()).collect();
+            let heated_remaining = b.get_dur(&StatusEffectKind::Heated).unwrap_or(0);
+            (status_remaining, heated_remaining)
+        }
+        None => (vec![], 0),
+    }
+}
+
 /// Apply damage to a single defender without consuming attacker resources (SP, ult, streak).
 /// Called in the per-target loop of Blast/AllEnemies fan-out; the caller hoists resource
-/// consumption before the loop. Returns per-target events only: OnDamageDealt, OnBreak, OnKO.
+/// consumption before the loop. Returns per-target events only: OnDamageDealt, OnBreak, UnitDied.
 pub fn apply_damage_only(
     resolved: &ResolvedAction,
     attacker_unit: &Unit,
@@ -557,7 +569,8 @@ pub fn apply_damage_only(
             events.push(CombatEventKind::OnBreak { damage_tag: resolved.damage_tag });
         }
         if ko {
-            events.push(CombatEventKind::OnKO);
+            let (status_remaining, heated_remaining) = ko_payload(defender_status);
+            events.push(CombatEventKind::UnitDied { status_remaining, heated_remaining });
         }
     }
 
@@ -777,7 +790,8 @@ pub fn apply_effects(
                 });
             }
             if ko {
-                events.push(CombatEventKind::OnKO);
+                let (status_remaining, heated_remaining) = ko_payload(defender_status);
+                events.push(CombatEventKind::UnitDied { status_remaining, heated_remaining });
             }
         }
     }
@@ -1295,7 +1309,7 @@ mod tests {
         assert!(
             events
                 .iter()
-                .any(|event| matches!(event, CombatEventKind::OnKO))
+                .any(|event| matches!(event, CombatEventKind::UnitDied { .. }))
         );
     }
 
@@ -1335,7 +1349,7 @@ mod tests {
         assert!(
             !events
                 .iter()
-                .any(|event| matches!(event, CombatEventKind::OnKO))
+                .any(|event| matches!(event, CombatEventKind::UnitDied { .. }))
         );
     }
 
