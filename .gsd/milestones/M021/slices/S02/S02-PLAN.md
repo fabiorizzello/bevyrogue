@@ -42,17 +42,17 @@ Three new integration tests under `tests/` provide closure: `timeline_onturnstar
   - Files: `src/combat/api/registry.rs`, `src/combat/api/skill_ctx.rs`
   - Verify: cargo check && cargo check --features windowed && cargo test --lib combat::api:: && cargo test --test intent_applier_canary && cargo test --test cast_id_propagation
 
-- [ ] **T03: BeatRunner with single-level LoopFrame (no test yet, must compile and be unit-tested)** `est:180m`
+- [x] **T03: BeatRunner with single-level LoopFrame (no test yet, must compile and be unit-tested)** `est:180m`
   Why: `BeatRunner` is the FSM engine — the slice's largest mechanical port from the spike. Keeping it in its own task isolates the borrow/lifetime work (F7) and lets T04 focus on the integration scenarios.
   - Files: `src/combat/api/runner.rs`, `src/combat/api/mod.rs`
   - Verify: cargo check && cargo test --lib combat::api::runner:: && rg 'pub struct BeatRunner' src/combat/api/runner.rs && rg 'LoopFrame' src/combat/api/runner.rs
 
-- [ ] **T04: Demo gates 1 & 3: fixture OnTurnStart kills target + chain_bolt CompiledTimeline port** `est:210m`
+- [x] **T04: Demo gates 1 & 3: fixture OnTurnStart kills target + chain_bolt CompiledTimeline port** `est:210m`
   Why: the two runner-driven demo gates from the roadmap. Keeping them in one task pays off because both build a hand-rolled `CompiledTimeline`, both wire a hook fn, and both drive `BeatRunner::run_to_completion` over an existing Bevy `App` — duplication of setup helpers is highest here.
   - Files: `tests/timeline_onturnstart_kills.rs`, `tests/timeline_chain_bolt_port.rs`
   - Verify: cargo test --test timeline_onturnstart_kills && cargo test --test timeline_chain_bolt_port && cargo test
 
-- [ ] **T05: CombatPlugin::finish validator hook + slice verification (grep gates, headless+windowed, full suite)** `est:90m`
+- [x] **T05: CombatPlugin::finish validator hook + slice verification (grep gates, headless+windowed, full suite)** `est:90m`
   Why: closes the slice with the `App::finish()` seam and the full demo-closure verification. The validator hook makes S05+ fail-fast on dangling references; the verification confirms every roadmap success criterion for S02 is green now.
   - Files: `src/combat/plugin.rs`, `src/combat/api/timeline.rs`
   - Verify: cargo check && cargo check --features windowed && cargo test && rg 'use bevy::winit|use bevy::render|use bevy_egui' src/combat/api/ ; rg 'TwinCore|BatteryLoop|HolySupport|PredatorLoop|PrecisionMindGame|KitsuneGrace' src/combat/api/ ; rg 'pub fn validate_timeline_refs' src/combat/api/timeline.rs && rg 'pub struct BeatRunner' src/combat/api/runner.rs && rg 'fn finish' src/combat/plugin.rs

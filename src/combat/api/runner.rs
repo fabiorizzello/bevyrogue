@@ -3,10 +3,12 @@ use std::{
     sync::Arc,
 };
 
+use bevy::log;
 use bevy::prelude::World;
 
 use crate::combat::{
     api::{
+        clock::Clock,
         intent::{CastId, Intent},
         registry::ExtRegistries,
         skill_ctx::{SkillCtx, SkillCtxMode},
@@ -43,7 +45,12 @@ pub enum StepOutcome {
     /// No more beats; the timeline finished normally.
     Done,
     /// Loop iterated `MAX_HOPS` (256) times without `exit_when` returning `true`.
+    /// A `bevy::log::warn!` is emitted with cast_id, timeline id, and hop count.
     Halted,
+    /// Clock::Windowed only: a Presentation-bearing beat fired its hook and is now
+    /// stalling. Call `resume_cue()` to unlatch, then `step()` to advance normally.
+    /// Never returned by `run_to_completion` (auto-resumed) or HeadlessAuto.
+    AwaitingCue,
 }
 
 /// FSM engine that drives a `CompiledTimeline` beat-by-beat.
@@ -68,6 +75,14 @@ pub struct BeatRunner {
     /// F6 fix: updated after every hook fires so edge-gate predicates see
     /// running target lists rather than the empty `BeatEvent` default.
     last_beat_targets: Vec<UnitId>,
+    /// Execution clock: HeadlessAuto (never stalls) or Windowed (stalls on Presentation).
+    clock: Clock,
+    /// Some(beat_id) when we fired a Presentation-bearing beat (Windowed) and are
+    /// waiting for `resume_cue()`. `step()` returns `AwaitingCue` while this is set.
+    awaiting_cue: Option<BeatId>,
+    /// Set by `resume_cue()`. Tells the next `step()` to skip re-firing the
+    /// already-fired presentation beat and advance cursor/body_cursor directly.
+    cue_just_resumed: bool,
 }
 
 impl BeatRunner {
@@ -87,13 +102,24 @@ impl BeatRunner {
             loop_stack: Vec::new(),
             cast_hit_set: HashSet::new(),
             last_beat_targets: Vec::new(),
+            clock: Clock::HeadlessAuto,
+            awaiting_cue: None,
+            cue_just_resumed: false,
         }
+    }
+
+    /// Override the clock mode (builder pattern — keeps `new` signature stable).
+    pub fn with_clock(mut self, clock: Clock) -> Self {
+        self.clock = clock;
+        self
     }
 
     /// Advance the FSM by one beat.
     ///
     /// - `Done` is returned when the timeline has no more beats.
-    /// - `Halted` is returned when a loop exceeds `MAX_HOPS` (256).
+    /// - `Halted` is returned when a loop exceeds `MAX_HOPS` (256) with a warn!.
+    /// - `AwaitingCue` is returned (Clock::Windowed only) when a Presentation-bearing
+    ///   beat fired its hook and is now stalling. Call `resume_cue()` to unlatch.
     /// - `SkillCtxMode` is forwarded to hooks and predicates so S03 can flip
     ///   to `DryRun` without an API change.
     pub fn step(
@@ -103,6 +129,15 @@ impl BeatRunner {
         mode: SkillCtxMode,
         pending: &mut VecDeque<Intent>,
     ) -> StepOutcome {
+        // Global stall gate: don't re-enter until resume_cue() clears the latch.
+        if self.awaiting_cue.is_some() {
+            return StepOutcome::AwaitingCue;
+        }
+
+        // Consume the resume flag at the top so both paths can read it.
+        let just_resumed = self.cue_just_resumed;
+        self.cue_just_resumed = false;
+
         // ── Loop body path ────────────────────────────────────────────────────
         if !self.loop_stack.is_empty() {
             // Copy all frame fields (all Copy types) before any &mut self calls.
@@ -120,6 +155,12 @@ impl BeatRunner {
 
             if hop_index >= MAX_HOPS {
                 self.loop_stack.pop();
+                log::warn!(
+                    "BeatRunner circuit-breaker: cast_id={:?} timeline={} halted at hop_index={}",
+                    self.cast_id,
+                    self.timeline.id,
+                    hop_index
+                );
                 return StepOutcome::Halted;
             }
 
@@ -132,9 +173,18 @@ impl BeatRunner {
                 }
             };
 
-            let beat_targets = self.fire_beat(&cur_beat, hop_index, world, regs, mode, pending);
-            if matches!(cur_beat.kind, BeatKind::Impact) {
-                self.last_beat_targets = beat_targets;
+            if !just_resumed {
+                let beat_targets =
+                    self.fire_beat(&cur_beat, hop_index, world, regs, mode, pending);
+                if matches!(cur_beat.kind, BeatKind::Impact) {
+                    self.last_beat_targets = beat_targets;
+                }
+
+                // Windowed stall: presentation beat fired once, now latch.
+                if cur_beat.presentation.is_some() && self.clock == Clock::Windowed {
+                    self.awaiting_cue = Some(cur_beat.id);
+                    return StepOutcome::AwaitingCue;
+                }
             }
 
             let body_len: usize = {
@@ -202,10 +252,19 @@ impl BeatRunner {
                 StepOutcome::Advanced
             }
             _ => {
-                let beat_targets = self.fire_beat(&beat, 0, world, regs, mode, pending);
-                if matches!(beat.kind, BeatKind::Impact) {
-                    self.last_beat_targets = beat_targets;
+                if !just_resumed {
+                    let beat_targets = self.fire_beat(&beat, 0, world, regs, mode, pending);
+                    if matches!(beat.kind, BeatKind::Impact) {
+                        self.last_beat_targets = beat_targets;
+                    }
+
+                    // Windowed stall: presentation beat fired once, now latch.
+                    if beat.presentation.is_some() && self.clock == Clock::Windowed {
+                        self.awaiting_cue = Some(beat_id);
+                        return StepOutcome::AwaitingCue;
+                    }
                 }
+
                 let gate_evt = BeatEvent {
                     cast_id: self.cast_id,
                     beat_id,
@@ -223,8 +282,19 @@ impl BeatRunner {
         }
     }
 
+    /// Unlatch a `StepOutcome::AwaitingCue` stall (Clock::Windowed only).
+    ///
+    /// The subsequent `step()` call will advance cursor/body_cursor normally
+    /// without re-firing the stalled beat's hook.
+    pub fn resume_cue(&mut self) {
+        self.awaiting_cue = None;
+        self.cue_just_resumed = true;
+    }
+
     /// Drive the runner to completion, calling `step` repeatedly.
     ///
+    /// `StepOutcome::AwaitingCue` is auto-resumed (Windowed cues are not awaited
+    /// in batch mode), preserving identical S02 drive-to-completion semantics.
     /// Returns `Done` on normal finish, `Halted` on MAX_HOPS circuit-breaker.
     /// Panics if `max_steps` is exceeded (a safety net for bugs, not the loop guard).
     pub fn run_to_completion(
@@ -239,6 +309,9 @@ impl BeatRunner {
             let outcome = self.step(world, regs, mode, pending);
             match outcome {
                 StepOutcome::Done | StepOutcome::Halted => return outcome,
+                StepOutcome::AwaitingCue => {
+                    self.resume_cue();
+                }
                 _ => {}
             }
         }
@@ -395,15 +468,16 @@ fn find_beat<'t>(timeline: &'t CompiledTimeline, id: BeatId) -> &'t Beat {
 mod tests {
     use super::*;
     use crate::combat::api::{
+        clock::Clock,
         intent::CastId,
         registry::ExtRegistries,
         skill_ctx::{SkillCtx, SkillCtxMode},
-        timeline::{Beat, BeatEdge, BeatKind, BeatEvent, CompiledTimeline},
+        timeline::{Beat, BeatEdge, BeatEvent, BeatKind, CompiledTimeline, Presentation},
     };
     use std::{
         collections::VecDeque,
         num::NonZeroU32,
-        sync::{Arc, Mutex},
+        sync::Arc,
     };
 
     fn cast_id() -> CastId {
@@ -552,5 +626,189 @@ mod tests {
         let outcome =
             runner.run_to_completion(&mut world, &regs, SkillCtxMode::Execute, &mut pending, 1000);
         assert_eq!(outcome, StepOutcome::Halted);
+    }
+
+    // ── Helpers for I3 / Windowed tests ───────────────────────────────────────
+
+    /// Build a simple timeline: Cast (with presentation) → Impact (no presentation)
+    fn presentation_timeline() -> Arc<CompiledTimeline> {
+        Arc::new(CompiledTimeline {
+            id: "presentation_test",
+            entry: "cast",
+            beats: vec![
+                Beat {
+                    id: "cast",
+                    kind: BeatKind::Cast,
+                    hook: Some("record_hook"),
+                    selector: None,
+                    presentation: Some(Presentation {
+                        cue_id: "test_cue",
+                        anim: None,
+                        vfx: None,
+                        sfx: None,
+                    }),
+                },
+                Beat {
+                    id: "impact",
+                    kind: BeatKind::Impact,
+                    hook: Some("record_hook"),
+                    selector: None,
+                    presentation: None,
+                },
+            ],
+            edges: vec![BeatEdge { from: "cast", to: "impact", gate: None }],
+        })
+    }
+
+    // ── Test (d): HeadlessAuto regression — presentation-bearing timeline ──────
+
+    #[test]
+    fn headless_auto_presentation_reaches_done_no_awaiting_cue() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        static HEADLESS_HOOK_CALLS: AtomicUsize = AtomicUsize::new(0);
+        fn headless_hook(_evt: &BeatEvent, _ctx: &mut SkillCtx<'_>) {
+            HEADLESS_HOOK_CALLS.fetch_add(1, Ordering::Relaxed);
+        }
+
+        let mut regs = ExtRegistries::default();
+        regs.hooks.register("record_hook", headless_hook);
+
+        HEADLESS_HOOK_CALLS.store(0, Ordering::Relaxed);
+        let timeline = presentation_timeline();
+        // HeadlessAuto is the default — no with_clock needed.
+        let mut runner = BeatRunner::new(timeline, cast_id(), CASTER, TARGET);
+        let mut world = World::new();
+        let mut pending = VecDeque::new();
+
+        let o1 = runner.step(&mut world, &regs, SkillCtxMode::Execute, &mut pending);
+        assert_eq!(o1, StepOutcome::Advanced, "HeadlessAuto must not stall on presentation");
+
+        let o2 = runner.step(&mut world, &regs, SkillCtxMode::Execute, &mut pending);
+        assert_eq!(o2, StepOutcome::Done);
+
+        assert_eq!(
+            HEADLESS_HOOK_CALLS.load(Ordering::Relaxed),
+            2,
+            "both hooks must fire under HeadlessAuto"
+        );
+    }
+
+    // ── Test (e): Windowed stalls exactly once, hook fires exactly once ────────
+
+    #[test]
+    fn windowed_stalls_on_presentation_hook_fires_once() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        static WINDOWED_HOOK_CALLS: AtomicUsize = AtomicUsize::new(0);
+        fn windowed_hook(_evt: &BeatEvent, _ctx: &mut SkillCtx<'_>) {
+            WINDOWED_HOOK_CALLS.fetch_add(1, Ordering::Relaxed);
+        }
+
+        let mut regs = ExtRegistries::default();
+        regs.hooks.register("record_hook", windowed_hook);
+
+        WINDOWED_HOOK_CALLS.store(0, Ordering::Relaxed);
+        let timeline = presentation_timeline();
+        let mut runner =
+            BeatRunner::new(timeline, cast_id(), CASTER, TARGET).with_clock(Clock::Windowed);
+        let mut world = World::new();
+        let mut pending = VecDeque::new();
+
+        // Step 1: fires "cast" hook, then stalls (presentation + Windowed).
+        let o1 = runner.step(&mut world, &regs, SkillCtxMode::Execute, &mut pending);
+        assert_eq!(o1, StepOutcome::AwaitingCue, "first step must stall");
+        assert_eq!(
+            WINDOWED_HOOK_CALLS.load(Ordering::Relaxed),
+            1,
+            "hook must fire exactly once before stall"
+        );
+
+        // Step 2 without resume: still stalled.
+        let o2 = runner.step(&mut world, &regs, SkillCtxMode::Execute, &mut pending);
+        assert_eq!(o2, StepOutcome::AwaitingCue, "still stalled before resume_cue");
+        assert_eq!(
+            WINDOWED_HOOK_CALLS.load(Ordering::Relaxed),
+            1,
+            "hook must NOT fire again while stalled"
+        );
+
+        // Unlatch and advance.
+        runner.resume_cue();
+
+        // Step 3: cursor advances to "impact" (no re-fire of "cast").
+        let o3 = runner.step(&mut world, &regs, SkillCtxMode::Execute, &mut pending);
+        assert_eq!(o3, StepOutcome::Advanced, "must advance past presentation beat after resume");
+        assert_eq!(
+            WINDOWED_HOOK_CALLS.load(Ordering::Relaxed),
+            1,
+            "cast hook must not re-fire on advance"
+        );
+
+        // Step 4: fires "impact" hook → Done.
+        let o4 = runner.step(&mut world, &regs, SkillCtxMode::Execute, &mut pending);
+        assert_eq!(o4, StepOutcome::Done);
+        assert_eq!(WINDOWED_HOOK_CALLS.load(Ordering::Relaxed), 2, "impact hook fires once");
+    }
+
+    // ── Test (f): HeadlessAuto pending == Windowed pending (stream parity) ────
+
+    #[test]
+    fn headless_and_windowed_produce_identical_pending_stream() {
+        use crate::combat::api::intent::Intent;
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        static PARITY_HOOK_CALLS: AtomicUsize = AtomicUsize::new(0);
+
+        fn parity_hook(evt: &BeatEvent, ctx: &mut SkillCtx<'_>) {
+            PARITY_HOOK_CALLS.fetch_add(1, Ordering::Relaxed);
+            // Enqueue a distinguishable intent per beat to verify stream ordering.
+            ctx.enqueue(Intent::SetBlueprintState {
+                actor: UnitId(evt.hop_index + 1),
+                key: evt.beat_id.to_string(),
+                value: 42,
+                cast_id: evt.cast_id,
+            });
+        }
+
+        let mut regs = ExtRegistries::default();
+        regs.hooks.register("record_hook", parity_hook);
+
+        let timeline = presentation_timeline();
+        let mut world = World::new();
+
+        // HeadlessAuto run.
+        PARITY_HOOK_CALLS.store(0, Ordering::Relaxed);
+        let mut pending_headless = VecDeque::new();
+        let mut runner_headless =
+            BeatRunner::new(Arc::clone(&timeline), cast_id(), CASTER, TARGET);
+        runner_headless.run_to_completion(
+            &mut world,
+            &regs,
+            SkillCtxMode::Execute,
+            &mut pending_headless,
+            100,
+        );
+
+        // Windowed run (auto-resumed via run_to_completion).
+        PARITY_HOOK_CALLS.store(0, Ordering::Relaxed);
+        let mut pending_windowed = VecDeque::new();
+        let mut runner_windowed =
+            BeatRunner::new(Arc::clone(&timeline), cast_id(), CASTER, TARGET)
+                .with_clock(Clock::Windowed);
+        runner_windowed.run_to_completion(
+            &mut world,
+            &regs,
+            SkillCtxMode::Execute,
+            &mut pending_windowed,
+            100,
+        );
+
+        // Compare normalized intent streams.
+        let headless_str: Vec<String> =
+            pending_headless.iter().map(|i| format!("{i:?}")).collect();
+        let windowed_str: Vec<String> =
+            pending_windowed.iter().map(|i| format!("{i:?}")).collect();
+        assert_eq!(
+            headless_str, windowed_str,
+            "HeadlessAuto and Windowed must produce identical Intent streams"
+        );
     }
 }

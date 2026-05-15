@@ -21,10 +21,10 @@
 - [x] **S01: S01** `risk:medium` `depends:[]`
   > After this: cargo check headless + windowed puliti; CombatPlugin in main.rs; src/combat/api/ con i 7 file primitive; cast_id su CombatEvent; canary Intent::DealDamage end-to-end via intent_applier emette CombatEvent con cast_id corretto.
 
-- [ ] **S02: S02** `risk:high` `depends:[]`
+- [x] **S02: S02** `risk:high` `depends:[]`
   > After this: Fixture OnTurnStart kills target verde; validate_timeline_refs scopre typo; LoopFrame single-level su chain_bolt port.
 
-- [ ] **S03: Mode parity (DryRun ≡ Execute ≡ Preview) + Two-clock invariant** `risk:medium` `depends:[S02]`
+- [ ] **S03: S03** `risk:medium` `depends:[]`
   > After this: Test DryRun≡Execute≡Preview verde su chain ramificata; two-clock verde; circuit breaker @256.
 
 - [ ] **S04: SignalBus + PassiveRunner + Ult instant + Intent::BlueprintSignal dispatcher** `risk:high` `depends:[S03]`
