@@ -4,6 +4,7 @@ use crate::combat::{
     api::{
         applier::{intent_applier, IntentQueue},
         blueprint_state::BlueprintState,
+        builtins::register_kernel_builtins,
         clock::Clock,
         event_bridge::combat_event_to_signal_system,
         intent::CastIdGen,
@@ -32,7 +33,7 @@ impl Plugin for CombatPlugin {
             .init_resource::<SignalTaxonomy>()
             .init_resource::<CastIdGen>()
             .init_resource::<IntentQueue>()
-            .init_resource::<TimelineLibrary>()
+            .init_resource::<TimelineLibrary<String>>()
             .init_resource::<BlueprintState>()
             .init_resource::<PassiveListeners>()
             .insert_resource(Clock::default())
@@ -45,6 +46,11 @@ impl Plugin for CombatPlugin {
                     passive_dispatch_system.after(combat_event_to_signal_system),
                 ),
             );
+
+        {
+            let mut regs = app.world_mut().resource_mut::<ExtRegistries>();
+            register_kernel_builtins(&mut regs);
+        }
 
         // Register kernel-side signals in SignalTaxonomy so ult-driven passive
         // activations pass the debug_assert! gate in intent_applier.
@@ -59,7 +65,7 @@ impl Plugin for CombatPlugin {
     /// Wire concrete timelines into `TimelineLibrary` before `App::finish()` (S05+).
     fn finish(&self, app: &mut App) {
         let world = app.world();
-        let library = world.resource::<TimelineLibrary>();
+        let library = world.resource::<TimelineLibrary<String>>();
         let regs = world.resource::<ExtRegistries>();
 
         let mut all_errors = Vec::new();

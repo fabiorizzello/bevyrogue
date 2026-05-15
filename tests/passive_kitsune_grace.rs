@@ -118,6 +118,7 @@ fn build_kitsune_grace_timeline() -> Arc<CompiledTimeline> {
                 hook: None,
                 selector: None,
                 presentation: None,
+                payload: None,
             },
             Beat {
                 id: "proc",
@@ -125,6 +126,7 @@ fn build_kitsune_grace_timeline() -> Arc<CompiledTimeline> {
                 hook: Some("kitsune_grace/proc"),
                 selector: None,
                 presentation: None,
+                payload: None,
             },
             Beat {
                 id: "resolve",
@@ -132,6 +134,7 @@ fn build_kitsune_grace_timeline() -> Arc<CompiledTimeline> {
                 hook: None,
                 selector: None,
                 presentation: None,
+                payload: None,
             },
         ],
         edges: vec![

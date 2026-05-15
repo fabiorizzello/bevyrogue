@@ -27,10 +27,10 @@
 - [x] **S03: S03** `risk:medium` `depends:[]`
   > After this: Test DryRun≡Execute≡Preview verde su chain ramificata; two-clock verde; circuit breaker @256.
 
-- [ ] **S04: S04** `risk:high` `depends:[]`
+- [x] **S04: S04** `risk:high` `depends:[]`
   > After this: Renamon kitsune_grace verde; JSONL Blueprint round-trip; debug_assert mismatch.
 
-- [ ] **S05: Built-in extension fns + RON → CompiledTimeline compiler** `risk:medium` `depends:[S04]`
+- [ ] **S05: S05** `risk:medium` `depends:[]`
   > After this: Tohakken + Petit Thunder via CompiledTimeline; typo→errore boot.
 
 - [ ] **S06: Migrate 18 active skill canon + drop enum Effect** `risk:high` `depends:[S05]`

@@ -17,6 +17,7 @@
 
 pub mod applier;
 pub mod blueprint_state;
+pub mod builtins;
 pub mod clock;
 pub mod event_bridge;
 pub mod intent;
@@ -44,7 +45,8 @@ pub use rng::CastRng;
 pub use runner::{BeatRunner, LoopFrame, StepOutcome};
 pub use signal::{Signal, SignalBus, SignalPayload, SignalTaxonomy};
 pub use skill_ctx::{SkillCtx, SkillCtxMode};
+pub use builtins::register_kernel_builtins;
 pub use timeline::{
-    Beat, BeatEdge, BeatEvent, BeatId, BeatKind, CompiledTimeline, CueCtx, Presentation,
-    SelectorCtx, TimelineLibrary, ValidationError, validate_timeline_refs,
+    Beat, BeatEdge, BeatEvent, BeatId, BeatKind, BeatPayload, CompiledTimeline, CueCtx,
+    Presentation, SelectorCtx, TimelineLibrary, ValidationError, validate_timeline_refs,
 };

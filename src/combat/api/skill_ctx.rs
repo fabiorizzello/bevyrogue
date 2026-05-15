@@ -1,4 +1,4 @@
-use std::collections::{HashSet, VecDeque};
+use std::{collections::{HashSet, VecDeque},};
 
 use bevy::prelude::World;
 
@@ -6,6 +6,7 @@ use crate::combat::{
     api::{
         intent::{CastId, Intent},
         registry::ExtRegistries,
+        timeline::BeatPayload,
     },
     types::UnitId,
 };
@@ -47,6 +48,8 @@ pub struct SkillCtx<'a> {
     pub world: &'a World,
     /// Tracks units already hit this cast (NoRepeat selector / chain-bolt pattern).
     pub cast_hit_set: &'a mut HashSet<UnitId>,
+    /// Typed payload for the currently executing beat, if the timeline supplied one.
+    beat_payload: Option<&'a BeatPayload>,
     pending: &'a mut VecDeque<Intent>,
 }
 
@@ -60,6 +63,7 @@ impl<'a> SkillCtx<'a> {
         world: &'a World,
         cast_hit_set: &'a mut HashSet<UnitId>,
         pending: &'a mut VecDeque<Intent>,
+        beat_payload: Option<&'a BeatPayload>,
     ) -> Self {
         Self {
             caster,
@@ -69,6 +73,7 @@ impl<'a> SkillCtx<'a> {
             registries,
             world,
             cast_hit_set,
+            beat_payload,
             pending,
         }
     }
@@ -86,5 +91,9 @@ impl<'a> SkillCtx<'a> {
 
     pub fn mode(&self) -> SkillCtxMode {
         self.mode
+    }
+
+    pub fn beat_payload(&self) -> Option<&'a BeatPayload> {
+        self.beat_payload
     }
 }

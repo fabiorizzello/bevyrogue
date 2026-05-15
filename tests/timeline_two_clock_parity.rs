@@ -69,6 +69,7 @@ fn build_timeline() -> Arc<CompiledTimeline> {
                     vfx: None,
                     sfx: None,
                 }),
+                payload: None,
             },
             Beat {
                 id: "impact",
@@ -76,6 +77,7 @@ fn build_timeline() -> Arc<CompiledTimeline> {
                 hook: Some("parity/emit_damage"),
                 selector: None,
                 presentation: None,
+                payload: None,
             },
         ],
         edges: vec![BeatEdge { from: "cast", to: "impact", gate: None }],

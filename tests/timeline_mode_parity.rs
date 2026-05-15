@@ -142,6 +142,7 @@ fn build_branched_timeline() -> Arc<CompiledTimeline> {
                 hook: Some("parity/entry_hook"),
                 selector: None,
                 presentation: None,
+                payload: None,
             },
             Beat {
                 id: "finisher",
@@ -149,6 +150,7 @@ fn build_branched_timeline() -> Arc<CompiledTimeline> {
                 hook: Some("parity/finisher_hook"),
                 selector: None,
                 presentation: None,
+                payload: None,
             },
             Beat {
                 id: "normal",
@@ -156,6 +158,7 @@ fn build_branched_timeline() -> Arc<CompiledTimeline> {
                 hook: Some("parity/normal_hook"),
                 selector: None,
                 presentation: None,
+                payload: None,
             },
         ],
         edges: vec![

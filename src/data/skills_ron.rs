@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
+use super::skill_timeline::SkillTimeline;
 use crate::combat::status_effect::StatusEffectKind;
 use crate::combat::types::{DamageTag, SkillId};
 
@@ -262,6 +263,9 @@ pub struct SkillDef {
     pub animation_sequence: Option<Vec<String>>,
     /// Optional QTE mechanic description.
     pub qte: Option<String>,
+    /// Optional compiled timeline schema for the kernel timeline path.
+    #[serde(default)]
+    pub timeline: Option<SkillTimeline>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

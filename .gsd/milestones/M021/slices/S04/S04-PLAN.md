@@ -53,7 +53,7 @@ Single integration capstone test (tests/passive_kitsune_grace.rs) drives the ful
   - Files: `src/combat/api/event_bridge.rs`, `src/combat/api/mod.rs`, `src/combat/plugin.rs`
   - Verify: cargo test --lib -- combat::api::event_bridge && cargo check && cargo check --features windowed && rg "TacticalCyclePhase::UltInstant" src/
 
-- [ ] **T05: Integration capstone: Renamon kitsune_grace passive end-to-end + JSONL round-trip + negative guards** `est:L`
+- [x] **T05: Integration capstone: Renamon kitsune_grace passive end-to-end + JSONL round-trip + negative guards** `est:L`
   Why: This is the slice demo gate (per ROADMAP: 'Renamon kitsune_grace verde + JSONL Blueprint round-trip + debug_assert mismatch'). It exercises T01–T04 together via the canonical reactive passive — the cleanest first proof for the whole stack.
   - Files: `tests/passive_kitsune_grace.rs`
   - Verify: cargo test --test passive_kitsune_grace && cargo test && cargo check --features windowed && rg "TwinCore|BatteryLoop|HolySupport|PredatorLoop|PrecisionMindGame|KitsuneGrace" src/combat/api/

@@ -6,3 +6,4 @@
 {"ts":"2026-05-15T10:34:26.118Z","severity":"error","component":"safety","message":"evidence-xref: Claimed exitCode=0 but actual exitCode=101"}
 {"ts":"2026-05-15T11:12:22.606Z","severity":"error","component":"safety","message":"evidence-xref: Claimed exitCode=0 but actual exitCode=101"}
 {"ts":"2026-05-15T12:03:40.509Z","severity":"error","component":"safety","message":"evidence-xref: Claimed exitCode=0 but actual exitCode=101"}
+{"ts":"2026-05-15T15:07:51.194Z","severity":"error","component":"safety","message":"evidence-xref: Claimed exitCode=0 but actual exitCode=101"}

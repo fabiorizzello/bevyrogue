@@ -149,7 +149,7 @@
     ),
     (
         id: SkillId("renamon_ult"),
-        name: "Fox Drive",
+        name: "Tohakken",
         damage_tag: Light,
         sp_cost: 0,
         targeting: SkillTargeting(
@@ -169,6 +169,16 @@
         ],
         animation_sequence: Some(["Skill(Spin)", "Attack(Launch)", "After-images(Retreat)"]),
         qte: Some("Precision Strike: Hit the moving cursor to ignore enemy DEF."),
+        timeline: Some((
+            entry: "cast",
+            beats: [
+                (id: "cast", kind: Cast, hook: None, selector: None, presentation: None, payload: None),
+                (id: "impact", kind: Impact, hook: Some("core/deal_damage"), selector: Some("core/primary"), presentation: None, payload: Some(DealDamage(amount: 48, tag: Light))),
+            ],
+            edges: [
+                (from: "cast", to: "impact", gate: Some("core/always")),
+            ],
+        )),
     ),
     (
         id: SkillId("patamon_ult"),
@@ -464,6 +474,16 @@
         implementation: Implemented,
         effects: [Damage(amount: 16, target: Single), ToughnessHit(8), ApplyStatus(kind: Paralyzed, duration: 1)],
         custom_signals: [(owner: "tentomon", signal: "build_static_charge", payload: Amount(amount: 1))],
+        timeline: Some((
+            entry: "cast",
+            beats: [
+                (id: "cast", kind: Cast, hook: None, selector: None, presentation: None, payload: None),
+                (id: "impact", kind: Impact, hook: Some("core/deal_damage"), selector: Some("core/primary"), presentation: None, payload: Some(DealDamage(amount: 16, tag: Electric))),
+            ],
+            edges: [
+                (from: "cast", to: "impact", gate: Some("core/always")),
+            ],
+        )),
     ),
     (
         id: SkillId("tentomon_follow_up"),

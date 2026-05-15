@@ -219,6 +219,7 @@ mod tests {
                 hook: Some("test_hook"),
                 selector: None,
                 presentation: None,
+                payload: None,
             }],
             edges: vec![],
         });
@@ -275,6 +276,7 @@ mod tests {
                 hook: Some("signal_hook"),
                 selector: None,
                 presentation: None,
+                payload: None,
             }],
             // Self-loop
             edges: vec![BeatEdge { from: "impact", to: "impact", gate: None }],

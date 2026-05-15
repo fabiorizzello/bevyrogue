@@ -1,6 +1,10 @@
 use bevy::prelude::Resource;
+use serde::{Deserialize, Serialize};
 
-use crate::combat::{api::intent::CastId, api::registry::ExtRegistries, types::UnitId};
+use crate::combat::{
+    api::{intent::CastId, registry::ExtRegistries},
+    types::{DamageTag, UnitId},
+};
 
 /// Resource holding all registered `CompiledTimeline`s for boot-time validation.
 ///
@@ -8,28 +12,39 @@ use crate::combat::{api::intent::CastId, api::registry::ExtRegistries, types::Un
 /// `CombatPlugin::finish` iterates this collection and panics on any dangling ref.
 /// Wire-up of concrete timelines is S05's responsibility; an empty library is valid.
 #[derive(Resource, Default)]
-pub struct TimelineLibrary {
-    pub timelines: Vec<CompiledTimeline>,
+pub struct TimelineLibrary<Id = &'static str> {
+    pub timelines: Vec<CompiledTimeline<Id>>,
 }
 
 /// Opaque identifier for a beat within a `CompiledTimeline`.
 pub type BeatId = &'static str;
 
+/// Minimal beat payload carried alongside a compiled beat.
+///
+/// Built-in hook functions read this through `SkillCtx` so a generic compiled
+/// timeline can carry concrete effect parameters without encoding them into
+/// the registry id string.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub enum BeatPayload {
+    DealDamage { amount: i32, tag: DamageTag },
+}
+
 /// Data-only presentation descriptor carried on a beat.
 ///
 /// Consumed by `Clock::Windowed` to drive animation/VFX/SFX.
 /// Headless paths ignore it.
-#[derive(Debug, Clone)]
-pub struct Presentation {
-    pub cue_id: &'static str,
-    pub anim: Option<&'static str>,
-    pub vfx: Option<&'static str>,
-    pub sfx: Option<&'static str>,
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Presentation<Id = &'static str> {
+    pub cue_id: Id,
+    pub anim: Option<Id>,
+    pub vfx: Option<Id>,
+    pub sfx: Option<Id>,
 }
 
 /// Structural role of a beat in the timeline FSM.
-#[derive(Debug, Clone)]
-pub enum BeatKind {
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum BeatKind<Id = &'static str> {
     /// Wind-up phase before the skill resolves.
     Cast,
     /// Phase boundary (e.g. stance change).
@@ -40,40 +55,43 @@ pub enum BeatKind {
     Aftermath,
     /// Single-level loop: execute `body` beats until `exit_when` predicate returns true.
     Loop {
-        body: Vec<Beat>,
+        body: Vec<Beat<Id>>,
         /// Predicate ID resolved in `ExtRegistries::predicates`.
-        exit_when: &'static str,
+        exit_when: Id,
     },
 }
 
 /// One node in the timeline graph.
-#[derive(Debug, Clone)]
-pub struct Beat {
-    pub id: BeatId,
-    pub kind: BeatKind,
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Beat<Id = &'static str> {
+    pub id: Id,
+    pub kind: BeatKind<Id>,
     /// Optional hook ID resolved in `ExtRegistries::hooks` — fires on beat entry.
-    pub hook: Option<&'static str>,
+    pub hook: Option<Id>,
     /// Optional selector ID resolved in `ExtRegistries::selectors` — populates `beat_targets`.
-    pub selector: Option<&'static str>,
-    pub presentation: Option<Presentation>,
+    pub selector: Option<Id>,
+    pub presentation: Option<Presentation<Id>>,
+    /// Optional typed payload consumed by generic built-in hooks.
+    #[serde(default)]
+    pub payload: Option<BeatPayload>,
 }
 
 /// Directed edge between two beats with an optional predicate gate.
-#[derive(Debug, Clone)]
-pub struct BeatEdge {
-    pub from: BeatId,
-    pub to: BeatId,
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BeatEdge<Id = &'static str> {
+    pub from: Id,
+    pub to: Id,
     /// Predicate ID resolved in `ExtRegistries::predicates`. `None` = unconditional.
-    pub gate: Option<&'static str>,
+    pub gate: Option<Id>,
 }
 
 /// Compiled, immutable representation of a skill's timeline FSM.
-#[derive(Debug, Clone)]
-pub struct CompiledTimeline {
-    pub id: &'static str,
-    pub entry: BeatId,
-    pub beats: Vec<Beat>,
-    pub edges: Vec<BeatEdge>,
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CompiledTimeline<Id = &'static str> {
+    pub id: Id,
+    pub entry: Id,
+    pub beats: Vec<Beat<Id>>,
+    pub edges: Vec<BeatEdge<Id>>,
 }
 
 /// Event emitted by the `BeatRunner` as each beat is processed.
@@ -115,8 +133,8 @@ pub struct ValidationError {
 /// Validate all hook/selector/predicate references in `timeline` against `regs`.
 ///
 /// Recurses into `BeatKind::Loop` bodies. Collects all errors before returning.
-pub fn validate_timeline_refs(
-    timeline: &CompiledTimeline,
+pub fn validate_timeline_refs<Id: AsRef<str>>(
+    timeline: &CompiledTimeline<Id>,
     regs: &ExtRegistries,
 ) -> Result<(), Vec<ValidationError>> {
     let mut errors = Vec::new();
@@ -126,12 +144,12 @@ pub fn validate_timeline_refs(
     }
 
     for edge in &timeline.edges {
-        if let Some(gate) = edge.gate {
-            if regs.predicates.get(gate).is_none() {
+        if let Some(gate) = edge.gate.as_ref() {
+            if regs.predicates.get(gate.as_ref()).is_none() {
                 errors.push(ValidationError {
                     axis: "predicate",
-                    missing_id: gate.to_string(),
-                    site: format!("edge {}->{}", edge.from, edge.to),
+                    missing_id: gate.as_ref().to_string(),
+                    site: format!("edge {}->{}", edge.from.as_ref(), edge.to.as_ref()),
                 });
             }
         }
@@ -140,34 +158,34 @@ pub fn validate_timeline_refs(
     if errors.is_empty() { Ok(()) } else { Err(errors) }
 }
 
-fn validate_beat(beat: &Beat, regs: &ExtRegistries, errors: &mut Vec<ValidationError>) {
-    let site = format!("beat {}", beat.id);
+fn validate_beat<Id: AsRef<str>>(beat: &Beat<Id>, regs: &ExtRegistries, errors: &mut Vec<ValidationError>) {
+    let site = format!("beat {}", beat.id.as_ref());
 
-    if let Some(hook_id) = beat.hook {
-        if regs.hooks.get(hook_id).is_none() {
+    if let Some(hook_id) = beat.hook.as_ref() {
+        if regs.hooks.get(hook_id.as_ref()).is_none() {
             errors.push(ValidationError {
                 axis: "hook",
-                missing_id: hook_id.to_string(),
+                missing_id: hook_id.as_ref().to_string(),
                 site: site.clone(),
             });
         }
     }
 
-    if let Some(selector_id) = beat.selector {
-        if regs.selectors.get(selector_id).is_none() {
+    if let Some(selector_id) = beat.selector.as_ref() {
+        if regs.selectors.get(selector_id.as_ref()).is_none() {
             errors.push(ValidationError {
                 axis: "selector",
-                missing_id: selector_id.to_string(),
+                missing_id: selector_id.as_ref().to_string(),
                 site: site.clone(),
             });
         }
     }
 
     if let BeatKind::Loop { body, exit_when } = &beat.kind {
-        if regs.predicates.get(exit_when).is_none() {
+        if regs.predicates.get(exit_when.as_ref()).is_none() {
             errors.push(ValidationError {
                 axis: "predicate",
-                missing_id: exit_when.to_string(),
+                missing_id: exit_when.as_ref().to_string(),
                 site: site.clone(),
             });
         }
@@ -187,18 +205,15 @@ mod tests {
         CompiledTimeline {
             id: "test_skill",
             entry: "cast",
-            beats: vec![
-                Beat {
-                    id: "cast",
-                    kind: BeatKind::Cast,
-                    hook: Some("my_hook"),
-                    selector: Some("my_selector"),
-                    presentation: None,
-                },
-            ],
-            edges: vec![
-                BeatEdge { from: "cast", to: "impact", gate: Some("my_pred") },
-            ],
+            beats: vec![Beat {
+                id: "cast",
+                kind: BeatKind::Cast,
+                hook: Some("my_hook"),
+                selector: Some("my_selector"),
+                presentation: None,
+                payload: None,
+            }],
+            edges: vec![BeatEdge { from: "cast", to: "impact", gate: Some("my_pred") }],
         }
     }
 
@@ -225,15 +240,14 @@ mod tests {
         let tl = CompiledTimeline {
             id: "bad_hook",
             entry: "cast",
-            beats: vec![
-                Beat {
-                    id: "cast",
-                    kind: BeatKind::Cast,
-                    hook: Some("nonexistent_hook"),
-                    selector: None,
-                    presentation: None,
-                },
-            ],
+            beats: vec![Beat {
+                id: "cast",
+                kind: BeatKind::Cast,
+                hook: Some("nonexistent_hook"),
+                selector: None,
+                presentation: None,
+                payload: None,
+            }],
             edges: vec![],
         };
         let regs = ExtRegistries::default();
@@ -249,12 +263,8 @@ mod tests {
         let tl = CompiledTimeline {
             id: "bad_gate",
             entry: "cast",
-            beats: vec![
-                Beat { id: "cast", kind: BeatKind::Cast, hook: None, selector: None, presentation: None },
-            ],
-            edges: vec![
-                BeatEdge { from: "cast", to: "impact", gate: Some("missing_gate") },
-            ],
+            beats: vec![Beat { id: "cast", kind: BeatKind::Cast, hook: None, selector: None, presentation: None, payload: None }],
+            edges: vec![BeatEdge { from: "cast", to: "impact", gate: Some("missing_gate") }],
         };
         let regs = ExtRegistries::default();
         let err = validate_timeline_refs(&tl, &regs).unwrap_err();
@@ -269,18 +279,17 @@ mod tests {
         let tl = CompiledTimeline {
             id: "bad_loop",
             entry: "loop_beat",
-            beats: vec![
-                Beat {
-                    id: "loop_beat",
-                    kind: BeatKind::Loop {
-                        body: vec![],
-                        exit_when: "missing_exit_pred",
-                    },
-                    hook: None,
-                    selector: None,
-                    presentation: None,
+            beats: vec![Beat {
+                id: "loop_beat",
+                kind: BeatKind::Loop {
+                    body: vec![],
+                    exit_when: "missing_exit_pred",
                 },
-            ],
+                hook: None,
+                selector: None,
+                presentation: None,
+                payload: None,
+            }],
             edges: vec![],
         };
         let regs = ExtRegistries::default();

@@ -82,6 +82,7 @@ fn fixture_onturnstart_kills_target() {
             hook: Some("test/ko_target"),
             selector: None,
             presentation: None,
+                payload: None,
         }],
         edges: vec![],
     });

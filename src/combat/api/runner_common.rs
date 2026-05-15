@@ -1,5 +1,6 @@
 use std::collections::{HashSet, VecDeque};
 use std::sync::Arc;
+
 use bevy::prelude::World;
 
 use crate::combat::{
@@ -33,15 +34,11 @@ pub struct RunnerParams<'a, 'w> {
 }
 
 /// Execute one beat: resolve selector (Impact only), fire hook, fold DealDamage hits.
-pub(crate) fn fire_beat(
-    beat: &Beat,
-    hop_index: u32,
-    params: RunnerParams,
-) -> Vec<UnitId> {
+pub(crate) fn fire_beat(beat: &Beat, hop_index: u32, params: RunnerParams) -> Vec<UnitId> {
     // Selector — only Impact beats resolve targets.
     let beat_targets = if matches!(beat.kind, BeatKind::Impact) {
-        if let Some(sel_id) = beat.selector {
-            let sel = *params.regs.selectors.get(sel_id).unwrap_or_else(|| {
+        if let Some(sel_id) = beat.selector.as_ref() {
+            let sel = *params.regs.selectors.get(sel_id.as_ref()).unwrap_or_else(|| {
                 panic!(
                     "selector `{sel_id}` not registered \
                      (validate_timeline_refs catches this at App::finish)"
@@ -61,8 +58,8 @@ pub(crate) fn fire_beat(
     };
 
     // Hook.
-    if let Some(hook_id) = beat.hook {
-        let f = *params.regs.hooks.get(hook_id).unwrap_or_else(|| {
+    if let Some(hook_id) = beat.hook.as_ref() {
+        let f = *params.regs.hooks.get(hook_id.as_ref()).unwrap_or_else(|| {
             panic!(
                 "hook `{hook_id}` not registered \
                  (validate_timeline_refs catches this at App::finish)"
@@ -85,6 +82,7 @@ pub(crate) fn fire_beat(
                 params.world,
                 params.cast_hit_set,
                 params.pending,
+                beat.payload.as_ref(),
             );
             f(&evt, &mut ctx);
         }
@@ -103,11 +101,7 @@ pub(crate) fn fire_beat(
 /// Evaluate a registered predicate, providing a fresh (read-only) `SkillCtx`.
 ///
 /// Any intents the predicate erroneously enqueues are discarded (dummy queue).
-pub(crate) fn eval_predicate(
-    pred_id: &str,
-    evt: &BeatEvent,
-    params: &mut RunnerParams,
-) -> bool {
+pub(crate) fn eval_predicate(pred_id: &str, evt: &BeatEvent, params: &mut RunnerParams) -> bool {
     let f = *params.regs.predicates.get(pred_id).unwrap_or_else(|| {
         panic!("predicate `{pred_id}` not registered")
     });
@@ -121,6 +115,7 @@ pub(crate) fn eval_predicate(
         params.world,
         params.cast_hit_set,
         &mut dummy,
+        None,
     );
     f(evt, &ctx)
 }

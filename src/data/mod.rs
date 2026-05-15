@@ -1,11 +1,15 @@
 pub mod party_ron;
+pub mod skill_timeline;
 pub mod skills_ron;
 pub mod units_ron;
 
 use bevy::prelude::*;
 use bevy_common_assets::ron::RonAssetPlugin;
 
+use crate::combat::api::{ExtRegistries, TimelineLibrary};
+
 use self::party_ron::PartyConfig;
+use self::skill_timeline::compile_skill_book_timelines;
 use self::skills_ron::{validate_skill_book, SkillBook};
 use self::units_ron::UnitRoster;
 
@@ -34,9 +38,10 @@ impl Plugin for DataPlugin {
         app.add_plugins(RonAssetPlugin::<UnitRoster>::new(&["ron"]))
             .add_plugins(RonAssetPlugin::<SkillBook>::new(&["ron"]))
             .add_plugins(RonAssetPlugin::<PartyConfig>::new(&["ron"]))
+            .init_resource::<TimelineLibrary<String>>()
             .init_resource::<DataLoadState>()
             .add_systems(Startup, load_data)
-            .add_systems(Update, (hydrate_data_ready, validate_skill_book_on_load));
+            .add_systems(Update, (hydrate_data_ready, sync_skill_book_on_load));
     }
 }
 
@@ -105,12 +110,17 @@ fn hydrate_data_ready(
     }
 }
 
-fn validate_skill_book_on_load(
+fn sync_skill_book_on_load(
     mut events: MessageReader<AssetEvent<SkillBook>>,
     handle: Option<Res<SkillBookHandle>>,
     books: Res<Assets<SkillBook>>,
+    regs: Res<ExtRegistries>,
+    mut library: ResMut<TimelineLibrary<String>>,
 ) {
-    let Some(handle) = handle else { return };
+    let Some(handle) = handle else {
+        return;
+    };
+
     for event in events.read() {
         let id = match event {
             AssetEvent::LoadedWithDependencies { id } => id,
@@ -124,6 +134,13 @@ fn validate_skill_book_on_load(
             if let Err(e) = validate_skill_book(book) {
                 panic!("SkillBook validation failed: {e}");
             }
+            let compiled = compile_skill_book_timelines(book, &regs)
+                .unwrap_or_else(|e| panic!("SkillBook timeline compilation failed: {e}"));
+            info!(
+                "skill timeline library loaded: {} compiled timelines",
+                compiled.len()
+            );
+            library.timelines = compiled;
         }
     }
 }
