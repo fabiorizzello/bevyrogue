@@ -1,7 +1,12 @@
-use std::collections::VecDeque;
+use std::collections::{HashSet, VecDeque};
+
+use bevy::prelude::World;
 
 use crate::combat::{
-    api::intent::{CastId, Intent},
+    api::{
+        intent::{CastId, Intent},
+        registry::ExtRegistries,
+    },
     types::UnitId,
 };
 
@@ -36,6 +41,12 @@ pub struct SkillCtx<'a> {
     pub primary_target: UnitId,
     pub cast_id: CastId,
     pub mode: SkillCtxMode,
+    /// All extension registries for this cast (hooks, selectors, predicates, cues…).
+    pub registries: &'a ExtRegistries,
+    /// Read-only borrow of the Bevy world — replaces the spike's thread-local F7 pattern.
+    pub world: &'a World,
+    /// Tracks units already hit this cast (NoRepeat selector / chain-bolt pattern).
+    pub cast_hit_set: &'a mut HashSet<UnitId>,
     pending: &'a mut VecDeque<Intent>,
 }
 
@@ -45,6 +56,9 @@ impl<'a> SkillCtx<'a> {
         primary_target: UnitId,
         cast_id: CastId,
         mode: SkillCtxMode,
+        registries: &'a ExtRegistries,
+        world: &'a World,
+        cast_hit_set: &'a mut HashSet<UnitId>,
         pending: &'a mut VecDeque<Intent>,
     ) -> Self {
         Self {
@@ -52,6 +66,9 @@ impl<'a> SkillCtx<'a> {
             primary_target,
             cast_id,
             mode,
+            registries,
+            world,
+            cast_hit_set,
             pending,
         }
     }

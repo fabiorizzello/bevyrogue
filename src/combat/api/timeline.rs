@@ -191,10 +191,13 @@ mod tests {
     }
 
     fn populated_regs() -> ExtRegistries {
+        fn noop_hook(_: &BeatEvent, _: &mut crate::combat::api::skill_ctx::SkillCtx<'_>) {}
+        fn noop_selector(_: &SelectorCtx<'_>) -> Vec<UnitId> { vec![] }
+        fn noop_pred(_: &BeatEvent, _: &crate::combat::api::skill_ctx::SkillCtx<'_>) -> bool { false }
         let mut regs = ExtRegistries::default();
-        regs.hooks.register("my_hook", || {});
-        regs.selectors.register("my_selector", || {});
-        regs.predicates.register("my_pred", || {});
+        regs.hooks.register("my_hook", noop_hook);
+        regs.selectors.register("my_selector", noop_selector);
+        regs.predicates.register("my_pred", noop_pred);
         regs
     }
 

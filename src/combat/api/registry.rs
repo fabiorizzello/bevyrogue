@@ -2,6 +2,10 @@ use std::collections::HashMap;
 
 use bevy::prelude::Resource;
 
+use crate::combat::types::UnitId;
+use super::skill_ctx::SkillCtx;
+use super::timeline::{BeatEvent, CueCtx, SelectorCtx};
+
 /// Marker trait for an extension axis.
 ///
 /// Each axis defines the concrete function type stored in its `Registry`.
@@ -62,34 +66,37 @@ impl<E: ExtPoint> Default for Registry<E> {
 /// Lifecycle hook: `OnTurnStart`, `OnDamageDealt`, etc.
 pub struct HookExt;
 impl ExtPoint for HookExt {
-    type Fn = fn();
+    type Fn = for<'a> fn(&BeatEvent, &mut SkillCtx<'a>);
 }
 
 /// Target selector: `primary`, `all_enemies`, `lowest_hp_pct`, etc.
 pub struct SelectorExt;
 impl ExtPoint for SelectorExt {
-    type Fn = fn();
+    type Fn = for<'a> fn(&SelectorCtx<'a>) -> Vec<UnitId>;
 }
 
 /// Edge-gate predicate: `has_target_alive`, `skilltree_unlocked`, etc.
 pub struct PredicateExt;
 impl ExtPoint for PredicateExt {
-    type Fn = fn();
+    type Fn = for<'a> fn(&BeatEvent, &SkillCtx<'a>) -> bool;
 }
 
 /// Damage / heal formula: `atk_scaling`, `fixed_value`, etc.
+/// Signature placeholder — S05 will refine to `for<'a> fn(&FormulaCtx<'a>) -> i32`.
 pub struct FormulaExt;
 impl ExtPoint for FormulaExt {
     type Fn = fn();
 }
 
 /// Per-turn status tick: `dot_tick`, `regen_tick`, etc.
+/// Signature placeholder — S07 will refine.
 pub struct TickExt;
 impl ExtPoint for TickExt {
     type Fn = fn();
 }
 
 /// AI utility scorer for action selection.
+/// Signature placeholder — S07 will refine.
 pub struct AiUtilityExt;
 impl ExtPoint for AiUtilityExt {
     type Fn = fn();
@@ -98,7 +105,7 @@ impl ExtPoint for AiUtilityExt {
 /// Presentation cue ID → animation handle for `Clock::Windowed` (I3 / D026).
 pub struct CueExt;
 impl ExtPoint for CueExt {
-    type Fn = fn();
+    type Fn = for<'a> fn(&CueCtx<'a>) -> &'static str;
 }
 
 /// Aggregated resource holding all seven extension registries (D031).
