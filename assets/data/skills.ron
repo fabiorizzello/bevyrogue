@@ -14,6 +14,20 @@
         implementation: Implemented,
         effects: [Damage(amount: 18, target: Single), ToughnessHit(10)],
         custom_signals: [(owner: "agumon", signal: "apply_heated", payload: Amount(amount: 3))],
+        timeline: Some((
+            entry: "cast",
+            beats: [
+                (id: "cast", kind: Cast, hook: None, selector: None, presentation: None, payload: None),
+                (id: "impact_damage", kind: Impact, hook: Some("core/deal_damage"), selector: Some("core/primary"), presentation: None, payload: Some(DealDamage(amount: 18, tag: Fire, target: Single))),
+                (id: "impact_break", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/primary"), presentation: None, payload: Some(BreakToughness(amount: 10, tag: Fire, target: Single))),
+                (id: "impact_signal", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/caster"), presentation: None, payload: Some(BlueprintSignal(owner: "agumon", name: "apply_heated", payload: Amount(3)))),
+            ],
+            edges: [
+                (from: "cast", to: "impact_damage", gate: Some("core/always")),
+                (from: "impact_damage", to: "impact_break", gate: Some("core/always")),
+                (from: "impact_break", to: "impact_signal", gate: Some("core/always")),
+            ],
+        )),
     ),
     (
         id: SkillId("bubble_blast"),
@@ -30,6 +44,20 @@
         implementation: Implemented,
         effects: [Damage(amount: 16, target: Single), ToughnessHit(8)],
         custom_signals: [(owner: "gabumon", signal: "apply_chilled", payload: Amount(amount: 3))],
+        timeline: Some((
+            entry: "cast",
+            beats: [
+                (id: "cast", kind: Cast, hook: None, selector: None, presentation: None, payload: None),
+                (id: "impact_damage", kind: Impact, hook: Some("core/deal_damage"), selector: Some("core/primary"), presentation: None, payload: Some(DealDamage(amount: 16, tag: Ice, target: Single))),
+                (id: "impact_break", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/primary"), presentation: None, payload: Some(BreakToughness(amount: 8, tag: Ice, target: Single))),
+                (id: "impact_signal", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/caster"), presentation: None, payload: Some(BlueprintSignal(owner: "gabumon", name: "apply_chilled", payload: Amount(3)))),
+            ],
+            edges: [
+                (from: "cast", to: "impact_damage", gate: Some("core/always")),
+                (from: "impact_damage", to: "impact_break", gate: Some("core/always")),
+                (from: "impact_break", to: "impact_signal", gate: Some("core/always")),
+            ],
+        )),
     ),
     (
         id: SkillId("draconic_edge"),
@@ -45,6 +73,18 @@
         ),
         implementation: Implemented,
         effects: [Damage(amount: 17, target: Single), ToughnessHit(9)],
+        timeline: Some((
+            entry: "cast",
+            beats: [
+                (id: "cast", kind: Cast, hook: None, selector: None, presentation: None, payload: None),
+                (id: "impact_damage", kind: Impact, hook: Some("core/deal_damage"), selector: Some("core/primary"), presentation: None, payload: Some(DealDamage(amount: 17, tag: Dark, target: Single))),
+                (id: "impact_break", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/primary"), presentation: None, payload: Some(BreakToughness(amount: 9, tag: Dark, target: Single))),
+            ],
+            edges: [
+                (from: "cast", to: "impact_damage", gate: Some("core/always")),
+                (from: "impact_damage", to: "impact_break", gate: Some("core/always")),
+            ],
+        )),
     ),
     (
         id: SkillId("diamond_storm"),
@@ -66,6 +106,20 @@
                 signal: "open_momentum_window",
             ),
         ],
+        timeline: Some((
+            entry: "cast",
+            beats: [
+                (id: "cast", kind: Cast, hook: None, selector: None, presentation: None, payload: None),
+                (id: "impact_damage", kind: Impact, hook: Some("core/deal_damage"), selector: Some("core/primary"), presentation: None, payload: Some(DealDamage(amount: 16, tag: Light, target: Single))),
+                (id: "impact_break", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/primary"), presentation: None, payload: Some(BreakToughness(amount: 8, tag: Light, target: Single))),
+                (id: "impact_signal", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/caster"), presentation: None, payload: Some(BlueprintSignal(owner: "renamon", name: "open_momentum_window", payload: Empty))),
+            ],
+            edges: [
+                (from: "cast", to: "impact_damage", gate: Some("core/always")),
+                (from: "impact_damage", to: "impact_break", gate: Some("core/always")),
+                (from: "impact_break", to: "impact_signal", gate: Some("core/always")),
+            ],
+        )),
     ),
     (
         id: SkillId("holy_breeze"),
@@ -81,6 +135,18 @@
         ),
         implementation: Implemented,
         effects: [Damage(amount: 15, target: Single), ToughnessHit(8)],
+        timeline: Some((
+            entry: "cast",
+            beats: [
+                (id: "cast", kind: Cast, hook: None, selector: None, presentation: None, payload: None),
+                (id: "impact_damage", kind: Impact, hook: Some("core/deal_damage"), selector: Some("core/primary"), presentation: None, payload: Some(DealDamage(amount: 15, tag: Light, target: Single))),
+                (id: "impact_break", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/primary"), presentation: None, payload: Some(BreakToughness(amount: 8, tag: Light, target: Single))),
+            ],
+            edges: [
+                (from: "cast", to: "impact_damage", gate: Some("core/always")),
+                (from: "impact_damage", to: "impact_break", gate: Some("core/always")),
+            ],
+        )),
     ),
     (
         id: SkillId("agumon_ult"),
@@ -217,6 +283,20 @@
         implementation: Implemented,
         effects: [Damage(amount: 22, target: Single), ToughnessHit(12)],
         custom_signals: [(owner: "agumon", signal: "apply_heated", payload: Amount(amount: 3))],
+        timeline: Some((
+            entry: "cast",
+            beats: [
+                (id: "cast", kind: Cast, hook: None, selector: None, presentation: None, payload: None),
+                (id: "impact_damage", kind: Impact, hook: Some("core/deal_damage"), selector: Some("core/primary"), presentation: None, payload: Some(DealDamage(amount: 22, tag: Fire, target: Single))),
+                (id: "impact_break", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/primary"), presentation: None, payload: Some(BreakToughness(amount: 12, tag: Fire, target: Single))),
+                (id: "impact_signal", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/caster"), presentation: None, payload: Some(BlueprintSignal(owner: "agumon", name: "apply_heated", payload: Amount(3)))),
+            ],
+            edges: [
+                (from: "cast", to: "impact_damage", gate: Some("core/always")),
+                (from: "impact_damage", to: "impact_break", gate: Some("core/always")),
+                (from: "impact_break", to: "impact_signal", gate: Some("core/always")),
+            ],
+        )),
     ),
     (
         id: SkillId("renamon_follow_up"),
@@ -232,6 +312,18 @@
         ),
         implementation: Implemented,
         effects: [Damage(amount: 20, target: Single), ToughnessHit(10)],
+        timeline: Some((
+            entry: "cast",
+            beats: [
+                (id: "cast", kind: Cast, hook: None, selector: None, presentation: None, payload: None),
+                (id: "impact_damage", kind: Impact, hook: Some("core/deal_damage"), selector: Some("core/primary"), presentation: None, payload: Some(DealDamage(amount: 20, tag: Light, target: Single))),
+                (id: "impact_break", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/primary"), presentation: None, payload: Some(BreakToughness(amount: 10, tag: Light, target: Single))),
+            ],
+            edges: [
+                (from: "cast", to: "impact_damage", gate: Some("core/always")),
+                (from: "impact_damage", to: "impact_break", gate: Some("core/always")),
+            ],
+        )),
     ),
     (
         id: SkillId("gabumon_follow_up"),
@@ -248,6 +340,20 @@
         implementation: Implemented,
         effects: [Damage(amount: 20, target: Single), ToughnessHit(10)],
         custom_signals: [(owner: "gabumon", signal: "apply_chilled", payload: Amount(amount: 3))],
+        timeline: Some((
+            entry: "cast",
+            beats: [
+                (id: "cast", kind: Cast, hook: None, selector: None, presentation: None, payload: None),
+                (id: "impact_damage", kind: Impact, hook: Some("core/deal_damage"), selector: Some("core/primary"), presentation: None, payload: Some(DealDamage(amount: 20, tag: Ice, target: Single))),
+                (id: "impact_break", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/primary"), presentation: None, payload: Some(BreakToughness(amount: 10, tag: Ice, target: Single))),
+                (id: "impact_signal", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/caster"), presentation: None, payload: Some(BlueprintSignal(owner: "gabumon", name: "apply_chilled", payload: Amount(3)))),
+            ],
+            edges: [
+                (from: "cast", to: "impact_damage", gate: Some("core/always")),
+                (from: "impact_damage", to: "impact_break", gate: Some("core/always")),
+                (from: "impact_break", to: "impact_signal", gate: Some("core/always")),
+            ],
+        )),
     ),
     (
         id: SkillId("dorumon_follow_up"),
@@ -263,6 +369,18 @@
         ),
         implementation: Implemented,
         effects: [Damage(amount: 23, target: Single), ToughnessHit(13)],
+        timeline: Some((
+            entry: "cast",
+            beats: [
+                (id: "cast", kind: Cast, hook: None, selector: None, presentation: None, payload: None),
+                (id: "impact_damage", kind: Impact, hook: Some("core/deal_damage"), selector: Some("core/primary"), presentation: None, payload: Some(DealDamage(amount: 23, tag: Dark, target: Single))),
+                (id: "impact_break", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/primary"), presentation: None, payload: Some(BreakToughness(amount: 13, tag: Dark, target: Single))),
+            ],
+            edges: [
+                (from: "cast", to: "impact_damage", gate: Some("core/always")),
+                (from: "impact_damage", to: "impact_break", gate: Some("core/always")),
+            ],
+        )),
     ),
     (
         id: SkillId("patamon_follow_up"),
@@ -278,6 +396,18 @@
         ),
         implementation: Implemented,
         effects: [Damage(amount: 18, target: Single), ToughnessHit(9)],
+        timeline: Some((
+            entry: "cast",
+            beats: [
+                (id: "cast", kind: Cast, hook: None, selector: None, presentation: None, payload: None),
+                (id: "impact_damage", kind: Impact, hook: Some("core/deal_damage"), selector: Some("core/primary"), presentation: None, payload: Some(DealDamage(amount: 18, tag: Light, target: Single))),
+                (id: "impact_break", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/primary"), presentation: None, payload: Some(BreakToughness(amount: 9, tag: Light, target: Single))),
+            ],
+            edges: [
+                (from: "cast", to: "impact_damage", gate: Some("core/always")),
+                (from: "impact_damage", to: "impact_break", gate: Some("core/always")),
+            ],
+        )),
     ),
     (
         id: SkillId("heat_viper"),
@@ -339,6 +469,16 @@
         ),
         implementation: Implemented,
         effects: [Revive(25)],
+        timeline: Some((
+            entry: "cast",
+            beats: [
+                (id: "cast", kind: Cast, hook: None, selector: None, presentation: None, payload: None),
+                (id: "impact_revive", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/primary"), presentation: None, payload: Some(Revive(pct: 25, target: Single))),
+            ],
+            edges: [
+                (from: "cast", to: "impact_revive", gate: Some("core/always")),
+            ],
+        )),
     ),
     (
         id: SkillId("rally"),
@@ -462,6 +602,20 @@
         implementation: Implemented,
         effects: [Damage(amount: 12, target: Single), ToughnessHit(6)],
         custom_signals: [(owner: "tentomon", signal: "build_static_charge", payload: Amount(amount: 1))],
+        timeline: Some((
+            entry: "cast",
+            beats: [
+                (id: "cast", kind: Cast, hook: None, selector: None, presentation: None, payload: None),
+                (id: "impact_damage", kind: Impact, hook: Some("core/deal_damage"), selector: Some("core/primary"), presentation: None, payload: Some(DealDamage(amount: 12, tag: Electric, target: Single))),
+                (id: "impact_break", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/primary"), presentation: None, payload: Some(BreakToughness(amount: 6, tag: Electric, target: Single))),
+                (id: "impact_signal", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/caster"), presentation: None, payload: Some(BlueprintSignal(owner: "tentomon", name: "build_static_charge", payload: Amount(1)))),
+            ],
+            edges: [
+                (from: "cast", to: "impact_damage", gate: Some("core/always")),
+                (from: "impact_damage", to: "impact_break", gate: Some("core/always")),
+                (from: "impact_break", to: "impact_signal", gate: Some("core/always")),
+            ],
+        )),
     ),
     (
         id: SkillId("petit_thunder"),
@@ -510,6 +664,20 @@
         implementation: Implemented,
         effects: [Damage(amount: 18, target: Single), ToughnessHit(9)],
         custom_signals: [(owner: "tentomon", signal: "build_static_charge", payload: Amount(amount: 1))],
+        timeline: Some((
+            entry: "cast",
+            beats: [
+                (id: "cast", kind: Cast, hook: None, selector: None, presentation: None, payload: None),
+                (id: "impact_damage", kind: Impact, hook: Some("core/deal_damage"), selector: Some("core/primary"), presentation: None, payload: Some(DealDamage(amount: 18, tag: Electric, target: Single))),
+                (id: "impact_break", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/primary"), presentation: None, payload: Some(BreakToughness(amount: 9, tag: Electric, target: Single))),
+                (id: "impact_signal", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/caster"), presentation: None, payload: Some(BlueprintSignal(owner: "tentomon", name: "build_static_charge", payload: Amount(1)))),
+            ],
+            edges: [
+                (from: "cast", to: "impact_damage", gate: Some("core/always")),
+                (from: "impact_damage", to: "impact_break", gate: Some("core/always")),
+                (from: "impact_break", to: "impact_signal", gate: Some("core/always")),
+            ],
+        )),
     ),
     // Greymon (Adult)
     (

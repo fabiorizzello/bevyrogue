@@ -28,7 +28,25 @@ fn canonical_asset_compiles_timeline_backed_skills_into_library_shape() {
         .expect("timeline-backed skills must compile");
 
     let ids: HashSet<_> = compiled.iter().map(|timeline| timeline.id.as_str()).collect();
-    assert_eq!(ids.len(), 2, "expected exactly the two timeline-backed canon skills");
+    assert_eq!(ids.len(), 15, "expected 15 timeline-backed canon skills after child-roster migration");
+
+    // child basic/active skills
+    for required in [
+        "baby_flame", "bubble_blast", "draconic_edge", "diamond_storm", "holy_breeze",
+        "tentomon_basic", "patamon_revive",
+    ] {
+        assert!(ids.contains(required), "missing child-basic timeline: {required}");
+    }
+
+    // child follow-up skills
+    for required in [
+        "agumon_follow_up", "gabumon_follow_up", "dorumon_follow_up",
+        "renamon_follow_up", "patamon_follow_up", "tentomon_follow_up",
+    ] {
+        assert!(ids.contains(required), "missing child-follow-up timeline: {required}");
+    }
+
+    // previously migrated
     assert!(ids.contains("petit_thunder"));
     assert!(ids.contains("renamon_ult"));
 
@@ -49,7 +67,8 @@ fn asset_typo_in_hook_id_fails_with_skill_and_beat_site() {
     let err = compile_skill_book_timelines(&book, &canonical_regs())
         .expect_err("hook typo must fail before runtime");
 
-    assert_eq!(err.skill_id, SkillId("renamon_ult".into()));
+    // baby_flame is now the first skill with a core/deal_damage beat (child-roster migration)
+    assert_eq!(err.skill_id, SkillId("baby_flame".into()));
     assert_eq!(err.site, "beat impact_damage");
     assert!(err.detail.contains("core/deal_damge"));
 }
