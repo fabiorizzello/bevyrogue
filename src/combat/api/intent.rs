@@ -100,6 +100,17 @@ pub enum Intent {
         amount_pct: u32,
         cast_id: CastId,
     },
+    Revive {
+        source: UnitId,
+        target: UnitId,
+        pct: i32,
+        cast_id: CastId,
+    },
+    GrantFreeSkill {
+        source: UnitId,
+        count: usize,
+        cast_id: CastId,
+    },
     EnqueueFollowUp {
         source: UnitId,
         skill_id: SkillId,

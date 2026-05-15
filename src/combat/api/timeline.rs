@@ -2,9 +2,12 @@ use bevy::prelude::Resource;
 use serde::{Deserialize, Serialize};
 
 use crate::combat::{
-    api::{intent::CastId, registry::ExtRegistries},
+    api::{intent::CastId, registry::ExtRegistries, signal::SignalPayload},
+    status_effect::StatusEffectKind,
     types::{DamageTag, UnitId},
 };
+
+use crate::data::skills_ron::TargetShape;
 
 /// Resource holding all registered `CompiledTimeline`s for boot-time validation.
 ///
@@ -27,7 +30,52 @@ pub type BeatId = &'static str;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub enum BeatPayload {
-    DealDamage { amount: i32, tag: DamageTag },
+    DealDamage {
+        amount: i32,
+        tag: DamageTag,
+        target: TargetShape,
+    },
+    BreakToughness {
+        amount: i32,
+        tag: DamageTag,
+        target: TargetShape,
+    },
+    ApplyStatus {
+        kind: StatusEffectKind,
+        duration: u32,
+        target: TargetShape,
+    },
+    DelayTurn {
+        amount_pct: u32,
+        target: TargetShape,
+    },
+    AdvanceTurn {
+        amount_pct: u32,
+        target: TargetShape,
+    },
+    ApplyBuff {
+        kind: StatusEffectKind,
+        duration: u32,
+        target: TargetShape,
+    },
+    Revive {
+        pct: i32,
+        target: TargetShape,
+    },
+    GrantFreeSkill {
+        count: usize,
+    },
+    GrantEnergy {
+        amount: i32,
+    },
+    SelfAdvance {
+        amount_pct: i32,
+    },
+    BlueprintSignal {
+        owner: String,
+        name: String,
+        payload: SignalPayload,
+    },
 }
 
 /// Data-only presentation descriptor carried on a beat.

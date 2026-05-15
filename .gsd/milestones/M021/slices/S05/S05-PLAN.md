@@ -35,12 +35,12 @@ Consumes `src/data/skills_ron.rs`, `src/data/mod.rs`, `src/combat/api/{timeline,
   - Files: `src/data/skills_ron.rs`, `src/data/skill_timeline.rs`, `src/data/mod.rs`, `src/combat/api/timeline.rs`, `tests/compiled_timeline_boot_validation.rs`, `assets/data/skills.ron`
   - Verify: cargo test --test compiled_timeline_boot_validation
 
-- [ ] **T03: Route timeline-backed actions through BeatRunner and cover required intent variants** `est:5h`
+- [x] **T03: Route timeline-backed actions through BeatRunner and cover required intent variants** `est:5h`
   Skills used: bevy, rust-best-practices, rust-testing, verify-before-complete.
   - Files: `src/combat/state.rs`, `src/combat/resolution.rs`, `src/combat/turn_system/pipeline.rs`, `src/combat/api/applier.rs`, `src/combat/api/runner.rs`, `tests/compiled_timeline_runtime_dispatch.rs`
   - Verify: cargo test --test compiled_timeline_runtime_dispatch
 
-- [ ] **T04: Port Petit Thunder and Renamon ult data to timeline-backed canon tests** `est:4h`
+- [x] **T04: Port Petit Thunder and Renamon ult data to timeline-backed canon tests** `est:4h`
   Skills used: bevy, rust-best-practices, rust-testing, verify-before-complete.
   - Files: `assets/data/skills.ron`, `tests/compiled_timeline_petit_thunder.rs`, `tests/compiled_timeline_tohakken.rs`
   - Verify: cargo test --test compiled_timeline_petit_thunder --test compiled_timeline_tohakken

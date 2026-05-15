@@ -213,3 +213,77 @@ fn chain_bolt_hits_3_targets_with_falloff() {
         dmg_events
     );
 }
+
+#[test]
+fn chain_bolt_respects_bounded_hops_without_extra_iterations() {
+    let mut app = setup_app();
+
+    let caster_id = UnitId(1);
+    let e_low = UnitId(12);
+    let e_mid = UnitId(11);
+    let e_hi = UnitId(10);
+
+    spawn_unit(&mut app, caster_id, Team::Ally, 500, 500);
+    spawn_unit(&mut app, e_low, Team::Enemy, 60, 100);
+    spawn_unit(&mut app, e_mid, Team::Enemy, 80, 100);
+    spawn_unit(&mut app, e_hi, Team::Enemy, 100, 100);
+
+    let cast_id = app.world_mut().resource_mut::<CastIdGen>().next();
+
+    let mut regs = ExtRegistries::default();
+    regs.selectors
+        .register("chain/lowest_hp_pct_alive_norepeat", lowest_hp_pct_alive_norepeat);
+    regs.predicates.register("chain/stop_after_two", |evt, ctx| {
+        evt.hop_index >= 2 || ctx.cast_hit_set.len() >= 2
+    });
+    regs.hooks.register("chain/bolt_hop", chain_bolt_hop);
+
+    let timeline = Arc::new(CompiledTimeline {
+        id: "chain_bolt_bounded",
+        entry: "loop",
+        beats: vec![Beat {
+            id: "loop",
+            kind: BeatKind::Loop {
+                body: vec![Beat {
+                    id: "hop",
+                    kind: BeatKind::Impact,
+                    hook: Some("chain/bolt_hop"),
+                    selector: Some("chain/lowest_hp_pct_alive_norepeat"),
+                    presentation: None,
+                    payload: None,
+                }],
+                exit_when: "chain/stop_after_two",
+            },
+            hook: None,
+            selector: None,
+            presentation: None,
+            payload: None,
+        }],
+        edges: vec![],
+    });
+
+    let mut runner = BeatRunner::new(Arc::clone(&timeline), cast_id, caster_id, e_hi);
+    let mut pending = VecDeque::new();
+
+    let outcome = runner.run_to_completion(
+        app.world_mut(),
+        &regs,
+        SkillCtxMode::Execute,
+        &mut pending,
+        64,
+    );
+    assert_eq!(outcome, StepOutcome::Done, "bounded timeline should finish normally");
+
+    let dmg_intents: Vec<(UnitId, i32)> = pending
+        .iter()
+        .filter_map(|i| match i {
+            Intent::DealDamage { target, amount, .. } => Some((*target, *amount)),
+            _ => None,
+        })
+        .collect();
+
+    assert_eq!(dmg_intents.len(), 2, "bounded loop should stop after two hops");
+    assert_eq!(dmg_intents[0].0, e_low);
+    assert_eq!(dmg_intents[1].0, e_mid);
+}
+

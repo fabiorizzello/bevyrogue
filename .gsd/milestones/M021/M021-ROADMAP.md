@@ -30,10 +30,10 @@
 - [x] **S04: S04** `risk:high` `depends:[]`
   > After this: Renamon kitsune_grace verde; JSONL Blueprint round-trip; debug_assert mismatch.
 
-- [ ] **S05: S05** `risk:medium` `depends:[]`
+- [x] **S05: S05** `risk:medium` `depends:[]`
   > After this: Tohakken + Petit Thunder via CompiledTimeline; typo→errore boot.
 
-- [ ] **S06: Migrate 18 active skill canon + drop enum Effect** `risk:high` `depends:[S05]`
+- [ ] **S06: S06** `risk:high` `depends:[]`
   > After this: 18 active via CompiledTimeline; suite verde + Loop tier-N.
 
 - [ ] **S07: Modifier pipeline + Migrate 6 passive canon** `risk:high` `depends:[S04,S06]`

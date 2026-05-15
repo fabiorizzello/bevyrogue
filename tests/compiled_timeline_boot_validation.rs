@@ -27,9 +27,8 @@ fn canonical_asset_compiles_timeline_backed_skills_into_library_shape() {
     let compiled = compile_skill_book_timelines(&book, &canonical_regs())
         .expect("timeline-backed skills must compile");
 
-    assert_eq!(compiled.len(), 2, "expected exactly the two timeline-backed canon skills");
-
     let ids: HashSet<_> = compiled.iter().map(|timeline| timeline.id.as_str()).collect();
+    assert_eq!(ids.len(), 2, "expected exactly the two timeline-backed canon skills");
     assert!(ids.contains("petit_thunder"));
     assert!(ids.contains("renamon_ult"));
 
@@ -38,8 +37,8 @@ fn canonical_asset_compiles_timeline_backed_skills_into_library_shape() {
         .find(|timeline| timeline.id == "petit_thunder")
         .expect("petit_thunder timeline present");
     assert_eq!(petit.entry, "cast");
-    assert_eq!(petit.beats.len(), 2);
-    assert_eq!(petit.edges.len(), 1);
+    assert_eq!(petit.beats.len(), 5);
+    assert_eq!(petit.edges.len(), 4);
 }
 
 #[test]
@@ -51,6 +50,6 @@ fn asset_typo_in_hook_id_fails_with_skill_and_beat_site() {
         .expect_err("hook typo must fail before runtime");
 
     assert_eq!(err.skill_id, SkillId("renamon_ult".into()));
-    assert_eq!(err.site, "beat impact");
+    assert_eq!(err.site, "beat impact_damage");
     assert!(err.detail.contains("core/deal_damge"));
 }

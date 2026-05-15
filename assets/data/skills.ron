@@ -160,7 +160,7 @@
             target_hp_rule: Any,
         ),
         implementation: Implemented,
-        effects: [Damage(amount: 48, target: Single), ToughnessHit(30)],
+        effects: [Damage(amount: 48, target: Single), ToughnessHit(30), DelayTurn(80)],
         custom_signals: [
             (
                 owner: "renamon",
@@ -173,10 +173,14 @@
             entry: "cast",
             beats: [
                 (id: "cast", kind: Cast, hook: None, selector: None, presentation: None, payload: None),
-                (id: "impact", kind: Impact, hook: Some("core/deal_damage"), selector: Some("core/primary"), presentation: None, payload: Some(DealDamage(amount: 48, tag: Light))),
+                (id: "impact_damage", kind: Impact, hook: Some("core/deal_damage"), selector: Some("core/primary"), presentation: None, payload: Some(DealDamage(amount: 48, tag: Light, target: Single))),
+                (id: "impact_delay", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/primary"), presentation: None, payload: Some(DelayTurn(amount_pct: 80, target: Single))),
+                (id: "impact_buff", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/caster"), presentation: None, payload: Some(ApplyBuff(kind: Blessed, duration: 2, target: Single))),
             ],
             edges: [
-                (from: "cast", to: "impact", gate: Some("core/always")),
+                (from: "cast", to: "impact_damage", gate: Some("core/always")),
+                (from: "impact_damage", to: "impact_delay", gate: Some("core/always")),
+                (from: "impact_delay", to: "impact_buff", gate: Some("core/always")),
             ],
         )),
     ),
@@ -478,10 +482,16 @@
             entry: "cast",
             beats: [
                 (id: "cast", kind: Cast, hook: None, selector: None, presentation: None, payload: None),
-                (id: "impact", kind: Impact, hook: Some("core/deal_damage"), selector: Some("core/primary"), presentation: None, payload: Some(DealDamage(amount: 16, tag: Electric))),
+                (id: "impact_damage", kind: Impact, hook: Some("core/deal_damage"), selector: Some("core/primary"), presentation: None, payload: Some(DealDamage(amount: 16, tag: Electric, target: Single))),
+                (id: "impact_break", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/primary"), presentation: None, payload: Some(BreakToughness(amount: 8, tag: Electric, target: Single))),
+                (id: "impact_status", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/primary"), presentation: None, payload: Some(ApplyStatus(kind: Paralyzed, duration: 1, target: Single))),
+                (id: "impact_signal", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/caster"), presentation: None, payload: Some(BlueprintSignal(owner: "tentomon", name: "build_static_charge", payload: Amount(1)))),
             ],
             edges: [
-                (from: "cast", to: "impact", gate: Some("core/always")),
+                (from: "cast", to: "impact_damage", gate: Some("core/always")),
+                (from: "impact_damage", to: "impact_break", gate: Some("core/always")),
+                (from: "impact_break", to: "impact_status", gate: Some("core/always")),
+                (from: "impact_status", to: "impact_signal", gate: Some("core/always")),
             ],
         )),
     ),

@@ -4,9 +4,12 @@
 //! See `.gsd/M010-HANDOFF.md` for integration status. The functions here
 //! are the scaffolding; wire-up into the Bevy schedule is incomplete.
 
+use bevy::log;
 use bevy::prelude::*;
 
 use crate::combat::api::intent::CastId;
+use crate::combat::api::{registry::ExtRegistries, runner::{BeatRunner, StepOutcome}, SkillCtxMode};
+use crate::combat::api::applier::IntentQueue;
 
 use crate::combat::damage::triangle_modifiers;
 use crate::combat::energy::{Energy, EnergyGainSource, RoundEnergyTracker};
@@ -144,6 +147,192 @@ fn dispatch_blueprint_transitions(
             );
         }
     }
+}
+
+fn intern_timeline_id(value: &str) -> &'static str {
+    Box::leak(value.to_owned().into_boxed_str())
+}
+
+fn intern_compiled_timeline(
+    timeline: &crate::combat::api::timeline::CompiledTimeline<String>,
+) -> crate::combat::api::timeline::CompiledTimeline<&'static str> {
+    use crate::combat::api::timeline::{Beat, BeatEdge, BeatKind, BeatPayload, CompiledTimeline, Presentation};
+
+    fn intern_payload(payload: &BeatPayload) -> BeatPayload {
+        match payload {
+            BeatPayload::DealDamage { amount, tag, target } => BeatPayload::DealDamage {
+                amount: *amount,
+                tag: *tag,
+                target: target.clone(),
+            },
+            BeatPayload::BreakToughness { amount, tag, target } => BeatPayload::BreakToughness {
+                amount: *amount,
+                tag: *tag,
+                target: target.clone(),
+            },
+            BeatPayload::ApplyStatus { kind, duration, target } => BeatPayload::ApplyStatus {
+                kind: kind.clone(),
+                duration: *duration,
+                target: target.clone(),
+            },
+            BeatPayload::DelayTurn { amount_pct, target } => BeatPayload::DelayTurn {
+                amount_pct: *amount_pct,
+                target: target.clone(),
+            },
+            BeatPayload::AdvanceTurn { amount_pct, target } => BeatPayload::AdvanceTurn {
+                amount_pct: *amount_pct,
+                target: target.clone(),
+            },
+            BeatPayload::ApplyBuff { kind, duration, target } => BeatPayload::ApplyBuff {
+                kind: kind.clone(),
+                duration: *duration,
+                target: target.clone(),
+            },
+            BeatPayload::Revive { pct, target } => BeatPayload::Revive {
+                pct: *pct,
+                target: target.clone(),
+            },
+            BeatPayload::GrantFreeSkill { count } => BeatPayload::GrantFreeSkill { count: *count },
+            BeatPayload::GrantEnergy { amount } => BeatPayload::GrantEnergy { amount: *amount },
+            BeatPayload::SelfAdvance { amount_pct } => BeatPayload::SelfAdvance {
+                amount_pct: *amount_pct,
+            },
+            BeatPayload::BlueprintSignal { owner, name, payload } => BeatPayload::BlueprintSignal {
+                owner: owner.clone(),
+                name: name.clone(),
+                payload: payload.clone(),
+            },
+        }
+    }
+
+    fn intern_presentation(p: &Presentation<String>) -> Presentation<&'static str> {
+        Presentation {
+            cue_id: intern_timeline_id(&p.cue_id),
+            anim: p.anim.as_deref().map(intern_timeline_id),
+            vfx: p.vfx.as_deref().map(intern_timeline_id),
+            sfx: p.sfx.as_deref().map(intern_timeline_id),
+        }
+    }
+
+    fn intern_beat(beat: &Beat<String>) -> Beat<&'static str> {
+        Beat {
+            id: intern_timeline_id(&beat.id),
+            kind: match &beat.kind {
+                BeatKind::Cast => BeatKind::Cast,
+                BeatKind::Phase => BeatKind::Phase,
+                BeatKind::Impact => BeatKind::Impact,
+                BeatKind::Aftermath => BeatKind::Aftermath,
+                BeatKind::Loop { body, exit_when } => BeatKind::Loop {
+                    body: body.iter().map(intern_beat).collect(),
+                    exit_when: intern_timeline_id(exit_when),
+                },
+            },
+            hook: beat.hook.as_deref().map(intern_timeline_id),
+            selector: beat.selector.as_deref().map(intern_timeline_id),
+            presentation: beat.presentation.as_ref().map(intern_presentation),
+            payload: beat.payload.as_ref().map(intern_payload),
+        }
+    }
+
+    CompiledTimeline {
+        id: intern_timeline_id(&timeline.id),
+        entry: intern_timeline_id(&timeline.entry),
+        beats: timeline.beats.iter().map(intern_beat).collect(),
+        edges: timeline
+            .edges
+            .iter()
+            .map(|edge| BeatEdge {
+                from: intern_timeline_id(&edge.from),
+                to: intern_timeline_id(&edge.to),
+                gate: edge.gate.as_deref().map(intern_timeline_id),
+            })
+            .collect(),
+    }
+}
+
+pub(crate) fn run_timeline_backed_action(
+    world: &mut World,
+    inflight: InFlightAction,
+    cast_id: CastId,
+) {
+    let Some(timeline_library) = world.get_resource::<crate::combat::api::timeline::TimelineLibrary<String>>() else {
+        log::warn!(
+            "timeline-backed action {:?} skipped: TimelineLibrary missing",
+            inflight.action.skill_id
+        );
+        return;
+    };
+    let Some(compiled) = timeline_library
+        .timelines
+        .iter()
+        .find(|timeline| timeline.id == inflight.action.skill_id.0)
+        .cloned()
+    else {
+        log::warn!(
+            "timeline-backed action {:?} skipped: compiled timeline not found",
+            inflight.action.skill_id
+        );
+        return;
+    };
+
+    let timeline = std::sync::Arc::new(intern_compiled_timeline(&compiled));
+
+    let regs_ptr = match world.get_resource::<crate::combat::api::registry::ExtRegistries>() {
+        Some(regs) => regs as *const _,
+        None => {
+            log::warn!(
+                "timeline-backed action {:?} skipped: ExtRegistries missing",
+                inflight.action.skill_id
+            );
+            return;
+        }
+    };
+    let mut pending = std::collections::VecDeque::new();
+    let mut runner = BeatRunner::new(timeline, cast_id, inflight.action.source, inflight.action.target);
+    let outcome = unsafe {
+        runner.run_to_completion(
+            world,
+            &*regs_ptr,
+            crate::combat::api::SkillCtxMode::Execute,
+            &mut pending,
+            1024,
+        )
+    };
+
+    if outcome != StepOutcome::Done {
+        let reason = format!("timeline execution halted: {outcome:?}");
+        world.resource_mut::<bevy::ecs::message::Messages<CombatEvent>>().write(CombatEvent {
+            kind: CombatEventKind::OnActionFailed { reason },
+            source: inflight.action.source,
+            target: inflight.action.target,
+            follow_up_depth: inflight.follow_up_depth,
+            cast_id,
+        });
+        world.resource_mut::<crate::combat::state::CombatState>().phase = CombatPhase::WaitingAction;
+        return;
+    }
+
+    world.init_resource::<IntentQueue>();
+    world.resource_mut::<IntentQueue>().0.extend(pending);
+    crate::combat::api::applier::intent_applier(world);
+
+    let mut event_writer = world.resource_mut::<bevy::ecs::message::Messages<CombatEvent>>();
+    event_writer.write(CombatEvent {
+        kind: CombatEventKind::OnActionApplied,
+        source: inflight.action.source,
+        target: inflight.action.target,
+        follow_up_depth: inflight.follow_up_depth,
+        cast_id,
+    });
+    event_writer.write(CombatEvent {
+        kind: CombatEventKind::OnActionResolved,
+        source: inflight.action.source,
+        target: inflight.action.target,
+        follow_up_depth: inflight.follow_up_depth,
+        cast_id,
+    });
+
+    world.resource_mut::<crate::combat::state::CombatState>().phase = CombatPhase::WaitingAction;
 }
 
 #[allow(clippy::too_many_arguments)]

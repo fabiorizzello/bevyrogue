@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T01",
+  "unitId": "M021/S06/T01",
+  "timestamp": 1778872691427,
+  "passed": true,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "cargo test --test timeline_chain_bolt_port --test compiled_timeline_builtin_validation --test compiled_timeline_petit_thunder",
+      "exitCode": 0,
+      "durationMs": 160,
+      "verdict": "pass"
+    }
+  ]
+}

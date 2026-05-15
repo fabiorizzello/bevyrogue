@@ -8,7 +8,9 @@ use crate::combat::{
         registry::ExtRegistries,
         timeline::BeatPayload,
     },
+    team::Team,
     types::UnitId,
+    unit::Unit,
 };
 
 /// Governs how the skill pipeline processes enqueued `Intent` values.
@@ -95,5 +97,12 @@ impl<'a> SkillCtx<'a> {
 
     pub fn beat_payload(&self) -> Option<&'a BeatPayload> {
         self.beat_payload
+    }
+
+    /// Return the caster's team using an immutable world query.
+    pub fn caster_team(&self) -> Option<Team> {
+        let mut q = self.world.try_query::<(&Unit, &Team)>()?;
+        q.iter(self.world)
+            .find_map(|(unit, team)| (unit.id == self.caster).then_some(*team))
     }
 }
