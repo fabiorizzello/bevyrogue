@@ -137,11 +137,12 @@ pub enum Intent {
     },
     /// Cross-blueprint signal dispatched to the owning unit's blueprint handler.
     ///
-    /// Payload is a `u64` tag for S01; S04 replaces this with the closed-enum
-    /// `Signal` type (D028: signal taxonomy registered at `App::finish()`).
+    /// Payload is a `SignalPayload` (S04).
     BlueprintSignal {
-        owner: UnitId,
-        payload: u64,
+        source: UnitId,
+        owner: &'static str,
+        name: &'static str,
+        payload: crate::combat::api::SignalPayload,
         cast_id: CastId,
     },
     /// Write a per-unit/per-key state entry (D034 canonical blueprint write-path).

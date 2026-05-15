@@ -24,10 +24,10 @@
 - [x] **S02: S02** `risk:high` `depends:[]`
   > After this: Fixture OnTurnStart kills target verde; validate_timeline_refs scopre typo; LoopFrame single-level su chain_bolt port.
 
-- [ ] **S03: S03** `risk:medium` `depends:[]`
+- [x] **S03: S03** `risk:medium` `depends:[]`
   > After this: Test DryRun≡Execute≡Preview verde su chain ramificata; two-clock verde; circuit breaker @256.
 
-- [ ] **S04: SignalBus + PassiveRunner + Ult instant + Intent::BlueprintSignal dispatcher** `risk:high` `depends:[S03]`
+- [ ] **S04: S04** `risk:high` `depends:[]`
   > After this: Renamon kitsune_grace verde; JSONL Blueprint round-trip; debug_assert mismatch.
 
 - [ ] **S05: Built-in extension fns + RON → CompiledTimeline compiler** `risk:medium` `depends:[S04]`

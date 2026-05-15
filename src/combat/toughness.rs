@@ -127,7 +127,7 @@ pub fn can_apply_toughness_damage(team: Team, toughness: Option<&Toughness>) -> 
     exposes_toughness_affordance(team, toughness)
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum DamageKind {
     Normal,
     Weak,

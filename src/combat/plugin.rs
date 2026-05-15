@@ -3,10 +3,12 @@ use bevy::prelude::*;
 use crate::combat::{
     api::{
         applier::{intent_applier, IntentQueue},
+        blueprint_state::BlueprintState,
         clock::Clock,
         intent::CastIdGen,
+        passive_runner::{passive_dispatch_system, PassiveListeners},
         registry::ExtRegistries,
-        signal::SignalBus,
+        signal::{SignalBus, SignalTaxonomy},
         timeline::{validate_timeline_refs, TimelineLibrary},
     },
     kernel::register_combat_kernel_runtime,
@@ -26,12 +28,15 @@ impl Plugin for CombatPlugin {
 
         app.init_resource::<ExtRegistries>()
             .init_resource::<SignalBus>()
+            .init_resource::<SignalTaxonomy>()
             .init_resource::<CastIdGen>()
             .init_resource::<IntentQueue>()
             .init_resource::<TimelineLibrary>()
+            .init_resource::<BlueprintState>()
+            .init_resource::<PassiveListeners>()
             .insert_resource(Clock::default())
             .insert_resource(CombatRng::from_seed(0xDEAD_BEEF))
-            .add_systems(Update, intent_applier);
+            .add_systems(Update, (intent_applier, passive_dispatch_system.after(intent_applier)));
     }
 
     /// Validates all registered `CompiledTimeline`s against `ExtRegistries`.

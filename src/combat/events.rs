@@ -15,7 +15,7 @@ pub use crate::combat::kernel::{
 /// Coarse intent classification carried by `OnActionDeclared`.
 /// Distinct from `ActionIntent` (which carries full payload) — this is
 /// serializable metadata only, with no heap-allocated fields.
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum ActionIntentKind {
     Basic,
     Skill,
@@ -23,7 +23,7 @@ pub enum ActionIntentKind {
 }
 
 /// Machine-readable combat bus consumed by follow-up listeners.
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum CombatEventKind {
     /// Emitted only for Skill/Ultimate intents, never for Basic.
     OnSkillCast {
@@ -154,7 +154,7 @@ pub enum CombatEventKind {
     },
 }
 
-#[derive(Message, Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[derive(Message, Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct CombatEvent {
     pub kind: CombatEventKind,
     pub source: UnitId,

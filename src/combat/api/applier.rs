@@ -4,9 +4,13 @@ use bevy::log;
 use bevy::prelude::*;
 
 use crate::combat::{
-    api::intent::{CastId, Intent},
+    api::{
+        blueprint_state::BlueprintState,
+        intent::{CastId, Intent},
+        signal::{Signal, SignalBus, SignalPayload, SignalTaxonomy},
+    },
     damage::{AttackContext, calculate_damage},
-    events::{CombatEvent, CombatEventKind},
+    events::{CombatEvent, CombatEventKind, CombatKernelTransition},
     toughness::{DamageKind, Toughness},
     types::{DamageTag, UnitId},
     unit::Unit,
@@ -46,6 +50,23 @@ pub fn intent_applier(world: &mut World) {
                 cast_id,
             } => {
                 apply_deal_damage(world, source, target, amount, tag, cast_id);
+            }
+            Intent::BlueprintSignal {
+                source,
+                owner,
+                name,
+                payload,
+                cast_id,
+            } => {
+                apply_blueprint_signal(world, source, owner, name, payload, cast_id);
+            }
+            Intent::SetBlueprintState {
+                actor,
+                key,
+                value,
+                cast_id,
+            } => {
+                apply_set_blueprint_state(world, actor, key, value, cast_id);
             }
             other => {
                 log::warn!("intent_applier: unimplemented intent variant {:?}", other);
@@ -123,4 +144,58 @@ fn apply_deal_damage(
             follow_up_depth: 0,
             cast_id,
         });
+}
+
+fn apply_blueprint_signal(
+    world: &mut World,
+    source: UnitId,
+    owner: &'static str,
+    name: &'static str,
+    payload: SignalPayload,
+    cast_id: CastId,
+) {
+    let taxonomy = world.resource::<SignalTaxonomy>();
+    if !taxonomy.contains(owner, name) {
+        debug_assert!(false, "unregistered signal: {}/{}", owner, name);
+        log::warn!(
+            "intent_applier BlueprintSignal: unregistered signal {}/{}",
+            owner,
+            name
+        );
+        return;
+    }
+
+    world.resource_mut::<SignalBus>().push(Signal::Blueprint {
+        owner: owner.to_string(),
+        name: name.to_string(),
+        payload: payload.clone(),
+        cast_id,
+    });
+
+    world.resource_mut::<Messages<CombatEvent>>().write(CombatEvent {
+        kind: CombatEventKind::OnKernelTransition {
+            transition: CombatKernelTransition::Blueprint {
+                owner: owner.to_string(),
+                name: name.to_string(),
+                payload,
+            },
+        },
+        source,
+        target: source,
+        follow_up_depth: 0,
+        cast_id,
+    });
+}
+
+fn apply_set_blueprint_state(
+    world: &mut World,
+    actor: UnitId,
+    key: String,
+    value: i64,
+    _cast_id: CastId,
+) {
+    world
+        .resource_mut::<BlueprintState>()
+        .map
+        .insert((actor, key), value);
 }

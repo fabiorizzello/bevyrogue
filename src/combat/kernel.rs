@@ -899,6 +899,11 @@ pub enum CombatKernelTransition {
     HolySupport(HolySupportTransition),
     PredatorLoop(PredatorLoopTransition),
     PrecisionMindGame(PrecisionMindGameTransition),
+    Blueprint {
+        owner: String,
+        name: String,
+        payload: crate::combat::api::SignalPayload,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

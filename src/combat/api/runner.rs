@@ -11,8 +11,9 @@ use crate::combat::{
         clock::Clock,
         intent::{CastId, Intent},
         registry::ExtRegistries,
-        skill_ctx::{SkillCtx, SkillCtxMode},
-        timeline::{Beat, BeatEvent, BeatId, BeatKind, CompiledTimeline, SelectorCtx},
+        runner_common::find_beat,
+        skill_ctx::SkillCtxMode,
+        timeline::{Beat, BeatEvent, BeatId, BeatKind, CompiledTimeline},
     },
     types::UnitId,
 };
@@ -174,8 +175,8 @@ impl BeatRunner {
             };
 
             if !just_resumed {
-                let beat_targets =
-                    self.fire_beat(&cur_beat, hop_index, world, regs, mode, pending);
+                let params = self.make_params(world, regs, mode, pending);
+                let beat_targets = crate::combat::api::runner_common::fire_beat(&cur_beat, hop_index, params);
                 if matches!(cur_beat.kind, BeatKind::Impact) {
                     self.last_beat_targets = beat_targets;
                 }
@@ -208,11 +209,13 @@ impl BeatRunner {
                 hop_index,
                 beat_targets: self.last_beat_targets.clone(),
             };
-            let should_exit = self.eval_predicate(exit_when, &exit_evt, world, regs, mode);
+            let mut params = self.make_params(world, regs, mode, pending);
+            let should_exit = crate::combat::api::runner_common::eval_predicate(exit_when, &exit_evt, &mut params);
             if should_exit {
                 self.loop_stack.pop();
                 // F1: first passing edge from the enclosing Loop beat becomes the next cursor.
-                let next = self.next_beat(enclosing, &exit_evt, world, regs, mode);
+                let mut params = self.make_params(world, regs, mode, pending);
+                let next = crate::combat::api::runner_common::next_beat(enclosing, &exit_evt, &mut params);
                 self.cursor = next;
                 return StepOutcome::LoopExited;
             } else {
@@ -253,7 +256,8 @@ impl BeatRunner {
             }
             _ => {
                 if !just_resumed {
-                    let beat_targets = self.fire_beat(&beat, 0, world, regs, mode, pending);
+                    let params = self.make_params(world, regs, mode, pending);
+                    let beat_targets = crate::combat::api::runner_common::fire_beat(&beat, 0, params);
                     if matches!(beat.kind, BeatKind::Impact) {
                         self.last_beat_targets = beat_targets;
                     }
@@ -271,7 +275,8 @@ impl BeatRunner {
                     hop_index: 0,
                     beat_targets: self.last_beat_targets.clone(),
                 };
-                let next = self.next_beat(beat_id, &gate_evt, world, regs, mode);
+                let mut params = self.make_params(world, regs, mode, pending);
+                let next = crate::combat::api::runner_common::next_beat(beat_id, &gate_evt, &mut params);
                 self.cursor = next;
                 if self.cursor.is_none() {
                     StepOutcome::Done
@@ -322,145 +327,25 @@ impl BeatRunner {
 
     // ─── Private helpers ──────────────────────────────────────────────────────
 
-    /// Execute one beat: resolve selector (Impact only), fire hook, fold DealDamage hits.
-    fn fire_beat(
-        &mut self,
-        beat: &Beat,
-        hop_index: u32,
-        world: &World,
-        regs: &ExtRegistries,
+    fn make_params<'a, 'w>(
+        &'a mut self,
+        world: &'w World,
+        regs: &'a ExtRegistries,
         mode: SkillCtxMode,
-        pending: &mut VecDeque<Intent>,
-    ) -> Vec<UnitId> {
-        // Selector — only Impact beats resolve targets.
-        let beat_targets = if matches!(beat.kind, BeatKind::Impact) {
-            if let Some(sel_id) = beat.selector {
-                let sel = *regs.selectors.get(sel_id).unwrap_or_else(|| {
-                    panic!(
-                        "selector `{sel_id}` not registered \
-                         (validate_timeline_refs catches this at App::finish)"
-                    )
-                });
-                let sctx = SelectorCtx {
-                    caster: self.caster,
-                    primary_target: self.primary_target,
-                    state: &(),
-                };
-                sel(&sctx)
-            } else {
-                Vec::new()
-            }
-        } else {
-            Vec::new()
-        };
-
-        // Hook.
-        if let Some(hook_id) = beat.hook {
-            let f = *regs.hooks.get(hook_id).unwrap_or_else(|| {
-                panic!(
-                    "hook `{hook_id}` not registered \
-                     (validate_timeline_refs catches this at App::finish)"
-                )
-            });
-            let evt = BeatEvent {
-                cast_id: self.cast_id,
-                beat_id: beat.id,
-                hop_index,
-                beat_targets: beat_targets.clone(),
-            };
-            let prev_len = pending.len();
-            {
-                let mut ctx = SkillCtx::new(
-                    self.caster,
-                    self.primary_target,
-                    self.cast_id,
-                    mode,
-                    regs,
-                    world,
-                    &mut self.cast_hit_set,
-                    pending,
-                );
-                f(&evt, &mut ctx);
-            }
-            // F6 fix: fold newly enqueued DealDamage targets into cast_hit_set so
-            // subsequent bounce / NoRepeat selectors skip already-hit units.
-            for i in prev_len..pending.len() {
-                if let Some(Intent::DealDamage { target, .. }) = pending.get(i) {
-                    self.cast_hit_set.insert(*target);
-                }
-            }
-        }
-
-        beat_targets
-    }
-
-    /// Evaluate a registered predicate, providing a fresh (read-only) `SkillCtx`.
-    ///
-    /// Any intents the predicate erroneously enqueues are discarded (dummy queue).
-    fn eval_predicate(
-        &mut self,
-        pred_id: &str,
-        evt: &BeatEvent,
-        world: &World,
-        regs: &ExtRegistries,
-        mode: SkillCtxMode,
-    ) -> bool {
-        let f = *regs.predicates.get(pred_id).unwrap_or_else(|| {
-            panic!("predicate `{pred_id}` not registered")
-        });
-        let mut dummy: VecDeque<Intent> = VecDeque::new();
-        let ctx = SkillCtx::new(
-            self.caster,
-            self.primary_target,
-            self.cast_id,
-            mode,
-            regs,
+        pending: &'a mut VecDeque<Intent>,
+    ) -> crate::combat::api::runner_common::RunnerParams<'a, 'w> {
+        crate::combat::api::runner_common::RunnerParams {
+            timeline: &self.timeline,
+            caster: self.caster,
+            primary_target: self.primary_target,
+            cast_id: self.cast_id,
+            cast_hit_set: &mut self.cast_hit_set,
             world,
-            &mut self.cast_hit_set,
-            &mut dummy,
-        );
-        f(evt, &ctx)
-    }
-
-    /// Pick the next beat by walking outgoing edges from `from` in declaration order.
-    ///
-    /// F1 fallback-edge rule: edges are tested left-to-right; the first edge whose
-    /// gate predicate is absent (`None`) or returns `true` is selected. An
-    /// unconditional edge placed last acts as the implicit fallback / default
-    /// transition. Returns `None` when the timeline has no more beats.
-    fn next_beat(
-        &mut self,
-        from: BeatId,
-        evt: &BeatEvent,
-        world: &World,
-        regs: &ExtRegistries,
-        mode: SkillCtxMode,
-    ) -> Option<BeatId> {
-        // Clone the Arc to obtain an independent reference; this avoids a borrow
-        // conflict between iterating `self.timeline.edges` and calling `&mut self`
-        // methods (eval_predicate) inside the loop body.
-        let timeline = Arc::clone(&self.timeline);
-        for edge in timeline.edges.iter().filter(|e| e.from == from) {
-            let passes = match edge.gate {
-                None => true,
-                Some(pred_id) => self.eval_predicate(pred_id, evt, world, regs, mode),
-            };
-            if passes {
-                return Some(edge.to);
-            }
+            regs,
+            mode,
+            pending,
         }
-        None
     }
-}
-
-// ─── Free helpers ─────────────────────────────────────────────────────────────
-
-fn find_beat<'t>(timeline: &'t CompiledTimeline, id: BeatId) -> &'t Beat {
-    timeline
-        .beats
-        .iter()
-        .find(|b| b.id == id)
-        .unwrap_or_else(|| panic!("beat `{id}` not found in timeline `{}`", timeline.id))
 }
 
 // ─── Inline unit tests ────────────────────────────────────────────────────────
