@@ -39,5 +39,5 @@ pub use signal::SignalBus;
 pub use skill_ctx::{SkillCtx, SkillCtxMode};
 pub use timeline::{
     Beat, BeatEdge, BeatEvent, BeatId, BeatKind, CompiledTimeline, CueCtx, Presentation,
-    SelectorCtx, ValidationError, validate_timeline_refs,
+    SelectorCtx, TimelineLibrary, ValidationError, validate_timeline_refs,
 };

@@ -1,4 +1,16 @@
+use bevy::prelude::Resource;
+
 use crate::combat::{api::intent::CastId, api::registry::ExtRegistries, types::UnitId};
+
+/// Resource holding all registered `CompiledTimeline`s for boot-time validation.
+///
+/// Insert into the `App` before `App::finish()` runs (e.g. in blueprint `build`).
+/// `CombatPlugin::finish` iterates this collection and panics on any dangling ref.
+/// Wire-up of concrete timelines is S05's responsibility; an empty library is valid.
+#[derive(Resource, Default)]
+pub struct TimelineLibrary {
+    pub timelines: Vec<CompiledTimeline>,
+}
 
 /// Opaque identifier for a beat within a `CompiledTimeline`.
 pub type BeatId = &'static str;
