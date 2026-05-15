@@ -37,7 +37,7 @@ Three new integration tests under `tests/` provide closure: `timeline_onturnstar
   - Files: `src/combat/api/timeline.rs`, `src/combat/api/mod.rs`, `tests/timeline_validate_typo.rs`
   - Verify: cargo check && cargo test --test timeline_validate_typo && cargo test --lib combat::api::timeline:: && rg 'pub fn validate_timeline_refs' src/combat/api/timeline.rs
 
-- [ ] **T02: Refine ExtPoint::Fn signatures (Hook/Selector/Predicate/Cue) + extend SkillCtx<'a>** `est:90m`
+- [x] **T02: Refine ExtPoint::Fn signatures (Hook/Selector/Predicate/Cue) + extend SkillCtx<'a>** `est:90m`
   Why: T01's `BeatEvent` and timeline types need real callable signatures on the four graph-referenced axes; T03's `BeatRunner` needs `SkillCtx<'a>` to carry the borrows the spike used thread-locals for (F7). This task does the surgical signature promotion and adds the borrows — nothing more.
   - Files: `src/combat/api/registry.rs`, `src/combat/api/skill_ctx.rs`
   - Verify: cargo check && cargo check --features windowed && cargo test --lib combat::api:: && cargo test --test intent_applier_canary && cargo test --test cast_id_propagation
