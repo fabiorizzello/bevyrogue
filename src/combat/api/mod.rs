@@ -20,6 +20,7 @@ pub mod clock;
 pub mod intent;
 pub mod registry;
 pub mod rng;
+pub mod runner;
 pub mod signal;
 pub mod skill_ctx;
 pub mod timeline;
@@ -33,6 +34,7 @@ pub use registry::{
     SelectorExt, TickExt,
 };
 pub use rng::CastRng;
+pub use runner::{BeatRunner, LoopFrame, StepOutcome};
 pub use signal::SignalBus;
 pub use skill_ctx::{SkillCtx, SkillCtxMode};
 pub use timeline::{
