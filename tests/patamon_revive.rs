@@ -48,6 +48,7 @@ fn build_app() -> App {
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
         SkillDef {
             id: SkillId("attack_skill".into()),
@@ -71,6 +72,7 @@ fn build_app() -> App {
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
     ]);
     let handle = assets.add(book);

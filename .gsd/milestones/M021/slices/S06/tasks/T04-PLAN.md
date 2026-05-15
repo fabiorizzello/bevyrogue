@@ -1,26 +1,12 @@
 ---
-estimated_steps: 11
+estimated_steps: 1
 estimated_files: 12
 skills_used: []
 ---
 
 # T04: Migrate inline fixtures and close the slice with full verification
 
-Expected skills: `bevy`, `rust-best-practices`, `tdd`, `verify-before-complete`.
-
-Why: removing `Effect` will strand a broad integration-test surface that still builds inline `SkillDef { effects: ... }` fixtures. The slice is only complete once those fixtures are rewritten for the timeline-era schema and the full project passes under headless and windowed builds.
-
-Do:
-- Rewrite the remaining inline test fixtures that currently depend on `SkillDef.effects` so they construct timeline-era skill definitions or load canonical assets, whichever keeps the contract under test clearer.
-- Prioritize high-signal integration surfaces: action affordance, boundary contracts, encounter and coherence flows, SP and ultimate behavior, blueprint seams, and presentation-boundary tests that currently assume legacy effect-backed construction.
-- Remove any test assertions that still describe timeline-vs-legacy coexistence, replacing them with timeline-only expectations and structural checks that the old schema is gone.
-- Run the full verification ladder and only stop when structural removal checks, full tests, headless check, and windowed check all pass.
-
-Negative tests:
-- Boundary fixtures must still cover malformed timeline references and unsupported target semantics where the old tests previously relied on invalid effect data.
-- Roster or encounter tests must keep deterministic behavior when the same skill is executed in repeated runs.
-
-Done when: no inline fixture or canonical asset still relies on `effects:`, the full automated verification ladder passes, and the codebase is structurally clean of the removed active-skill effect path.
+Rewrite the remaining inline test fixtures that depend on SkillDef.effects so they construct timeline-era skill definitions or load canonical assets, prioritizing action affordance, boundary contracts, encounter/coherence flows, SP/ultimate behavior, blueprint seams, and presentation-boundary tests. Remove assertions that still describe timeline-vs-legacy coexistence, replace them with timeline-only expectations and structural checks that the old schema is gone, then run the full verification ladder until structural removal checks, full tests, headless check, and windowed check all pass.
 
 ## Inputs
 

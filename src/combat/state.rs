@@ -43,8 +43,6 @@ pub struct ResolvedAction {
     /// First ApplyStatus effect found in the skill definition; first match wins.
     pub status_to_apply: Option<(StatusEffectKind, u32)>,
     pub advance_pct: u32,
-    /// True when the skill has a compiled kernel timeline and should dispatch through BeatRunner.
-    pub timeline_backed: bool,
     pub delay_pct: u32,
     /// Energy to grant the attacker from a GrantEnergy effect (0 = none).
     pub energy_grant: i32,
@@ -63,6 +61,7 @@ pub struct InFlightAction {
     pub action: ResolvedAction,
     pub interrupted: bool,
     pub follow_up_depth: u8,
+    pub timeline_backed: bool,
 }
 
 // Used by S06/T02.

@@ -1,26 +1,12 @@
 ---
-estimated_steps: 11
+estimated_steps: 1
 estimated_files: 9
 skills_used: []
 ---
 
 # T01: Expand the generic timeline verb surface for looped active skills
 
-Expected skills: `bevy`, `rust-best-practices`, `tdd`, `verify-before-complete`.
-
-Why: S05 only proved straight-line active execution. S06 must first cover the remaining generic active verbs and the loop-backed hop semantics that the canon roster still lacks in shipped assets.
-
-Do:
-- Extend the timeline payload and builtin execution surface only for the active verbs needed by the child-roster canon set: looped multi-hop damage sequencing, break, status, delay or advance tempo, revive, grant-free-skill, energy grant, and self-targeted tempo side effects where the active catalog actually uses them.
-- Reuse the generic targeting and bounce helpers already living in `src/combat/resolution.rs` instead of re-implementing hop selection in blueprint code.
-- Keep the runtime headless-safe and continue using immutable Bevy world queries from `SkillCtx` helpers via `World::try_query::<&T>()` where read-only ECS inspection is needed.
-- Add or update focused tests so the generic runtime proves loop iteration order, payload-to-intent translation, and failure behavior for malformed payload or missing registry wiring before any broad asset rewrite begins.
-
-Negative tests:
-- Missing or wrong payload type on a builtin hook must still fail loudly at the beat site.
-- Loop chains with exhausted targets or bounded hops must stop deterministically without hidden extra iterations.
-
-Done when: the generic timeline runtime can express the remaining active verb surface needed by the canon assets, and the loop-focused targeted tests pass without relying on the legacy action resolver.
+Extend the timeline payload and builtin execution surface for the remaining active verbs needed by the child-roster canon set, including looped multi-hop damage sequencing, break, status, delay/advance tempo, revive, grant-free-skill, energy grant, and self-targeted tempo side effects. Reuse generic targeting and bounce helpers in src/combat/resolution.rs, keep runtime headless-safe, and add focused tests for loop iteration order, payload-to-intent translation, and malformed payload or missing registry wiring failure behavior.
 
 ## Inputs
 

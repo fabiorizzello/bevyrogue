@@ -321,7 +321,7 @@ pub fn resolve_action_system(
             .map(|g| g.next())
             .unwrap_or(CastId::ROOT);
 
-        if inflight.action.timeline_backed {
+        if inflight.timeline_backed {
             commands.queue(move |world: &mut bevy::prelude::World| {
                 pipeline::run_timeline_backed_action(world, inflight, action_cast_id);
             });

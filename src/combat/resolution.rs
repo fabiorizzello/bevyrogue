@@ -274,7 +274,6 @@ pub fn resolve_action(
         grant_free_skill_count: skill_grant_free_count(&skill.effects),
         status_to_apply: skill_apply_status(&skill.effects),
         advance_pct: skill_advance(&skill.effects),
-        timeline_backed: skill.timeline.is_some(),
         delay_pct: skill_delay(&skill.effects),
         energy_grant: skill_grant_energy(&skill.effects),
         self_advance_pct: skill_self_advance(&skill.effects),

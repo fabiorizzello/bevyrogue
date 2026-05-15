@@ -105,7 +105,7 @@ fn timeline_skill(id: &str) -> SkillDef {
     }
 }
 
-fn legacy_skill(id: &str) -> SkillDef {
+fn damage_timeline_skill(id: &str) -> SkillDef {
     SkillDef {
         id: SkillId(id.into()),
         name: id.into(),
@@ -123,6 +123,32 @@ fn legacy_skill(id: &str) -> SkillDef {
             Effect::Damage { amount: 13, target: TargetShape::Single, per_hop: Default::default() },
             Effect::ToughnessHit(5),
         ],
+        timeline: Some(SkillTimeline {
+            entry: "cast".into(),
+            beats: vec![
+                Beat { id: "cast".into(), kind: BeatKind::Cast, hook: None, selector: None, presentation: None, payload: None },
+                Beat {
+                    id: "damage".into(),
+                    kind: BeatKind::Impact,
+                    hook: Some("core/deal_damage".into()),
+                    selector: Some("core/primary".into()),
+                    presentation: None,
+                    payload: Some(BeatPayload::DealDamage { amount: 13, tag: DamageTag::Physical, target: TargetShape::Single }),
+                },
+                Beat {
+                    id: "break".into(),
+                    kind: BeatKind::Aftermath,
+                    hook: Some("core/apply_effect".into()),
+                    selector: Some("core/primary".into()),
+                    presentation: None,
+                    payload: Some(BeatPayload::BreakToughness { amount: 5, tag: DamageTag::Physical, target: TargetShape::Single }),
+                },
+            ],
+            edges: vec![
+                BeatEdge { from: "cast".into(), to: "damage".into(), gate: Some("core/always".into()) },
+                BeatEdge { from: "damage".into(), to: "break".into(), gate: Some("core/always".into()) },
+            ],
+        }),
         ..Default::default()
     }
 }
@@ -233,9 +259,9 @@ fn event_pos(events: &[CombatEvent], predicate: impl Fn(&CombatEvent) -> bool) -
 
 #[test]
 fn timeline_backed_action_runs_through_beat_runner_and_applier() {
-    let book = SkillBook(vec![timeline_skill("timeline_kernel_demo"), legacy_skill("legacy_slash")]);
+    let book = SkillBook(vec![timeline_skill("timeline_kernel_demo"), damage_timeline_skill("damage_only_demo")]);
     let mut app = build_app(book);
-    let _actor = spawn_actor(&mut app, vec![SkillId("timeline_kernel_demo".into()), SkillId("legacy_slash".into())]);
+    let _actor = spawn_actor(&mut app, vec![SkillId("timeline_kernel_demo".into()), SkillId("damage_only_demo".into())]);
     let target = spawn_target(&mut app);
 
     let mut cursor = app.world_mut().resource_mut::<Messages<CombatEvent>>().get_cursor_current();
@@ -250,7 +276,7 @@ fn timeline_backed_action_runs_through_beat_runner_and_applier() {
     let pos_break = event_pos(&events, |e| matches!(e.kind, CombatEventKind::OnBreak { .. }));
     let pos_status = event_pos(&events, |e| matches!(&e.kind, CombatEventKind::OnStatusApplied { kind } if *kind == StatusEffectKind::Slowed));
     let pos_delay_status = event_pos(&events, |e| matches!(e.kind, CombatEventKind::DelayTurn { amount_pct: 30, .. }));
-    let pos_delay_explicit = event_pos(&events, |e| matches!(e.kind, CombatEventKind::DelayTurn { amount_pct: 80, .. }));
+    let pos_delay_explicit = event_pos(&events, |e| matches!(e.kind, CombatEventKind::DelayTurn { amount_pct: 50, .. }));
     let pos_buff = event_pos(&events, |e| matches!(&e.kind, CombatEventKind::OnStatusApplied { kind } if *kind == StatusEffectKind::Blessed));
     let pos_applied = event_pos(&events, |e| matches!(e.kind, CombatEventKind::OnActionApplied));
     let pos_resolved = event_pos(&events, |e| matches!(e.kind, CombatEventKind::OnActionResolved));
@@ -276,18 +302,18 @@ fn timeline_backed_action_runs_through_beat_runner_and_applier() {
 }
 
 #[test]
-fn legacy_skill_without_timeline_still_uses_effect_resolver() {
-    let book = SkillBook(vec![timeline_skill("timeline_kernel_demo"), legacy_skill("legacy_slash")]);
+fn damage_only_timeline_skill_still_uses_beat_runner() {
+    let book = SkillBook(vec![timeline_skill("timeline_kernel_demo"), damage_timeline_skill("damage_only_demo")]);
     let mut app = build_app(book);
-    let _actor = spawn_actor(&mut app, vec![SkillId("timeline_kernel_demo".into()), SkillId("legacy_slash".into())]);
+    let _actor = spawn_actor(&mut app, vec![SkillId("timeline_kernel_demo".into()), SkillId("damage_only_demo".into())]);
     let target = spawn_target(&mut app);
 
     let mut cursor = app.world_mut().resource_mut::<Messages<CombatEvent>>().get_cursor_current();
-    fire_skill(&mut app, "legacy_slash");
+    fire_skill(&mut app, "damage_only_demo");
 
     let events = collect_events(&app, &mut cursor);
 
-    assert!(events.iter().any(|e| matches!(e.kind, CombatEventKind::OnDamageDealt { .. })), "legacy path must still emit damage events");
-    assert!(!events.iter().any(|e| matches!(e.kind, CombatEventKind::OnStatusApplied { .. })), "legacy damage skill should not emit timeline status events");
-    assert!(app.world().get::<Unit>(target).expect("target missing").hp_current < 200, "legacy skill should still damage the target");
+    assert!(events.iter().any(|e| matches!(e.kind, CombatEventKind::OnDamageDealt { .. })), "timeline damage skill must emit damage events");
+    assert!(!events.iter().any(|e| matches!(e.kind, CombatEventKind::OnStatusApplied { .. })), "damage-only timeline skill should not emit status events");
+    assert!(app.world().get::<Unit>(target).expect("target missing").hp_current < 200, "timeline damage skill should damage the target");
 }

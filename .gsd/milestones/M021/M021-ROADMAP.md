@@ -1,6 +1,6 @@
 # M021: Kernel framework + Timeline FSM + Registry<E>
 
-**Vision:** Un kernel combat che espone solo primitive generiche (`Intent` come unica mutazione, `CompiledTimeline` come unica forma di "skill", `Registry<E: ExtPoint>` come unico asse di estensione, `SkillCtx` come unico contesto, `SignalBus` come bus reattivo, `Clock` two-mode). Niente trait per skill, niente enum effect, niente trait per blueprint. Ogni Digimon = un solo modulo + un solo `register(reg: &mut ExtRegistries)`. Lo skilltree è context immutabile per il run, letto via predicate fn-by-id; abilita/disabilita branch nella FSM senza patch compile-time. Validato da spike standalone (33/33 verde) su 4 pattern architettonicamente distinti.
+**Vision:** Un kernel combat che espone solo primitive generiche (`Intent` come unica mutazione, `CompiledTimeline` come unica forma di skill, `Registry<E: ExtPoint>` come unico asse di estensione, `SkillCtx` come unico contesto, `SignalBus` come bus reattivo, `Clock` two-mode). Niente trait per skill, niente enum effect, niente trait per blueprint. Ogni Digimon = un solo modulo + un solo `register(reg: &mut ExtRegistries)`. Lo skilltree è context immutabile per il run, letto via predicate fn-by-id; abilita/disabilita branch nella FSM senza patch compile-time.
 
 ## Success Criteria
 
@@ -19,13 +19,13 @@
 ## Slices
 
 - [x] **S01: S01** `risk:medium` `depends:[]`
-  > After this: cargo check headless + windowed puliti; CombatPlugin in main.rs; src/combat/api/ con i 7 file primitive; cast_id su CombatEvent; canary Intent::DealDamage end-to-end via intent_applier emette CombatEvent con cast_id corretto.
+  > After this: cargo check headless + windowed puliti; CombatPlugin in main.rs; src/combat/api/ con i 7 file primitive; cast_id su CombatEvent; canary Intent::DealDamage end-to-end.
 
 - [x] **S02: S02** `risk:high` `depends:[]`
   > After this: Fixture OnTurnStart kills target verde; validate_timeline_refs scopre typo; LoopFrame single-level su chain_bolt port.
 
 - [x] **S03: S03** `risk:medium` `depends:[]`
-  > After this: Test DryRun≡Execute≡Preview verde su chain ramificata; two-clock verde; circuit breaker @256.
+  > After this: DryRun≡Execute≡Preview verde; two-clock verde; circuit breaker @256.
 
 - [x] **S04: S04** `risk:high` `depends:[]`
   > After this: Renamon kitsune_grace verde; JSONL Blueprint round-trip; debug_assert mismatch.
@@ -48,7 +48,7 @@
 - [ ] **S10: Patamon + Renamon migrated + kernel digimon-free** `risk:medium` `depends:[S09]`
   > After this: Kernel digimon-free verificato grep; smoke UI 2 encounter.
 
-- [ ] **S11: UI/AI consumers via SkillCtx::Mode::Preview** `risk:low` `depends:[S06,S07]`
+- [ ] **S11: UI and AI consumers via SkillCtx Preview** `risk:low` `depends:[S06,S07]`
   > After this: UI preview damage via stream; AI score ottimale via stream.
 
 - [ ] **S12: RosterEntry blueprint-keyed + ValidationSnapshot from registry** `risk:low` `depends:[S10]`
