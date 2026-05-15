@@ -18,6 +18,7 @@
 pub mod applier;
 pub mod blueprint_state;
 pub mod clock;
+pub mod event_bridge;
 pub mod intent;
 pub mod passive_runner;
 pub mod registry;
@@ -30,6 +31,7 @@ pub mod timeline;
 
 // Stable re-exports for the most-imported types.
 pub use applier::IntentQueue;
+pub use event_bridge::combat_event_to_signal_system;
 pub use blueprint_state::BlueprintState;
 pub use clock::Clock;
 pub use intent::{CastId, CastIdGen, Intent};

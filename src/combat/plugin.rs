@@ -5,6 +5,7 @@ use crate::combat::{
         applier::{intent_applier, IntentQueue},
         blueprint_state::BlueprintState,
         clock::Clock,
+        event_bridge::combat_event_to_signal_system,
         intent::CastIdGen,
         passive_runner::{passive_dispatch_system, PassiveListeners},
         registry::ExtRegistries,
@@ -36,7 +37,20 @@ impl Plugin for CombatPlugin {
             .init_resource::<PassiveListeners>()
             .insert_resource(Clock::default())
             .insert_resource(CombatRng::from_seed(0xDEAD_BEEF))
-            .add_systems(Update, (intent_applier, passive_dispatch_system.after(intent_applier)));
+            .add_systems(
+                Update,
+                (
+                    intent_applier,
+                    combat_event_to_signal_system.after(intent_applier),
+                    passive_dispatch_system.after(combat_event_to_signal_system),
+                ),
+            );
+
+        // Register kernel-side signals in SignalTaxonomy so ult-driven passive
+        // activations pass the debug_assert! gate in intent_applier.
+        app.world_mut()
+            .resource_mut::<SignalTaxonomy>()
+            .register("kernel", "ult_used");
     }
 
     /// Validates all registered `CompiledTimeline`s against `ExtRegistries`.

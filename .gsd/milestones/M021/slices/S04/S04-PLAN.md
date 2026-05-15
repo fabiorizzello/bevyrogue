@@ -48,7 +48,7 @@ Single integration capstone test (tests/passive_kitsune_grace.rs) drives the ful
   - Files: `src/combat/api/passive_runner.rs`, `src/combat/api/runner.rs`, `src/combat/api/mod.rs`, `src/combat/plugin.rs`
   - Verify: cargo test --lib -- combat::api::passive_runner && cargo test --test timeline_mode_parity --test timeline_two_clock_parity --test timeline_circuit_breaker && cargo check && cargo check --features windowed
 
-- [ ] **T04: CombatEvent → Signal bridge for UltimateUsed (D010 precondition, scope-limited)** `est:S`
+- [x] **T04: CombatEvent → Signal bridge for UltimateUsed (D010 precondition, scope-limited)** `est:S`
   Why: Per D010, ult cast must be observable to listener passives (e.g. kitsune_grace) without restructuring the existing turn pipeline. The cheapest path is a small system that reads CombatEvent::UltimateUsed and writes Signal::Blueprint{owner:"kernel",name:"ult_used",payload:UnitTarget(unit_id)} to SignalBus. Research recommendation explicitly scope-limits D010 to this bridge — do NOT touch TacticalCyclePhase.
   - Files: `src/combat/api/event_bridge.rs`, `src/combat/api/mod.rs`, `src/combat/plugin.rs`
   - Verify: cargo test --lib -- combat::api::event_bridge && cargo check && cargo check --features windowed && rg "TacticalCyclePhase::UltInstant" src/
