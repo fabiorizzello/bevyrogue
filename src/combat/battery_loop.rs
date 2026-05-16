@@ -8,6 +8,7 @@ use super::kernel::{
     TacticalCycleTransition,
 };
 use super::observability::BatteryLoopSnapshot;
+use crate::combat::api::intent::CastId;
 
 pub const STATIC_CHARGE_THRESHOLD: u8 = 3;
 pub const CIRCUIT_CHARGE_CAP: u8 = 3;
@@ -36,6 +37,8 @@ pub struct BatteryLoopState {
     pub circuit_charge_cap: u8,
     pub static_charge_threshold: u8,
     pub threshold_grant_emitted_this_cycle: bool,
+    pub block_reaction_armed: bool,
+    pub last_block_reaction_cast_id: Option<CastId>,
     pub last_transition: Option<BatteryLoopTransition>,
     pub last_blocked_reason: Option<BatteryLoopBlockedReason>,
 }
@@ -49,6 +52,8 @@ impl Default for BatteryLoopState {
             circuit_charge_cap: CIRCUIT_CHARGE_CAP,
             static_charge_threshold: STATIC_CHARGE_THRESHOLD,
             threshold_grant_emitted_this_cycle: false,
+            block_reaction_armed: false,
+            last_block_reaction_cast_id: None,
             last_transition: None,
             last_blocked_reason: None,
         }
@@ -61,8 +66,16 @@ impl BatteryLoopState {
             && !self.threshold_grant_emitted_this_cycle
     }
 
-    pub fn snapshot(&self) -> BatteryLoopSnapshot {
-        BatteryLoopSnapshot::from(self)
+    pub fn block_reaction_ready(&self) -> bool {
+        self.block_reaction_armed
+    }
+
+    pub fn arm_block_reaction(&mut self) -> BatteryLoopTransition {
+        apply_battery_loop_transition(self, BatteryLoopTransition::block_ready())
+    }
+
+    pub fn proc_block_reaction(&mut self) -> BatteryLoopTransition {
+        apply_battery_loop_transition(self, BatteryLoopTransition::block_proc())
     }
 
     pub fn gain_static_charge(&mut self, amount: u8) -> BatteryLoopTransition {
@@ -109,6 +122,14 @@ pub fn apply_battery_loop_transition(
         BatteryLoopSignal::BuildStaticCharge => apply_static_charge(state, transition.amount),
         BatteryLoopSignal::BuildCircuitCharge => apply_circuit_charge(state, transition.amount),
         BatteryLoopSignal::SpendCircuitCharge => spend_circuit_charge(state, transition.amount),
+        BatteryLoopSignal::BlockReady => {
+            state.block_reaction_armed = true;
+            transition
+        }
+        BatteryLoopSignal::BlockProc => {
+            state.block_reaction_armed = false;
+            transition
+        }
         BatteryLoopSignal::GrantEnergy
         | BatteryLoopSignal::SelfEnergyGain
         | BatteryLoopSignal::TransferEnergy
@@ -116,6 +137,8 @@ pub fn apply_battery_loop_transition(
             if matches!(transition.signal, BatteryLoopSignal::CycleReset) {
                 state.static_charge = 0;
                 state.threshold_grant_emitted_this_cycle = false;
+                state.block_reaction_armed = false;
+                state.last_block_reaction_cast_id = None;
             }
             transition
         }
@@ -189,6 +212,7 @@ fn apply_static_charge(state: &mut BatteryLoopState, amount: u8) -> BatteryLoopT
 
     if state.threshold_grant_eligible() {
         state.threshold_grant_emitted_this_cycle = true;
+        state.block_reaction_armed = true;
         BatteryLoopTransition::grant_energy(BATTERY_ENERGY_GRANT)
     } else {
         BatteryLoopTransition::build_static_charge(amount)

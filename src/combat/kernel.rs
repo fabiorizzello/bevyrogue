@@ -526,6 +526,8 @@ pub enum BatteryLoopStep {
     BuildStaticCharge { amount: u8 },
     BuildCircuitCharge { amount: u8 },
     SpendCircuitCharge { amount: u8 },
+    BlockReady,
+    BlockProc,
     GrantEnergy { amount: u8 },
     SelfEnergyGain { amount: u8 },
     TransferEnergy { amount: u8 },
@@ -537,6 +539,8 @@ pub enum BatteryLoopSignal {
     BuildStaticCharge,
     BuildCircuitCharge,
     SpendCircuitCharge,
+    BlockReady,
+    BlockProc,
     GrantEnergy,
     SelfEnergyGain,
     TransferEnergy,
@@ -576,6 +580,24 @@ impl BatteryLoopTransition {
         Self {
             signal: BatteryLoopSignal::SpendCircuitCharge,
             amount,
+            attempted: None,
+            reason: None,
+        }
+    }
+
+    pub const fn block_ready() -> Self {
+        Self {
+            signal: BatteryLoopSignal::BlockReady,
+            amount: 0,
+            attempted: None,
+            reason: None,
+        }
+    }
+
+    pub const fn block_proc() -> Self {
+        Self {
+            signal: BatteryLoopSignal::BlockProc,
+            amount: 0,
             attempted: None,
             reason: None,
         }
@@ -1094,6 +1116,7 @@ pub fn register_combat_kernel_runtime(app: &mut App) {
         crate::combat::blueprints::agumon::AgumonPlugin,
         crate::combat::blueprints::patamon::PatamonPlugin,
         crate::combat::blueprints::dorumon::DorumonPlugin,
+        crate::combat::blueprints::tentomon::TentomonPlugin,
     ));
 }
 

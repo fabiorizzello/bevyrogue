@@ -63,6 +63,8 @@ pub struct BatteryLoopSnapshot {
     pub circuit_charge_cap: u8,
     pub static_charge_threshold: u8,
     pub threshold_grant_emitted_this_cycle: bool,
+    pub block_reaction_armed: bool,
+    pub last_block_reaction_cast_id: Option<crate::combat::api::intent::CastId>,
     pub last_transition: Option<BatteryLoopTransition>,
     pub last_blocked_reason: Option<BatteryLoopBlockedReason>,
 }
@@ -76,6 +78,8 @@ impl From<&BatteryLoopState> for BatteryLoopSnapshot {
             circuit_charge_cap: state.circuit_charge_cap,
             static_charge_threshold: state.static_charge_threshold,
             threshold_grant_emitted_this_cycle: state.threshold_grant_emitted_this_cycle,
+            block_reaction_armed: state.block_reaction_armed,
+            last_block_reaction_cast_id: state.last_block_reaction_cast_id,
             last_transition: state.last_transition,
             last_blocked_reason: state.last_blocked_reason,
         }
@@ -580,13 +584,18 @@ fn format_twin_core_transition(transition: TwinCoreTransition) -> String {
 
 pub fn format_battery_loop_snapshot(snapshot: &BatteryLoopSnapshot) -> String {
     format!(
-        "static={}/{} circuit={}/{} threshold={} grant_guard={} last={} blocked={}",
+        "static={}/{} circuit={}/{} threshold={} grant_guard={} block_ready={} last_block_cast={} last={} blocked={}",
         snapshot.static_charge,
         snapshot.static_charge_cap,
         snapshot.circuit_charge,
         snapshot.circuit_charge_cap,
         snapshot.static_charge_threshold,
         snapshot.threshold_grant_emitted_this_cycle,
+        snapshot.block_reaction_armed,
+        snapshot
+            .last_block_reaction_cast_id
+            .map(|cast_id| cast_id.0.get().to_string())
+            .unwrap_or_else(|| "none".to_string()),
         snapshot
             .last_transition
             .map(format_battery_loop_transition)
@@ -609,6 +618,8 @@ fn format_battery_loop_transition(transition: BatteryLoopTransition) -> String {
         super::kernel::BatteryLoopSignal::SpendCircuitCharge => {
             format!("spend-circuit({})", transition.amount)
         }
+        super::kernel::BatteryLoopSignal::BlockReady => "block-ready".to_string(),
+        super::kernel::BatteryLoopSignal::BlockProc => "block-proc".to_string(),
         super::kernel::BatteryLoopSignal::GrantEnergy => {
             format!("grant({})", transition.amount)
         }
@@ -651,6 +662,8 @@ fn format_battery_loop_step(step: super::kernel::BatteryLoopStep) -> String {
         super::kernel::BatteryLoopStep::SpendCircuitCharge { amount } => {
             format!("spend-circuit({amount})")
         }
+        super::kernel::BatteryLoopStep::BlockReady => "block-ready".to_string(),
+        super::kernel::BatteryLoopStep::BlockProc => "block-proc".to_string(),
         super::kernel::BatteryLoopStep::GrantEnergy { amount } => format!("grant({amount})"),
         super::kernel::BatteryLoopStep::SelfEnergyGain { amount } => {
             format!("self-gain({amount})")

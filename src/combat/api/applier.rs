@@ -333,6 +333,12 @@ fn apply_deal_damage(
         .map(|mut ledger| ledger.drain(target))
         .unwrap_or_default();
 
+    let block_reaction_mitigated_pct = reaction_chain
+        .terms()
+        .iter()
+        .find(|term| term.layer == ModifierLayer::Passive)
+        .map(|term| (100 - term.multiplier_pct).clamp(0, 100) as u8);
+
     let mut modifier_chain = ModifierChain::default();
     if src
         .status
@@ -342,7 +348,6 @@ fn apply_deal_damage(
         modifier_chain.push(ModifierLayer::Status, 115);
     }
     modifier_chain.extend(reaction_chain.clone());
-    let modifier_trace = modifier_chain.apply_to(base_damage);
 
     emit_event(
         world,
@@ -354,6 +359,24 @@ fn apply_deal_damage(
         target,
         cast_id,
     );
+
+    let mut tentomon_block_triggered = false;
+    if tgt.unit.name == "Tentomon" {
+        world.resource_scope(|world, mut state: Mut<crate::combat::battery_loop::BatteryLoopState>| {
+            if state.block_reaction_ready() && state.last_block_reaction_cast_id != Some(cast_id) {
+                state.last_block_reaction_cast_id = Some(cast_id);
+                world.resource_scope(|_world, mut rng: Mut<CombatRng>| {
+                    if rng.roll_pct(30) {
+                        modifier_chain.push(ModifierLayer::Passive, 50);
+                        tentomon_block_triggered = true;
+                        let _ = state.proc_block_reaction();
+                    }
+                });
+            }
+        });
+    }
+
+    let modifier_trace = modifier_chain.apply_to(base_damage);
 
     let attack = AttackContext {
         damage_tag: tag,
@@ -393,27 +416,14 @@ fn apply_deal_damage(
         cast_id,
     );
 
-    if reaction_chain
-        .terms()
-        .iter()
-        .any(|term| term.layer == ModifierLayer::Passive)
-    {
-        if let Some(mitigated_pct) = reaction_chain
-            .terms()
-            .iter()
-            .find(|term| term.layer == ModifierLayer::Passive)
-            .map(|term| term.multiplier_pct)
-        {
-            emit_event(
-                world,
-                CombatEventKind::BlockReactionTriggered {
-                    mitigated_pct: mitigated_pct.clamp(0, 255) as u8,
-                },
-                source,
-                target,
-                cast_id,
-            );
-        }
+    if let Some(mitigated_pct) = block_reaction_mitigated_pct.or_else(|| tentomon_block_triggered.then_some(50)) {
+        emit_event(
+            world,
+            CombatEventKind::BlockReactionTriggered { mitigated_pct },
+            source,
+            target,
+            cast_id,
+        );
     }
 
     if hp_after.is_some_and(|hp| hp <= 0) {

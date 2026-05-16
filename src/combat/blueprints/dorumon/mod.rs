@@ -27,6 +27,8 @@ impl Plugin for DorumonPlugin {
         app.init_resource::<identity::PredatorLoopState>()
             .add_systems(Update, identity::apply_predator_loop_transitions_system);
 
+        hooks::register_passive_runtime(app);
+
         app.world_mut()
             .resource_mut::<CombatKernelRegistry>()
             .register(identity::PredatorLoopHook);

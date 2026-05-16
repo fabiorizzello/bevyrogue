@@ -59,17 +59,17 @@ Consumes the shared combat runtime (`CombatPlugin`, `intent_applier`, `SignalBus
   - Files: `src/combat/api/event_filter.rs`, `src/combat/api/event_bridge.rs`, `src/combat/api/passive_runner.rs`, `src/combat/api/signal.rs`, `src/combat/api/mod.rs`, `tests/passive_event_filters.rs`
   - Verify: cargo test --test passive_event_filters
 
-- [ ] **T02: Wire modifier aggregation and pre-damage Block Reaction into damage application** `est:2h`
+- [x] **T02: Wire modifier aggregation and pre-damage Block Reaction into damage application** `est:2h`
   Expected skills: bevy, rust-best-practices, rust-testing, verify-before-complete.
   - Files: `src/combat/modifiers.rs`, `src/combat/api/intent.rs`, `src/combat/api/applier.rs`, `src/combat/damage.rs`, `src/combat/events.rs`, `src/combat/mod.rs`, `tests/block_reaction_pipeline.rs`
   - Verify: cargo test --test block_reaction_pipeline
 
-- [ ] **T03: Migrate Agumon, Gabumon, Patamon, and Renamon passives onto PassiveRunner** `est:2h`
+- [x] **T03: Migrate Agumon, Gabumon, Patamon, and Renamon passives onto PassiveRunner** `est:2h`
   Expected skills: bevy, rust-best-practices, rust-testing, verify-before-complete.
   - Files: `src/combat/blueprints/agumon/mod.rs`, `src/combat/blueprints/gabumon.rs`, `src/combat/blueprints/patamon/mod.rs`, `src/combat/blueprints/renamon.rs`, `src/combat/kernel.rs`, `tests/passive_canon_support.rs`
   - Verify: cargo test --test passive_canon_support
 
-- [ ] **T04: Migrate Dorumon and Tentomon reactive passives and prove deterministic Block Reaction** `est:2h`
+- [x] **T04: Migrate Dorumon and Tentomon reactive passives and prove deterministic Block Reaction** `est:2h`
   Expected skills: bevy, rust-best-practices, rust-testing, verify-before-complete.
   - Files: `src/combat/blueprints/dorumon/mod.rs`, `src/combat/blueprints/dorumon/hooks.rs`, `src/combat/blueprints/tentomon.rs`, `src/combat/battery_loop.rs`, `src/combat/kernel.rs`, `tests/passive_reactive_canon.rs`
   - Verify: cargo test --test passive_reactive_canon
