@@ -29,6 +29,15 @@ pub enum CombatEventKind {
     OnSkillCast {
         skill_id: SkillId,
     },
+    /// Emitted before HP mutation so observers can inspect the raw incoming hit.
+    IncomingDamage {
+        raw_amount: i32,
+        damage_tag: DamageTag,
+    },
+    /// Emitted after a pre-damage modifier has been consumed and committed.
+    BlockReactionTriggered {
+        mitigated_pct: u8,
+    },
     OnDamageDealt {
         amount: i32,
         kind: DamageKind,

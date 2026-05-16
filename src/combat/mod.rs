@@ -62,6 +62,8 @@ pub mod stun;
 pub mod status_effect;
 /// Damage-reduction bag (`DrBag` + `sum_dr`); generic multiplicative DR primitive.
 pub mod buffs;
+/// Ordered modifier aggregation and one-shot incoming-damage ledger.
+pub mod modifiers;
 /// SP pool condiviso (cap 5, gen Basic, +2 extra/round). Vedi D038.
 pub mod sp;
 /// Ultimate charge meter + accumulation triggers.

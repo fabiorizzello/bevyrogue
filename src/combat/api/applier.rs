@@ -12,7 +12,9 @@ use crate::combat::{
     damage::{AttackContext, calculate_damage, triangle_modifiers},
     energy::{Energy, EnergyGainSource, RoundEnergyTracker},
     events::{CombatEvent, CombatEventKind, CombatKernelTransition},
+    modifiers::{DamageModifierLedger, ModifierChain, ModifierLayer},
     round_flags::RoundFlags,
+    buffs::DrBag,
     rng::CombatRng,
     status_effect::{StatusBag, StatusEffectKind, classify_buff_kind},
     stun::Stunned,
@@ -92,6 +94,14 @@ pub fn intent_applier(world: &mut World) {
             } => {
                 apply_buff(world, target, kind, duration_turns, cast_id);
             }
+            Intent::ApplyDamageModifier {
+                target,
+                layer,
+                multiplier_pct,
+                cast_id,
+            } => {
+                apply_damage_modifier(world, target, layer, multiplier_pct, cast_id);
+            }
             Intent::AdvanceTurn {
                 target,
                 amount_pct,
@@ -158,6 +168,8 @@ struct UnitSnapshot {
     unit: Unit,
     team: Team,
     weaknesses: Vec<DamageTag>,
+    status: Option<StatusBag>,
+    dr: Option<DrBag>,
 }
 
 fn emit_event(
@@ -234,8 +246,8 @@ fn emit_event(
 }
 
 fn find_unit_snapshot(world: &mut World, id: UnitId) -> Option<UnitSnapshot> {
-    let mut q = world.query::<(Entity, &Unit, &Team, Option<&Toughness>)>();
-    q.iter(world).find_map(|(entity, unit, team, toughness)| {
+    let mut q = world.query::<(Entity, &Unit, &Team, Option<&Toughness>, Option<&StatusBag>, Option<&DrBag>)>();
+    q.iter(world).find_map(|(entity, unit, team, toughness, status, dr)| {
         (unit.id == id).then(|| UnitSnapshot {
             entity,
             id,
@@ -244,6 +256,8 @@ fn find_unit_snapshot(world: &mut World, id: UnitId) -> Option<UnitSnapshot> {
             weaknesses: toughness
                 .map(|tg| tg.weaknesses.clone())
                 .unwrap_or_default(),
+            status: status.cloned(),
+            dr: dr.cloned(),
         })
     })
 }
@@ -289,9 +303,9 @@ fn apply_deal_damage(
 ) {
     // Snapshot all units to avoid aliased world borrows during calculation.
     let snapshot: Vec<UnitSnapshot> = {
-        let mut q = world.query::<(Entity, &Unit, &Team, Option<&Toughness>)>();
+        let mut q = world.query::<(Entity, &Unit, &Team, Option<&Toughness>, Option<&StatusBag>, Option<&DrBag>)>();
         q.iter(world)
-            .map(|(e, u, team, t)| UnitSnapshot {
+            .map(|(e, u, team, t, status, dr)| UnitSnapshot {
                 entity: e,
                 id: u.id,
                 unit: u.clone(),
@@ -299,6 +313,8 @@ fn apply_deal_damage(
                 weaknesses: t
                     .map(|tg| tg.weaknesses.clone())
                     .unwrap_or_default(),
+                status: status.cloned(),
+                dr: dr.cloned(),
             })
             .collect()
     };
@@ -312,12 +328,47 @@ fn apply_deal_damage(
         return;
     };
 
+    let reaction_chain = world
+        .get_resource_mut::<DamageModifierLedger>()
+        .map(|mut ledger| ledger.drain(target))
+        .unwrap_or_default();
+
+    let mut modifier_chain = ModifierChain::default();
+    if src
+        .status
+        .as_ref()
+        .is_some_and(|bag| bag.has(&StatusEffectKind::Blessed))
+    {
+        modifier_chain.push(ModifierLayer::Status, 115);
+    }
+    modifier_chain.extend(reaction_chain.clone());
+    let modifier_trace = modifier_chain.apply_to(base_damage);
+
+    emit_event(
+        world,
+        CombatEventKind::IncomingDamage {
+            raw_amount: base_damage,
+            damage_tag: tag,
+        },
+        source,
+        target,
+        cast_id,
+    );
+
     let attack = AttackContext {
         damage_tag: tag,
-        base_damage,
+        base_damage: modifier_trace.final_amount,
         is_break: false,
     };
-    let bd = calculate_damage(&src.unit, &attack, &tgt.unit, &tgt.weaknesses, None, 1.0, None);
+    let bd = calculate_damage(
+        &src.unit,
+        &attack,
+        &tgt.unit,
+        &tgt.weaknesses,
+        tgt.status.as_ref(),
+        1.0,
+        tgt.dr.as_ref(),
+    );
 
     let tgt_entity = tgt.entity;
 
@@ -341,6 +392,29 @@ fn apply_deal_damage(
         target,
         cast_id,
     );
+
+    if reaction_chain
+        .terms()
+        .iter()
+        .any(|term| term.layer == ModifierLayer::Passive)
+    {
+        if let Some(mitigated_pct) = reaction_chain
+            .terms()
+            .iter()
+            .find(|term| term.layer == ModifierLayer::Passive)
+            .map(|term| term.multiplier_pct)
+        {
+            emit_event(
+                world,
+                CombatEventKind::BlockReactionTriggered {
+                    mitigated_pct: mitigated_pct.clamp(0, 255) as u8,
+                },
+                source,
+                target,
+                cast_id,
+            );
+        }
+    }
 
     if hp_after.is_some_and(|hp| hp <= 0) {
         world.entity_mut(tgt_entity).insert(Ko);
@@ -526,6 +600,22 @@ fn apply_buff(
         false,
         false,
     );
+}
+
+fn apply_damage_modifier(
+    world: &mut World,
+    target: UnitId,
+    layer: ModifierLayer,
+    multiplier_pct: i32,
+    _cast_id: CastId,
+) {
+    if multiplier_pct == 100 {
+        return;
+    }
+
+    world
+        .resource_mut::<DamageModifierLedger>()
+        .arm(target, layer, multiplier_pct);
 }
 
 fn apply_delay_turn(world: &mut World, target: UnitId, amount_pct: u32, cast_id: CastId) {

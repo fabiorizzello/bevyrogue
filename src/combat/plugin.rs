@@ -13,6 +13,7 @@ use crate::combat::{
         signal::{SignalBus, SignalTaxonomy},
         timeline::{validate_timeline_refs, TimelineLibrary},
     },
+    modifiers::DamageModifierLedger,
     kernel::register_combat_kernel_runtime,
     rng::CombatRng,
 };
@@ -36,6 +37,7 @@ impl Plugin for CombatPlugin {
             .init_resource::<IntentExecutionMeta>()
             .init_resource::<TimelineLibrary<String>>()
             .init_resource::<BlueprintState>()
+            .init_resource::<DamageModifierLedger>()
             .init_resource::<PassiveListeners>()
             .insert_resource(Clock::default())
             .insert_resource(CombatRng::from_seed(0xDEAD_BEEF))

@@ -3,6 +3,7 @@ use std::num::NonZeroU32;
 use bevy::prelude::Resource;
 
 use crate::combat::{
+    modifiers::ModifierLayer,
     status_effect::StatusEffectKind,
     types::{DamageTag, SkillId, UnitId},
 };
@@ -83,6 +84,12 @@ pub enum Intent {
         target: UnitId,
         kind: StatusEffectKind,
         duration_turns: u32,
+        cast_id: CastId,
+    },
+    ApplyDamageModifier {
+        target: UnitId,
+        layer: ModifierLayer,
+        multiplier_pct: i32,
         cast_id: CastId,
     },
     RemoveBuff {
