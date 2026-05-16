@@ -8,8 +8,8 @@ use bevy::log;
 use bevy::prelude::*;
 
 use crate::combat::api::intent::CastId;
-use crate::combat::api::{registry::ExtRegistries, runner::{BeatRunner, StepOutcome}, SkillCtxMode};
-use crate::combat::api::applier::IntentQueue;
+use crate::combat::api::{registry::ExtRegistries, runner::{BeatRunner, StepOutcome}};
+use crate::combat::api::applier::{IntentExecutionMeta, IntentQueue};
 
 use crate::combat::damage::triangle_modifiers;
 use crate::combat::energy::{Energy, EnergyGainSource, RoundEnergyTracker};
@@ -255,38 +255,142 @@ pub(crate) fn run_timeline_backed_action(
     inflight: InFlightAction,
     cast_id: CastId,
 ) {
-    let Some(timeline_library) = world.get_resource::<crate::combat::api::timeline::TimelineLibrary<String>>() else {
-        log::warn!(
-            "timeline-backed action {:?} skipped: TimelineLibrary missing",
-            inflight.action.skill_id
-        );
-        return;
-    };
-    let Some(compiled) = timeline_library
-        .timelines
-        .iter()
-        .find(|timeline| timeline.id == inflight.action.skill_id.0)
-        .cloned()
-    else {
-        log::warn!(
-            "timeline-backed action {:?} skipped: compiled timeline not found",
-            inflight.action.skill_id
-        );
-        return;
-    };
+    let mut fallback_regs = None;
+    let regs_ptr: *const crate::combat::api::registry::ExtRegistries =
+        if let Some(regs) = world.get_resource::<crate::combat::api::registry::ExtRegistries>() {
+            regs as *const _
+        } else {
+            let mut regs = crate::combat::api::registry::ExtRegistries::default();
+            crate::combat::api::builtins::register_kernel_builtins(&mut regs);
+            fallback_regs = Some(regs);
+            fallback_regs
+                .as_ref()
+                .expect("fallback ext registries initialized") as *const _
+        };
 
-    let timeline = std::sync::Arc::new(intern_compiled_timeline(&compiled));
-
-    let regs_ptr = match world.get_resource::<crate::combat::api::registry::ExtRegistries>() {
-        Some(regs) => regs as *const _,
-        None => {
+    let compiled = if let Some(timeline) = world
+        .get_resource::<crate::combat::api::timeline::TimelineLibrary<String>>()
+        .and_then(|library| {
+            library
+                .timelines
+                .iter()
+                .find(|timeline| timeline.id == inflight.action.skill_id.0)
+                .cloned()
+        }) {
+        timeline
+    } else {
+        let Some(book) = world
+            .get_resource::<bevy::prelude::Assets<crate::data::skills_ron::SkillBook>>()
+            .and_then(|assets| {
+                world.get_resource::<crate::data::SkillBookHandle>()
+                    .and_then(|handle| assets.get(&handle.0))
+            })
+        else {
             log::warn!(
-                "timeline-backed action {:?} skipped: ExtRegistries missing",
+                "timeline-backed action {:?} skipped: compiled timeline not found and SkillBook unavailable",
                 inflight.action.skill_id
             );
             return;
-        }
+        };
+
+        let compiled = unsafe {
+            crate::data::skill_timeline::compile_skill_book_timelines(book, &*regs_ptr)
+        };
+        let Ok(compiled) = compiled else {
+            log::warn!(
+                "timeline-backed action {:?} skipped: SkillBook timeline compile failed",
+                inflight.action.skill_id
+            );
+            return;
+        };
+        let Some(timeline) = compiled
+            .into_iter()
+            .find(|timeline| timeline.id == inflight.action.skill_id.0)
+        else {
+            log::warn!(
+                "timeline-backed action {:?} skipped: compiled timeline not found",
+                inflight.action.skill_id
+            );
+            return;
+        };
+        timeline
     };
+
+    let attacker_id = inflight.action.source;
+
+    if inflight.action.sp_cost > 0 {
+        let current_sp = world
+            .get_resource::<SpPool>()
+            .map(|sp| sp.current)
+            .unwrap_or(0);
+        if current_sp < inflight.action.sp_cost {
+            let mut events = world.resource_mut::<bevy::ecs::message::Messages<CombatEvent>>();
+            events.write(CombatEvent {
+                kind: CombatEventKind::OnActionFailed {
+                    reason: "SP shortfall".to_string(),
+                },
+                source: inflight.action.source,
+                target: inflight.action.target,
+                follow_up_depth: inflight.follow_up_depth,
+                cast_id,
+            });
+            events.write(CombatEvent {
+                kind: CombatEventKind::OnActionApplied,
+                source: inflight.action.source,
+                target: inflight.action.target,
+                follow_up_depth: inflight.follow_up_depth,
+                cast_id,
+            });
+            events.write(CombatEvent {
+                kind: CombatEventKind::OnActionResolved,
+                source: inflight.action.source,
+                target: inflight.action.target,
+                follow_up_depth: inflight.follow_up_depth,
+                cast_id,
+            });
+            world.resource_mut::<crate::combat::state::CombatState>().phase = CombatPhase::WaitingAction;
+            return;
+        }
+    }
+
+    if matches!(inflight.action.ult_effect, UltEffect::Reset) {
+        let mut q = world.query::<(&crate::combat::unit::Unit, &crate::combat::ultimate::UltimateCharge)>();
+        let ult_ready = q
+            .iter(world)
+            .find_map(|(unit, ult)| (unit.id == attacker_id).then_some(ult.ready()))
+            .unwrap_or(false);
+        if !ult_ready {
+            let mut events = world.resource_mut::<bevy::ecs::message::Messages<CombatEvent>>();
+            events.write(CombatEvent {
+                kind: CombatEventKind::OnActionFailed {
+                    reason: "SP shortfall".to_string(),
+                },
+                source: inflight.action.source,
+                target: inflight.action.target,
+                follow_up_depth: inflight.follow_up_depth,
+                cast_id,
+            });
+            events.write(CombatEvent {
+                kind: CombatEventKind::OnActionApplied,
+                source: inflight.action.source,
+                target: inflight.action.target,
+                follow_up_depth: inflight.follow_up_depth,
+                cast_id,
+            });
+            events.write(CombatEvent {
+                kind: CombatEventKind::OnActionResolved,
+                source: inflight.action.source,
+                target: inflight.action.target,
+                follow_up_depth: inflight.follow_up_depth,
+                cast_id,
+            });
+            world.resource_mut::<crate::combat::state::CombatState>().phase = CombatPhase::WaitingAction;
+            return;
+        }
+    }
+
+    let timeline = std::sync::Arc::new(intern_compiled_timeline(&compiled));
+
     let mut pending = std::collections::VecDeque::new();
     let mut runner = BeatRunner::new(timeline, cast_id, inflight.action.source, inflight.action.target);
     let outcome = unsafe {
@@ -313,8 +417,46 @@ pub(crate) fn run_timeline_backed_action(
     }
 
     world.init_resource::<IntentQueue>();
+    world.init_resource::<IntentExecutionMeta>();
+    world.init_resource::<crate::combat::api::signal::SignalBus>();
+    world.init_resource::<crate::combat::api::signal::SignalTaxonomy>();
+    world.init_resource::<crate::combat::api::blueprint_state::BlueprintState>();
+    let fallback_signal_pairs: Vec<(String, String)> = world
+        .get_resource::<bevy::prelude::Assets<crate::data::skills_ron::SkillBook>>()
+        .and_then(|assets| {
+            world.get_resource::<crate::data::SkillBookHandle>()
+                .and_then(|handle| assets.get(&handle.0))
+        })
+        .map(|book| {
+            book.0
+                .iter()
+                .flat_map(|skill| {
+                    skill.custom_signals.iter().map(|custom| {
+                        (custom.owner.clone(), custom.signal.clone())
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    {
+        let mut taxonomy = world.resource_mut::<crate::combat::api::signal::SignalTaxonomy>();
+        taxonomy.register("kernel", "ult_used");
+        for (owner, signal) in fallback_signal_pairs {
+            let owner: &'static str = Box::leak(owner.into_boxed_str());
+            let signal: &'static str = Box::leak(signal.into_boxed_str());
+            taxonomy.register(owner, signal);
+        }
+    }
+    world
+        .resource_mut::<IntentExecutionMeta>()
+        .follow_up_depths
+        .insert(cast_id, inflight.follow_up_depth);
     world.resource_mut::<IntentQueue>().0.extend(pending);
     crate::combat::api::applier::intent_applier(world);
+    world
+        .resource_mut::<IntentExecutionMeta>()
+        .follow_up_depths
+        .remove(&cast_id);
 
     let attacker_id = inflight.action.source;
     let ult_effect = inflight.action.ult_effect;
@@ -342,6 +484,15 @@ pub(crate) fn run_timeline_backed_action(
     }
 
     let mut event_writer = world.resource_mut::<bevy::ecs::message::Messages<CombatEvent>>();
+    event_writer.write(CombatEvent {
+        kind: CombatEventKind::OnSkillCast {
+            skill_id: inflight.action.skill_id.clone(),
+        },
+        source: inflight.action.source,
+        target: inflight.action.target,
+        follow_up_depth: inflight.follow_up_depth,
+        cast_id,
+    });
     if matches!(ult_effect, UltEffect::Reset) {
         event_writer.write(CombatEvent {
             kind: CombatEventKind::UltimateUsed { unit_id: attacker_id },

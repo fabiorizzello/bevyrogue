@@ -648,8 +648,8 @@ fn s_m008_s06_break_follow_up_and_ult_timing_trace() {
 
     assert_eq!(
         ult_current(&mut app, renamon.id),
-        0,
-        "timeline-backed root breaks do not yet open the allied follow-up ultimate window"
+        100,
+        "timeline-backed root breaks now open the allied follow-up ultimate window"
     );
 
     app.world_mut().write_message(ActionIntent::Ultimate {
@@ -664,26 +664,26 @@ fn s_m008_s06_break_follow_up_and_ult_timing_trace() {
     let trace = audit_trace(&events, &traces, &log, &[]);
 
     assert!(
-        !traces.iter().any(|entry| {
+        traces.iter().any(|entry| {
             entry.trigger == bevyrogue::combat::kit::FollowUpTrigger::OnEnemyBreak
                 && entry.decision == bevyrogue::combat::follow_up::FollowUpDecision::Scheduled
                 && entry.origin_source == agumon.id
                 && entry.origin_target == UnitId(101)
         }),
-        "timeline-backed root breaks should not yet schedule allied break follow-ups\n{trace}"
+        "timeline-backed root breaks should schedule allied break follow-ups\n{trace}"
     );
     assert!(
-        !events.iter().any(|event| {
+        events.iter().any(|event| {
             matches!(
                 &event.kind,
                 CombatEventKind::UltGain { unit_id, .. }
                     if *unit_id == renamon.id
             )
         }),
-        "unexpected Renamon ult gain before allied follow-up triggers are wired\n{trace}"
+        "expected Renamon ult gain once allied follow-up triggers are wired\n{trace}"
     );
     assert!(
-        !events.iter().any(|event| {
+        events.iter().any(|event| {
             event.source == renamon.id
                 && event.target == UnitId(101)
                 && event.follow_up_depth == 0
@@ -693,7 +693,7 @@ fn s_m008_s06_break_follow_up_and_ult_timing_trace() {
                         if *skill_id == SkillId("renamon_ult".into())
                 )
         }),
-        "Renamon ultimate should stay gated until the allied follow-up charge window exists\n{trace}"
+        "Renamon ultimate should unlock once the allied follow-up charge window exists\n{trace}"
     );
     assert!(
         trace.contains("\"type\":\"summary\"")

@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 
 use bevy::log;
 use bevy::prelude::*;
@@ -21,6 +21,7 @@ use crate::combat::{
     types::{DamageTag, UnitId},
     unit::{Ko, SlotIndex, Unit},
     kit::UnitSkills,
+    log::{ActionLog, LogEntry},
 };
 
 /// Pending `Intent` queue drained each frame by `intent_applier`.
@@ -30,6 +31,13 @@ use crate::combat::{
 /// violate the P001 single-source-of-truth invariant.
 #[derive(Resource, Default)]
 pub struct IntentQueue(pub VecDeque<Intent>);
+
+/// Per-cast execution metadata needed by the intent applier when timeline-backed
+/// actions are resolved outside the legacy `step_app` path.
+#[derive(Resource, Default)]
+pub struct IntentExecutionMeta {
+    pub follow_up_depths: HashMap<CastId, u8>,
+}
 
 /// Exclusive system that drains `IntentQueue` and routes each variant to the
 /// appropriate combat subsystem.
@@ -159,11 +167,68 @@ fn emit_event(
     target: UnitId,
     cast_id: CastId,
 ) {
+    let follow_up_depth = world
+        .get_resource::<IntentExecutionMeta>()
+        .and_then(|meta| meta.follow_up_depths.get(&cast_id).copied())
+        .unwrap_or(0);
+
+    if let Some(mut log) = world.get_resource_mut::<ActionLog>() {
+        match &kind {
+            CombatEventKind::OnDamageDealt { amount, kind, .. } => {
+                log.push(LogEntry::BasicHit {
+                    attacker: source,
+                    target,
+                    amount: *amount,
+                    kind: *kind,
+                });
+            }
+            CombatEventKind::OnBreak { damage_tag } => {
+                log.push(LogEntry::Break {
+                    target,
+                    damage_tag: *damage_tag,
+                });
+            }
+            CombatEventKind::UnitDied { .. } => {
+                log.push(LogEntry::Ko { target });
+            }
+            CombatEventKind::OnRevive { hp_after } => {
+                log.push(LogEntry::Revive {
+                    target,
+                    hp_after: *hp_after,
+                });
+            }
+            CombatEventKind::OnActionFailed { reason } => {
+                log.push(LogEntry::ActionFailed {
+                    reason: reason.clone(),
+                });
+            }
+            CombatEventKind::AdvanceTurn {
+                target: log_target,
+                amount_pct,
+            } => {
+                log.push(LogEntry::AdvanceTurn {
+                    target: *log_target,
+                    amount_pct: *amount_pct,
+                });
+            }
+            CombatEventKind::DelayTurn {
+                target: log_target,
+                amount_pct,
+            } => {
+                log.push(LogEntry::DelayTurn {
+                    target: *log_target,
+                    amount_pct: *amount_pct,
+                });
+            }
+            _ => {}
+        }
+    }
+
     world.resource_mut::<Messages<CombatEvent>>().write(CombatEvent {
         kind,
         source,
         target,
-        follow_up_depth: 0,
+        follow_up_depth,
         cast_id,
     });
 }
@@ -257,26 +322,42 @@ fn apply_deal_damage(
     let tgt_entity = tgt.entity;
 
     // Apply HP mutation.
+    let mut hp_after = None;
     if let Some(mut u) = world.get_mut::<Unit>(tgt_entity) {
         u.hp_current -= bd.final_damage;
+        hp_after = Some(u.hp_current);
     }
 
-    // Emit OnDamageDealt event.
-    world
-        .resource_mut::<Messages<CombatEvent>>()
-        .write(CombatEvent {
-            kind: CombatEventKind::OnDamageDealt {
-                amount: bd.final_damage,
-                kind: DamageKind::Normal,
-                tag_mod_pct: bd.tag_mod_pct,
-                triangle_mod_pct: bd.triangle_mod_pct,
-                damage_tag: tag,
+    emit_event(
+        world,
+        CombatEventKind::OnDamageDealt {
+            amount: bd.final_damage,
+            kind: DamageKind::Normal,
+            tag_mod_pct: bd.tag_mod_pct,
+            triangle_mod_pct: bd.triangle_mod_pct,
+            damage_tag: tag,
+        },
+        source,
+        target,
+        cast_id,
+    );
+
+    if hp_after.is_some_and(|hp| hp <= 0) {
+        world.entity_mut(tgt_entity).insert(Ko);
+        emit_event(
+            world,
+            CombatEventKind::UnitDied {
+                status_remaining: vec![],
+                heated_remaining: 0,
             },
             source,
             target,
-            follow_up_depth: 0,
             cast_id,
-        });
+        );
+        if src.team != tgt.team {
+            emit_event(world, CombatEventKind::OnEnemyKill, source, target, cast_id);
+        }
+    }
 }
 
 fn apply_break_toughness(

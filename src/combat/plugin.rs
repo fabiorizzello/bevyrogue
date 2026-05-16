@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::combat::{
     api::{
-        applier::{intent_applier, IntentQueue},
+        applier::{intent_applier, IntentExecutionMeta, IntentQueue},
         blueprint_state::BlueprintState,
         builtins::register_kernel_builtins,
         clock::Clock,
@@ -33,6 +33,7 @@ impl Plugin for CombatPlugin {
             .init_resource::<SignalTaxonomy>()
             .init_resource::<CastIdGen>()
             .init_resource::<IntentQueue>()
+            .init_resource::<IntentExecutionMeta>()
             .init_resource::<TimelineLibrary<String>>()
             .init_resource::<BlueprintState>()
             .init_resource::<PassiveListeners>()
