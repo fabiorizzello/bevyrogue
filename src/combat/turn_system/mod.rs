@@ -321,9 +321,69 @@ pub fn resolve_action_system(
             .map(|g| g.next())
             .unwrap_or(CastId::ROOT);
 
-        commands.queue(move |world: &mut bevy::prelude::World| {
-            pipeline::run_timeline_backed_action(world, inflight, action_cast_id);
-        });
+        let use_timeline = skill_book_handle
+            .as_ref()
+            .and_then(|h| skill_books.get(&h.0))
+            .and_then(|book| book.0.iter().find(|skill| skill.id == inflight.action.skill_id))
+            .and_then(|skill| skill.timeline.as_ref())
+            .is_some();
+
+        if use_timeline {
+            commands.queue(move |world: &mut bevy::prelude::World| {
+                pipeline::run_timeline_backed_action(world, inflight, action_cast_id);
+            });
+        } else {
+            pipeline::step_app(
+                &mut commands,
+                &inflight,
+                &mut state,
+                &mut sp,
+                &mut log,
+                &mut turn_order,
+                &time,
+                &mut event_writer,
+                registry.as_deref(),
+                &mut actors,
+                &mut combat_rng,
+                &mut energy_q,
+                action_cast_id,
+            );
+
+            emit_combat_event(
+                &mut event_writer,
+                CombatEventKind::OnActionApplied,
+                inflight.action.source,
+                inflight.action.target,
+                0,
+                CastId::ROOT,
+            );
+            emit_combat_beat(
+                &mut event_writer,
+                registry.as_deref(),
+                CombatBeatId::Applied,
+                inflight.action.source,
+                inflight.action.target,
+                0,
+                CastId::ROOT,
+            );
+            emit_combat_event(
+                &mut event_writer,
+                CombatEventKind::OnActionResolved,
+                inflight.action.source,
+                inflight.action.target,
+                0,
+                CastId::ROOT,
+            );
+            emit_combat_beat(
+                &mut event_writer,
+                registry.as_deref(),
+                CombatBeatId::Resolved,
+                inflight.action.source,
+                inflight.action.target,
+                0,
+                CastId::ROOT,
+            );
+        }
     }
 }
 

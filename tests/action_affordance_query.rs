@@ -43,6 +43,7 @@ fn unit(
         toughness: None,
         ..Default::default()
     }
+}
 
 fn actor_with_skills(
     mut unit: UnitQuerySnapshot,
@@ -83,6 +84,7 @@ fn snapshot_with(
         target_unit: None,
         units,
     }
+}
 
 fn basic_attack_skill(id: &str) -> SkillDef {
     SkillDef {
@@ -108,6 +110,7 @@ fn basic_attack_skill(id: &str) -> SkillDef {
         qte: None,
         timeline: None,
     }
+}
 
 fn offensive_skill(id: &str, sp_cost: i32) -> SkillDef {
     SkillDef {
@@ -133,6 +136,7 @@ fn offensive_skill(id: &str, sp_cost: i32) -> SkillDef {
         qte: None,
         timeline: None,
     }
+}
 
 fn any_target_skill(id: &str) -> SkillDef {
     SkillDef {
@@ -158,6 +162,7 @@ fn any_target_skill(id: &str) -> SkillDef {
         qte: None,
         timeline: None,
     }
+}
 
 fn hidden_self_only_skill() -> SkillDef {
     SkillDef {
@@ -181,6 +186,7 @@ fn hidden_self_only_skill() -> SkillDef {
         qte: None,
         timeline: None,
     }
+}
 
 fn revive_skill() -> SkillDef {
     SkillDef {
@@ -202,6 +208,7 @@ fn revive_skill() -> SkillDef {
         qte: None,
         timeline: None,
     }
+}
 
 fn damaged_ally_skill() -> SkillDef {
     SkillDef {
@@ -227,6 +234,7 @@ fn damaged_ally_skill() -> SkillDef {
         qte: None,
         timeline: None,
     }
+}
 
 fn row_skill() -> SkillDef {
     SkillDef {
@@ -252,6 +260,7 @@ fn row_skill() -> SkillDef {
         qte: None,
         timeline: None,
     }
+}
 
 fn deferred_row_skill() -> SkillDef {
     SkillDef {
@@ -259,8 +268,8 @@ fn deferred_row_skill() -> SkillDef {
             reason: LegalityReasonCode::UnimplementedTargetShape,
         },
         ..row_skill()
-        timeline: None,
     }
+}
 
 fn hidden_row_skill() -> SkillDef {
     SkillDef {
@@ -268,8 +277,8 @@ fn hidden_row_skill() -> SkillDef {
             reason: LegalityReasonCode::EnemyTraitDeferred,
         },
         ..row_skill()
-        timeline: None,
     }
+}
 
 fn skill_book(skills: Vec<SkillDef>) -> SkillBook {
     SkillBook(skills)

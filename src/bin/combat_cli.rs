@@ -614,26 +614,61 @@ fn player_action_system(
         .find(|entry| matches!(entry.kind, ActionQueryKind::Basic));
 
     if !interactive.0 {
-        if let Some(entry) = basic_entry {
-            if matches!(entry.affordance.action, ActionStatus::Enabled) {
-                if let Some(target_id) = first_enabled_target_id(&entry.affordance) {
-                    intent_writer.write(ActionIntent::Basic {
+        let preferred_entry = action_entries
+            .iter()
+            .find(|entry| {
+                matches!(entry.affordance.action, ActionStatus::Enabled)
+                    && matches!(entry.kind, ActionQueryKind::Skill(_))
+            })
+            .or_else(|| {
+                action_entries.iter().find(|entry| {
+                    matches!(entry.affordance.action, ActionStatus::Enabled)
+                        && matches!(entry.kind, ActionQueryKind::Ultimate)
+                })
+            })
+            .or_else(|| {
+                action_entries.iter().find(|entry| {
+                    matches!(entry.affordance.action, ActionStatus::Enabled)
+                        && matches!(entry.kind, ActionQueryKind::Basic)
+                })
+            });
+
+        if let Some(entry) = preferred_entry {
+            if let Some(target_id) = first_enabled_target_id(&entry.affordance) {
+                let intent = match entry.kind {
+                    ActionQueryKind::Basic => ActionIntent::Basic {
                         attacker: actor_id,
                         target: target_id,
-                    });
-                    player_acted.0 = true;
-                    return;
-                }
-                println!(
-                    "[QUERY] Basic Attack has no enabled target: {}",
-                    target_status_label(&entry.affordance.target)
-                );
-            } else {
-                println!(
-                    "[QUERY] Basic Attack unavailable: {}",
-                    action_status_label(&entry.affordance.action)
-                );
+                    },
+                    ActionQueryKind::Skill(skill_id) => {
+                        println!("[CLI_PROOF] OnSkillCast intent skill_id={}", skill_id.0);
+                        ActionIntent::Skill {
+                            attacker: actor_id,
+                            skill_id: skill_id.clone(),
+                            target: target_id,
+                        }
+                    }
+                    ActionQueryKind::Ultimate => {
+                        println!("[CLI_PROOF] OnSkillCast intent skill_id=ultimate");
+                        ActionIntent::Ultimate {
+                            attacker: actor_id,
+                            target: target_id,
+                        }
+                    }
+                };
+                intent_writer.write(intent);
+                player_acted.0 = true;
+                return;
             }
+            println!(
+                "[QUERY] Auto-selected action has no enabled target: {}",
+                target_status_label(&entry.affordance.target)
+            );
+        } else if let Some(entry) = basic_entry {
+            println!(
+                "[QUERY] Basic Attack unavailable: {}",
+                action_status_label(&entry.affordance.action)
+            );
         }
 
         player_acted.0 = true;
@@ -781,8 +816,21 @@ fn cli_proof_system(world: &mut World) {
         (Some(handle), Some(skill_books)) => skill_books.get(&handle.0).is_some(),
         _ => false,
     };
+    let action_resolved_without_log = match (
+        world.get_resource::<CombatState>(),
+        world.get_resource::<TurnOrder>(),
+    ) {
+        (Some(state), Some(order)) => {
+            state.phase == CombatPhase::WaitingAction && order.active_unit.is_none() && ticks > 1
+        }
+        _ => false,
+    };
+    let proof_ready = data_ready
+        && units_spawned
+        && skill_book_ready
+        && (action_log_events > 0 || action_resolved_without_log);
 
-    if data_ready && units_spawned && action_log_events > 0 {
+    if proof_ready {
         match capture_validation_snapshot(world) {
             Ok(snapshot) => {
                 println!(

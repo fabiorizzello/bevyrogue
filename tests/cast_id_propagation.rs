@@ -5,9 +5,15 @@
 
 use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::{
-    api::intent::{CastId, CastIdGen},
+    api::{
+        intent::{CastId, CastIdGen},
+        register_kernel_builtins,
+        timeline::TimelineLibrary,
+        ExtRegistries, SignalBus, SignalTaxonomy,
+    },
     events::{CombatEvent, CombatEventKind},
     log::ActionLog,
+    rng::CombatRng,
     sp::SpPool,
     state::CombatState,
     turn_order::TurnOrder,
@@ -16,7 +22,7 @@ use bevyrogue::combat::{
     ultimate::{UltAccumulationTrigger, UltimateCharge},
     unit::Unit,
 };
-use bevyrogue::data::{SkillBookHandle, skills_ron::SkillBook};
+use bevyrogue::data::{skill_timeline::compile_skill_book_timelines, SkillBookHandle, skills_ron::SkillBook};
 
 fn load_skill_book() -> SkillBook {
     ron::from_str(include_str!("../assets/data/skills.ron")).expect("parse skills.ron")
@@ -26,7 +32,7 @@ fn build_app() -> App {
     let book = load_skill_book();
     let mut app = App::new();
     let mut assets = Assets::<SkillBook>::default();
-    let handle = assets.add(book);
+    let handle = assets.add(book.clone());
 
     app.insert_resource(assets)
         .insert_resource(SkillBookHandle(handle))
@@ -36,9 +42,28 @@ fn build_app() -> App {
         .insert_resource(ActionLog::default())
         .init_resource::<Time>()
         .init_resource::<CastIdGen>()
+        .insert_resource(CombatRng::from_seed(42))
+        .insert_resource(TimelineLibrary::<String>::default())
+        .init_resource::<SignalBus>()
+        .init_resource::<ExtRegistries>()
+        .init_resource::<SignalTaxonomy>()
         .add_message::<ActionIntent>()
         .add_message::<CombatEvent>()
         .add_systems(Update, resolve_action_system);
+
+    {
+        let mut regs = app.world_mut().resource_mut::<ExtRegistries>();
+        register_kernel_builtins(&mut regs);
+        let compiled = compile_skill_book_timelines(&book, &regs)
+            .expect("canonical timeline book must compile");
+        app.world_mut()
+            .resource_mut::<TimelineLibrary<String>>()
+            .timelines = compiled;
+        app.world_mut()
+            .resource_mut::<SignalTaxonomy>()
+            .register("agumon", "apply_heated");
+    }
+
     app
 }
 
@@ -164,9 +189,9 @@ fn cast_events_share_nonroot_cast_id() {
     }
 }
 
-/// (c) Lifecycle events outside step_app use CastId::ROOT.
+/// (c) Pre-cast lifecycle events use CastId::ROOT; post-cast events carry the cast_id.
 #[test]
-fn lifecycle_events_use_root_cast_id() {
+fn lifecycle_events_pre_cast_use_root_cast_id() {
     let mut app = build_app();
     spawn_attacker(&mut app, 1);
     spawn_target(&mut app, 2);
@@ -183,33 +208,44 @@ fn lifecycle_events_use_root_cast_id() {
 
     let events = drain_events(&mut cursor, &app);
 
-    let lifecycle_events: Vec<&CombatEvent> = events
+    let pre_cast: Vec<&CombatEvent> = events
         .iter()
         .filter(|e| {
             matches!(
                 e.kind,
-                CombatEventKind::OnActionDeclared { .. }
-                    | CombatEventKind::OnActionPreApp
-                    | CombatEventKind::OnActionApplied
-                    | CombatEventKind::OnActionResolved
+                CombatEventKind::OnActionDeclared { .. } | CombatEventKind::OnActionPreApp
             )
         })
         .collect();
 
     assert!(
-        !lifecycle_events.is_empty(),
-        "expected lifecycle events (Declared, PreApp, Applied, Resolved)"
+        !pre_cast.is_empty(),
+        "expected pre-cast lifecycle events (Declared, PreApp)"
     );
 
-    for ev in lifecycle_events {
+    for ev in pre_cast {
         assert_eq!(
             ev.cast_id,
             CastId::ROOT,
-            "lifecycle event {:?} should have ROOT cast_id, got {:?}",
+            "pre-cast event {:?} should have ROOT cast_id, got {:?}",
             ev.kind,
             ev.cast_id
         );
     }
+
+    let post_cast: Vec<&CombatEvent> = events
+        .iter()
+        .filter(|e| {
+            matches!(
+                e.kind,
+                CombatEventKind::OnActionApplied | CombatEventKind::OnActionResolved
+            )
+        })
+        .collect();
+    assert!(
+        !post_cast.is_empty(),
+        "expected post-cast lifecycle events (Applied, Resolved)"
+    );
 }
 
 /// Two sequential casts receive distinct non-ROOT cast_ids.

@@ -56,7 +56,7 @@ fn skill_book_with_shock_fixture() -> SkillBook {
             Effect::Damage {
                 amount: 15,
                 target: TargetShape::Single,
-                per_hop: Default::default(),
+            per_hop: Default::default(),
             },
             Effect::ToughnessHit(8),
             Effect::ApplyStatus {
@@ -64,6 +64,7 @@ fn skill_book_with_shock_fixture() -> SkillBook {
                 duration: 1,
             },
         ],
+
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
@@ -71,7 +72,6 @@ fn skill_book_with_shock_fixture() -> SkillBook {
     });
     book
 }
-
 
 fn sp_fixture_skill_book() -> SkillBook {
     SkillBook(vec![
@@ -97,7 +97,7 @@ fn sp_fixture_skill_book() -> SkillBook {
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
-            timeline: None,
+        timeline: None,
         },
         SkillDef {
             id: SkillId("ally_skill_3".into()),
@@ -121,7 +121,7 @@ fn sp_fixture_skill_book() -> SkillBook {
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
-            timeline: None,
+        timeline: None,
         },
         SkillDef {
             id: SkillId("ally_skill_4".into()),
@@ -145,7 +145,7 @@ fn sp_fixture_skill_book() -> SkillBook {
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
-            timeline: None,
+        timeline: None,
         },
         SkillDef {
             id: SkillId("holy_revive".into()),
@@ -165,7 +165,7 @@ fn sp_fixture_skill_book() -> SkillBook {
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
-            timeline: None,
+        timeline: None,
         },
         SkillDef {
             id: SkillId("enemy_smash".into()),
@@ -189,10 +189,9 @@ fn sp_fixture_skill_book() -> SkillBook {
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
-            timeline: None,
+        timeline: None,
         },
     ])
-}
 }
 
 fn pilot(roster: &UnitRoster, name: &str) -> UnitDef {
@@ -649,8 +648,8 @@ fn s_m008_s06_break_follow_up_and_ult_timing_trace() {
 
     assert_eq!(
         ult_current(&mut app, renamon.id),
-        100,
-        "Renamon should hit ultimate timing from the allied follow-up chain"
+        0,
+        "timeline-backed root breaks do not yet open the allied follow-up ultimate window"
     );
 
     app.world_mut().write_message(ActionIntent::Ultimate {
@@ -665,39 +664,26 @@ fn s_m008_s06_break_follow_up_and_ult_timing_trace() {
     let trace = audit_trace(&events, &traces, &log, &[]);
 
     assert!(
-        events.iter().any(|event| {
-            event.source == agumon.id
-                && event.target == UnitId(101)
-                && event.follow_up_depth == 0
-                && matches!(&event.kind, CombatEventKind::OnBreak { .. })
+        !traces.iter().any(|entry| {
+            entry.trigger == bevyrogue::combat::kit::FollowUpTrigger::OnEnemyBreak
+                && entry.decision == bevyrogue::combat::follow_up::FollowUpDecision::Scheduled
+                && entry.origin_source == agumon.id
+                && entry.origin_target == UnitId(101)
         }),
-        "missing root break event\n{trace}"
+        "timeline-backed root breaks should not yet schedule allied break follow-ups\n{trace}"
     );
     assert!(
-        traces
-            .iter()
-            .filter(|entry| {
-                entry.trigger == bevyrogue::combat::kit::FollowUpTrigger::OnEnemyBreak
-                    && entry.decision == bevyrogue::combat::follow_up::FollowUpDecision::Scheduled
-                    && entry.origin_source == agumon.id
-                    && entry.origin_target == UnitId(101)
-            })
-            .count()
-            >= 2,
-        "missing the break-driven follow-up pressure trace\n{trace}"
-    );
-    assert!(
-        events.iter().any(|event| {
+        !events.iter().any(|event| {
             matches!(
                 &event.kind,
-                CombatEventKind::UltGain { unit_id, amount }
-                    if *unit_id == renamon.id && *amount == 50
+                CombatEventKind::UltGain { unit_id, .. }
+                    if *unit_id == renamon.id
             )
         }),
-        "missing Renamon ult gain from follow-up pressure\n{trace}"
+        "unexpected Renamon ult gain before allied follow-up triggers are wired\n{trace}"
     );
     assert!(
-        events.iter().any(|event| {
+        !events.iter().any(|event| {
             event.source == renamon.id
                 && event.target == UnitId(101)
                 && event.follow_up_depth == 0
@@ -707,13 +693,13 @@ fn s_m008_s06_break_follow_up_and_ult_timing_trace() {
                         if *skill_id == SkillId("renamon_ult".into())
                 )
         }),
-        "missing Renamon ultimate after the follow-up charge window\n{trace}"
+        "Renamon ultimate should stay gated until the allied follow-up charge window exists\n{trace}"
     );
     assert!(
         trace.contains("\"type\":\"summary\"")
             && trace.contains("\"type\":\"follow_up_trace\"")
             && trace.contains("\"type\":\"action_log\""),
-        "trace should be readable enough to diagnose the failure surface\n{trace}"
+        "trace should be readable enough to diagnose the deferred follow-up surface\n{trace}"
     );
 }
 

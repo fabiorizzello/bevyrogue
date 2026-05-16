@@ -316,7 +316,41 @@ pub(crate) fn run_timeline_backed_action(
     world.resource_mut::<IntentQueue>().0.extend(pending);
     crate::combat::api::applier::intent_applier(world);
 
+    let attacker_id = inflight.action.source;
+    let ult_effect = inflight.action.ult_effect;
+
+    if matches!(ult_effect, UltEffect::Reset) || matches!(ult_effect, UltEffect::GainFromBasic) {
+        let mut q = world.query::<(&crate::combat::unit::Unit, &mut crate::combat::ultimate::UltimateCharge)>();
+        for (unit, mut ult) in q.iter_mut(world) {
+            if unit.id == attacker_id {
+                match ult_effect {
+                    UltEffect::Reset => { ult.current = 0; }
+                    UltEffect::GainFromBasic => {
+                        let cpe = ult.charge_per_event;
+                        ult.try_add(cpe);
+                    }
+                    UltEffect::None => {}
+                }
+                break;
+            }
+        }
+    }
+
+    if inflight.action.sp_cost > 0 {
+        let mut sp = world.resource_mut::<SpPool>();
+        sp.spend(inflight.action.sp_cost);
+    }
+
     let mut event_writer = world.resource_mut::<bevy::ecs::message::Messages<CombatEvent>>();
+    if matches!(ult_effect, UltEffect::Reset) {
+        event_writer.write(CombatEvent {
+            kind: CombatEventKind::UltimateUsed { unit_id: attacker_id },
+            source: attacker_id,
+            target: inflight.action.target,
+            follow_up_depth: inflight.follow_up_depth,
+            cast_id,
+        });
+    }
     event_writer.write(CombatEvent {
         kind: CombatEventKind::OnActionApplied,
         source: inflight.action.source,

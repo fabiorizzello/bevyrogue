@@ -1,4 +1,4 @@
-# M021: Kernel framework + Timeline FSM + Registry<E>
+# M021: M021: Kernel framework + Timeline FSM + Registry<E>
 
 **Vision:** Un kernel combat che espone solo primitive generiche (`Intent` come unica mutazione, `CompiledTimeline` come unica forma di skill, `Registry<E: ExtPoint>` come unico asse di estensione, `SkillCtx` come unico contesto, `SignalBus` come bus reattivo, `Clock` two-mode). Niente trait per skill, niente enum effect, niente trait per blueprint. Ogni Digimon = un solo modulo + un solo `register(reg: &mut ExtRegistries)`. Lo skilltree è context immutabile per il run, letto via predicate fn-by-id; abilita/disabilita branch nella FSM senza patch compile-time.
 
@@ -53,6 +53,8 @@
 
 - [ ] **S12: RosterEntry blueprint-keyed + ValidationSnapshot from registry** `risk:low` `depends:[S10]`
   > After this: Test 'add new digimon' modifica solo le 2 dir; suite verde.
+
+## Boundary Map
 
 ## Boundary Map
 

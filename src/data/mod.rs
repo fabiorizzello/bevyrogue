@@ -116,7 +116,10 @@ fn sync_skill_book_on_load(
     books: Res<Assets<SkillBook>>,
     regs: Res<ExtRegistries>,
     mut library: ResMut<TimelineLibrary<String>>,
+    mut taxonomy: ResMut<crate::combat::api::signal::SignalTaxonomy>,
 ) {
+    use crate::combat::api::timeline::{BeatKind, BeatPayload};
+
     let Some(handle) = handle else {
         return;
     };
@@ -136,6 +139,28 @@ fn sync_skill_book_on_load(
             }
             let compiled = compile_skill_book_timelines(book, &regs)
                 .unwrap_or_else(|e| panic!("SkillBook timeline compilation failed: {e}"));
+
+            for timeline in &compiled {
+                for beat in &timeline.beats {
+                    if let Some(BeatPayload::BlueprintSignal { owner, name, .. }) = &beat.payload {
+                        taxonomy.register(
+                            Box::leak(owner.clone().into_boxed_str()),
+                            Box::leak(name.clone().into_boxed_str()),
+                        );
+                    }
+                    if let BeatKind::Loop { body, .. } = &beat.kind {
+                        for inner in body {
+                            if let Some(BeatPayload::BlueprintSignal { owner, name, .. }) = &inner.payload {
+                                taxonomy.register(
+                                    Box::leak(owner.clone().into_boxed_str()),
+                                    Box::leak(name.clone().into_boxed_str()),
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+
             info!(
                 "skill timeline library loaded: {} compiled timelines",
                 compiled.len()

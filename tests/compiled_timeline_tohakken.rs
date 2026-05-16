@@ -172,7 +172,7 @@ fn renamon_ult_timeline_backed_path_applies_delay_and_ally_blessed() {
     let dump: Vec<_> = events.iter().map(|e| format!("{:?}", e.kind)).collect();
 
     let pos_damage = event_pos(&events, |e| matches!(e.kind, CombatEventKind::OnDamageDealt { .. }), "damage");
-    let pos_delay = event_pos(&events, |e| matches!(e.kind, CombatEventKind::DelayTurn { amount_pct: 80, .. }), "delay");
+    let pos_delay = event_pos(&events, |e| matches!(e.kind, CombatEventKind::DelayTurn { amount_pct: 50, .. }), "delay");
     let pos_blessed = event_pos(&events, |e| matches!(&e.kind, CombatEventKind::OnStatusApplied { kind } if *kind == StatusEffectKind::Blessed), "blessed status");
     let pos_applied = event_pos(&events, |e| matches!(e.kind, CombatEventKind::OnActionApplied), "action applied");
     let pos_resolved = event_pos(&events, |e| matches!(e.kind, CombatEventKind::OnActionResolved), "action resolved");

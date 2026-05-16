@@ -1,6 +1,6 @@
 ---
 estimated_steps: 1
-estimated_files: 12
+estimated_files: 18
 skills_used: []
 ---
 
@@ -45,10 +45,7 @@ Rewrite the remaining inline test fixtures that depend on SkillDef.effects so th
 
 ## Verification
 
-cargo test
-cargo check
-cargo check --features windowed
-bash -lc '! rg -n "enum Effect|timeline_backed|apply_effects\\(|effects:" src tests assets/data/skills.ron'
+bash tools/verify_m021_s06_t04.sh
 
 ## Observability Impact
 
