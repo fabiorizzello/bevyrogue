@@ -206,7 +206,7 @@ pub enum DamageCurve {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub enum Effect {
+pub enum LegacyEffect {
     Damage {
         amount: i32,
         target: TargetShape,
@@ -247,6 +247,8 @@ pub enum Effect {
     },
 }
 
+pub use LegacyEffect as Effect;
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(deny_unknown_fields)]
 pub struct SkillDef {
@@ -256,7 +258,7 @@ pub struct SkillDef {
     pub sp_cost: i32,
     pub targeting: SkillTargeting,
     pub implementation: SkillImplementation,
-    pub effects: Vec<Effect>,
+    pub legacy_ops: Vec<LegacyEffect>,
     #[serde(default)]
     pub custom_signals: Vec<SkillCustomSignal>,
     /// Optional sequence of animation steps for visual polish.
@@ -317,7 +319,7 @@ fn validation_error(
 }
 
 fn skill_has_effect(skill: &SkillDef, predicate: impl Fn(&Effect) -> bool) -> bool {
-    skill.effects.iter().any(predicate)
+    skill.legacy_ops.iter().any(predicate)
 }
 
 const CANON_STATUS_IDS: &[&str] = &["heated", "chilled", "paralyzed", "slowed", "blessed"];
@@ -325,7 +327,7 @@ const CANON_STATUS_IDS: &[&str] = &["heated", "chilled", "paralyzed", "slowed", 
 fn validate_skill_def(skill: &SkillDef) -> Result<(), SkillBookValidationError> {
     use crate::combat::status_effect::StatusEffectKind;
 
-    for effect in &skill.effects {
+    for effect in &skill.legacy_ops {
         if let Effect::ApplyStatus { kind, .. } = effect {
             if matches!(kind, StatusEffectKind::Burn | StatusEffectKind::Shock) {
                 return Err(validation_error(
@@ -384,7 +386,7 @@ fn validate_skill_def(skill: &SkillDef) -> Result<(), SkillBookValidationError> 
     }
 
     if has_damage {
-        for (target, per_hop) in skill.effects.iter().filter_map(|effect| match effect {
+        for (target, per_hop) in skill.legacy_ops.iter().filter_map(|effect| match effect {
             Effect::Damage { target, per_hop, .. } => Some((*target, per_hop)),
             _ => None,
         }) {
@@ -517,7 +519,7 @@ fn validate_skill_def(skill: &SkillDef) -> Result<(), SkillBookValidationError> 
         }
     }
 
-    for effect in &skill.effects {
+    for effect in &skill.legacy_ops {
         if let Effect::Heal { target, .. } = effect {
             match target {
                 TargetShape::Bounce { .. }
@@ -538,7 +540,7 @@ fn validate_skill_def(skill: &SkillDef) -> Result<(), SkillBookValidationError> 
         }
     }
 
-    for effect in &skill.effects {
+    for effect in &skill.legacy_ops {
         if let Effect::Cleanse { target, .. } = effect {
             match target {
                 TargetShape::Bounce { .. }
@@ -559,8 +561,8 @@ fn validate_skill_def(skill: &SkillDef) -> Result<(), SkillBookValidationError> 
         }
     }
 
-    let has_heal = skill.effects.iter().any(|e| matches!(e, Effect::Heal { .. }));
-    let has_cleanse = skill.effects.iter().any(|e| matches!(e, Effect::Cleanse { .. }));
+    let has_heal = skill.legacy_ops.iter().any(|e| matches!(e, Effect::Heal { .. }));
+    let has_cleanse = skill.legacy_ops.iter().any(|e| matches!(e, Effect::Cleanse { .. }));
     if has_heal && has_cleanse {
         return Err(validation_error(
             skill,
@@ -610,7 +612,7 @@ mod tests {
             sp_cost: 4,
             targeting: offensive_targeting(TargetShape::Single),
             implementation: SkillImplementation::Implemented,
-            effects: vec![
+            legacy_ops: vec![
                 Effect::Damage {
                     amount: 18,
                     target: TargetShape::Single,
@@ -803,7 +805,7 @@ mod tests {
                 damage_tag: Fire,
                 sp_cost: 0,
                 implementation: Implemented,
-                effects: [Damage(amount: 1, target: Single)]
+                legacy_ops: [Damage(amount: 1, target: Single)]
             )"#,
         )
         .expect_err("missing targeting must fail parse");
@@ -826,7 +828,7 @@ mod tests {
                 targeting: (shape: Single, side: Enemy, life: Alive, self_rule: Forbid),
                 implementation: Implemented,
                 bogus_field: true,
-                effects: [Damage(amount: 1, target: Single)]
+                legacy_ops: [Damage(amount: 1, target: Single)]
             )"#,
         )
         .expect_err("unknown field must fail parse");
@@ -854,7 +856,7 @@ mod tests {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![Effect::Damage {
+            legacy_ops: vec![Effect::Damage {
                 amount: 10,
                 target: TargetShape::Row,
                 per_hop: DamageCurve::Constant,
@@ -885,7 +887,7 @@ mod tests {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![Effect::Revive(25)],
+            legacy_ops: vec![Effect::Revive(25)],
             ..Default::default()
         }]);
 
@@ -911,7 +913,7 @@ mod tests {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![Effect::Damage {
+            legacy_ops: vec![Effect::Damage {
                 amount: 10,
                 target: TargetShape::Row,
                 per_hop: DamageCurve::Constant,
@@ -943,7 +945,7 @@ mod tests {
             implementation: SkillImplementation::Deferred {
                 reason: LegalityReasonCode::UnimplementedEffect,
             },
-            effects: vec![
+            legacy_ops: vec![
                 Effect::Damage {
                     amount: 48,
                     target: TargetShape::Row,
@@ -965,7 +967,7 @@ mod tests {
 
         let ids: HashSet<_> = book.0.iter().map(|skill| skill.id.clone()).collect();
         assert_eq!(ids.len(), book.0.len(), "duplicate skill ids in skills.ron");
-        assert!(book.0.iter().all(|skill| !skill.effects.is_empty()));
+        assert!(book.0.iter().all(|skill| !skill.legacy_ops.is_empty()));
         validate_skill_book(&book).expect("canonical skills.ron must validate");
 
         for required in [
@@ -1063,7 +1065,7 @@ mod tests {
                 repeat: RepeatPolicy::NoRepeat,
             }),
             implementation: SkillImplementation::Implemented,
-            effects: vec![
+            legacy_ops: vec![
                 Effect::Damage {
                     amount: 20,
                     target: TargetShape::Bounce {
@@ -1150,7 +1152,7 @@ mod tests {
                 repeat: RepeatPolicy::NoRepeat,
             }),
             implementation: SkillImplementation::Implemented,
-            effects: vec![Effect::Damage {
+            legacy_ops: vec![Effect::Damage {
                 amount: 25,
                 target: TargetShape::Bounce {
                     hops: 3,
@@ -1177,7 +1179,7 @@ mod tests {
                 repeat: RepeatPolicy::AllowRepeat,
             }),
             implementation: SkillImplementation::Implemented,
-            effects: vec![Effect::Damage {
+            legacy_ops: vec![Effect::Damage {
                 amount: 20,
                 target: TargetShape::Bounce {
                     hops: 2,
@@ -1204,7 +1206,7 @@ mod tests {
                 repeat: RepeatPolicy::NoRepeat,
             }),
             implementation: SkillImplementation::Implemented,
-            effects: vec![Effect::Damage {
+            legacy_ops: vec![Effect::Damage {
                 amount: 25,
                 target: TargetShape::Bounce {
                     hops: 3,
@@ -1237,7 +1239,7 @@ mod tests {
             implementation: SkillImplementation::Deferred {
                 reason: LegalityReasonCode::UnimplementedTargetShape,
             },
-            effects: vec![Effect::Damage {
+            legacy_ops: vec![Effect::Damage {
                 amount: 10,
                 target: TargetShape::Bounce {
                     hops: 0,
@@ -1266,7 +1268,7 @@ mod tests {
                 repeat: RepeatPolicy::NoRepeat,
             }),
             implementation: SkillImplementation::Implemented,
-            effects: vec![Effect::Damage {
+            legacy_ops: vec![Effect::Damage {
                 amount: 20,
                 target: TargetShape::Bounce {
                     hops: 2,

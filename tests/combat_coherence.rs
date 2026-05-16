@@ -52,11 +52,11 @@ fn skill_book_with_shock_fixture() -> SkillBook {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![
+        legacy_ops: vec![
             Effect::Damage {
                 amount: 15,
                 target: TargetShape::Single,
-            per_hop: Default::default(),
+                per_hop: Default::default(),
             },
             Effect::ToughnessHit(8),
             Effect::ApplyStatus {
@@ -64,13 +64,14 @@ fn skill_book_with_shock_fixture() -> SkillBook {
                 duration: 1,
             },
         ],
-
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     });
     book
 }
+
 
 fn sp_fixture_skill_book() -> SkillBook {
     SkillBook(vec![
@@ -87,7 +88,7 @@ fn sp_fixture_skill_book() -> SkillBook {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![Effect::Damage {
+            legacy_ops: vec![Effect::Damage {
                 amount: 8,
                 target: TargetShape::Single,
             per_hop: Default::default(),
@@ -96,6 +97,7 @@ fn sp_fixture_skill_book() -> SkillBook {
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
         SkillDef {
             id: SkillId("ally_skill_3".into()),
@@ -110,7 +112,7 @@ fn sp_fixture_skill_book() -> SkillBook {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![Effect::Damage {
+            legacy_ops: vec![Effect::Damage {
                 amount: 16,
                 target: TargetShape::Single,
             per_hop: Default::default(),
@@ -119,6 +121,7 @@ fn sp_fixture_skill_book() -> SkillBook {
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
         SkillDef {
             id: SkillId("ally_skill_4".into()),
@@ -133,7 +136,7 @@ fn sp_fixture_skill_book() -> SkillBook {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![Effect::Damage {
+            legacy_ops: vec![Effect::Damage {
                 amount: 18,
                 target: TargetShape::Single,
             per_hop: Default::default(),
@@ -142,6 +145,7 @@ fn sp_fixture_skill_book() -> SkillBook {
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
         SkillDef {
             id: SkillId("holy_revive".into()),
@@ -156,11 +160,12 @@ fn sp_fixture_skill_book() -> SkillBook {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![Effect::Revive(25)],
+            legacy_ops: vec![Effect::Revive(25)],
 
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
         SkillDef {
             id: SkillId("enemy_smash".into()),
@@ -175,7 +180,7 @@ fn sp_fixture_skill_book() -> SkillBook {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![Effect::Damage {
+            legacy_ops: vec![Effect::Damage {
                 amount: 9999,
                 target: TargetShape::Single,
             per_hop: Default::default(),
@@ -184,8 +189,10 @@ fn sp_fixture_skill_book() -> SkillBook {
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
     ])
+}
 }
 
 fn pilot(roster: &UnitRoster, name: &str) -> UnitDef {

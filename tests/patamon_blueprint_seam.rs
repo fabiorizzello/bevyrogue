@@ -47,7 +47,7 @@ fn no_signal_skill_ron() -> &'static str {
             target_hp_rule: Any,
         ),
         implementation: Implemented,
-        effects: [Damage(amount: 1, target: Single)],
+        legacy_ops: [Damage(amount: 1, target: Single)],
     )"#
 }
 
@@ -148,8 +148,8 @@ fn custom_signal_missing_field_defaults_to_empty() {
 #[test]
 fn custom_signal_rejects_unknown_patamon_variant() {
     let malformed = no_signal_skill_ron().replace(
-        "effects: [Damage(amount: 1, target: Single)],",
-        "effects: [Damage(amount: 1, target: Single)],\n        custom_signals: [(owner: \"patamon\", signal: \"unknown_signal\")],",
+        "legacy_ops: [Damage(amount: 1, target: Single)],",
+        "legacy_ops: [Damage(amount: 1, target: Single)],\n        custom_signals: [(owner: \"patamon\", signal: \"unknown_signal\")],",
     );
 
     let skill: SkillDef = ron::from_str(&malformed).expect("generic custom signal parses");
@@ -221,12 +221,13 @@ fn custom_signal_resolved_action_carries_metadata_without_interpreting_it() {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Damage {
+        legacy_ops: vec![Effect::Damage {
             amount: 7,
             target: TargetShape::Single,
             per_hop: Default::default(),
         }],
         custom_signals: vec![signal("patamon", "build_holy_support_grace", 1)],
+        timeline: None,
         ..Default::default()
     };
     let book = SkillBook(vec![skill.clone()]);

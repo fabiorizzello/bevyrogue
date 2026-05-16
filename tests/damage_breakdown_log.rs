@@ -54,19 +54,21 @@ fn fire_skill() -> SkillDef {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![
+        legacy_ops: vec![
             Effect::Damage {
                 amount: 100,
                 target: TargetShape::Single,
-            per_hop: Default::default(),
+                per_hop: Default::default(),
             },
             Effect::ToughnessHit(0),
         ],
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
 }
+
 
 /// Spawn a minimal headless Bevy app wired for `resolve_action_system`.
 /// `defender_resists` and `defender_weaknesses` control the tag mod.

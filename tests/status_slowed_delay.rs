@@ -49,7 +49,7 @@ fn slowed_skill() -> SkillDef {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::ApplyStatus {
+        legacy_ops: vec![Effect::ApplyStatus {
             kind: StatusEffectKind::Slowed,
             duration: 3,
         }],

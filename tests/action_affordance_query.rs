@@ -43,7 +43,6 @@ fn unit(
         toughness: None,
         ..Default::default()
     }
-}
 
 fn actor_with_skills(
     mut unit: UnitQuerySnapshot,
@@ -84,7 +83,6 @@ fn snapshot_with(
         target_unit: None,
         units,
     }
-}
 
 fn basic_attack_skill(id: &str) -> SkillDef {
     SkillDef {
@@ -100,7 +98,7 @@ fn basic_attack_skill(id: &str) -> SkillDef {
             target_hp_rule: TargetHpRule::Any,
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Damage {
+        legacy_ops: vec![Effect::Damage {
             amount: 10,
             target: TargetShape::Single,
         per_hop: Default::default(),
@@ -108,8 +106,8 @@ fn basic_attack_skill(id: &str) -> SkillDef {
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
-}
 
 fn offensive_skill(id: &str, sp_cost: i32) -> SkillDef {
     SkillDef {
@@ -125,7 +123,7 @@ fn offensive_skill(id: &str, sp_cost: i32) -> SkillDef {
             target_hp_rule: TargetHpRule::Any,
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Damage {
+        legacy_ops: vec![Effect::Damage {
             amount: 10,
             target: TargetShape::Single,
         per_hop: Default::default(),
@@ -133,8 +131,8 @@ fn offensive_skill(id: &str, sp_cost: i32) -> SkillDef {
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
-}
 
 fn any_target_skill(id: &str) -> SkillDef {
     SkillDef {
@@ -150,7 +148,7 @@ fn any_target_skill(id: &str) -> SkillDef {
             target_hp_rule: TargetHpRule::Any,
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Damage {
+        legacy_ops: vec![Effect::Damage {
             amount: 10,
             target: TargetShape::Single,
         per_hop: Default::default(),
@@ -158,8 +156,8 @@ fn any_target_skill(id: &str) -> SkillDef {
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
-}
 
 fn hidden_self_only_skill() -> SkillDef {
     SkillDef {
@@ -177,12 +175,12 @@ fn hidden_self_only_skill() -> SkillDef {
         implementation: SkillImplementation::Hidden {
             reason: LegalityReasonCode::UnimplementedEffect,
         },
-        effects: vec![Effect::GrantEnergy(5)],
+        legacy_ops: vec![Effect::GrantEnergy(5)],
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
-}
 
 fn revive_skill() -> SkillDef {
     SkillDef {
@@ -198,12 +196,12 @@ fn revive_skill() -> SkillDef {
             target_hp_rule: TargetHpRule::Any,
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Revive(25)],
+        legacy_ops: vec![Effect::Revive(25)],
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
-}
 
 fn damaged_ally_skill() -> SkillDef {
     SkillDef {
@@ -219,7 +217,7 @@ fn damaged_ally_skill() -> SkillDef {
             target_hp_rule: TargetHpRule::Damaged,
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Damage {
+        legacy_ops: vec![Effect::Damage {
             amount: 5,
             target: TargetShape::Single,
         per_hop: Default::default(),
@@ -227,8 +225,8 @@ fn damaged_ally_skill() -> SkillDef {
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
-}
 
 fn row_skill() -> SkillDef {
     SkillDef {
@@ -244,7 +242,7 @@ fn row_skill() -> SkillDef {
             target_hp_rule: TargetHpRule::Any,
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Damage {
+        legacy_ops: vec![Effect::Damage {
             amount: 12,
             target: TargetShape::Row,
         per_hop: Default::default(),
@@ -252,8 +250,8 @@ fn row_skill() -> SkillDef {
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
-}
 
 fn deferred_row_skill() -> SkillDef {
     SkillDef {
@@ -261,8 +259,8 @@ fn deferred_row_skill() -> SkillDef {
             reason: LegalityReasonCode::UnimplementedTargetShape,
         },
         ..row_skill()
+        timeline: None,
     }
-}
 
 fn hidden_row_skill() -> SkillDef {
     SkillDef {
@@ -270,8 +268,8 @@ fn hidden_row_skill() -> SkillDef {
             reason: LegalityReasonCode::EnemyTraitDeferred,
         },
         ..row_skill()
+        timeline: None,
     }
-}
 
 fn skill_book(skills: Vec<SkillDef>) -> SkillBook {
     SkillBook(skills)

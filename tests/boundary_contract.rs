@@ -96,18 +96,18 @@ fn s08_boundary_turn_advance_and_action_intent() {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![
+        legacy_ops: vec![
             Effect::Damage {
                 amount: 50,
                 target: TargetShape::Single,
-            per_hop: Default::default(),
+                per_hop: Default::default(),
             },
             Effect::ToughnessHit(20),
         ],
-
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }]);
     let handle = assets.add(book);
     app.insert_resource(assets);
@@ -218,7 +218,7 @@ fn s08_ultimate_interrupt_flow() {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![
+            legacy_ops: vec![
                 Effect::Damage {
                     amount: 50,
                     target: TargetShape::Single,
@@ -230,6 +230,9 @@ fn s08_ultimate_interrupt_flow() {
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
+        }
+            timeline: None,
         },
         SkillDef {
             id: SkillId("ebasic".into()),
@@ -244,7 +247,7 @@ fn s08_ultimate_interrupt_flow() {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![
+            legacy_ops: vec![
                 Effect::Damage {
                     amount: 10,
                     target: TargetShape::Single,
@@ -256,6 +259,9 @@ fn s08_ultimate_interrupt_flow() {
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
+        }
+            timeline: None,
         },
     ]);
     let handle = assets.add(book);

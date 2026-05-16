@@ -672,7 +672,7 @@ mod tests {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![
+            legacy_ops: vec![
                 Effect::Damage {
                     amount: damage,
                     target: TargetShape::Single,

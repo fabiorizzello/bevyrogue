@@ -50,7 +50,7 @@ fn delay_skill(id: &str, pct: u32) -> SkillDef {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::DelayTurn(pct)],
+        legacy_ops: vec![Effect::DelayTurn(pct)],
         ..Default::default()
     }
 }
@@ -68,7 +68,7 @@ fn advance_skill(id: &str, pct: u32) -> SkillDef {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::AdvanceTurn(pct)],
+        legacy_ops: vec![Effect::AdvanceTurn(pct)],
         ..Default::default()
     }
 }

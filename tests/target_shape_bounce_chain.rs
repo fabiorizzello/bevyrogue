@@ -151,11 +151,12 @@ fn bounce_skill(
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Damage {
+        legacy_ops: vec![Effect::Damage {
             amount: base_damage,
             target: shape,
             per_hop: curve,
         }],
+        timeline: None,
         ..Default::default()
     }])
 }
@@ -445,11 +446,12 @@ fn bounce_pool_exhaustion_truncates_silently() {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Damage {
+        legacy_ops: vec![Effect::Damage {
             amount: 15,
             target: shape,
             per_hop: DamageCurve::Constant,
         }],
+        timeline: None,
         ..Default::default()
     }]);
 

@@ -10,7 +10,7 @@
 use bevyrogue::combat::{
     buffs::DrBag,
     events::CombatEventKind,
-    resolution::apply_effects,
+    resolution::apply_legacy_ops,
     sp::SpPool,
     state::{ResolvedAction, UltEffect},
     team::Team,
@@ -81,7 +81,7 @@ fn damage_action(tag: DamageTag, base: i32) -> ResolvedAction {
     }
 }
 
-/// Run apply_effects with the given parameters; return (OnDamageDealt amount, all events).
+/// Run apply_legacy_ops with the given parameters; return (OnDamageDealt amount, all events).
 fn run(
     base: i32,
     tag: DamageTag,
@@ -100,7 +100,7 @@ fn run(
     let mut sp = SpPool { current: 99, max: 99 };
     let action = damage_action(tag, base);
 
-    let (_outcome, events) = apply_effects(
+    let (_outcome, events) = apply_legacy_ops(
         &action,
         &atk,
         &mut def,

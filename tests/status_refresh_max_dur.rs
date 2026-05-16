@@ -39,7 +39,7 @@ fn heated_skill(id: &str, duration: u32) -> SkillDef {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![
+        legacy_ops: vec![
             Effect::Damage { amount: 1, target: TargetShape::Single , per_hop: Default::default()},
             Effect::ToughnessHit(0),
             Effect::ApplyStatus { kind: StatusEffectKind::Heated, duration },

@@ -45,7 +45,7 @@ fn build_app() -> App {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![
+            legacy_ops: vec![
                 Effect::Damage {
                     amount: 5,
                     target: TargetShape::Single,
@@ -57,6 +57,7 @@ fn build_app() -> App {
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
         SkillDef {
             id: SkillId("skill".into()),
@@ -71,7 +72,7 @@ fn build_app() -> App {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![
+            legacy_ops: vec![
                 Effect::Damage {
                     amount: 10,
                     target: TargetShape::Single,
@@ -83,6 +84,7 @@ fn build_app() -> App {
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
         SkillDef {
             id: SkillId("grant_energy".into()),
@@ -97,11 +99,12 @@ fn build_app() -> App {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![Effect::GrantEnergy(15)],
+            legacy_ops: vec![Effect::GrantEnergy(15)],
 
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
     ]);
     let handle = assets.add(book);

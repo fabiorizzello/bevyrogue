@@ -78,7 +78,7 @@ fn perhop_length_guard_emits_diagnostic_and_clamps_loop() {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Damage {
+        legacy_ops: vec![Effect::Damage {
             amount: 0,
             target: shape,
             per_hop: DamageCurve::PerHop(vec![30, 20]),

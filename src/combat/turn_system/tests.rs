@@ -45,7 +45,7 @@ fn skill(
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![
+        legacy_ops: vec![
             Effect::Damage {
                 amount: damage,
                 target: TargetShape::Single,
@@ -155,7 +155,7 @@ fn resolve_action_system_rejects_revive_on_healthy_target() {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Revive(25)],
+        legacy_ops: vec![Effect::Revive(25)],
 
         custom_signals: vec![],
         animation_sequence: None,

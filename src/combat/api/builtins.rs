@@ -302,12 +302,51 @@ fn snapshot_targets(world: &World) -> TargetableSnapshot {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::combat::api::{intent::CastId, timeline::BeatPayload};
+    use crate::combat::api::timeline::{Beat, BeatEdge, BeatKind, CompiledTimeline};
+    use crate::combat::api::{intent::CastId, timeline::BeatPayload, validate_timeline_refs};
     use bevy::prelude::World;
     use std::{
         collections::{HashSet, VecDeque},
         num::NonZeroU32,
     };
+
+    fn owned_builtin_timeline(
+        hook: &'static str,
+        selector: &'static str,
+        predicate: &'static str,
+    ) -> CompiledTimeline<&'static str> {
+        CompiledTimeline {
+            id: "test_skill",
+            entry: "cast",
+            beats: vec![
+                Beat {
+                    id: "cast",
+                    kind: BeatKind::Cast,
+                    hook: None,
+                    selector: None,
+                    presentation: None,
+                    payload: None,
+                },
+                Beat {
+                    id: "impact",
+                    kind: BeatKind::Impact,
+                    hook: Some(hook),
+                    selector: Some(selector),
+                    presentation: None,
+                    payload: Some(BeatPayload::DealDamage {
+                        amount: 1,
+                        tag: crate::combat::types::DamageTag::Fire,
+                        target: TargetShape::Single,
+                    }),
+                },
+            ],
+            edges: vec![BeatEdge {
+                from: "cast",
+                to: "impact",
+                gate: Some(predicate),
+            }],
+        }
+    }
 
     #[test]
     fn register_kernel_builtins_installs_core_ids() {
@@ -442,7 +481,7 @@ mod tests {
         let mut cast_hit_set = HashSet::new();
         let mut ctx = crate::combat::api::SkillCtx::new(
             caster,
-            primary_target,
+            revive_target,
             cast_id,
             crate::combat::api::SkillCtxMode::Execute,
             &regs,
@@ -464,7 +503,7 @@ mod tests {
         let mut cast_hit_set = HashSet::new();
         let mut ctx = crate::combat::api::SkillCtx::new(
             caster,
-            primary_target,
+            revive_target,
             cast_id,
             crate::combat::api::SkillCtxMode::Execute,
             &regs,

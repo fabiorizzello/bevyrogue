@@ -55,7 +55,7 @@ fn blueprint_skill(
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Damage {
+        legacy_ops: vec![Effect::Damage {
             amount: 1,
             target: TargetShape::Single,
         per_hop: Default::default(),

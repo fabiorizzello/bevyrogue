@@ -61,14 +61,15 @@ fn offensive_skill(id: &str) -> SkillDef {
             target_hp_rule: TargetHpRule::Any,
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Damage {
+        legacy_ops: vec![Effect::Damage {
             amount: 10,
             target: TargetShape::Single,
-        per_hop: Default::default(),
+            per_hop: Default::default(),
         }],
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
 }
 
@@ -86,12 +87,14 @@ fn revive_skill(id: &str) -> SkillDef {
             target_hp_rule: TargetHpRule::Any,
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Revive(25)],
+        legacy_ops: vec![Effect::Revive(25)],
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
 }
+
 
 fn unit_skills(skill_id: &str) -> UnitSkills {
     let skill_id = SkillId(skill_id.into());

@@ -44,6 +44,7 @@ fn skill_def<'a>(book: &'a SkillBook, id: &str) -> &'a SkillDef {
         .unwrap_or_else(|| panic!("missing canonical skill {id}"))
 }
 
+
 fn runtime_unit(def: &UnitDef) -> Unit {
     Unit {
         id: def.id,

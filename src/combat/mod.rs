@@ -40,7 +40,7 @@ pub mod rng;
 pub mod turn_order;
 /// Turn pipeline: `advance_turn_system`, `resolve_action_system`, `check_victory_system`.
 pub mod turn_system;
-/// Apply effects: traduce `Action` (resolved) → mutazioni stato + eventi.
+/// Apply runtime payloads: traduce `Action` (resolved) → mutazioni stato + eventi.
 pub mod resolution;
 /// `ActionValue` component + `ActionValueUpdated` message (gauge math).
 pub mod av;

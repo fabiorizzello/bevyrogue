@@ -43,7 +43,7 @@ fn build_app() -> App {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![Effect::Revive(25)],
+            legacy_ops: vec![Effect::Revive(25)],
 
             custom_signals: vec![],
             animation_sequence: None,
@@ -63,7 +63,7 @@ fn build_app() -> App {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![Effect::Damage {
+            legacy_ops: vec![Effect::Damage {
                 amount: 9999,
                 target: TargetShape::Single,
                 per_hop: Default::default(),

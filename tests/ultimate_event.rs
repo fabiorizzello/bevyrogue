@@ -6,6 +6,7 @@
 /// - No `UltimateUsed` event is emitted for a Basic intent.
 /// - No `UltimateUsed` event is emitted for a Skill (non-Reset) intent.
 use bevy::{ecs::message::MessageCursor, prelude::*};
+use bevyrogue::combat::api::CastId;
 use bevyrogue::combat::{
     events::{CombatEvent, CombatEventKind},
     kit::UnitSkills,
@@ -44,6 +45,16 @@ fn make_unit(id: u32, name: &str, hp: i32) -> Unit {
     }
 }
 
+fn combat_event(kind: CombatEventKind, source: UnitId, target: UnitId) -> CombatEvent {
+    CombatEvent {
+        kind,
+        source,
+        target,
+        follow_up_depth: 0,
+        cast_id: CastId::ROOT,
+    }
+}
+
 fn ult_charge_ready() -> UltimateCharge {
     UltimateCharge {
         current: 100,
@@ -78,7 +89,7 @@ fn ult_skill_def() -> SkillDef {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Damage {
+        legacy_ops: vec![Effect::Damage {
             amount: 50,
             target: TargetShape::Single,
             per_hop: Default::default(),
@@ -86,6 +97,7 @@ fn ult_skill_def() -> SkillDef {
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
 }
 
@@ -103,7 +115,7 @@ fn basic_skill_def() -> SkillDef {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Damage {
+        legacy_ops: vec![Effect::Damage {
             amount: 10,
             target: TargetShape::Single,
             per_hop: Default::default(),
@@ -111,6 +123,7 @@ fn basic_skill_def() -> SkillDef {
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
 }
 
@@ -128,7 +141,7 @@ fn skill_def() -> SkillDef {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Damage {
+        legacy_ops: vec![Effect::Damage {
             amount: 20,
             target: TargetShape::Single,
             per_hop: Default::default(),
@@ -136,6 +149,7 @@ fn skill_def() -> SkillDef {
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
 }
 

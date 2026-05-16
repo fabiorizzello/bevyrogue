@@ -1,12 +1,12 @@
 /// Integration test for §H.1 Blessed offensive bonus (S05/T02):
 /// attacker with Blessed deals ×1.15 damage; without Blessed, baseline.
 ///
-/// Uses `apply_effects` directly (no full Bevy world needed) to isolate the
+/// Uses `apply_legacy_ops` directly (no full Bevy world needed) to isolate the
 /// Blessed dmg-mult computation path in resolution.rs → calculate_damage.
 use bevyrogue::combat::{
     StatusBag, StatusEffectKind,
     events::CombatEventKind,
-    resolution::apply_effects,
+    resolution::apply_legacy_ops,
     sp::SpPool,
     state::{ResolvedAction, UltEffect},
     team::Team,
@@ -85,7 +85,7 @@ fn run_apply(base_damage: i32, attacker_bag: Option<&StatusBag>) -> i32 {
     let mut sp = SpPool { current: 5, max: 5 };
     let action = basic_action(base_damage);
 
-    let (_, events) = apply_effects(
+    let (_, events) = apply_legacy_ops(
         &action,
         &attacker,
         &mut defender,

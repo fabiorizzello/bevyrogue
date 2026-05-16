@@ -2,7 +2,7 @@
 /// Three cases: baseline (no Blessed), Blessed Basic, Blessed Ultimate-cast (Reset → no leak).
 use bevyrogue::combat::{
     StatusBag, StatusEffectKind,
-    resolution::apply_effects,
+    resolution::apply_legacy_ops,
     sp::SpPool,
     state::{ResolvedAction, UltEffect},
     team::Team,
@@ -90,7 +90,7 @@ fn run(resolved: &ResolvedAction, attacker_bag: Option<&StatusBag>) -> i32 {
     let before = ult.current;
     let mut sp = SpPool { current: 5, max: 5 };
 
-    apply_effects(
+    apply_legacy_ops(
         resolved,
         &atk,
         &mut def,
@@ -124,7 +124,7 @@ fn run_ult_action(attacker_bag: Option<&StatusBag>) -> i32 {
     let mut sp = SpPool { current: 5, max: 5 };
     let resolved = ult_resolved();
 
-    apply_effects(
+    apply_legacy_ops(
         &resolved,
         &atk,
         &mut def,

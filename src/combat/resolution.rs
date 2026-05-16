@@ -265,27 +265,27 @@ pub fn resolve_action(
         target,
         skill_id: skill.id.clone(),
         damage_tag: skill.damage_tag,
-        base_damage: skill_base_damage(&skill.effects),
-        toughness_damage: skill_toughness_hit(&skill.effects),
-        revive_pct: skill_revive_pct(&skill.effects),
-        heal_pct: skill_heal_pct(&skill.effects),
+        base_damage: skill_base_damage(&skill.legacy_ops),
+        toughness_damage: skill_toughness_hit(&skill.legacy_ops),
+        revive_pct: skill_revive_pct(&skill.legacy_ops),
+        heal_pct: skill_heal_pct(&skill.legacy_ops),
         sp_cost: skill.sp_cost,
         ult_effect,
-        grant_free_skill_count: skill_grant_free_count(&skill.effects),
-        status_to_apply: skill_apply_status(&skill.effects),
-        advance_pct: skill_advance(&skill.effects),
-        delay_pct: skill_delay(&skill.effects),
-        energy_grant: skill_grant_energy(&skill.effects),
-        self_advance_pct: skill_self_advance(&skill.effects),
+        grant_free_skill_count: skill_grant_free_count(&skill.legacy_ops),
+        status_to_apply: skill_apply_status(&skill.legacy_ops),
+        advance_pct: skill_advance(&skill.legacy_ops),
+        delay_pct: skill_delay(&skill.legacy_ops),
+        energy_grant: skill_grant_energy(&skill.legacy_ops),
+        self_advance_pct: skill_self_advance(&skill.legacy_ops),
         target_shape: skill.targeting.shape,
         custom_signals: skill.custom_signals.clone(),
-        damage_curve: skill_damage_curve(&skill.effects),
-        cleanse_count: skill_cleanse_count(&skill.effects),
+        damage_curve: skill_damage_curve(&skill.legacy_ops),
+        cleanse_count: skill_cleanse_count(&skill.legacy_ops),
     })
 }
 
-fn skill_base_damage(effects: &[Effect]) -> i32 {
-    effects
+fn skill_base_damage(legacy_ops: &[Effect]) -> i32 {
+    legacy_ops
         .iter()
         .find_map(|effect| match effect {
             Effect::Damage { amount, .. } => Some(*amount),
@@ -294,10 +294,10 @@ fn skill_base_damage(effects: &[Effect]) -> i32 {
         .unwrap_or(0)
 }
 
-/// Extract the `DamageCurve` from the first `Effect::Damage` in `effects`.
+/// Extract the `DamageCurve` from the first `Effect::Damage` in `legacy_ops`.
 /// Returns `DamageCurve::Constant` when no damage effect is found.
-pub fn skill_damage_curve(effects: &[Effect]) -> DamageCurve {
-    effects
+pub fn skill_damage_curve(legacy_ops: &[Effect]) -> DamageCurve {
+    legacy_ops
         .iter()
         .find_map(|effect| match effect {
             Effect::Damage { per_hop, .. } => Some(per_hop.clone()),
@@ -333,8 +333,8 @@ pub fn compute_hop_damage(base_damage: i32, curve: &DamageCurve, hop: usize) -> 
     }
 }
 
-fn skill_toughness_hit(effects: &[Effect]) -> i32 {
-    effects
+fn skill_toughness_hit(legacy_ops: &[Effect]) -> i32 {
+    legacy_ops
         .iter()
         .find_map(|effect| match effect {
             Effect::ToughnessHit(amount) => Some(*amount),
@@ -343,8 +343,8 @@ fn skill_toughness_hit(effects: &[Effect]) -> i32 {
         .unwrap_or(0)
 }
 
-fn skill_revive_pct(effects: &[Effect]) -> i32 {
-    effects
+fn skill_revive_pct(legacy_ops: &[Effect]) -> i32 {
+    legacy_ops
         .iter()
         .find_map(|effect| match effect {
             Effect::Revive(pct) => Some(*pct),
@@ -353,8 +353,8 @@ fn skill_revive_pct(effects: &[Effect]) -> i32 {
         .unwrap_or(0)
 }
 
-fn skill_heal_pct(effects: &[Effect]) -> u32 {
-    effects
+fn skill_heal_pct(legacy_ops: &[Effect]) -> u32 {
+    legacy_ops
         .iter()
         .find_map(|effect| match effect {
             Effect::Heal { amount_pct_max_hp, .. } => Some(*amount_pct_max_hp),
@@ -363,8 +363,8 @@ fn skill_heal_pct(effects: &[Effect]) -> u32 {
         .unwrap_or(0)
 }
 
-fn skill_grant_free_count(effects: &[Effect]) -> usize {
-    effects
+fn skill_grant_free_count(legacy_ops: &[Effect]) -> usize {
+    legacy_ops
         .iter()
         .find_map(|effect| match effect {
             Effect::GrantFreeSkill { count } => Some(*count),
@@ -374,15 +374,15 @@ fn skill_grant_free_count(effects: &[Effect]) -> usize {
 }
 
 /// First ApplyStatus effect in the skill's effect list; first match wins.
-fn skill_apply_status(effects: &[Effect]) -> Option<(StatusEffectKind, u32)> {
-    effects.iter().find_map(|effect| match effect {
+fn skill_apply_status(legacy_ops: &[Effect]) -> Option<(StatusEffectKind, u32)> {
+    legacy_ops.iter().find_map(|effect| match effect {
         Effect::ApplyStatus { kind, duration } => Some((kind.clone(), *duration)),
         _ => None,
     })
 }
 
-fn skill_advance(effects: &[Effect]) -> u32 {
-    effects
+fn skill_advance(legacy_ops: &[Effect]) -> u32 {
+    legacy_ops
         .iter()
         .find_map(|effect| match effect {
             Effect::AdvanceTurn(amount) => Some((*amount).min(50)),
@@ -391,8 +391,8 @@ fn skill_advance(effects: &[Effect]) -> u32 {
         .unwrap_or(0)
 }
 
-fn skill_delay(effects: &[Effect]) -> u32 {
-    effects
+fn skill_delay(legacy_ops: &[Effect]) -> u32 {
+    legacy_ops
         .iter()
         .find_map(|effect| match effect {
             Effect::DelayTurn(amount) => Some((*amount).min(50)),
@@ -401,8 +401,8 @@ fn skill_delay(effects: &[Effect]) -> u32 {
         .unwrap_or(0)
 }
 
-fn skill_grant_energy(effects: &[Effect]) -> i32 {
-    effects
+fn skill_grant_energy(legacy_ops: &[Effect]) -> i32 {
+    legacy_ops
         .iter()
         .find_map(|effect| match effect {
             Effect::GrantEnergy(amount) => Some(*amount),
@@ -411,8 +411,8 @@ fn skill_grant_energy(effects: &[Effect]) -> i32 {
         .unwrap_or(0)
 }
 
-fn skill_self_advance(effects: &[Effect]) -> i32 {
-    effects
+fn skill_self_advance(legacy_ops: &[Effect]) -> i32 {
+    legacy_ops
         .iter()
         .find_map(|effect| match effect {
             Effect::SelfAdvance(amount) => Some(*amount),
@@ -423,8 +423,8 @@ fn skill_self_advance(effects: &[Effect]) -> i32 {
 
 /// Returns `Some(count)` when the skill carries `Effect::Cleanse`, else `None`.
 /// The inner `Option<u8>` is the count field from the effect (None = remove all).
-fn skill_cleanse_count(effects: &[Effect]) -> Option<Option<u8>> {
-    effects.iter().find_map(|effect| match effect {
+fn skill_cleanse_count(legacy_ops: &[Effect]) -> Option<Option<u8>> {
+    legacy_ops.iter().find_map(|effect| match effect {
         Effect::Cleanse { count, .. } => Some(*count),
         _ => None,
     })
@@ -623,7 +623,7 @@ pub fn apply_cleanse_only(
     (outcome, vec![CombatEventKind::OnCleansed { kinds }])
 }
 
-pub fn apply_effects(
+pub fn apply_legacy_ops(
     resolved: &ResolvedAction,
     attacker_unit: &Unit,
     defender_unit: &mut Unit,
@@ -884,7 +884,7 @@ mod tests {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![
+            legacy_ops: vec![
                 Effect::Damage {
                     amount: 30,
                     target: TargetShape::Single,
@@ -945,7 +945,7 @@ mod tests {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![
+            legacy_ops: vec![
                 Effect::Damage {
                     amount: damage,
                     target: TargetShape::Single,
@@ -975,7 +975,7 @@ mod tests {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![Effect::Revive(pct)],
+            legacy_ops: vec![Effect::Revive(pct)],
 
             custom_signals: vec![],
             animation_sequence: None,
@@ -1024,7 +1024,7 @@ mod tests {
             implementation: SkillImplementation::Deferred {
                 reason: LegalityReasonCode::UnimplementedTargetShape,
             },
-            effects: vec![Effect::Damage {
+            legacy_ops: vec![Effect::Damage {
                 amount: 12,
                 target: TargetShape::Single,
                 per_hop: Default::default(),
@@ -1071,7 +1071,7 @@ mod tests {
         let mut sp = SpPool { current: 3, max: 5 };
         let resolved = resolved(&basic_intent(), skill("basic", DamageTag::Fire, 10, 0, 5));
 
-        let (outcome, events) = apply_effects(
+        let (outcome, events) = apply_legacy_ops(
             &resolved,
             &attacker,
             &mut defender,
@@ -1122,7 +1122,7 @@ mod tests {
         };
         let resolved = resolved(&intent, skill("skill", DamageTag::Fire, 10, 4, 5));
 
-        let (outcome, events) = apply_effects(
+        let (outcome, events) = apply_legacy_ops(
             &resolved,
             &attacker,
             &mut defender,
@@ -1167,7 +1167,7 @@ mod tests {
         };
         let resolved = resolved(&intent, skill("skill", DamageTag::Fire, 10, 4, 5));
 
-        let (outcome, events) = apply_effects(
+        let (outcome, events) = apply_legacy_ops(
             &resolved,
             &attacker,
             &mut defender,
@@ -1205,7 +1205,7 @@ mod tests {
         let mut sp = SpPool { current: 3, max: 5 };
         let resolved = resolved(&basic_intent(), skill("basic", DamageTag::Fire, 10, 0, 10));
 
-        let (outcome, events) = apply_effects(
+        let (outcome, events) = apply_legacy_ops(
             &resolved,
             &attacker,
             &mut defender,
@@ -1247,7 +1247,7 @@ mod tests {
         let mut sp = SpPool { current: 3, max: 5 };
         let resolved = resolved(&basic_intent(), skill("basic", DamageTag::Fire, 10, 0, 5));
 
-        let (outcome, events) = apply_effects(
+        let (outcome, events) = apply_legacy_ops(
             &resolved,
             &attacker,
             &mut defender,
@@ -1287,7 +1287,7 @@ mod tests {
         let mut sp = SpPool { current: 3, max: 5 };
         let resolved = resolved(&basic_intent(), skill("basic", DamageTag::Fire, 10, 0, 5));
 
-        let (outcome, events) = apply_effects(
+        let (outcome, events) = apply_legacy_ops(
             &resolved,
             &attacker,
             &mut defender,
@@ -1328,7 +1328,7 @@ mod tests {
         let mut sp = SpPool { current: 3, max: 5 };
         let resolved = resolved(&basic_intent(), skill("basic", DamageTag::Fire, 10, 0, 5));
 
-        let (outcome, events) = apply_effects(
+        let (outcome, events) = apply_legacy_ops(
             &resolved,
             &attacker,
             &mut defender,
@@ -1372,7 +1372,7 @@ mod tests {
         };
         let resolved = resolved(&intent, skill("ultimate", DamageTag::Fire, 30, 0, 20));
 
-        let (outcome, events) = apply_effects(
+        let (outcome, events) = apply_legacy_ops(
             &resolved,
             &attacker,
             &mut defender,
@@ -1417,7 +1417,7 @@ mod tests {
         };
         let resolved = resolved(&intent, revive_skill("revive", 25, 4));
 
-        let (outcome, events) = apply_effects(
+        let (outcome, events) = apply_legacy_ops(
             &resolved,
             &attacker,
             &mut defender,
@@ -1507,7 +1507,7 @@ mod tests {
         };
         let resolved = resolved(&intent, revive_skill("revive", 25, 4));
 
-        let (_outcome, events) = apply_effects(
+        let (_outcome, events) = apply_legacy_ops(
             &resolved,
             &attacker,
             &mut defender,
@@ -1554,7 +1554,7 @@ mod tests {
         let basic = basic_intent();
         let basic_resolved = resolved(&basic, skill("basic", DamageTag::Fire, 5, 0, 0));
         let mut streak = BasicStreak::default();
-        apply_effects(
+        apply_legacy_ops(
             &basic_resolved,
             &attacker,
             &mut defender,
@@ -1570,7 +1570,7 @@ mod tests {
             None,
             None,
         );
-        apply_effects(
+        apply_legacy_ops(
             &basic_resolved,
             &attacker,
             &mut defender,
@@ -1597,7 +1597,7 @@ mod tests {
         };
         let skill_resolved = resolved(&intent, skill("skill", DamageTag::Fire, 10, 3, 0));
         sp.current = 3;
-        let (outcome, _) = apply_effects(
+        let (outcome, _) = apply_legacy_ops(
             &skill_resolved,
             &attacker,
             &mut defender,
@@ -1640,7 +1640,7 @@ mod tests {
         };
         let skill_resolved = resolved(&intent, skill("skill", DamageTag::Fire, 10, 3, 0));
         sp.current = 3;
-        let _ = apply_effects(
+        let _ = apply_legacy_ops(
             &skill_resolved,
             &attacker,
             &mut defender,
@@ -1682,7 +1682,7 @@ mod tests {
             target: UnitId(2),
         };
         let skill_resolved = resolved(&intent, skill("skill", DamageTag::Fire, 10, 2, 0));
-        let (outcome, _) = apply_effects(
+        let (outcome, _) = apply_legacy_ops(
             &skill_resolved,
             &attacker,
             &mut defender,
@@ -1723,7 +1723,7 @@ mod tests {
             target: UnitId(2),
         };
         let skill_resolved = resolved(&intent, skill("skill", DamageTag::Fire, 10, 3, 0));
-        apply_effects(
+        apply_legacy_ops(
             &skill_resolved,
             &attacker,
             &mut defender,
@@ -1776,7 +1776,7 @@ mod tests {
             target: UnitId(2),
         };
         let skill_resolved = resolved(&intent, skill("skill", DamageTag::Fire, 10, 3, 0));
-        let (outcome, _) = apply_effects(
+        let (outcome, _) = apply_legacy_ops(
             &skill_resolved,
             &attacker,
             &mut defender,

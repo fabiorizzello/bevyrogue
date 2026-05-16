@@ -8,7 +8,7 @@ use bevyrogue::combat::kernel::{CombatKernelRegistry, CombatKernelTransition};
 use bevyrogue::combat::kit::UnitSkills;
 use bevyrogue::combat::log::ActionLog;
 use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
-use bevyrogue::combat::resolution::{apply_effects, resolve_action};
+use bevyrogue::combat::resolution::{apply_legacy_ops, resolve_action};
 use bevyrogue::combat::sp::{RoundSpTracker, SpPool};
 use bevyrogue::combat::state::CombatState;
 use bevyrogue::combat::team::Team;
@@ -119,7 +119,7 @@ fn patamon_ult_builds_grace_through_the_blueprint_kernel_path() {
     let mut streak = BasicStreak::default();
     let resolved = resolved_skill(&book, "patamon_ult", attacker.id, defender.id);
 
-    let (outcome, events) = apply_effects(
+    let (outcome, events) = apply_legacy_ops(
         &resolved,
         &attacker,
         &mut defender,

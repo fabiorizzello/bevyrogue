@@ -223,7 +223,7 @@ fn all_enemies_skill_is_rejected_before_mutation_or_lifecycle() {
         implementation: SkillImplementation::Deferred {
             reason: LegalityReasonCode::UnimplementedTargetShape,
         },
-        effects: vec![
+        legacy_ops: vec![
             Effect::Damage {
                 amount: 20,
                 target: TargetShape::AllEnemies,
@@ -311,7 +311,7 @@ fn single_target_skill_still_executes_normally() {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![
+        legacy_ops: vec![
             Effect::Damage {
                 amount: 20,
                 target: TargetShape::Single,

@@ -1,11 +1,11 @@
 /// Integration test for M020/S01/T02: UnitDied carries the defender's status snapshot at KO.
 ///
-/// Uses `apply_effects` directly (no full Bevy world needed) to isolate the
+/// Uses `apply_legacy_ops` directly (no full Bevy world needed) to isolate the
 /// UnitDied payload construction in resolution.rs → ko_payload.
 use bevyrogue::combat::{
     StatusBag, StatusEffectKind,
     events::CombatEventKind,
-    resolution::apply_effects,
+    resolution::apply_legacy_ops,
     sp::{RoundSpTracker, SpPool},
     state::{ResolvedAction, UltEffect},
     team::Team,
@@ -78,7 +78,7 @@ fn unit_died_carries_defender_status_snapshot() {
     defender_bag.apply(StatusEffectKind::Heated, 2);
     defender_bag.apply(StatusEffectKind::Slowed, 1);
 
-    let (_, events) = apply_effects(
+    let (_, events) = apply_legacy_ops(
         &action,
         &attacker,
         &mut defender,
@@ -156,7 +156,7 @@ fn unit_died_not_emitted_on_survival() {
         cleanse_count: None,
     };
 
-    let (_, events) = apply_effects(
+    let (_, events) = apply_legacy_ops(
         &action,
         &attacker,
         &mut defender,

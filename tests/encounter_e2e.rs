@@ -56,7 +56,7 @@ fn s06_encounter_e2e_2v2_victory() {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![
+            legacy_ops: vec![
                 Effect::Damage {
                     amount: 15,
                     target: TargetShape::Single,
@@ -68,6 +68,7 @@ fn s06_encounter_e2e_2v2_victory() {
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
         SkillDef {
             id: SkillId("skill_a1".into()),
@@ -82,7 +83,7 @@ fn s06_encounter_e2e_2v2_victory() {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![
+            legacy_ops: vec![
                 Effect::Damage {
                     amount: 30,
                     target: TargetShape::Single,
@@ -94,6 +95,7 @@ fn s06_encounter_e2e_2v2_victory() {
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
         SkillDef {
             id: SkillId("basic_a2".into()),
@@ -108,7 +110,7 @@ fn s06_encounter_e2e_2v2_victory() {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![
+            legacy_ops: vec![
                 Effect::Damage {
                     amount: 15,
                     target: TargetShape::Single,
@@ -120,6 +122,7 @@ fn s06_encounter_e2e_2v2_victory() {
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
         SkillDef {
             id: SkillId("skill_a2".into()),
@@ -134,7 +137,7 @@ fn s06_encounter_e2e_2v2_victory() {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![
+            legacy_ops: vec![
                 Effect::Damage {
                     amount: 30,
                     target: TargetShape::Single,
@@ -146,6 +149,7 @@ fn s06_encounter_e2e_2v2_victory() {
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
     ]);
     let handle = assets.add(book);

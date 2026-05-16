@@ -74,7 +74,7 @@ fn s09_event_stream_observes_all_variants() {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![
+            legacy_ops: vec![
                 Effect::Damage {
                     amount: 10,
                     target: TargetShape::Single,
@@ -85,6 +85,7 @@ fn s09_event_stream_observes_all_variants() {
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
         SkillDef {
             id: SkillId("skill_a1".into()),
@@ -99,17 +100,18 @@ fn s09_event_stream_observes_all_variants() {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![
+            legacy_ops: vec![
                 Effect::Damage {
                     amount: 20,
                     target: TargetShape::Single,
-                per_hop: Default::default(),
+                    per_hop: Default::default(),
                 },
                 Effect::ToughnessHit(5),
             ],
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
         SkillDef {
             id: SkillId("enemy_basic".into()),
@@ -124,7 +126,7 @@ fn s09_event_stream_observes_all_variants() {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![
+            legacy_ops: vec![
                 Effect::Damage {
                     amount: 10,
                     target: TargetShape::Single,
@@ -135,6 +137,7 @@ fn s09_event_stream_observes_all_variants() {
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
     ]));
     app.insert_resource(assets);

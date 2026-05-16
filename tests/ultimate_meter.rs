@@ -117,17 +117,18 @@ fn ult_skill() -> SkillDef {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![
+        legacy_ops: vec![
             Effect::Damage {
                 amount: 50,
                 target: TargetShape::Single,
-            per_hop: Default::default(),
+                per_hop: Default::default(),
             },
             Effect::ToughnessHit(10),
         ],
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
 }
 
@@ -145,17 +146,18 @@ fn basic_skill() -> SkillDef {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![
+        legacy_ops: vec![
             Effect::Damage {
                 amount: 10,
                 target: TargetShape::Single,
-            per_hop: Default::default(),
+                per_hop: Default::default(),
             },
             Effect::ToughnessHit(5),
         ],
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
 }
 
@@ -391,7 +393,7 @@ fn ult_not_ready_does_not_front_insert() {
     );
 }
 
-/// Negative: when the target is a Commander, apply_effects rejects the action without
+/// Negative: when the target is a Commander, apply_legacy_ops rejects the action without
 /// consuming the ult meter, so no front-insert occurs.
 #[test]
 fn commander_defender_does_not_front_insert() {
@@ -405,7 +407,7 @@ fn commander_defender_does_not_front_insert() {
         ult_charge(100, 100, UltAccumulationTrigger::OnBasicAttack, 25),
         Toughness::new(100, vec![]),
     ));
-    // Defender is a Commander — apply_effects will reject and skip meter reset
+    // Defender is a Commander — apply_legacy_ops will reject and skip meter reset
     app.world_mut().spawn((
         make_unit(2, "Taichi", 200),
         Team::Ally,

@@ -103,14 +103,15 @@ fn basic_skill(id: &str) -> SkillDef {
             target_hp_rule: TargetHpRule::Any,
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Damage {
+        legacy_ops: vec![Effect::Damage {
             amount: 10,
             target: TargetShape::Single,
-        per_hop: Default::default(),
+            per_hop: Default::default(),
         }],
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
 }
 
@@ -128,14 +129,16 @@ fn revive_skill(id: &str, sp_cost: i32) -> SkillDef {
             target_hp_rule: TargetHpRule::Any,
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Revive(25)],
+        legacy_ops: vec![Effect::Revive(25)],
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
 }
 
 fn deferred_skill(id: &str) -> SkillDef {
+
     SkillDef {
         id: SkillId(id.into()),
         name: "Deferred Skill".into(),
@@ -151,16 +154,18 @@ fn deferred_skill(id: &str) -> SkillDef {
         implementation: SkillImplementation::Deferred {
             reason: LegalityReasonCode::UnimplementedTargetShape,
         },
-        effects: vec![Effect::Damage {
+        legacy_ops: vec![Effect::Damage {
             amount: 10,
             target: TargetShape::Single,
-        per_hop: Default::default(),
+            per_hop: Default::default(),
         }],
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
 }
+
 
 fn snapshot_from_fixtures(
     fixtures: &[Fixture],

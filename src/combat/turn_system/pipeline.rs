@@ -18,7 +18,7 @@ use crate::combat::floating::FloatingDamage;
 use crate::combat::kernel::{CombatBeatId, CombatKernelRegistry};
 use crate::combat::log::{ActionLog, LogEntry};
 use crate::combat::resolution::{
-    apply_cleanse_only, apply_damage_only, apply_effects, apply_heal_only, compute_hop_damage,
+    apply_cleanse_only, apply_damage_only, apply_legacy_ops, apply_heal_only, compute_hop_damage,
     resolve_action, resolve_targets, select_bounce_hop, target_shape_rejection_reason,
 };
 use crate::combat::resolution::{TargetEntry, TargetableSnapshot};
@@ -1547,7 +1547,7 @@ pub(crate) fn step_app(
             .unwrap_or(false);
         let ult_before = attacker_ult.current;
         let mut sp_tracker = RoundSpTracker::default();
-        let (outcome, core_events) = apply_effects(
+        let (outcome, core_events) = apply_legacy_ops(
             &inflight.action,
             &attacker_unit,
             &mut defender_unit,
@@ -1902,7 +1902,7 @@ pub(crate) fn step_app(
         .as_ref()
         .map(|f| f.break_sealed)
         .unwrap_or(false);
-    let (outcome, core_events) = apply_effects(
+    let (outcome, core_events) = apply_legacy_ops(
         &inflight.action,
         &attacker_unit,
         &mut defender_unit,

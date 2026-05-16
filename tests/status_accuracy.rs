@@ -50,7 +50,7 @@ fn shock_skill() -> SkillDef {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![
+        legacy_ops: vec![
             Effect::Damage {
                 amount: 1,
                 target: TargetShape::Single,

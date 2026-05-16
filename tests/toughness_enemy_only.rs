@@ -37,7 +37,7 @@ fn build_app() -> App {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![
+        legacy_ops: vec![
             Effect::Damage {
                 amount: 20,
                 target: TargetShape::Single,

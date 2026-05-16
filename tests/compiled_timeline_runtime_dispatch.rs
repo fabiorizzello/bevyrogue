@@ -43,7 +43,7 @@ fn timeline_skill(id: &str) -> SkillDef {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![
+        legacy_ops: vec![
             Effect::Damage { amount: 11, target: TargetShape::Single, per_hop: Default::default() },
             Effect::ToughnessHit(25),
             Effect::ApplyStatus { kind: StatusEffectKind::Slowed, duration: 3 },
@@ -119,7 +119,7 @@ fn damage_timeline_skill(id: &str) -> SkillDef {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![
+        legacy_ops: vec![
             Effect::Damage { amount: 13, target: TargetShape::Single, per_hop: Default::default() },
             Effect::ToughnessHit(5),
         ],
