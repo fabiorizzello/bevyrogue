@@ -2,6 +2,7 @@ use bevy::ecs::message::{MessageCursor, Messages};
 use bevy::prelude::*;
 use bevyrogue::combat::{
     api::{register_kernel_builtins, ExtRegistries, SignalBus, SignalTaxonomy},
+    blueprints::register_all_blueprint_exts,
     av::{ActionValue, ActionValueUpdated, MAX_AV},
     events::{CombatEvent, CombatEventKind},
     log::ActionLog,
@@ -33,6 +34,7 @@ fn canonical_book() -> SkillBook {
 fn canonical_regs() -> ExtRegistries {
     let mut regs = ExtRegistries::default();
     register_kernel_builtins(&mut regs);
+    register_all_blueprint_exts(&mut regs);
     regs
 }
 
@@ -62,6 +64,7 @@ fn build_app(book: &SkillBook) -> App {
     {
         let mut regs = app.world_mut().resource_mut::<ExtRegistries>();
         register_kernel_builtins(&mut regs);
+        register_all_blueprint_exts(&mut regs);
         let compiled = compile_skill_book_timelines(book, &regs)
             .expect("canonical timeline book must compile");
         app.world_mut().resource_mut::<TimelineLibrary<String>>().timelines = compiled;

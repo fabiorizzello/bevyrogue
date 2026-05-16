@@ -1,7 +1,10 @@
 use std::collections::HashSet;
 
 use bevyrogue::{
-    combat::api::{ExtRegistries, register_kernel_builtins},
+    combat::{
+        api::{ExtRegistries, register_kernel_builtins},
+        blueprints::register_all_blueprint_exts,
+    },
     combat::types::SkillId,
     data::{
         skill_timeline::compile_skill_book_timelines,
@@ -12,6 +15,7 @@ use bevyrogue::{
 fn canonical_regs() -> ExtRegistries {
     let mut regs = ExtRegistries::default();
     register_kernel_builtins(&mut regs);
+    register_all_blueprint_exts(&mut regs);
     regs
 }
 

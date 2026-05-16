@@ -65,7 +65,6 @@ impl PassiveRunner {
 
         for step_index in 0..1_024 {
             let outcome = runner.step(world, regs, mode, pending);
-            intent_applier(world);
 
             if step_index > 0 && !runner.in_loop() && runner.cursor() == Some(runner.entry()) {
                 return;
@@ -271,6 +270,8 @@ mod tests {
         });
 
         runner.react(&signal, &mut world, &regs, SkillCtxMode::Execute, &mut pending, &mut cast_id_gen);
+        world.insert_resource(IntentQueue(pending));
+        intent_applier(&mut world);
 
         let state = world.resource::<crate::combat::api::blueprint_state::BlueprintState>();
         assert_eq!(

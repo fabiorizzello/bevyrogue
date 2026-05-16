@@ -82,7 +82,7 @@ mod tests {
         );
         match &captured.0[0] {
             Signal::CombatEvent(event) => {
-                assert!(matches!(&event.kind, CombatEventKind::UltimateUsed { unit_id: seen } if seen == unit_id));
+                assert!(matches!(&event.kind, CombatEventKind::UltimateUsed { unit_id: seen } if *seen == unit_id));
             }
             other => panic!("expected combat envelope first, got: {:?}", other),
         }

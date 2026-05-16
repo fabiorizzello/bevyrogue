@@ -186,7 +186,11 @@ fn runtime_registration_applies_all_kernel_transition_domains() {
     register_combat_kernel_runtime(&mut app);
 
     for transition in [
-        CombatKernelTransition::TwinCore(TwinCoreTransition::build_cross_resonance(1)),
+        CombatKernelTransition::Blueprint {
+            owner: "twin_core".into(),
+            name: "build_cross_resonance".into(),
+            payload: SignalPayload::Amount(1),
+        },
         CombatKernelTransition::HolySupport(HolySupportTransition::build_grace(1)),
         CombatKernelTransition::PrecisionMindGame(PrecisionMindGameTransition::open_window(
             PrecisionWindowKind::Momentum,

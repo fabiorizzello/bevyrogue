@@ -21,17 +21,17 @@ Upstream: S06 (CompiledTimeline + ExtRegistries active skills), S07 (PassiveRunn
 
 ## Tasks
 
-- [ ] **T01: Extract TwinCore to blueprints/twin_core mini-plugin and remove kernel coupling** `est:2h`
+- [x] **T01: Extract TwinCore to blueprints/twin_core mini-plugin and remove kernel coupling** `est:2h`
   **Why:** The M021 success criterion requires `rg TwinCore src/combat/ --glob '!blueprints/**'` → 0 lines. Currently `TwinCoreSignal`, `TwinCoreTransition`, and the `CombatKernelTransition::TwinCore(...)` variant live in `kernel.rs`, and `TwinCoreHook`, `TwinCoreState`, `apply_twin_core_transitions_system` live in `blueprints/agumon/identity.rs`. All must consolidate into a new `blueprints/twin_core/` module. The `CombatKernelTransition::TwinCore(TwinCoreTransition)` variant is replaced by `CombatKernelTransition::Blueprint { owner: "twin_core", name: "<signal>", payload: Amount(amount) }` per M021 CONTEXT M5.
   - Files: `src/combat/blueprints/twin_core/mod.rs`, `src/combat/blueprints/mod.rs`, `src/combat/blueprints/agumon/identity.rs`, `src/combat/blueprints/agumon/mod.rs`, `src/combat/kernel.rs`, `src/combat/observability.rs`, `tests/twin_core_integration.rs`, `tests/twin_core_mechanics.rs`, `tests/event_stream.rs`, `tests/validation_snapshot.rs`, `tests/status_observability_canon.rs`, `tests/holy_support_mechanics.rs`, `tests/holy_support_affordance.rs`
   - Verify: cargo test && rg "TwinCore" src/combat/ --glob '!blueprints/**'
 
-- [ ] **T02: Convert Gabumon to directory module with twin_core imports** `est:30m`
+- [x] **T02: Convert Gabumon to directory module with twin_core imports** `est:30m`
   **Why:** Gabumon currently lives in a single flat file (`gabumon.rs`) and imports TwinCore types from `blueprints::agumon::`. After T01, those types live in `blueprints::twin_core::`. This task restructures Gabumon into a proper directory module (matching Agumon's structure) and fixes the import coupling.
   - Files: `src/combat/blueprints/gabumon/mod.rs`, `src/combat/blueprints/gabumon/signals.rs`
   - Verify: cargo test && rg "blueprints::agumon" src/combat/blueprints/gabumon/
 
-- [ ] **T03: Add Bouncing Fire Loop branch to baby_flame and register predicate+selector+hook** `est:1h30m`
+- [x] **T03: Add Bouncing Fire Loop branch to baby_flame and register predicate+selector+hook** `est:1h30m`
   **Why:** The S08 success criterion requires 'Bouncing Fire OFF≡baseline' — proving that with talent rank 0 the intent stream from baby_flame is identical to the current no-loop timeline. This is the first production use of `BeatKind::Loop` in a real blueprint. It proves the Loop infrastructure from S02/S03 works in a real Digimon context and the gate mechanism cleanly gates off the branch.
   - Files: `src/combat/blueprints/agumon/mod.rs`, `assets/data/skills.ron`, `src/combat/api/registry.rs`
   - Verify: cargo check

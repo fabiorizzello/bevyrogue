@@ -1022,6 +1022,8 @@ pub fn register_combat_kernel_runtime(app: &mut App) {
     app.init_resource::<CombatKernelState>()
         .init_resource::<crate::combat::battery_loop::BatteryLoopState>()
         .init_resource::<crate::combat::precision_mind_game::PrecisionMindGameState>()
+        .init_resource::<crate::combat::modifiers::DamageModifierLedger>()
+        .init_resource::<crate::combat::rng::CombatRng>()
         .add_systems(
             Update,
             (

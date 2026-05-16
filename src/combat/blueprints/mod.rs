@@ -135,6 +135,15 @@ const BLUEPRINTS: &[BlueprintRegistration] = &[
     },
 ];
 
+/// Register all blueprint extension points (hooks, predicates, selectors) into `regs`.
+///
+/// Call this alongside `register_kernel_builtins` whenever you compile the full
+/// `SkillBook` timeline set, so that blueprint-specific references in timelines
+/// (like `"agumon/has_bouncing_fire"`) resolve correctly.
+pub fn register_all_blueprint_exts(regs: &mut crate::combat::api::ExtRegistries) {
+    agumon::register_agumon_ext(regs);
+}
+
 pub fn dispatch_custom_signal(
     signal: &SkillCustomSignal,
     action: &ResolvedAction,

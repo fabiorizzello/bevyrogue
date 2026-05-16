@@ -39,7 +39,7 @@
 - [x] **S07: S07** `risk:high` `depends:[]`
   > After this: 6 passive via PassiveRunner; Block Reaction verde deterministico.
 
-- [ ] **S08: Agumon + Gabumon migrated (Twin Core paired)** `risk:medium` `depends:[S06,S07]`
+- [ ] **S08: S08** `risk:medium` `depends:[]`
   > After this: Twin Core end-to-end; Bouncing Fire OFF≡baseline; no coupling.
 
 - [ ] **S09: Dorumon + Tentomon migrated (Predator Loop + Battery Loop)** `risk:medium` `depends:[S08]`

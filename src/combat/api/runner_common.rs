@@ -48,6 +48,8 @@ pub(crate) fn fire_beat(beat: &Beat, hop_index: u32, params: RunnerParams) -> Ve
                 caster: params.caster,
                 primary_target: params.primary_target,
                 state: &(),
+                world: params.world,
+                cast_hit_set: params.cast_hit_set,
             };
             sel(&sctx)
         } else {

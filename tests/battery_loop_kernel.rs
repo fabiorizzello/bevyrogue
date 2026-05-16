@@ -111,7 +111,7 @@ fn static_charge_caps_and_reports_a_stable_blocked_reason_on_the_fourth_hit() {
         })
     );
 
-    let snapshot = state.snapshot();
+    let snapshot = BatteryLoopSnapshot::from(&state);
     assert_eq!(snapshot.last_transition, Some(fourth));
     assert_eq!(
         snapshot.last_blocked_reason,

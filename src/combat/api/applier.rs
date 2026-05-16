@@ -361,7 +361,10 @@ fn apply_deal_damage(
     );
 
     let mut tentomon_block_triggered = false;
-    if tgt.unit.name == "Tentomon" {
+    if tgt.unit.name == "Tentomon"
+        && world.contains_resource::<crate::combat::battery_loop::BatteryLoopState>()
+        && world.contains_resource::<CombatRng>()
+    {
         world.resource_scope(|world, mut state: Mut<crate::combat::battery_loop::BatteryLoopState>| {
             if state.block_reaction_ready() && state.last_block_reaction_cast_id != Some(cast_id) {
                 state.last_block_reaction_cast_id = Some(cast_id);

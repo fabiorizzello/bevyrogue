@@ -2,7 +2,7 @@ use crate::combat::kernel::CombatKernelTransition;
 use crate::combat::state::ResolvedAction;
 use crate::data::skills_ron::SkillCustomSignal;
 
-use super::identity::{TwinCoreDesignTag, twin_core_added_tag_transition};
+use super::{TwinCoreDesignTag, twin_core_added_tag_transition};
 use super::super::{CustomSignalDispatchError, amount_payload};
 
 pub const OWNER: &str = "agumon";

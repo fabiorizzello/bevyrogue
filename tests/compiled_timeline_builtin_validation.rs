@@ -84,11 +84,16 @@ fn builtins_hook_selector_and_predicates_work_through_registry() {
     let mut regs = ExtRegistries::default();
     register_kernel_builtins(&mut regs);
 
+    let world = bevy::prelude::World::new();
+    let cast_hit_set = HashSet::new();
+
     let selector = regs.selectors.get("core/primary").expect("builtin selector");
     let selected = selector(&SelectorCtx {
         caster: UnitId(11),
         primary_target: UnitId(22),
         state: &(),
+        world: &world,
+        cast_hit_set: &cast_hit_set,
     });
     assert_eq!(selected, vec![UnitId(22)]);
 
@@ -100,8 +105,7 @@ fn builtins_hook_selector_and_predicates_work_through_registry() {
         hop_index: 0,
         beat_targets: vec![UnitId(33)],
     };
-    let world = bevy::prelude::World::new();
-    let mut cast_hit_set = HashSet::new();
+    let mut cast_hit_set = cast_hit_set;
     let mut pending = VecDeque::new();
     let payload = BeatPayload::DealDamage {
         amount: 19,

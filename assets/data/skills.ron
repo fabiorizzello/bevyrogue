@@ -21,11 +21,25 @@
                 (id: "impact_damage", kind: Impact, hook: Some("core/deal_damage"), selector: Some("core/primary"), presentation: None, payload: Some(DealDamage(amount: 18, tag: Fire, target: Single))),
                 (id: "impact_break", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/primary"), presentation: None, payload: Some(BreakToughness(amount: 10, tag: Fire, target: Single))),
                 (id: "impact_signal", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/caster"), presentation: None, payload: Some(BlueprintSignal(owner: "agumon", name: "apply_heated", payload: Amount(3)))),
+                (
+                    id: "bounce_loop",
+                    kind: Loop(
+                        body: [
+                            (id: "bounce_hop", kind: Impact, hook: Some("agumon/on_bounce_hop"), selector: Some("agumon/bounce_pick_next"), presentation: None, payload: None),
+                        ],
+                        exit_when: "agumon/bounce_exit",
+                    ),
+                    hook: None,
+                    selector: None,
+                    presentation: None,
+                    payload: None,
+                ),
             ],
             edges: [
                 (from: "cast", to: "impact_damage", gate: Some("core/always")),
                 (from: "impact_damage", to: "impact_break", gate: Some("core/always")),
                 (from: "impact_break", to: "impact_signal", gate: Some("core/always")),
+                (from: "impact_signal", to: "bounce_loop", gate: Some("agumon/has_bouncing_fire")),
             ],
         )),
     ),

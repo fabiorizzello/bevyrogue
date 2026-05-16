@@ -161,8 +161,8 @@ mod tests {
         assert!(ledger.is_armed(target));
 
         let drained = ledger.drain(target);
-        assert!(!drained.is_empty());
+        assert!(!drained.terms.is_empty());
         assert!(!ledger.is_armed(target));
-        assert!(ledger.drain(target).is_empty());
+        assert!(ledger.drain(target).terms.is_empty());
     }
 }

@@ -1,4 +1,6 @@
-use bevy::prelude::Resource;
+use std::collections::HashSet;
+
+use bevy::prelude::{Resource, World};
 use serde::{Deserialize, Serialize};
 
 use crate::combat::{
@@ -159,6 +161,10 @@ pub struct SelectorCtx<'a, S = ()> {
     pub caster: UnitId,
     pub primary_target: UnitId,
     pub state: &'a S,
+    /// Read-only world access for complex selectors that need to query unit state.
+    pub world: &'a World,
+    /// Units already hit this cast — selectors must skip these to avoid repeats.
+    pub cast_hit_set: &'a HashSet<UnitId>,
 }
 
 /// Read context passed to cue resolver functions.
