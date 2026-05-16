@@ -311,8 +311,8 @@ fn s09_event_stream_observes_all_variants() {
     assert!(kinds.iter().any(|kind| matches!(
         kind,
         CombatEventKind::OnKernelTransition {
-            transition: CombatKernelTransition::TwinCore(_),
-        }
+            transition: CombatKernelTransition::Blueprint { owner, .. },
+        } if owner == "twin_core"
     )));
     // Suppress unused-import warning until T02 emits these variants.
     let _ = ActionIntentKind::Basic;

@@ -1,12 +1,14 @@
 use bevy::prelude::*;
 use bevyrogue::combat::api::intent::CastId;
 use bevyrogue::combat::{
+    api::SignalPayload,
     events::{CombatEvent, CombatEventKind},
     floating::FloatingDamage,
     blueprints::patamon::HolySupportState,
+    blueprints::twin_core::{TwinCoreState, TwinCoreTransition},
     kernel::{
         CombatKernelTransition, HolySupportTransition, PrecisionMindGameTransition,
-        PrecisionWindowKind, TwinCoreTransition, register_combat_kernel_runtime,
+        PrecisionWindowKind, register_combat_kernel_runtime,
     },
     log::{ActionLog, LogEntry},
     observability::{
@@ -21,7 +23,6 @@ use bevyrogue::combat::{
     team::Team,
     toughness::{DamageKind, Toughness},
     turn_order::TurnOrder,
-    blueprints::agumon::TwinCoreState,
     types::{Attribute, DamageTag, EvoStage, UnitId},
     ultimate::{UltAccumulationTrigger, UltimateCharge},
     unit::{Ko, Unit},

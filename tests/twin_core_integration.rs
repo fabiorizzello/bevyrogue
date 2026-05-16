@@ -11,7 +11,7 @@ use bevyrogue::combat::observability::{capture_validation_snapshot, format_valid
 use bevyrogue::combat::sp::SpPool;
 use bevyrogue::combat::state::CombatState;
 use bevyrogue::combat::toughness::Toughness;
-use bevyrogue::combat::blueprints::agumon::{
+use bevyrogue::combat::blueprints::twin_core::{
     TwinCoreDesignTag, TwinCoreHook, TwinCoreState, apply_twin_core_transitions_system,
     twin_core_design_tag,
 };
@@ -256,7 +256,7 @@ fn skill_resolution_emits_twin_core_signals_through_blueprints() {
 
     match &transitions[0] {
         bevyrogue::combat::kernel::CombatKernelTransition::Tag(tag) => {
-            assert_eq!(tag.before.id, bevyrogue::combat::blueprints::agumon::twin_core_design_tag(bevyrogue::combat::blueprints::agumon::TwinCoreDesignTag::Heated));
+            assert_eq!(tag.before.id, bevyrogue::combat::blueprints::twin_core::twin_core_design_tag(bevyrogue::combat::blueprints::twin_core::TwinCoreDesignTag::Heated));
             assert_eq!(tag.kind, bevyrogue::combat::kernel::CombatTagChangeKind::Added);
         }
         _ => panic!("Expected Tag transition"),

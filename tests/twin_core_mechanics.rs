@@ -5,11 +5,11 @@ use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::kernel::{
     CombatBeatId, CombatKernelRegistry, CombatKernelTransition, CombatTagChangeKind,
     CombatTagState, CombatTagTransition, TacticalCyclePhase, TacticalCycleStep,
-    TacticalCycleTransition, TwinCoreSignal,
+    TacticalCycleTransition,
 };
-use bevyrogue::combat::blueprints::agumon::{
-    TwinCoreDesignTag, TwinCoreHook, TwinCoreState, apply_twin_core_transitions_system,
-    twin_core_design_tag,
+use bevyrogue::combat::blueprints::twin_core::{
+    TwinCoreDesignTag, TwinCoreHook, TwinCoreSignal, TwinCoreState,
+    apply_twin_core_transitions_system, twin_core_design_tag,
 };
 use bevyrogue::combat::types::UnitId;
 

@@ -8,10 +8,11 @@ use crate::combat::{
     battery_loop::BatteryLoopState,
     floating::FloatingDamage,
     blueprints::patamon::HolySupportSnapshot,
+    blueprints::twin_core::{TwinCoreSignal, TwinCoreTransition},
     kernel::{
         BatteryLoopBlockedReason, BatteryLoopTransition, PrecisionCommitment,
         PrecisionMindGamePhase, PrecisionMindGameTransition, PrecisionOutcome, PrecisionReveal,
-        PrecisionWindowKind, PredatorLoopTransition, TwinCoreSignal, TwinCoreTransition,
+        PrecisionWindowKind, PredatorLoopTransition,
     },
     log::{ActionLog, LogEntry},
     precision_mind_game::PrecisionMindGameSnapshot,

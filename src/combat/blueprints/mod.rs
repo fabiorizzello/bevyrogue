@@ -9,6 +9,7 @@ pub mod gabumon;
 pub mod patamon;
 pub mod renamon;
 pub mod tentomon;
+pub mod twin_core;
 
 use std::fmt;
 

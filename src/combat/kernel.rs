@@ -430,82 +430,6 @@ impl CombatBeatId {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum TwinCoreSignal {
-    BuildCrossResonance,
-    SpendCrossResonance,
-    ThermalSpark,
-    TwinBurst,
-    Shatter,
-    FireSpendMarker,
-    IceSpendMarker,
-    CycleReset,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub struct TwinCoreTransition {
-    pub signal: TwinCoreSignal,
-    pub amount: u8,
-}
-
-impl TwinCoreTransition {
-    pub const fn build_cross_resonance(amount: u8) -> Self {
-        Self {
-            signal: TwinCoreSignal::BuildCrossResonance,
-            amount,
-        }
-    }
-
-    pub const fn spend_cross_resonance(amount: u8) -> Self {
-        Self {
-            signal: TwinCoreSignal::SpendCrossResonance,
-            amount,
-        }
-    }
-
-    pub const fn thermal_spark(amount: u8) -> Self {
-        Self {
-            signal: TwinCoreSignal::ThermalSpark,
-            amount,
-        }
-    }
-
-    pub const fn twin_burst(amount: u8) -> Self {
-        Self {
-            signal: TwinCoreSignal::TwinBurst,
-            amount,
-        }
-    }
-
-    pub const fn shatter(amount: u8) -> Self {
-        Self {
-            signal: TwinCoreSignal::Shatter,
-            amount,
-        }
-    }
-
-    pub const fn fire_spend_marker(amount: u8) -> Self {
-        Self {
-            signal: TwinCoreSignal::FireSpendMarker,
-            amount,
-        }
-    }
-
-    pub const fn ice_spend_marker(amount: u8) -> Self {
-        Self {
-            signal: TwinCoreSignal::IceSpendMarker,
-            amount,
-        }
-    }
-
-    pub const fn cycle_reset() -> Self {
-        Self {
-            signal: TwinCoreSignal::CycleReset,
-            amount: 0,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BatteryLoopChargeKind {
     Static,
     Circuit,
@@ -916,7 +840,6 @@ pub enum CombatKernelTransition {
     Fatigue(FatigueTransition),
     Tag(CombatTagTransition),
     Beat(CombatBeatId),
-    TwinCore(TwinCoreTransition),
     BatteryLoop(BatteryLoopTransition),
     HolySupport(HolySupportTransition),
     PredatorLoop(PredatorLoopTransition),
@@ -1113,7 +1036,7 @@ pub fn register_combat_kernel_runtime(app: &mut App) {
     // Added here so every callsite of `register_combat_kernel_runtime` keeps
     // working without touching ~15 test files.
     app.add_plugins((
-        crate::combat::blueprints::agumon::AgumonPlugin,
+        crate::combat::blueprints::twin_core::TwinCorePlugin,
         crate::combat::blueprints::patamon::PatamonPlugin,
         crate::combat::blueprints::dorumon::DorumonPlugin,
         crate::combat::blueprints::tentomon::TentomonPlugin,
