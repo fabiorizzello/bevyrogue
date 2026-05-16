@@ -1,0 +1,404 @@
+[
+  {
+    "kind": "bash",
+    "toolCallId": "call_BX5lbCkbKTyy9pdHB1vxFqhe|fc_09ba886198f857dc016a07fac9fca88191b6dbcece591c183a",
+    "command": "rg -n \"\\bEffect\\b|timeline_backed|apply_legacy_ops|skill_.*\\(legacy_ops|legacy_ops\" src tests assets/data/skills.ron",
+    "exitCode": 0,
+    "outputSnippet": "assets/data/skills.ron:15:        legacy_ops: [Damage(amount: 18, target: Single), ToughnessHit(10)],\nassets/data/skills.ron:45:        legacy_ops: [Damage(amount: 16, target: Single), ToughnessHit(8)],\nassets/data/skills.ron:75:        legacy_ops: [Damage(amount: 17, target: Single), ToughnessHit(9)],\nassets/data/skills.ron:102:        legacy_ops: [Damage(amount: 16, target: Single), ToughnessHit(8)],\nassets/data/skills.ron:137:        legacy_ops: [Damage(amount: 15, target: Single), ToughnessH",
+    "timestamp": 1778907851049
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_hDVVFKHL0pWF5xeLiQupeKr0|fc_09ba886198f857dc016a07fafd9fa081919c50adb541048204",
+    "path": "/home/fabio/dev/bevyrogue/src/combat/state.rs",
+    "timestamp": 1778907902859
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_MdYfaP3yHi0SuAgPVYvOGLod|fc_09ba886198f857dc016a07fb029c24819182224c2b98588af9",
+    "path": "/home/fabio/dev/bevyrogue/src/combat/turn_system/pipeline.rs",
+    "timestamp": 1778907908228
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_76tf9BYpaivzXGPLpg7W5JU2|fc_09ba886198f857dc016a07fb0774508191a9b7eac4986f8c63",
+    "path": "/home/fabio/dev/bevyrogue/src/combat/turn_system/pipeline.rs",
+    "timestamp": 1778907913040
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_d11ijGTdRrNygqBpyhXTLysi|fc_09ba886198f857dc016a07fb0abb288191812d969301dcd03f",
+    "path": "/home/fabio/dev/bevyrogue/src/combat/turn_system/mod.rs",
+    "timestamp": 1778907918949
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_zRGjbAW3mViSW7hwSiYM1nTw|fc_09ba886198f857dc016a07fb18d89081918d3a6b06020b8886",
+    "command": "rg -n \"CombatBeatId::Applied|CombatBeatId::Resolved|CombatBeatId::PreApp|CombatBeatId::Declared|step_app\\(|timeline_backed\" src/combat/turn_system/mod.rs src/combat/turn_system/pipeline.rs src/combat/state.rs",
+    "exitCode": 0,
+    "outputSnippet": "src/combat/turn_system/mod.rs:295:            CombatBeatId::Declared,\nsrc/combat/turn_system/mod.rs:312:            CombatBeatId::PreApp,\nsrc/combat/turn_system/mod.rs:325:            pipeline::run_timeline_backed_action(world, inflight, action_cast_id);\nsrc/combat/turn_system/pipeline.rs:253:pub(crate) fn run_timeline_backed_action(\nsrc/combat/turn_system/pipeline.rs:339:pub(crate) fn step_app(\n",
+    "timestamp": 1778907930457
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_HSEYiK4fLAFC4nb1G8XhujGl|fc_09ba886198f857dc016a07fb30e0e48191b724e811fc420a7b",
+    "command": "rg -n \"BeatKind::Loop|BeatPayload::GrantFreeSkill|core/primary|core/deal_damage|core/apply_effect|BeatKind::Impact\" tests src/combat -g '!src/combat/turn_system/pipeline.rs'",
+    "exitCode": 0,
+    "outputSnippet": "tests/compiled_timeline_builtin_validation.rs:33:                kind: BeatKind::Impact,\ntests/compiled_timeline_builtin_validation.rs:64:    assert!(regs.hooks.get(\"core/deal_damage\").is_some());\ntests/compiled_timeline_builtin_validation.rs:73:    assert!(regs.hooks.get(\"core/apply_effect\").is_some());\ntests/compiled_timeline_builtin_validation.rs:74:    assert!(regs.selectors.get(\"core/primary\").is_some());\ntests/compiled_timeline_builtin_validation.rs:78:    let timeline = owned_builtin_time",
+    "timestamp": 1778907953984
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_59majLGCLHuV2SPaX03L8OOh|fc_09ba886198f857dc016a07fb3d418081919e9b6243a0581bb1",
+    "command": "rg -n \"Revive|GrantFreeSkill|ApplyStatus|Cleanse|SelfAdvance|GrantEnergy|DelayTurn|AdvanceTurn\" src/combat/api/builtins.rs src/combat/api/runner.rs src/combat/api/applier.rs",
+    "exitCode": 0,
+    "outputSnippet": "src/combat/api/builtins.rs:94:    let Some(BeatPayload::ApplyStatus { kind, duration, target }) = ctx.beat_payload() else {\nsrc/combat/api/builtins.rs:96:            \"core/apply_status requires BeatPayload::ApplyStatus at beat `{}`\",\nsrc/combat/api/builtins.rs:103:    enqueue_targets(evt, ctx, *target, move |target_id| Intent::ApplyStatus {\nsrc/combat/api/builtins.rs:113:    let Some(BeatPayload::DelayTurn { amount_pct, target }) = ctx.beat_payload() else {\nsrc/combat/api/builtins.rs:115:       ",
+    "timestamp": 1778907966470
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_6fAwbutJpDaekdMzGCr44r17|fc_09ba886198f857dc016a07fd0a66f88191b23dcd1dc034dd05",
+    "path": "/home/fabio/dev/bevyrogue/src/combat/turn_system/tests.rs",
+    "timestamp": 1778908434891
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_7JHzJBlEWwIpiG9wMaqofr3B|fc_09ba886198f857dc016a07fd210c24819193338dea194c017f",
+    "command": "rg -n \"fn compile_skill_book_timelines\" -n src/data/skill_timeline.rs src/data -g '!target'",
+    "exitCode": 0,
+    "outputSnippet": "src/data/skill_timeline.rs:60:pub fn compile_skill_book_timelines(\nsrc/data/skill_timeline.rs:60:pub fn compile_skill_book_timelines(\n",
+    "timestamp": 1778908450346
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_iXUzffL1Ky9nr9R45ITuGRaq|fc_09ba886198f857dc016a07fd30cbf08191b86d59415fdcabd8",
+    "path": "/home/fabio/dev/bevyrogue/src/combat/turn_system/tests.rs",
+    "timestamp": 1778908479609
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_yqboKc7GyjdGOjvF8URjyWzl|fc_09ba886198f857dc016a07fd70ea308191b0d70785ef5292b4",
+    "path": "/home/fabio/dev/bevyrogue/src/combat/turn_system/tests.rs",
+    "timestamp": 1778908533833
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_trMhure1OqlNvwHCeY719EpJ|fc_09ba886198f857dc016a07fd81306881918a84300dc817f01c",
+    "command": "rg -n \"let mut app = App::new\\(\\);|SkillBookHandle\\(handle\\);\" src/combat/turn_system/tests.rs",
+    "exitCode": 0,
+    "outputSnippet": "82:    let mut app = App::new();\n119:    let mut app = App::new();\n176:    let mut app = App::new();\n260:    let mut app = App::new();\n317:    let mut app = App::new();\n",
+    "timestamp": 1778908573394
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_uGn321agx0tBh3oa5npMh3Ra|fc_09ba886198f857dc016a07fdda8d108191b67397d7d0a9df66",
+    "path": "/home/fabio/dev/bevyrogue/src/combat/turn_system/tests.rs",
+    "timestamp": 1778908639047
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_l8se52e613pg2IJUvaQ8dZDx|fc_09ba886198f857dc016a07fe0141c0819188a62f04bc216392",
+    "command": "python3 - <<'PY'\nfrom pathlib import Path\npath = Path('src/combat/turn_system/tests.rs')\ntext = path.read_text()\nold_basic = '''    let mut app = App::new();\n    app.init_resource::<TurnOrder>()\n        .init_resource::<CombatState>()\n        .init_resource::<SpPool>()\n        .init_resource::<ActionLog>()\n        .init_resource::<Time>()\n        .add_message::<ActionIntent>()\n        .add_message::<CombatEvent>()\n        .add_systems(Update, resolve_action_system);\n\n    let mut assets = Assets::<SkillBook>::default();\n    let handle = assets.add(SkillBook(vec![skill(\"basic\", DamageTag::Fire, 10, 0, 5)]));\n    app.insert_resource(assets);\n    app.insert_resource(SkillBookHandle(handle));\n'''\nnew_basic = '    let mut app = build_app(SkillBook(vec![skill(\"basic\", DamageTag::Fire, 10, 0, 5)]));\\n'\ntext = text.replace(old_basic, new_basic, 1)\ntext = text.replace(old_basic, new_basic, 1)\nold_revive = '''    let mut app = App::new();\n    app.init_resource::<TurnOrder>()\n        .init_resource::<CombatState>()\n        .init_resource::<SpPool>()\n        .init_resource::<ActionLog>()\n        .init_resource::<Time>()\n        .add_message::<ActionIntent>()\n        .add_message::<CombatEvent>()\n        .add_systems(Update, resolve_action_system);\n\n    let mut assets = Assets::<SkillBook>::default();\n    let revive_skill = SkillDef {\n        id: SkillId(\"revive\".into()),\n        name: \"Revive\".into(),\n        damage_tag: DamageTag::Light,\n        sp_cost: 10,\n        targeting: SkillTargeting {\n            shape: TargetShape::Single,\n            side: TargetSide::Ally,\n            life: TargetLife::Ko,\n            self_rule: SelfTargetRule::Forbid,\n            ..Default::default()\n        },\n        implementation: SkillImplementation::Implemented,\n        legacy_ops: vec![Effect::Revive(25)],\n\n        custom_signals: vec![],\n        animation_sequence: None,\n        qte: None,\n        ..Default::default()\n    };\n    let handle = assets.add(SkillBook(vec![revive_skill]));\n    app.insert_resource(assets);\n    app.insert_resource(SkillBookHandle(handle));\n'''\nnew_revive = '''    let revive_skill = SkillDef {\n        id: SkillId(\"revive\".into()),\n        name: \"Revive\".into(),\n        damage_tag: DamageTag::Light,\n        sp_cost: 10,\n        targeting: SkillTargeting {\n            shape: TargetShape::Single,\n            side: TargetSide::Ally,\n            life: TargetLife::Ko,\n            self_rule: SelfTargetRule::Forbid,\n            ..Default::default()\n        },\n        implementation: SkillImplementation::Implemented,\n        legacy_ops: vec![Effect::Revive(25)],\n        timeline: Some(crate::data::skill_timeline::SkillTimeline {\n            entry: \"cast\".into(),\n            beats: vec![Beat {\n                id: \"cast\".into(),\n                kind: BeatKind::Cast,\n                hook: None,\n                selector: None,\n                presentation: None,\n                payload: None,\n            }],\n            edges: vec![],\n        }),\n\n        custom_signals: vec![],\n        animation_sequence: None,\n        qte: None,\n        ..Default::default()\n    };\n    let mut app = build_app(SkillBook(vec![revive_skill]));\n'''\ntext = text.replace(old_revive, new_revive, 1)\n# restore SP pool setup for the revive test after build_app\ntext = text.replace('''    app.world_mut().resource_mut::<SpPool>().max = 100;\n    app.world_mut().resource_mut::<SpPool>().gain(100);\n''', '''    app.world_mut().resource_mut::<SpPool>().max = 100;\n    app.world_mut().resource_mut::<SpPool>().gain(100);\n''', 1)\n# Remove manual app setup for stunned test\ntext = text.replace(old_basic, new_basic, 1)\npath.write_text(text)\nPY",
+    "exitCode": 0,
+    "outputSnippet": "(no output)",
+    "timestamp": 1778908691262
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_7yPf8R0KAXa2fBXCFALYsoab|fc_0b01872a21a70f28016a0800bab4c0819191b569638237bb8e",
+    "command": "",
+    "exitCode": 0,
+    "outputSnippet": "gsd_exec[76b6c114-9c88-46e7-bd98-3b03c64aa6cd] runtime=bash exit=0 duration=9ms\n  stdout: 39564B → /home/fabio/dev/bevyrogue/.gsd/exec/76b6c114-9c88-46e7-bd98-3b03c64aa6cd.stdout\n  stderr: 0B → /home/fabio/dev/bevyrogue/.gsd/exec/76b6c114-9c88-46e7-bd98-3b03c64aa6cd.stderr\n--- digest ---\nrs:146:fn petit_thunder_timeline_backed_path_preserves_break_status_and_signal_order() {\ntests/digimon_signal_registry.rs:23:fn resolve_skill(book: &SkillBook, skill_id: &str) -> bevyrogue::combat::state::Resolv",
+    "timestamp": 1778909371684
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_x1VmqxztVvPtW99Vt5HRjdxD|fc_0b01872a21a70f28016a0800ced4608191b6becbb6ee43dcae",
+    "command": "",
+    "exitCode": 0,
+    "outputSnippet": "gsd_exec[4ca0e261-7a62-4ed2-9b17-577af3f6d86b] runtime=bash exit=0 duration=8ms\n  stdout: 2663B → /home/fabio/dev/bevyrogue/.gsd/exec/4ca0e261-7a62-4ed2-9b17-577af3f6d86b.stdout\n  stderr: 0B → /home/fabio/dev/bevyrogue/.gsd/exec/4ca0e261-7a62-4ed2-9b17-577af3f6d86b.stderr\n--- digest ---\nompiled_timeline_runtime_dispatch.rs:261:fn timeline_backed_action_runs_through_beat_runner_and_applier() {\ntests/dr_pipeline.rs:103:    let (_outcome, events) = apply_legacy_ops(\ntests/compiled_timeline_boot_val",
+    "timestamp": 1778909391741
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_w3T8EqhZT037mgzadsSFqYnG|fc_0b01872a21a70f28016a0800d8268081918cf4d2196edd3ef7",
+    "command": "",
+    "exitCode": 0,
+    "outputSnippet": "gsd_exec[b34568a1-ed07-454a-bf58-02bace55d0a7] runtime=bash exit=0 duration=529ms\n  stdout: 4127B → /home/fabio/dev/bevyrogue/.gsd/exec/b34568a1-ed07-454a-bf58-02bace55d0a7.stdout\n  stderr: 0B → /home/fabio/dev/bevyrogue/.gsd/exec/b34568a1-ed07-454a-bf58-02bace55d0a7.stderr\n--- digest ---\neam.rs', 'tests/tentomon_blueprint.rs', 'tests/heal_effect.rs', 'tests/dorumon_predator_runtime.rs', 'tests/dorumon_blueprint.rs', 'tests/status_blessed_ult_charge.rs', 'tests/cleanse_effect.rs', 'tests/present",
+    "timestamp": 1778909400296
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_1FYZxR2nTkRAaBpn4P4j8TiY|fc_0b01872a21a70f28016a0800d8269c8191ae343f37dc903488",
+    "command": "",
+    "exitCode": 0,
+    "outputSnippet": "gsd_exec[e3a58b65-5e7d-4fb5-96c4-6221e72e1459] runtime=bash exit=0 duration=418ms\n  stdout: 1596B → /home/fabio/dev/bevyrogue/.gsd/exec/e3a58b65-5e7d-4fb5-96c4-6221e72e1459.stdout\n  stderr: 0B → /home/fabio/dev/bevyrogue/.gsd/exec/e3a58b65-5e7d-4fb5-96c4-6221e72e1459.stderr\n--- digest ---\ntests.rs\nsrc/combat/turn_system/pipeline.rs\n.gsd/spikes/spike-blueprint-api/sketches/kitsune_grace.rs\n.gsd/spikes/spike-blueprint-api/sketches/holy_aegis.rs\n.gsd/spikes/spike-kernel-primitives/sketches/status_a",
+    "timestamp": 1778909400296
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_tgUB92JyBUXAtoHGIkkMhPRu|fc_0b01872a21a70f28016a080101d7608191a1392e45468d85e3",
+    "command": "",
+    "exitCode": 0,
+    "outputSnippet": "gsd_exec[3a97a1b0-5bb2-4f4e-acb5-4229f05d4c3f] runtime=bash exit=0 duration=27ms\n  stdout: 331B → /home/fabio/dev/bevyrogue/.gsd/exec/3a97a1b0-5bb2-4f4e-acb5-4229f05d4c3f.stdout\n  stderr: 0B → /home/fabio/dev/bevyrogue/.gsd/exec/3a97a1b0-5bb2-4f4e-acb5-4229f05d4c3f.stderr\n--- digest ---\nresolution.rs\nsrc/combat/blueprints/gabumon.rs\nsrc/combat/blueprints/tentomon.rs\nsrc/combat/blueprints/renamon.rs\nsrc/combat/blueprints/mod.rs\nsrc/combat/turn_system/pipeline.rs\nsrc/combat/blueprints/agumon/signa",
+    "timestamp": 1778909442149
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_Q3lm8jKFWUFHqalgqFIs5ZAA|fc_0b01872a21a70f28016a080101d77881919ccc498f1867c12e",
+    "command": "",
+    "exitCode": 0,
+    "outputSnippet": "gsd_exec[d6956544-7de9-4dd8-b989-0b58980da4d6] runtime=bash exit=0 duration=26ms\n  stdout: 160B → /home/fabio/dev/bevyrogue/.gsd/exec/d6956544-7de9-4dd8-b989-0b58980da4d6.stdout\n  stderr: 0B → /home/fabio/dev/bevyrogue/.gsd/exec/d6956544-7de9-4dd8-b989-0b58980da4d6.stderr\n--- digest ---\nsrc/data/skills_ron.rs\nsrc/combat/events.rs\nsrc/combat/follow_up.rs\nsrc/combat/resolution.rs\nsrc/combat/turn_system/tests.rs\nsrc/combat/turn_system/pipeline.rs",
+    "timestamp": 1778909442149
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_CRTqS39KS0EzamTypyUm4rCB|fc_0b01872a21a70f28016a08011c3a88819197836219e5e39efa",
+    "command": "",
+    "exitCode": 0,
+    "outputSnippet": "gsd_exec[f504e1f7-ed97-436a-af39-757f608ff14d] runtime=bash exit=0 duration=9ms\n  stdout: 109B → /home/fabio/dev/bevyrogue/.gsd/exec/f504e1f7-ed97-436a-af39-757f608ff14d.stdout\n  stderr: 0B → /home/fabio/dev/bevyrogue/.gsd/exec/f504e1f7-ed97-436a-af39-757f608ff14d.stderr\n--- digest ---\nsrc/combat/turn_system/pipeline.rs:339:pub(crate) fn step_app(\nsrc/combat/follow_up.rs:556:        step_app(",
+    "timestamp": 1778909469103
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_HB38lCeVFaqiZi7NnC2vRHG6|fc_0b01872a21a70f28016a08011c3dfc8191970bab79fd0159df",
+    "command": "",
+    "exitCode": 0,
+    "outputSnippet": "gsd_exec[39cede9b-a338-4d40-bac6-ed777896fa1f] runtime=bash exit=0 duration=9ms\n  stdout: 198B → /home/fabio/dev/bevyrogue/.gsd/exec/39cede9b-a338-4d40-bac6-ed777896fa1f.stdout\n  stderr: 0B → /home/fabio/dev/bevyrogue/.gsd/exec/39cede9b-a338-4d40-bac6-ed777896fa1f.stderr\n--- digest ---\nsrc/combat/turn_system/pipeline.rs:253:pub(crate) fn run_timeline_backed_action(\nsrc/combat/turn_system/mod.rs:325:            pipeline::run_timeline_backed_action(world, inflight, action_cast_id);",
+    "timestamp": 1778909469104
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_o8S5WSn7ONXEoy6Lh3m1z4lD|fc_0b01872a21a70f28016a08016c58a081919eecd674f693dcc8",
+    "command": "",
+    "exitCode": 0,
+    "outputSnippet": "gsd_exec[e3a14f1d-f8db-4b65-9f33-3a96c29bcdd7] runtime=bash exit=0 duration=7ms\n  stdout: 2373B → /home/fabio/dev/bevyrogue/.gsd/exec/e3a14f1d-f8db-4b65-9f33-3a96c29bcdd7.stdout\n  stderr: 0B → /home/fabio/dev/bevyrogue/.gsd/exec/e3a14f1d-f8db-4b65-9f33-3a96c29bcdd7.stderr\n--- digest ---\netShape::Bounce {\nsrc/combat/state.rs:53:    /// Per-hop damage curve (relevant for `TargetShape::Bounce`; `Constant` for all other shapes).\nsrc/combat/resolution.rs:126:        TargetShape::Bounce { hops, select",
+    "timestamp": 1778909549474
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_xUa1Kes78hcPPHofgPDYCCtD|fc_0b01872a21a70f28016a08016c58ac8191930b1ed87999b0a9",
+    "command": "",
+    "exitCode": 0,
+    "outputSnippet": "gsd_exec[dfc68347-0616-47d0-8052-2cd0a0f3a9ad] runtime=bash exit=0 duration=7ms\n  stdout: 4833B → /home/fabio/dev/bevyrogue/.gsd/exec/dfc68347-0616-47d0-8052-2cd0a0f3a9ad.stdout\n  stderr: 0B → /home/fabio/dev/bevyrogue/.gsd/exec/dfc68347-0616-47d0-8052-2cd0a0f3a9ad.stderr\n--- digest ---\nine_runtime_dispatch.rs:91:                    selector: Some(\"core/primary\".into()),\ntests/compiled_timeline_runtime_dispatch.rs:134:                    selector: Some(\"core/primary\".into()),\ntests/compiled_time",
+    "timestamp": 1778909549474
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_HCf99tPQAAJwPpTAHYjXgY0L|fc_0b01872a21a70f28016a080174da3c8191a062ea649cc81a07",
+    "command": "",
+    "exitCode": 0,
+    "outputSnippet": "gsd_exec[ac22905c-b373-4547-9361-40bc9258b07e] runtime=bash exit=0 duration=8ms\n  stdout: 4857B → /home/fabio/dev/bevyrogue/.gsd/exec/ac22905c-b373-4547-9361-40bc9258b07e.stdout\n  stderr: 0B → /home/fabio/dev/bevyrogue/.gsd/exec/ac22905c-b373-4547-9361-40bc9258b07e.stderr\n--- digest ---\n source);\nsrc/combat/api/applier.rs:246:        log::warn!(\"intent_applier DealDamage: target {:?} not found\", target);\nsrc/combat/api/timeline.rs:33:    DealDamage {\nsrc/combat/api/runner.rs:72:    /// Units hit",
+    "timestamp": 1778909557168
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_nTkYGEKH4ySR6EDRWcLwH05n|fc_0b01872a21a70f28016a080174da5081919651286f2048c12f",
+    "command": "",
+    "exitCode": 0,
+    "outputSnippet": "gsd_exec[0c017e7a-b643-45a2-9074-1c12dd39242f] runtime=bash exit=0 duration=8ms\n  stdout: 2906B → /home/fabio/dev/bevyrogue/.gsd/exec/0c017e7a-b643-45a2-9074-1c12dd39242f.stdout\n  stderr: 0B → /home/fabio/dev/bevyrogue/.gsd/exec/0c017e7a-b643-45a2-9074-1c12dd39242f.stderr\n--- digest ---\nll(&mut app, \"damage_only_demo\");\ntests/patamon_blueprint_seam.rs:118:                SkillId(\"patamon_revive\".into()),\ntests/action_affordance_consumers.rs:736:    assert!(!source.contains(\"patamon_revive\"));\nte",
+    "timestamp": 1778909557168
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_l5YRzggCyV3JVmYi5EwqrLTQ|fc_0b01872a21a70f28016a08018917348191930aef7f970a54d7",
+    "command": "",
+    "exitCode": 0,
+    "outputSnippet": "gsd_exec[7a762acc-f05a-4fb1-9116-79403ca8ad77] runtime=bash exit=0 duration=7ms\n  stdout: 182B → /home/fabio/dev/bevyrogue/.gsd/exec/7a762acc-f05a-4fb1-9116-79403ca8ad77.stdout\n  stderr: 0B → /home/fabio/dev/bevyrogue/.gsd/exec/7a762acc-f05a-4fb1-9116-79403ca8ad77.stderr\n--- digest ---\nsrc/combat/api/applier.rs:52:            Intent::DealDamage {\nsrc/combat/api/runner_common.rs:92:            if let Some(Intent::DealDamage { target, .. }) = params.pending.get(i) {",
+    "timestamp": 1778909579920
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_pktW0M8KPgWofzEBYZI6z5t3|fc_0b01872a21a70f28016a080189174081919a010fd8479cdb59",
+    "command": "",
+    "exitCode": 0,
+    "outputSnippet": "gsd_exec[d4e86759-48a6-4090-8742-75615cf3cbde] runtime=bash exit=0 duration=8ms\n  stdout: 2133B → /home/fabio/dev/bevyrogue/.gsd/exec/d4e86759-48a6-4090-8742-75615cf3cbde.stdout\n  stderr: 0B → /home/fabio/dev/bevyrogue/.gsd/exec/d4e86759-48a6-4090-8742-75615cf3cbde.stderr\n--- digest ---\nape,\nsrc/combat/api/timeline.rs:46:        target: TargetShape,\nsrc/combat/api/timeline.rs:50:        target: TargetShape,\nsrc/combat/api/timeline.rs:54:        target: TargetShape,\nsrc/combat/api/timeline.rs:59:",
+    "timestamp": 1778909579921
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_zoVU14pPxDx0x9G3d0kHmRpB|fc_0b01872a21a70f28016a0801a47710819197ba492681879024",
+    "command": "",
+    "exitCode": 0,
+    "outputSnippet": "gsd_exec[fb823389-22a2-4393-a45b-1904c1a6d693] runtime=bash exit=0 duration=7ms\n  stdout: 1743B → /home/fabio/dev/bevyrogue/.gsd/exec/fb823389-22a2-4393-a45b-1904c1a6d693.stdout\n  stderr: 0B → /home/fabio/dev/bevyrogue/.gsd/exec/fb823389-22a2-4393-a45b-1904c1a6d693.stderr\n--- digest ---\n    let timeline = owned_builtin_timeline(\"core/deal_damage\", \"core/primary\", \"core/alwys\");\nsrc/combat/api/timeline.rs:270:        fn noop_selector(_: &SelectorCtx<'_>) -> Vec<UnitId> { vec![] }\nsrc/combat/api/r",
+    "timestamp": 1778909605393
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_oPZrR3aKFbNhx3VkTTh6EjKX|fc_0b01872a21a70f28016a0801a477408191bd013a65b529cd72",
+    "command": "",
+    "exitCode": 0,
+    "outputSnippet": "gsd_exec[8aaf0a13-53df-4452-8bb0-7db76bfab84c] runtime=bash exit=0 duration=7ms\n  stdout: 12903B → /home/fabio/dev/bevyrogue/.gsd/exec/8aaf0a13-53df-4452-8bb0-7db76bfab84c.stdout\n  stderr: 0B → /home/fabio/dev/bevyrogue/.gsd/exec/8aaf0a13-53df-4452-8bb0-7db76bfab84c.stderr\n--- digest ---\ni/builtins.rs:553:            hop_index: 0,\nsrc/combat/api/builtins.rs:576:        let timeline = owned_builtin_timeline(\"core/deal_damge\", \"core/primary\", \"core/always\");\nsrc/combat/api/builtins.rs:592:        ",
+    "timestamp": 1778909605394
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_WYgfByIdGIS35itFbabBNaYo|fc_0b01872a21a70f28016a0801db3ad48191a1e90bbe68b11ebc",
+    "command": "",
+    "exitCode": 0,
+    "outputSnippet": "gsd_exec[93b8d67f-cc4b-41d8-8ab7-29f387996a07] runtime=bash exit=0 duration=8ms\n  stdout: 4400B → /home/fabio/dev/bevyrogue/.gsd/exec/93b8d67f-cc4b-41d8-8ab7-29f387996a07.stdout\n  stderr: 0B → /home/fabio/dev/bevyrogue/.gsd/exec/93b8d67f-cc4b-41d8-8ab7-29f387996a07.stderr\n--- digest ---\nit_set,\nsrc/combat/api/runner.rs:657:                actor: UnitId(evt.hop_index + 1),\nsrc/combat/api/skill_ctx.rs:52:    pub cast_hit_set: &'a mut HashSet<UnitId>,\nsrc/combat/api/skill_ctx.rs:66:        cast_hit",
+    "timestamp": 1778909659755
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_csOsNU6e1cFYW7H6QiWoJuDU|fc_0b01872a21a70f28016a0801db3ae48191a8074abb34b8e220",
+    "command": "",
+    "exitCode": 0,
+    "outputSnippet": "gsd_exec[eb98061c-b479-4bdb-b6ac-a801db83977a] runtime=bash exit=0 duration=5ms\n  stdout: 888B → /home/fabio/dev/bevyrogue/.gsd/exec/eb98061c-b479-4bdb-b6ac-a801db83977a.stdout\n  stderr: 0B → /home/fabio/dev/bevyrogue/.gsd/exec/eb98061c-b479-4bdb-b6ac-a801db83977a.stderr\n--- digest ---\nr(\"core/apply_effect\", apply_effect);\n33:    regs.selectors.register(\"core/primary\", select_primary_target);\n34:    regs.selectors.register(\"core/caster\", select_caster_target);\n35:    regs.predicates.register(\"co",
+    "timestamp": 1778909659755
+  },
+  {
+    "kind": "write",
+    "toolCallId": "call_kvB263jdmXA9XTMLCf0uSgm8|fc_0b01872a21a70f28016a0802a291888191ac1feac3e4be1e64",
+    "path": "/home/fabio/dev/bevyrogue/tests/target_shape_bounce_chain.rs",
+    "timestamp": 1778909889405
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_vbb4Bf6tsbwIRwXCAkyzfduf|fc_0b01872a21a70f28016a0802d463b08191bbcb9d8ac8f040a9",
+    "path": "/home/fabio/dev/bevyrogue/tests/target_shape_bounce_chain.rs",
+    "timestamp": 1778909909479
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_UKYBltNlJ4djO902tA1KwD0m|fc_0b01872a21a70f28016a0802d463c081919ebf9d324544c501",
+    "path": "/home/fabio/dev/bevyrogue/tests/target_shape_bounce_chain.rs",
+    "timestamp": 1778909909480
+  },
+  {
+    "kind": "write",
+    "toolCallId": "call_U0lzG02sUfSM20xUq1jcV3i1|fc_0b01872a21a70f28016a0802e998b881919ca10fa9fd514de8",
+    "path": "/home/fabio/dev/bevyrogue/tests/patamon_revive.rs",
+    "timestamp": 1778909941658
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_wVAQ7AKAaUyxl1C5dl0ovD5k|fc_0b01872a21a70f28016a08031cbcc08191bb8b35b23bc22b12",
+    "path": "/home/fabio/dev/bevyrogue/tests/patamon_revive.rs",
+    "timestamp": 1778909981874
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_UZlp1UPA3cODTyFTOFmhZR0k|fc_0b01872a21a70f28016a0803335f588191a54506a53891c400",
+    "path": "/home/fabio/dev/bevyrogue/tests/compiled_timeline_runtime_dispatch.rs",
+    "timestamp": 1778910004944
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_etoOmK8memoFJvPX6id7YVZ0|fc_0b01872a21a70f28016a0803335f708191bcdf36f3e48fcce4",
+    "path": "/home/fabio/dev/bevyrogue/tests/compiled_timeline_runtime_dispatch.rs",
+    "timestamp": 1778910004946
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_E1IqUwbrdDYZq8T8Vr7GW4hL|fc_0b01872a21a70f28016a0803335f788191b924b8ef49796299",
+    "path": "/home/fabio/dev/bevyrogue/tests/compiled_timeline_runtime_dispatch.rs",
+    "timestamp": 1778910004955
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_OAC0cMTUUkS8HqJrAdrCzzyD|fc_0b01872a21a70f28016a08035a2f648191b113b969c8224547",
+    "path": "/home/fabio/dev/bevyrogue/tests/compiled_timeline_runtime_dispatch.rs",
+    "timestamp": 1778910042958
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_E9UggoReeUHtE1prJVU5GI0T|fc_0b01872a21a70f28016a0803756fe881918c2982cd36cb3b87",
+    "path": "/home/fabio/dev/bevyrogue/tests/compiled_timeline_runtime_dispatch.rs",
+    "timestamp": 1778910070604
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_U2YthjXjs7ZhPQkEqsSoL4sT|fc_0b01872a21a70f28016a08038155108191a893945f614d3339",
+    "command": "",
+    "exitCode": 0,
+    "outputSnippet": "gsd_exec[cd0e83c0-3c7b-4128-863d-af3c1be3073e] runtime=bash exit=1 duration=6ms\n  stdout: 0B → /home/fabio/dev/bevyrogue/.gsd/exec/cd0e83c0-3c7b-4128-863d-af3c1be3073e.stdout\n  stderr: 0B → /home/fabio/dev/bevyrogue/.gsd/exec/cd0e83c0-3c7b-4128-863d-af3c1be3073e.stderr\n--- digest ---\n[no output]",
+    "timestamp": 1778910082908
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_Z9dVOKVmYUAsnQt7J5dmedZ8|fc_0b01872a21a70f28016a08039103488191bee672d045a31c18",
+    "path": "/home/fabio/dev/bevyrogue/tests/patamon_revive.rs",
+    "timestamp": 1778910098895
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_yAio3GVzfDcpCPTiY6Yykw6Y|fc_0b01872a21a70f28016a0803a0104081919a9b196de80b90af",
+    "path": "/home/fabio/dev/bevyrogue/tests/target_shape_bounce_chain.rs",
+    "timestamp": 1778910113245
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_BKWB1cdSdX6b5ymZ2e6IvwMj|fc_0b01872a21a70f28016a0803a010788191873ac0f05be4b8be",
+    "path": "/home/fabio/dev/bevyrogue/tests/target_shape_bounce_chain.rs",
+    "timestamp": 1778910113246
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_MIoHGgtwuEAG85N3y4QuoAan|fc_0b01872a21a70f28016a0803b3384081918727bc86cc74ba35",
+    "command": "cargo test --test compiled_timeline_runtime_dispatch --test target_shape_bounce_chain --test patamon_revive",
+    "exitCode": 101,
+    "outputSnippet": "   Compiling bevyrogue v0.1.0 (/home/fabio/dev/bevyrogue)\nwarning: unused imports: `classify_buff_kind` and `classify`\n  --> src/combat/api/applier.rs:17:50\n   |\n17 |     status_effect::{StatusBag, StatusEffectKind, classify_buff_kind},\n   |                                                  ^^^^^^^^^^^^^^^^^^\n...\n20 |     toughness::{DamageKind, Toughness, can_apply_toughness_damage, classify},\n   |                                                                    ^^^^^^^^\n   |\n   = note: `#[war",
+    "timestamp": 1778910132394
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_DbVCrNuyDHXKCNiHLvJRA0Gn|fc_0b01872a21a70f28016a0803e55448819180a5f9f8f49572b5",
+    "path": "/home/fabio/dev/bevyrogue/tests/target_shape_bounce_chain.rs",
+    "timestamp": 1778910182858
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_RRYo0DI5l6GVQ4A6PbmpDOqx|fc_0b01872a21a70f28016a0804166c388191b5c03319de1a001b",
+    "command": "cargo test --test compiled_timeline_runtime_dispatch --test target_shape_bounce_chain --test patamon_revive",
+    "exitCode": 101,
+    "outputSnippet": "warning: unused imports: `classify_buff_kind` and `classify`\n  --> src/combat/api/applier.rs:17:50\n   |\n17 |     status_effect::{StatusBag, StatusEffectKind, classify_buff_kind},\n   |                                                  ^^^^^^^^^^^^^^^^^^\n...\n20 |     toughness::{DamageKind, Toughness, can_apply_toughness_damage, classify},\n   |                                                                    ^^^^^^^^\n   |\n   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by defa",
+    "timestamp": 1778910230993
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_ISbuj9lBCkjWCSDrqJnDvIF1|fc_0b01872a21a70f28016a0804384bf081918062311cd0aefb22",
+    "path": "/home/fabio/dev/bevyrogue/tests/target_shape_bounce_chain.rs",
+    "timestamp": 1778910265370
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_TfDnm8gd06rSxufGaGythV47|fc_0b01872a21a70f28016a0804384c288191b218ca01a617acce",
+    "path": "/home/fabio/dev/bevyrogue/tests/target_shape_bounce_chain.rs",
+    "timestamp": 1778910265372
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_2ZhZnZEJp3tBaHPYQHEN7WSi|fc_0b01872a21a70f28016a0804384c308191bac08567dfde4503",
+    "path": "/home/fabio/dev/bevyrogue/tests/target_shape_bounce_chain.rs",
+    "timestamp": 1778910265380
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_zP10vvmoOAxuPHDJByfLg0Pl|fc_0b01872a21a70f28016a0804626360819186958a1facf845df",
+    "path": "/home/fabio/dev/bevyrogue/tests/target_shape_bounce_chain.rs",
+    "timestamp": 1778910307761
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_s0LvbHx6FS16biqpCakbvSTw|fc_0b01872a21a70f28016a0804910eac8191ac485fed59abfc77",
+    "path": "/home/fabio/dev/bevyrogue/tests/target_shape_bounce_chain.rs",
+    "timestamp": 1778910354440
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_a7YCWgw7p1T890tbkK046kWg|fc_0b01872a21a70f28016a0804a880448191ae50ed9722dbe1bd",
+    "command": "",
+    "exitCode": 0,
+    "outputSnippet": "gsd_exec[fac19483-1e16-478f-b6b3-bdb7c38a3198] runtime=bash exit=0 duration=7ms\n  stdout: 452B → /home/fabio/dev/bevyrogue/.gsd/exec/fac19483-1e16-478f-b6b3-bdb7c38a3198.stdout\n  stderr: 0B → /home/fabio/dev/bevyrogue/.gsd/exec/fac19483-1e16-478f-b6b3-bdb7c38a3198.stderr\n--- digest ---\n      .resource_mut::<TimelineLibrary<String>>()\n334:                Beat {\n336:                    kind: BeatKind::Cast,\n342:                Beat {\n344:                    kind: BeatKind::Impact,\n348:            ",
+    "timestamp": 1778910377181
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_SLOhRDUriMq7Z7EnKPrnoNS8|fc_0b01872a21a70f28016a0804ba992081919799c37fa71ffa3b",
+    "command": "cargo test --test compiled_timeline_runtime_dispatch --test target_shape_bounce_chain --test patamon_revive",
+    "exitCode": 101,
+    "outputSnippet": "warning: unused imports: `classify_buff_kind` and `classify`\n  --> src/combat/api/applier.rs:17:50\n   |\n17 |     status_effect::{StatusBag, StatusEffectKind, classify_buff_kind},\n   |                                                  ^^^^^^^^^^^^^^^^^^\n...\n20 |     toughness::{DamageKind, Toughness, can_apply_toughness_damage, classify},\n   |                                                                    ^^^^^^^^\n   |\n   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by defa",
+    "timestamp": 1778910396096
+  }
+]

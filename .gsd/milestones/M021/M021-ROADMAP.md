@@ -33,7 +33,7 @@
 - [x] **S05: S05** `risk:medium` `depends:[]`
   > After this: Tohakken + Petit Thunder via CompiledTimeline; typo→errore boot.
 
-- [ ] **S06: S06** `risk:high` `depends:[]`
+- [x] **S06: S06** `risk:high` `depends:[]`
   > After this: 18 active via CompiledTimeline; suite verde + Loop tier-N.
 
 - [ ] **S07: Modifier pipeline + Migrate 6 passive canon** `risk:high` `depends:[S04,S06]`
