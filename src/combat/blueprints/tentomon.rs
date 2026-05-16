@@ -1,9 +1,9 @@
 use bevy::prelude::*;
 
 use crate::combat::{
-    api::{applier::intent_applier, intent::CastId},
+    api::{applier::intent_applier, intent::CastId, SignalPayload},
     events::{CombatEvent, CombatEventKind},
-    kernel::{BatteryLoopTransition, CombatKernelTransition},
+    kernel::CombatKernelTransition,
     modifiers::{DamageModifierLedger, ModifierLayer},
     rng::CombatRng,
     types::UnitId,
@@ -14,6 +14,10 @@ use super::{CustomSignalDispatchError, amount_payload};
 use crate::combat::battery_loop::BatteryLoopState;
 
 pub const OWNER: &str = "tentomon";
+pub const SIG_BUILD_STATIC_CHARGE: &str = "build_static_charge";
+pub const SIG_BUILD_CIRCUIT_CHARGE: &str = "build_circuit_charge";
+pub const SIG_SPEND_CIRCUIT_CHARGE: &str = "spend_circuit_charge";
+pub const SIG_CYCLE_RESET: &str = "cycle_reset";
 const BLOCK_REACTION_CHANCE_PCT: i32 = 30;
 const BLOCK_REACTION_MITIGATION_PCT: i32 = 50;
 
@@ -32,6 +36,14 @@ pub fn register_passive_runtime(app: &mut App) {
     );
 }
 
+fn blueprint_transition(name: &'static str, amount: i64) -> CombatKernelTransition {
+    CombatKernelTransition::Blueprint {
+        owner: OWNER.to_string(),
+        name: name.to_string(),
+        payload: SignalPayload::Amount(amount),
+    }
+}
+
 pub fn dispatch(
     signal: &crate::data::skills_ron::SkillCustomSignal,
     _action: &crate::combat::state::ResolvedAction,
@@ -43,23 +55,17 @@ pub fn dispatch(
     }
 
     match signal.signal() {
-        "build_static_charge" => {
-            let amount = amount_payload(signal, OWNER, "build_static_charge")?;
-            Ok(vec![crate::combat::kernel::CombatKernelTransition::BatteryLoop(
-                BatteryLoopTransition::build_static_charge(amount as u8),
-            )])
+        SIG_BUILD_STATIC_CHARGE => {
+            let amount = amount_payload(signal, OWNER, SIG_BUILD_STATIC_CHARGE)?;
+            Ok(vec![blueprint_transition(SIG_BUILD_STATIC_CHARGE, amount as i64)])
         }
-        "build_circuit_charge" => {
-            let amount = amount_payload(signal, OWNER, "build_circuit_charge")?;
-            Ok(vec![crate::combat::kernel::CombatKernelTransition::BatteryLoop(
-                BatteryLoopTransition::build_circuit_charge(amount as u8),
-            )])
+        SIG_BUILD_CIRCUIT_CHARGE => {
+            let amount = amount_payload(signal, OWNER, SIG_BUILD_CIRCUIT_CHARGE)?;
+            Ok(vec![blueprint_transition(SIG_BUILD_CIRCUIT_CHARGE, amount as i64)])
         }
-        "spend_circuit_charge" => {
-            let amount = amount_payload(signal, OWNER, "spend_circuit_charge")?;
-            Ok(vec![crate::combat::kernel::CombatKernelTransition::BatteryLoop(
-                BatteryLoopTransition::spend_circuit_charge(amount as u8),
-            )])
+        SIG_SPEND_CIRCUIT_CHARGE => {
+            let amount = amount_payload(signal, OWNER, SIG_SPEND_CIRCUIT_CHARGE)?;
+            Ok(vec![blueprint_transition(SIG_SPEND_CIRCUIT_CHARGE, amount as i64)])
         }
         other => Err(CustomSignalDispatchError::UnknownSignal {
             owner: OWNER.to_string(),

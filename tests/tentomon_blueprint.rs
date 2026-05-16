@@ -1,9 +1,10 @@
 use bevy::prelude::*;
-use bevyrogue::combat::battery_loop::BatteryLoopState;
-use bevyrogue::combat::blueprints;
-use bevyrogue::combat::kernel::{
-    BatteryLoopTransition, CombatKernelTransition, register_combat_kernel_runtime,
+use bevyrogue::combat::{battery_loop::BatteryLoopState, blueprints};
+use bevyrogue::combat::blueprints::tentomon::{
+    OWNER as TENTOMON_OWNER, SIG_BUILD_CIRCUIT_CHARGE, SIG_BUILD_STATIC_CHARGE,
+    SIG_SPEND_CIRCUIT_CHARGE,
 };
+use bevyrogue::combat::kernel::{CombatKernelTransition, register_combat_kernel_runtime};
 use bevyrogue::combat::state::{ResolvedAction, UltEffect};
 use bevyrogue::combat::types::{DamageTag, SkillId, UnitId};
 use bevyrogue::data::skills_ron::{CustomSignalPayload, SkillCustomSignal, TargetShape};
@@ -54,7 +55,11 @@ fn tentomon_blueprint_maps_static_charge() {
     assert_eq!(transitions.len(), 1);
     assert_eq!(
         transitions[0],
-        CombatKernelTransition::BatteryLoop(BatteryLoopTransition::build_static_charge(1))
+        CombatKernelTransition::Blueprint {
+            owner: TENTOMON_OWNER.to_string(),
+            name: SIG_BUILD_STATIC_CHARGE.to_string(),
+            payload: bevyrogue::combat::api::SignalPayload::Amount(1),
+        }
     );
 }
 
@@ -69,7 +74,11 @@ fn tentomon_blueprint_maps_circuit_charge() {
     assert_eq!(transitions.len(), 1);
     assert_eq!(
         transitions[0],
-        CombatKernelTransition::BatteryLoop(BatteryLoopTransition::build_circuit_charge(1))
+        CombatKernelTransition::Blueprint {
+            owner: TENTOMON_OWNER.to_string(),
+            name: SIG_BUILD_CIRCUIT_CHARGE.to_string(),
+            payload: bevyrogue::combat::api::SignalPayload::Amount(1),
+        }
     );
 }
 
@@ -84,7 +93,11 @@ fn tentomon_blueprint_maps_spend_circuit_charge() {
     assert_eq!(transitions.len(), 1);
     assert_eq!(
         transitions[0],
-        CombatKernelTransition::BatteryLoop(BatteryLoopTransition::spend_circuit_charge(2))
+        CombatKernelTransition::Blueprint {
+            owner: TENTOMON_OWNER.to_string(),
+            name: SIG_SPEND_CIRCUIT_CHARGE.to_string(),
+            payload: bevyrogue::combat::api::SignalPayload::Amount(2),
+        }
     );
 }
 

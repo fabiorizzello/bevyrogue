@@ -8,7 +8,11 @@ use super::kernel::{
     TacticalCycleTransition,
 };
 use super::observability::BatteryLoopSnapshot;
-use crate::combat::api::intent::CastId;
+use super::blueprints::tentomon::{
+    OWNER as TENTOMON_OWNER, SIG_BUILD_CIRCUIT_CHARGE, SIG_BUILD_STATIC_CHARGE,
+    SIG_CYCLE_RESET, SIG_SPEND_CIRCUIT_CHARGE,
+};
+use crate::combat::api::{intent::CastId, SignalPayload};
 
 pub const STATIC_CHARGE_THRESHOLD: u8 = 3;
 pub const CIRCUIT_CHARGE_CAP: u8 = 3;
@@ -157,11 +161,31 @@ pub fn apply_battery_loop_transitions_system(
             continue;
         };
 
-        let CombatKernelTransition::BatteryLoop(battery_transition) = transition else {
+        let CombatKernelTransition::Blueprint { owner, name, payload } = transition else {
             continue;
         };
 
-        apply_battery_loop_transition(&mut state, *battery_transition);
+        if owner != TENTOMON_OWNER {
+            continue;
+        }
+
+        let amount = match payload {
+            SignalPayload::Amount(amount) => match u8::try_from(*amount) {
+                Ok(amount) => amount,
+                Err(_) => continue,
+            },
+            _ => continue,
+        };
+
+        let battery_transition = match name.as_str() {
+            SIG_BUILD_STATIC_CHARGE => BatteryLoopTransition::build_static_charge(amount),
+            SIG_BUILD_CIRCUIT_CHARGE => BatteryLoopTransition::build_circuit_charge(amount),
+            SIG_SPEND_CIRCUIT_CHARGE => BatteryLoopTransition::spend_circuit_charge(amount),
+            SIG_CYCLE_RESET => BatteryLoopTransition::cycle_reset(),
+            _ => continue,
+        };
+
+        apply_battery_loop_transition(&mut state, battery_transition);
     }
 }
 
@@ -184,9 +208,11 @@ impl CombatKernelHook for BatteryLoopHook {
                 ..
             })
         ) {
-            out.push(CombatKernelTransition::BatteryLoop(
-                BatteryLoopTransition::cycle_reset(),
-            ));
+            out.push(CombatKernelTransition::Blueprint {
+                owner: TENTOMON_OWNER.to_string(),
+                name: SIG_CYCLE_RESET.to_string(),
+                payload: SignalPayload::Amount(0),
+            });
         }
     }
 }

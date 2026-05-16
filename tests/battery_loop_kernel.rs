@@ -1,14 +1,18 @@
 use bevy::prelude::*;
 
+use bevyrogue::combat::api::{intent::CastId, SignalPayload};
 use bevyrogue::combat::battery_loop::{
     BATTERY_ENERGY_GRANT, BatteryLoopState, apply_battery_loop_transition,
     apply_battery_loop_transitions_system,
 };
-use bevyrogue::combat::api::intent::CastId;
+use bevyrogue::combat::blueprints::tentomon::{
+    OWNER as TENTOMON_OWNER, SIG_BUILD_STATIC_CHARGE, SIG_CYCLE_RESET,
+};
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::kernel::{
     BatteryLoopBlockedReason, BatteryLoopChargeKind, BatteryLoopSignal, BatteryLoopStep,
-    BatteryLoopTransition, CombatKernelTransition, register_combat_kernel_runtime,
+    BatteryLoopTransition, CombatKernelHook, CombatKernelTransition, TacticalCycleStep,
+    TacticalCycleTransition, register_combat_kernel_runtime,
 };
 use bevyrogue::combat::observability::{BatteryLoopSnapshot, format_battery_loop_snapshot};
 use bevyrogue::combat::types::UnitId;
@@ -19,6 +23,14 @@ fn app_with_battery_loop() -> App {
         .init_resource::<BatteryLoopState>()
         .add_systems(Update, apply_battery_loop_transitions_system);
     app
+}
+
+fn tentomon_blueprint_transition(name: &str, amount: i64) -> CombatKernelTransition {
+    CombatKernelTransition::Blueprint {
+        owner: TENTOMON_OWNER.to_string(),
+        name: name.to_string(),
+        payload: SignalPayload::Amount(amount),
+    }
 }
 
 fn emit_kernel_transition(app: &mut App, transition: CombatKernelTransition) {
@@ -40,7 +52,7 @@ fn runtime_registration_applies_battery_transition_once() {
 
     emit_kernel_transition(
         &mut app,
-        CombatKernelTransition::BatteryLoop(BatteryLoopTransition::build_static_charge(1)),
+        tentomon_blueprint_transition(SIG_BUILD_STATIC_CHARGE, 1),
     );
 
     let state = app.world().resource::<BatteryLoopState>();
@@ -49,6 +61,49 @@ fn runtime_registration_applies_battery_transition_once() {
         state.last_transition,
         Some(BatteryLoopTransition::build_static_charge(1))
     );
+}
+
+#[test]
+fn wrapped_cycle_hook_emits_tentomon_blueprint_cycle_reset() {
+    let hook = bevyrogue::combat::battery_loop::BatteryLoopHook;
+    let mut out = Vec::new();
+
+    hook.on_transition(
+        &CombatKernelTransition::TacticalCycle(TacticalCycleTransition {
+            before: TacticalCycleStep::default(),
+            after: TacticalCycleStep::default(),
+            wrapped_phase: false,
+            wrapped_cycle: true,
+        }),
+        &mut out,
+    );
+
+    assert_eq!(
+        out,
+        vec![CombatKernelTransition::Blueprint {
+            owner: TENTOMON_OWNER.to_string(),
+            name: SIG_CYCLE_RESET.to_string(),
+            payload: SignalPayload::Amount(0),
+        }]
+    );
+}
+
+#[test]
+fn foreign_blueprint_transitions_do_not_mutate_battery_loop_state() {
+    let mut app = app_with_battery_loop();
+    let before = app.world().resource::<BatteryLoopState>().clone();
+
+    emit_kernel_transition(
+        &mut app,
+        CombatKernelTransition::Blueprint {
+            owner: "other".to_string(),
+            name: SIG_BUILD_STATIC_CHARGE.to_string(),
+            payload: SignalPayload::Amount(1),
+        },
+    );
+
+    let after = app.world().resource::<BatteryLoopState>();
+    assert_eq!(*after, before);
 }
 
 #[test]
@@ -168,7 +223,7 @@ fn tactical_cycle_reset_is_visible_after_message_flush() {
 
     emit_kernel_transition(
         &mut app,
-        CombatKernelTransition::BatteryLoop(BatteryLoopTransition::cycle_reset()),
+        tentomon_blueprint_transition(SIG_CYCLE_RESET, 0),
     );
 
     let state = app.world().resource::<BatteryLoopState>();
