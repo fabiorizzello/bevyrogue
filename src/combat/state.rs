@@ -61,7 +61,6 @@ pub struct InFlightAction {
     pub action: ResolvedAction,
     pub interrupted: bool,
     pub follow_up_depth: u8,
-    pub timeline_backed: bool,
 }
 
 // Used by S06/T02.

@@ -1,5 +1,6 @@
 use super::*;
 use crate::combat::{
+    api::{register_kernel_builtins, ExtRegistries},
     events::CombatEvent,
     kit::UnitSkills,
     log::{ActionLog, LogEntry},
@@ -8,9 +9,14 @@ use crate::combat::{
     types::{Attribute, DamageTag, EvoStage},
     ultimate::UltAccumulationTrigger,
 };
-use crate::data::skills_ron::{
-    Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
-    SkillTargeting, TargetLife, TargetShape, TargetSide,
+use crate::combat::api::timeline::{Beat, BeatKind, TimelineLibrary};
+use crate::data::{
+    skill_timeline::compile_skill_book_timelines,
+    skills_ron::{
+        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
+        SkillTargeting, TargetLife, TargetShape, TargetSide,
+    },
+    SkillBookHandle,
 };
 
 fn unit(id: u32, attribute: Attribute, hp_current: i32) -> Unit {
@@ -53,12 +59,48 @@ fn skill(
             },
             Effect::ToughnessHit(toughness_damage),
         ],
-
+        timeline: Some(crate::data::skill_timeline::SkillTimeline {
+            entry: "cast".into(),
+            beats: vec![Beat {
+                id: "cast".into(),
+                kind: BeatKind::Cast,
+                hook: None,
+                selector: None,
+                presentation: None,
+                payload: None,
+            }],
+            edges: vec![],
+        }),
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
         ..Default::default()
     }
+}
+
+fn build_app(book: SkillBook) -> App {
+    let mut app = App::new();
+    let mut assets = Assets::<SkillBook>::default();
+    let handle = assets.add(book.clone());
+    app.insert_resource(assets)
+        .insert_resource(SkillBookHandle(handle))
+        .insert_resource(TimelineLibrary::<String>::default())
+        .insert_resource(ExtRegistries::default())
+        .init_resource::<CombatState>()
+        .init_resource::<TurnOrder>()
+        .init_resource::<SpPool>()
+        .init_resource::<ActionLog>()
+        .init_resource::<Time>()
+        .add_message::<ActionIntent>()
+        .add_message::<CombatEvent>()
+        .add_systems(Update, resolve_action_system);
+
+    let regs = ExtRegistries::default();
+    let compiled = compile_skill_book_timelines(&book, &regs)
+        .expect("test skill book must compile timelines");
+    app.world_mut().resource_mut::<TimelineLibrary<String>>().timelines = compiled;
+
+    app
 }
 
 fn combat_events(app: &mut App) -> Vec<CombatEvent> {
@@ -74,20 +116,7 @@ fn combat_events(app: &mut App) -> Vec<CombatEvent> {
 
 #[test]
 fn resolve_action_system_rejects_ko_target() {
-    let mut app = App::new();
-    app.init_resource::<TurnOrder>()
-        .init_resource::<CombatState>()
-        .init_resource::<SpPool>()
-        .init_resource::<ActionLog>()
-        .init_resource::<Time>()
-        .add_message::<ActionIntent>()
-        .add_message::<CombatEvent>()
-        .add_systems(Update, resolve_action_system);
-
-    let mut assets = Assets::<SkillBook>::default();
-    let handle = assets.add(SkillBook(vec![skill("basic", DamageTag::Fire, 10, 0, 5)]));
-    app.insert_resource(assets);
-    app.insert_resource(SkillBookHandle(handle));
+    let mut app = build_app(SkillBook(vec![skill("basic", DamageTag::Fire, 10, 0, 5)]));
 
     app.world_mut().spawn((
         unit(1, Attribute::Vaccine, 100),
@@ -131,17 +160,6 @@ fn resolve_action_system_rejects_ko_target() {
 
 #[test]
 fn resolve_action_system_rejects_revive_on_healthy_target() {
-    let mut app = App::new();
-    app.init_resource::<TurnOrder>()
-        .init_resource::<CombatState>()
-        .init_resource::<SpPool>()
-        .init_resource::<ActionLog>()
-        .init_resource::<Time>()
-        .add_message::<ActionIntent>()
-        .add_message::<CombatEvent>()
-        .add_systems(Update, resolve_action_system);
-
-    let mut assets = Assets::<SkillBook>::default();
     let revive_skill = SkillDef {
         id: SkillId("revive".into()),
         name: "Revive".into(),
@@ -156,15 +174,25 @@ fn resolve_action_system_rejects_revive_on_healthy_target() {
         },
         implementation: SkillImplementation::Implemented,
         legacy_ops: vec![Effect::Revive(25)],
+        timeline: Some(crate::data::skill_timeline::SkillTimeline {
+            entry: "cast".into(),
+            beats: vec![Beat {
+                id: "cast".into(),
+                kind: BeatKind::Cast,
+                hook: None,
+                selector: None,
+                presentation: None,
+                payload: None,
+            }],
+            edges: vec![],
+        }),
 
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
         ..Default::default()
     };
-    let handle = assets.add(SkillBook(vec![revive_skill]));
-    app.insert_resource(assets);
-    app.insert_resource(SkillBookHandle(handle));
+    let mut app = build_app(SkillBook(vec![revive_skill]));
 
     app.world_mut().resource_mut::<SpPool>().max = 100;
     app.world_mut().resource_mut::<SpPool>().gain(100);
@@ -215,20 +243,7 @@ fn resolve_action_system_rejects_revive_on_healthy_target() {
 
 #[test]
 fn resolve_action_system_rejects_stunned_attacker() {
-    let mut app = App::new();
-    app.init_resource::<TurnOrder>()
-        .init_resource::<CombatState>()
-        .init_resource::<SpPool>()
-        .init_resource::<ActionLog>()
-        .init_resource::<Time>()
-        .add_message::<ActionIntent>()
-        .add_message::<CombatEvent>()
-        .add_systems(Update, resolve_action_system);
-
-    let mut assets = Assets::<SkillBook>::default();
-    let handle = assets.add(SkillBook(vec![skill("basic", DamageTag::Fire, 10, 0, 5)]));
-    app.insert_resource(assets);
-    app.insert_resource(SkillBookHandle(handle));
+    let mut app = build_app(SkillBook(vec![skill("basic", DamageTag::Fire, 10, 0, 5)]));
 
     app.world_mut().spawn((
         unit(1, Attribute::Vaccine, 100),

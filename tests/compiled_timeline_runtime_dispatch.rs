@@ -23,8 +23,8 @@ use bevyrogue::combat::{
 use bevyrogue::data::{
     skill_timeline::{compile_skill_book_timelines, SkillTimeline},
     skills_ron::{
-        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation, SkillTargeting,
-        TargetLife, TargetShape, TargetSide,
+        SelfTargetRule, SkillBook, SkillDef, SkillImplementation, SkillTargeting, TargetLife,
+        TargetShape, TargetSide,
     },
     SkillBookHandle,
 };
@@ -43,11 +43,7 @@ fn timeline_skill(id: &str) -> SkillDef {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        legacy_ops: vec![
-            Effect::Damage { amount: 11, target: TargetShape::Single, per_hop: Default::default() },
-            Effect::ToughnessHit(25),
-            Effect::ApplyStatus { kind: StatusEffectKind::Slowed, duration: 3 },
-        ],
+        legacy_ops: vec![],
         timeline: Some(SkillTimeline {
             entry: "cast".into(),
             beats: vec![
@@ -119,10 +115,7 @@ fn damage_timeline_skill(id: &str) -> SkillDef {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        legacy_ops: vec![
-            Effect::Damage { amount: 13, target: TargetShape::Single, per_hop: Default::default() },
-            Effect::ToughnessHit(5),
-        ],
+        legacy_ops: vec![],
         timeline: Some(SkillTimeline {
             entry: "cast".into(),
             beats: vec![

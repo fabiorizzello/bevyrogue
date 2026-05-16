@@ -77,10 +77,6 @@ pub(crate) fn step_declaration(
     };
     let skill_book = skill_book_handle.and_then(|h| skill_books.get(&h.0));
     let mut action = resolve_action(intent, kit, skill_book)?;
-    let timeline_backed = skill_book
-        .and_then(|book| book.0.iter().find(|skill| skill.id == action.skill_id))
-        .and_then(|skill| skill.timeline.as_ref())
-        .is_some();
 
     if follow_up_origin_kind == super::super::follow_up::FollowUpOriginKind::FormIdentity
         && action.target_shape == TargetShape::SelfOnly
@@ -110,7 +106,6 @@ pub(crate) fn step_declaration(
         action,
         interrupted: false,
         follow_up_depth,
-        timeline_backed,
     };
 
     Some(inflight)
