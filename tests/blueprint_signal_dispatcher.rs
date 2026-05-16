@@ -63,6 +63,7 @@ fn test_blueprint_signal_dispatching() {
             assert_eq!(*name, "sig");
             assert_eq!(*sig_payload, payload);
         }
+        Signal::CombatEvent(event) => panic!("expected blueprint signal, got combat envelope: {:?}", event),
     }
     
     // Assert CombatEvent

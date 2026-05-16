@@ -115,6 +115,21 @@ impl BeatRunner {
         self
     }
 
+    /// Current cursor beat, or `None` when the timeline has finished.
+    pub fn cursor(&self) -> Option<BeatId> {
+        self.cursor
+    }
+
+    /// Entry beat for the timeline.
+    pub fn entry(&self) -> BeatId {
+        self.timeline.entry
+    }
+
+    /// Whether the runner is currently inside a `BeatKind::Loop` body.
+    pub fn in_loop(&self) -> bool {
+        !self.loop_stack.is_empty()
+    }
+
     /// Advance the FSM by one beat.
     ///
     /// - `Done` is returned when the timeline has no more beats.

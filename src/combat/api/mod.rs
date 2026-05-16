@@ -8,7 +8,7 @@
 //! - `intent`   — `CastId` + closed `Intent` enum (~18 variants).
 //! - `registry` — `ExtPoint` trait + `Registry<E>` + `ExtRegistries` Resource (7 axes).
 //! - `signal`   — `SignalBus` Resource scaffold (full impl in S04).
-//! - `clock`    — `Clock { HeadlessAuto, Windowed }` enum.
+//! - `event_filter` — typed runtime filters for passive subscriptions.
 //! - `rng`      — `CastRng` SplitMix64 deterministic per-cast RNG.
 //!
 //! ## Import constraints
@@ -20,6 +20,7 @@ pub mod blueprint_state;
 pub mod builtins;
 pub mod clock;
 pub mod event_bridge;
+pub mod event_filter;
 pub mod intent;
 pub mod passive_runner;
 pub mod registry;
@@ -33,6 +34,7 @@ pub mod timeline;
 // Stable re-exports for the most-imported types.
 pub use applier::IntentQueue;
 pub use event_bridge::combat_event_to_signal_system;
+pub use event_filter::EventFilter;
 pub use blueprint_state::BlueprintState;
 pub use clock::Clock;
 pub use intent::{CastId, CastIdGen, Intent};

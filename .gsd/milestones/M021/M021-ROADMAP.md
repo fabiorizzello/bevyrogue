@@ -36,7 +36,7 @@
 - [x] **S06: S06** `risk:high` `depends:[]`
   > After this: 18 active via CompiledTimeline; suite verde + Loop tier-N.
 
-- [ ] **S07: Modifier pipeline + Migrate 6 passive canon** `risk:high` `depends:[S04,S06]`
+- [ ] **S07: S07** `risk:high` `depends:[]`
   > After this: 6 passive via PassiveRunner; Block Reaction verde deterministico.
 
 - [ ] **S08: Agumon + Gabumon migrated (Twin Core paired)** `risk:medium` `depends:[S06,S07]`

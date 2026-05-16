@@ -5,16 +5,19 @@ use crate::combat::{
     events::{CombatEvent, CombatEventKind},
 };
 
-/// Reads `CombatEvent::UltimateUsed` messages and pushes a corresponding
-/// `Signal::Blueprint { owner: "kernel", name: "ult_used" }` onto the `SignalBus`.
+/// Mirrors kernel combat events onto the passive signal bus.
 ///
-/// Runs after `intent_applier` and before `passive_dispatch_system` so passive
-/// hooks can react to ult casts in the same Update tick.
+/// `CombatEvent` envelopes are bridged verbatim so passive listeners can inspect
+/// kernel state transitions without reverse-engineering ad hoc owner/name pairs.
+/// `UltimateUsed` still emits the legacy `kernel/ult_used` blueprint signal for
+/// existing passive hooks.
 pub fn combat_event_to_signal_system(
     mut events: MessageReader<CombatEvent>,
     mut bus: ResMut<SignalBus>,
 ) {
     for event in events.read() {
+        bus.push(Signal::CombatEvent(event.clone()));
+
         if let CombatEventKind::UltimateUsed { unit_id } = &event.kind {
             bus.push(Signal::Blueprint {
                 owner: "kernel".to_string(),
@@ -31,7 +34,7 @@ mod tests {
     use super::*;
     use crate::combat::{
         api::intent::CastId,
-        events::CombatEvent,
+        events::{ActionIntentKind, CombatEvent},
         types::UnitId,
     };
 
@@ -56,7 +59,7 @@ mod tests {
     }
 
     #[test]
-    fn ult_used_event_pushes_kernel_signal() {
+    fn ult_used_event_pushes_combat_and_kernel_signal() {
         let mut app = build_app();
 
         let unit_id = UnitId(42);
@@ -73,24 +76,29 @@ mod tests {
         let captured = app.world().resource::<CapturedSignals>();
         assert_eq!(
             captured.0.len(),
-            1,
-            "expected exactly one ult_used signal, got: {:?}",
+            2,
+            "expected combat envelope + legacy ult_used signal, got: {:?}",
             captured.0
         );
         match &captured.0[0] {
+            Signal::CombatEvent(event) => {
+                assert!(matches!(&event.kind, CombatEventKind::UltimateUsed { unit_id: seen } if seen == unit_id));
+            }
+            other => panic!("expected combat envelope first, got: {:?}", other),
+        }
+        match &captured.0[1] {
             Signal::Blueprint { owner, name, payload, cast_id } => {
                 assert_eq!(owner, "kernel");
                 assert_eq!(name, "ult_used");
                 assert_eq!(*payload, SignalPayload::UnitTarget(unit_id));
                 assert_eq!(*cast_id, CastId::ROOT);
             }
+            other => panic!("expected legacy blueprint signal second, got: {:?}", other),
         }
     }
 
     #[test]
-    fn non_ult_events_produce_no_signal() {
-        use crate::combat::events::ActionIntentKind;
-
+    fn non_ult_events_produce_only_combat_envelope() {
         let mut app = build_app();
 
         let unit_id = UnitId(1);
@@ -107,15 +115,12 @@ mod tests {
         app.update();
 
         let captured = app.world().resource::<CapturedSignals>();
-        assert!(
-            captured.0.is_empty(),
-            "non-ult event should not push any signal, got: {:?}",
-            captured.0
-        );
+        assert_eq!(captured.0.len(), 1, "non-ult event should bridge as combat envelope only, got: {:?}", captured.0);
+        assert!(matches!(captured.0[0], Signal::CombatEvent(_)));
     }
 
     #[test]
-    fn multiple_ult_events_each_produce_a_signal() {
+    fn multiple_ult_events_each_produce_both_signals() {
         let mut app = build_app();
 
         let u1 = UnitId(1);
@@ -138,11 +143,6 @@ mod tests {
         app.update();
 
         let captured = app.world().resource::<CapturedSignals>();
-        assert_eq!(
-            captured.0.len(),
-            2,
-            "expected two signals for two ult events, got: {:?}",
-            captured.0
-        );
+        assert_eq!(captured.0.len(), 4, "expected two combat envelopes + two blueprint signals, got: {:?}", captured.0);
     }
 }

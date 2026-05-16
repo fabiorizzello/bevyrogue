@@ -3,7 +3,11 @@ use std::collections::{HashSet, VecDeque};
 use bevy::prelude::Resource;
 use serde::{Deserialize, Serialize};
 
-use crate::combat::{api::CastId, types::UnitId};
+use crate::combat::{
+    api::CastId,
+    events::CombatEvent,
+    types::UnitId,
+};
 
 /// Typed signal payload for blueprint-specific reactive logic.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -27,6 +31,24 @@ pub enum Signal {
         /// The cast that triggered this signal.
         cast_id: CastId,
     },
+    /// Bridged kernel combat event envelope for passive listeners.
+    CombatEvent(CombatEvent),
+}
+
+impl Signal {
+    /// Resolve the primary target the passive pipeline should treat as the signal's focus.
+    ///
+    /// Blueprint signals use `SignalPayload::UnitTarget` when available; all other
+    /// payloads fall back to the passive owner's unit id.
+    pub fn primary_target(&self, fallback: UnitId) -> UnitId {
+        match self {
+            Signal::Blueprint { payload, .. } => match payload {
+                SignalPayload::UnitTarget(unit) => *unit,
+                _ => fallback,
+            },
+            Signal::CombatEvent(event) => event.target,
+        }
+    }
 }
 
 /// Global reactive signal bus.
@@ -74,6 +96,7 @@ impl SignalTaxonomy {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::combat::events::{CombatEvent, CombatEventKind, ActionIntentKind};
 
     #[test]
     fn test_push_drain_order() {
@@ -124,5 +147,22 @@ mod tests {
         assert_eq!(serde_json::from_str::<SignalPayload>(&s1).unwrap(), p1);
         assert_eq!(serde_json::from_str::<SignalPayload>(&s2).unwrap(), p2);
         assert_eq!(serde_json::from_str::<SignalPayload>(&s3).unwrap(), p3);
+    }
+
+    #[test]
+    fn test_combat_event_round_trip() {
+        let sig = Signal::CombatEvent(CombatEvent {
+            kind: CombatEventKind::OnActionDeclared {
+                intent_kind: ActionIntentKind::Skill,
+            },
+            source: UnitId(2),
+            target: UnitId(3),
+            follow_up_depth: 1,
+            cast_id: CastId::ROOT,
+        });
+
+        let json = serde_json::to_string(&sig).unwrap();
+        let round_tripped: Signal = serde_json::from_str(&json).unwrap();
+        assert_eq!(round_tripped, sig);
     }
 }

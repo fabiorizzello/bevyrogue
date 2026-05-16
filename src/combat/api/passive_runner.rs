@@ -1,139 +1,96 @@
-use std::{
-    collections::{HashSet, VecDeque},
-    sync::Arc,
-};
+use std::sync::Arc;
 
 use bevy::log;
 use bevy::prelude::{Resource, World};
 
 use crate::combat::{
     api::{
-        intent::{CastIdGen, Intent},
-        registry::ExtRegistries,
-        runner_common::{fire_beat, next_beat, RunnerParams, find_beat},
-        signal::{Signal, SignalPayload},
+        applier::{intent_applier, IntentQueue},
+        event_filter::EventFilter,
+        intent::CastIdGen,
+        runner::{BeatRunner, StepOutcome},
+        signal::{Signal, SignalBus},
         skill_ctx::SkillCtxMode,
-        timeline::{BeatEvent, CompiledTimeline},
+        timeline::CompiledTimeline,
     },
     types::UnitId,
 };
 
-/// Maximum loop iterations before the circuit breaker fires.
-const MAX_HOPS: u32 = 256;
-
-/// Sibling to BeatRunner that consumes Signals and drives a timeline.
+/// Sibling to `BeatRunner` that consumes reactive signals and drives a timeline.
 ///
-/// Unlike BeatRunner, PassiveRunner is persistent and has no persistent cursor.
-/// Each matching signal triggers a fresh atomic drive of the timeline to completion.
+/// The runner is persistent, but each matched signal triggers a fresh atomic run
+/// of the underlying timeline to completion.
 pub struct PassiveRunner {
     pub timeline: Arc<CompiledTimeline>,
     pub owner: UnitId,
-    pub triggers: Vec<(&'static str, &'static str)>,
-    pub cast_hit_set: HashSet<UnitId>,
-    pub last_beat_targets: Vec<UnitId>,
+    pub filters: Vec<EventFilter>,
 }
 
 impl PassiveRunner {
     pub fn new(
         timeline: Arc<CompiledTimeline>,
         owner: UnitId,
-        triggers: Vec<(&'static str, &'static str)>,
+        filters: Vec<EventFilter>,
     ) -> Self {
         Self {
             timeline,
             owner,
-            triggers,
-            cast_hit_set: HashSet::new(),
-            last_beat_targets: Vec::new(),
+            filters,
         }
     }
 
-    /// React to a signal if it matches any of our triggers.
+    /// Returns `true` when any subscription matches the incoming signal.
+    pub fn matches(&self, signal: &Signal) -> bool {
+        self.filters.iter().any(|filter| filter.matches(signal))
+    }
+
+    /// React to a signal if it matches any subscription.
     pub fn react(
         &mut self,
         signal: &Signal,
-        world: &World,
-        regs: &ExtRegistries,
+        world: &mut World,
+        regs: &crate::combat::api::registry::ExtRegistries,
         mode: SkillCtxMode,
-        pending: &mut VecDeque<Intent>,
+        pending: &mut std::collections::VecDeque<crate::combat::api::intent::Intent>,
         cast_id_gen: &mut CastIdGen,
     ) {
-        let Signal::Blueprint { owner, name, payload, .. } = signal;
-
-        let matched = self.triggers.iter().any(|(t_owner, t_name)| {
-            *t_owner == owner.as_str() && *t_name == name.as_str()
-        });
-
-        if !matched {
+        if !self.matches(signal) {
             return;
         }
 
         let cast_id = cast_id_gen.next();
-        let primary_target = match payload {
-            SignalPayload::UnitTarget(unit) => *unit,
-            _ => self.owner,
-        };
+        let primary_target = signal.primary_target(self.owner);
 
-        // Reset per-cast state
-        self.cast_hit_set.clear();
-        self.last_beat_targets.clear();
+        let mut runner = BeatRunner::new(Arc::clone(&self.timeline), cast_id, self.owner, primary_target);
 
-        let mut cursor = Some(self.timeline.entry);
-        let mut hop_count = 0;
+        for step_index in 0..1_024 {
+            let outcome = runner.step(world, regs, mode, pending);
+            intent_applier(world);
 
-        while let Some(beat_id) = cursor {
-            if hop_count >= MAX_HOPS {
-                log::warn!(
-                    "PassiveRunner circuit-breaker: owner={:?} timeline={} halted at hop_count={}",
-                    self.owner,
-                    self.timeline.id,
-                    hop_count
-                );
-                break;
+            if step_index > 0 && !runner.in_loop() && runner.cursor() == Some(runner.entry()) {
+                return;
             }
 
-            let beat = find_beat(&self.timeline, beat_id).clone();
-            
-            // Note: Passive timelines are assumed to be linear for S04 (no Loop support).
-            // If they have Loop, it would need LoopFrame tracking here.
-            
-            let params = RunnerParams {
-                timeline: &self.timeline,
-                caster: self.owner,
-                primary_target,
-                cast_id,
-                cast_hit_set: &mut self.cast_hit_set,
-                world,
-                regs,
-                mode,
-                pending,
-            };
-
-            let beat_targets = fire_beat(&beat, 0, params);
-            self.last_beat_targets = beat_targets;
-
-            let gate_evt = BeatEvent {
-                cast_id,
-                beat_id,
-                hop_index: 0,
-                beat_targets: self.last_beat_targets.clone(),
-            };
-
-            let mut params = RunnerParams {
-                timeline: &self.timeline,
-                caster: self.owner,
-                primary_target,
-                cast_id,
-                cast_hit_set: &mut self.cast_hit_set,
-                world,
-                regs,
-                mode,
-                pending,
-            };
-
-            cursor = next_beat(beat_id, &gate_evt, &mut params);
-            hop_count += 1;
+            match outcome {
+                StepOutcome::Done => return,
+                StepOutcome::Halted => {
+                    // BeatRunner already logs the circuit-breaker; this branch exists only
+                    // to make the control flow explicit for future diagnostics.
+                    log::debug!(
+                        "PassiveRunner halted after running timeline={} for owner={:?}",
+                        self.timeline.id,
+                        self.owner
+                    );
+                    return;
+                }
+                StepOutcome::AwaitingCue => runner.resume_cue(),
+                StepOutcome::Advanced | StepOutcome::LoopExited => {}
+            }
         }
+
+        panic!(
+            "PassiveRunner::react exceeded max_steps=1024; possible infinite loop"
+        );
     }
 }
 
@@ -146,7 +103,6 @@ pub struct PassiveListeners {
 /// System that drains SignalBus and dispatches to PassiveListeners.
 pub fn passive_dispatch_system(world: &mut World) {
     use crate::combat::api::signal::SignalBus;
-    use crate::combat::api::applier::{intent_applier, IntentQueue};
 
     let mut total_reacts = 0;
 
@@ -156,7 +112,7 @@ pub fn passive_dispatch_system(world: &mut World) {
             break;
         }
 
-        if total_reacts >= MAX_HOPS {
+        if total_reacts >= 256 {
             log::warn!(
                 "passive_dispatch_system: signal-cascade circuit-breaker fired (total_reacts={})",
                 total_reacts
@@ -165,7 +121,7 @@ pub fn passive_dispatch_system(world: &mut World) {
         }
 
         world.resource_scope(|world_l, mut listeners: bevy::prelude::Mut<PassiveListeners>| {
-            world_l.resource_scope(|world_r, regs: bevy::prelude::Mut<ExtRegistries>| {
+            world_l.resource_scope(|world_r, regs: bevy::prelude::Mut<crate::combat::api::registry::ExtRegistries>| {
                 world_r.resource_scope(|world_q, mut queue: bevy::prelude::Mut<IntentQueue>| {
                     world_q.resource_scope(|world_c, mut cast_id_gen: bevy::prelude::Mut<CastIdGen>| {
                         for signal in &signals {
@@ -186,9 +142,9 @@ pub fn passive_dispatch_system(world: &mut World) {
             });
         });
 
-        // After one pass of reacts, if new BlueprintSignals were enqueued, 
-        // we might want to apply them immediately to allow same-frame cascade.
-        // We call intent_applier to flush the queue and potentially populate SignalBus again.
+        // Flush the intents produced by the reactive pass. Any new signals emitted
+        // by the applier will be observed in the next outer loop iteration, keeping
+        // same-frame cascades deterministic.
         intent_applier(world);
     }
 }
@@ -197,26 +153,95 @@ pub fn passive_dispatch_system(world: &mut World) {
 mod tests {
     use super::*;
     use crate::combat::api::{
+        event_filter::EventFilter,
         intent::CastId,
         registry::ExtRegistries,
-        signal::Signal,
-        timeline::{Beat, BeatEdge, BeatKind},
+        signal::{Signal, SignalPayload},
+        timeline::{Beat, BeatEdge, BeatEvent, BeatKind},
     };
-    use std::num::NonZeroU32;
+    use std::{collections::VecDeque, num::NonZeroU32};
 
     fn cast_id() -> CastId {
         CastId(NonZeroU32::new(1).unwrap())
     }
 
     #[test]
-    fn test_passive_trigger_match() {
+    fn blueprint_filter_matches_exact_signal() {
+        let mut runner = PassiveRunner::new(
+            Arc::new(CompiledTimeline {
+                id: "passive_test",
+                entry: "impact",
+                beats: vec![Beat {
+                    id: "impact",
+                    kind: BeatKind::Impact,
+                    hook: None,
+                    selector: None,
+                    presentation: None,
+                    payload: None,
+                }],
+                edges: vec![],
+            }),
+            UnitId(1),
+            vec![EventFilter::blueprint("renamon", "ult_used")],
+        );
+
+        let signal = Signal::Blueprint {
+            owner: "renamon".to_string(),
+            name: "ult_used".to_string(),
+            payload: SignalPayload::Empty,
+            cast_id: cast_id(),
+        };
+        assert!(runner.matches(&signal));
+
+        let other = Signal::Blueprint {
+            owner: "other".to_string(),
+            name: "ult_used".to_string(),
+            payload: SignalPayload::Empty,
+            cast_id: cast_id(),
+        };
+        assert!(!runner.matches(&other));
+    }
+
+    #[test]
+    fn loop_timeline_halts_at_circuit_breaker() {
+        fn never(_evt: &BeatEvent, _ctx: &crate::combat::api::skill_ctx::SkillCtx<'_>) -> bool {
+            false
+        }
+
+        fn loop_hook(evt: &BeatEvent, ctx: &mut crate::combat::api::skill_ctx::SkillCtx<'_>) {
+            use std::sync::atomic::{AtomicU32, Ordering};
+
+            static LOOP_CALLS: AtomicU32 = AtomicU32::new(0);
+            let count = LOOP_CALLS.fetch_add(1, Ordering::Relaxed) + 1;
+            ctx.enqueue(crate::combat::api::intent::Intent::SetBlueprintState {
+                actor: ctx.caster,
+                key: "loop/count".to_string(),
+                value: count as i64,
+                cast_id: evt.cast_id,
+            });
+        }
+
+        let mut regs = ExtRegistries::default();
+        regs.predicates.register("loop/never", never);
+        regs.hooks.register("loop/tick", loop_hook);
+
         let timeline = Arc::new(CompiledTimeline {
-            id: "passive_test",
-            entry: "impact",
+            id: "loop_test",
+            entry: "loop",
             beats: vec![Beat {
-                id: "impact",
-                kind: BeatKind::Impact,
-                hook: Some("test_hook"),
+                id: "loop",
+                kind: BeatKind::Loop {
+                    body: vec![Beat {
+                        id: "tick",
+                        kind: BeatKind::Impact,
+                        hook: Some("loop/tick"),
+                        selector: None,
+                        presentation: None,
+                        payload: None,
+                    }],
+                    exit_when: "loop/never",
+                },
+                hook: None,
                 selector: None,
                 presentation: None,
                 payload: None,
@@ -224,89 +249,34 @@ mod tests {
             edges: vec![],
         });
 
-        use std::sync::atomic::{AtomicU32, Ordering};
-        static HOOK_CALLS: AtomicU32 = AtomicU32::new(0);
-        fn test_hook(_evt: &BeatEvent, _ctx: &mut crate::combat::api::skill_ctx::SkillCtx<'_>) {
-            HOOK_CALLS.fetch_add(1, Ordering::Relaxed);
-        }
-
-        let mut regs = ExtRegistries::default();
-        regs.hooks.register("test_hook", test_hook);
-
         let mut runner = PassiveRunner::new(
             timeline,
             UnitId(1),
-            vec![("renamon", "ult_used")],
+            vec![EventFilter::custom(|signal| matches!(signal, Signal::CombatEvent(_)))],
         );
 
-        let world = World::new();
+        let mut world = World::new();
+        world.init_resource::<crate::combat::api::blueprint_state::BlueprintState>();
         let mut pending = VecDeque::new();
-        let mut cast_id_gen = CastIdGen::default();
+        let mut cast_id_gen = crate::combat::api::intent::CastIdGen::default();
 
-        // 1. Non-matching signal
-        let sig_none = Signal::Blueprint {
-            owner: "other".to_string(),
-            name: "ult_used".to_string(),
-            payload: SignalPayload::Empty,
-            cast_id: cast_id(),
-        };
-        HOOK_CALLS.store(0, Ordering::Relaxed);
-        runner.react(&sig_none, &world, &regs, SkillCtxMode::Execute, &mut pending, &mut cast_id_gen);
-        assert_eq!(HOOK_CALLS.load(Ordering::Relaxed), 0);
-
-        // 2. Matching signal
-        let sig_match = Signal::Blueprint {
-            owner: "renamon".to_string(),
-            name: "ult_used".to_string(),
-            payload: SignalPayload::Empty,
-            cast_id: cast_id(),
-        };
-        runner.react(&sig_match, &world, &regs, SkillCtxMode::Execute, &mut pending, &mut cast_id_gen);
-        assert_eq!(HOOK_CALLS.load(Ordering::Relaxed), 1);
-    }
-
-    #[test]
-    fn test_passive_circuit_breaker() {
-        let timeline = Arc::new(CompiledTimeline {
-            id: "loop_test",
-            entry: "impact",
-            beats: vec![Beat {
-                id: "impact",
-                kind: BeatKind::Impact,
-                hook: Some("signal_hook"),
-                selector: None,
-                presentation: None,
-                payload: None,
-            }],
-            // Self-loop
-            edges: vec![BeatEdge { from: "impact", to: "impact", gate: None }],
+        let signal = Signal::CombatEvent(crate::combat::events::CombatEvent {
+            kind: crate::combat::events::CombatEventKind::OnActionDeclared {
+                intent_kind: crate::combat::events::ActionIntentKind::Basic,
+            },
+            source: UnitId(1),
+            target: UnitId(2),
+            follow_up_depth: 0,
+            cast_id: CastId::ROOT,
         });
 
-        fn signal_hook(_evt: &BeatEvent, _ctx: &mut crate::combat::api::skill_ctx::SkillCtx<'_>) {
-            // No-op, just needed to fire
-        }
+        runner.react(&signal, &mut world, &regs, SkillCtxMode::Execute, &mut pending, &mut cast_id_gen);
 
-        let mut regs = ExtRegistries::default();
-        regs.hooks.register("signal_hook", signal_hook);
-
-        let mut runner = PassiveRunner::new(
-            timeline,
-            UnitId(1),
-            vec![("test", "loop")],
+        let state = world.resource::<crate::combat::api::blueprint_state::BlueprintState>();
+        assert_eq!(
+            state.map.get(&(UnitId(1), "loop/count".to_string())),
+            Some(&256),
+            "loop timeline should stop at the 256-hop guard"
         );
-
-        let world = World::new();
-        let mut pending = VecDeque::new();
-        let mut cast_id_gen = CastIdGen::default();
-
-        let sig = Signal::Blueprint {
-            owner: "test".to_string(),
-            name: "loop".to_string(),
-            payload: SignalPayload::Empty,
-            cast_id: cast_id(),
-        };
-
-        // Should halt at MAX_HOPS=256 without crashing
-        runner.react(&sig, &world, &regs, SkillCtxMode::Execute, &mut pending, &mut cast_id_gen);
     }
 }

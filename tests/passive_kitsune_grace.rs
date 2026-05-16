@@ -2,7 +2,7 @@ use bevy::{ecs::message::MessageCursor, ecs::system::RunSystemOnce, prelude::*};
 use bevyrogue::combat::{
     api::{
         applier::intent_applier,
-        CastId, CastIdGen, Intent, SignalBus, SignalPayload, SignalTaxonomy,
+        CastId, CastIdGen, EventFilter, Intent, SignalBus, SignalPayload, SignalTaxonomy,
         BlueprintState, ExtRegistries, IntentQueue, PassiveListeners, PassiveRunner,
         SkillCtx,
         combat_event_to_signal_system, passive_dispatch_system,
@@ -172,7 +172,7 @@ fn register_kitsune_grace(app: &mut App) {
         .push(PassiveRunner::new(
             build_kitsune_grace_timeline(),
             RENAMON_ID,
-            vec![("kernel", "ult_used")],
+            vec![EventFilter::blueprint("kernel", "ult_used")],
         ));
 }
 
