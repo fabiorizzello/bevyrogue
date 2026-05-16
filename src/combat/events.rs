@@ -7,10 +7,10 @@ use crate::combat::{
     types::{DamageTag, SkillId, UnitId},
 };
 
-// Re-export kernel types used in CombatEventKind variants so callers can import from events.
-pub use crate::combat::kernel::{
-    BatteryLoopTransition, CombatBeatId, CombatKernelTransition, PredatorLoopTransition,
-};
+// Re-export combat transition payloads used in CombatEventKind variants so callers can import from events.
+pub use crate::combat::battery_loop::BatteryLoopTransition;
+pub use crate::combat::blueprints::dorumon::PredatorLoopTransition;
+pub use crate::combat::kernel::{CombatBeatId, CombatKernelTransition};
 
 /// Coarse intent classification carried by `OnActionDeclared`.
 /// Distinct from `ActionIntent` (which carries full payload) — this is

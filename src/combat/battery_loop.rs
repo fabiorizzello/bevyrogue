@@ -3,9 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use super::events::{CombatEvent, CombatEventKind};
 use super::kernel::{
-    BatteryLoopBlockedReason, BatteryLoopChargeKind, BatteryLoopSignal, BatteryLoopStep,
-    BatteryLoopTransition, CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition,
-    TacticalCycleTransition,
+    CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition, TacticalCycleTransition,
 };
 use super::observability::BatteryLoopSnapshot;
 use super::blueprints::tentomon::{
@@ -17,6 +15,160 @@ use crate::combat::api::{intent::CastId, SignalPayload};
 pub const STATIC_CHARGE_THRESHOLD: u8 = 3;
 pub const CIRCUIT_CHARGE_CAP: u8 = 3;
 pub const BATTERY_ENERGY_GRANT: u8 = 5;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum BatteryLoopChargeKind {
+    Static,
+    Circuit,
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum BatteryLoopBlockedReason {
+    ChargeCapReached { charge: BatteryLoopChargeKind },
+    ChargeUnderflow { charge: BatteryLoopChargeKind },
+    MissingPreExistingShock,
+    NoEligibleAlly,
+    UnsupportedRequest,
+    MalformedData,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum BatteryLoopStep {
+    BuildStaticCharge { amount: u8 },
+    BuildCircuitCharge { amount: u8 },
+    SpendCircuitCharge { amount: u8 },
+    BlockReady,
+    BlockProc,
+    GrantEnergy { amount: u8 },
+    SelfEnergyGain { amount: u8 },
+    TransferEnergy { amount: u8 },
+    CycleReset,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum BatteryLoopSignal {
+    BuildStaticCharge,
+    BuildCircuitCharge,
+    SpendCircuitCharge,
+    BlockReady,
+    BlockProc,
+    GrantEnergy,
+    SelfEnergyGain,
+    TransferEnergy,
+    CycleReset,
+    Rejected,
+    Ignored,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BatteryLoopTransition {
+    pub signal: BatteryLoopSignal,
+    pub amount: u8,
+    pub attempted: Option<BatteryLoopStep>,
+    pub reason: Option<BatteryLoopBlockedReason>,
+}
+
+impl BatteryLoopTransition {
+    pub const fn build_static_charge(amount: u8) -> Self {
+        Self {
+            signal: BatteryLoopSignal::BuildStaticCharge,
+            amount,
+            attempted: None,
+            reason: None,
+        }
+    }
+
+    pub const fn build_circuit_charge(amount: u8) -> Self {
+        Self {
+            signal: BatteryLoopSignal::BuildCircuitCharge,
+            amount,
+            attempted: None,
+            reason: None,
+        }
+    }
+
+    pub const fn spend_circuit_charge(amount: u8) -> Self {
+        Self {
+            signal: BatteryLoopSignal::SpendCircuitCharge,
+            amount,
+            attempted: None,
+            reason: None,
+        }
+    }
+
+    pub const fn block_ready() -> Self {
+        Self {
+            signal: BatteryLoopSignal::BlockReady,
+            amount: 0,
+            attempted: None,
+            reason: None,
+        }
+    }
+
+    pub const fn block_proc() -> Self {
+        Self {
+            signal: BatteryLoopSignal::BlockProc,
+            amount: 0,
+            attempted: None,
+            reason: None,
+        }
+    }
+
+    pub const fn grant_energy(amount: u8) -> Self {
+        Self {
+            signal: BatteryLoopSignal::GrantEnergy,
+            amount,
+            attempted: None,
+            reason: None,
+        }
+    }
+
+    pub const fn self_energy_gain(amount: u8) -> Self {
+        Self {
+            signal: BatteryLoopSignal::SelfEnergyGain,
+            amount,
+            attempted: None,
+            reason: None,
+        }
+    }
+
+    pub const fn transfer_energy(amount: u8) -> Self {
+        Self {
+            signal: BatteryLoopSignal::TransferEnergy,
+            amount,
+            attempted: None,
+            reason: None,
+        }
+    }
+
+    pub const fn cycle_reset() -> Self {
+        Self {
+            signal: BatteryLoopSignal::CycleReset,
+            amount: 0,
+            attempted: None,
+            reason: None,
+        }
+    }
+
+    pub const fn rejected(attempted: BatteryLoopStep, reason: BatteryLoopBlockedReason) -> Self {
+        Self {
+            signal: BatteryLoopSignal::Rejected,
+            amount: 0,
+            attempted: Some(attempted),
+            reason: Some(reason),
+        }
+    }
+
+    pub const fn ignored(attempted: BatteryLoopStep) -> Self {
+        Self {
+            signal: BatteryLoopSignal::Ignored,
+            amount: 0,
+            attempted: Some(attempted),
+            reason: None,
+        }
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BatteryLoopDesignTag {

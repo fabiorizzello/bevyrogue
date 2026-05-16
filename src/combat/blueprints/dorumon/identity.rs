@@ -7,10 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::combat::api::intent::CastId;
 use crate::combat::api::SignalPayload;
 use crate::combat::events::{CombatEvent, CombatEventKind};
-use crate::combat::kernel::{
-    CombatKernelState, CombatKernelTransition, PredatorLoopBlockedReason, PredatorLoopCapKind,
-    PredatorLoopSignal, PredatorLoopStep, PredatorLoopTransition,
-};
+use crate::combat::kernel::{CombatKernelState, CombatKernelTransition};
 use crate::combat::types::UnitId;
 use super::signals::{
     OWNER, SIGNAL_APPLY_PREY_LOCK, SIGNAL_BUILD_EXPLOIT, SIGNAL_CONSUME_PREY_LOCK_PAYOFF,
@@ -20,6 +17,149 @@ use super::signals::{
 pub const DEFAULT_EXPLOIT_CAP: u8 = 3;
 pub const DEFAULT_PREY_LOCK_DURATION: u8 = 2;
 pub const DEFAULT_BERSERK_STRAIN_THRESHOLD: u16 = 50;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PredatorLoopCapKind {
+    Exploit,
+    PreyLock,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PredatorLoopBlockedReason {
+    CapReached { cap: PredatorLoopCapKind },
+    MissingExploit,
+    MissingPreyLock,
+    ExpiredPreyLock,
+    InvalidTarget,
+    BerserkBlockedByStrain { current: u16, threshold: u16 },
+    UnsupportedRequest,
+    MalformedData,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PredatorLoopStep {
+    BuildExploit { target: UnitId, amount: u16 },
+    ApplyPreyLock { target: UnitId },
+    ConsumePreyLockPayoff { target: UnitId },
+    EnterBerserk,
+    Tick,
+    Expire { target: UnitId },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PredatorLoopSignal {
+    BuildExploit,
+    ApplyPreyLock,
+    ConsumePreyLockPayoff,
+    EnterBerserk,
+    Tick,
+    Expire,
+    Rejected,
+    Ignored,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PredatorLoopTransition {
+    pub signal: PredatorLoopSignal,
+    pub target: Option<UnitId>,
+    pub amount: u16,
+    pub attempted: Option<PredatorLoopStep>,
+    pub reason: Option<PredatorLoopBlockedReason>,
+}
+
+impl PredatorLoopTransition {
+    pub const fn build_exploit(target: UnitId, amount: u16) -> Self {
+        Self {
+            signal: PredatorLoopSignal::BuildExploit,
+            target: Some(target),
+            amount,
+            attempted: None,
+            reason: None,
+        }
+    }
+
+    pub const fn apply_prey_lock(target: UnitId, duration: u16) -> Self {
+        Self {
+            signal: PredatorLoopSignal::ApplyPreyLock,
+            target: Some(target),
+            amount: duration,
+            attempted: None,
+            reason: None,
+        }
+    }
+
+    pub const fn consume_prey_lock_payoff(target: UnitId, amount: u16) -> Self {
+        Self {
+            signal: PredatorLoopSignal::ConsumePreyLockPayoff,
+            target: Some(target),
+            amount,
+            attempted: None,
+            reason: None,
+        }
+    }
+
+    pub const fn enter_berserk(strain_current: u16) -> Self {
+        Self {
+            signal: PredatorLoopSignal::EnterBerserk,
+            target: None,
+            amount: strain_current,
+            attempted: None,
+            reason: None,
+        }
+    }
+
+    pub const fn tick() -> Self {
+        Self {
+            signal: PredatorLoopSignal::Tick,
+            target: None,
+            amount: 0,
+            attempted: None,
+            reason: None,
+        }
+    }
+
+    pub const fn expire(target: UnitId) -> Self {
+        Self {
+            signal: PredatorLoopSignal::Expire,
+            target: Some(target),
+            amount: 0,
+            attempted: None,
+            reason: None,
+        }
+    }
+
+    pub const fn rejected(attempted: PredatorLoopStep, reason: PredatorLoopBlockedReason) -> Self {
+        Self {
+            signal: PredatorLoopSignal::Rejected,
+            target: match attempted {
+                PredatorLoopStep::BuildExploit { target, .. }
+                | PredatorLoopStep::ApplyPreyLock { target }
+                | PredatorLoopStep::ConsumePreyLockPayoff { target }
+                | PredatorLoopStep::Expire { target } => Some(target),
+                PredatorLoopStep::EnterBerserk | PredatorLoopStep::Tick => None,
+            },
+            amount: 0,
+            attempted: Some(attempted),
+            reason: Some(reason),
+        }
+    }
+
+    pub const fn ignored(attempted: PredatorLoopStep) -> Self {
+        Self {
+            signal: PredatorLoopSignal::Ignored,
+            target: match attempted {
+                PredatorLoopStep::BuildExploit { target, .. }
+                | PredatorLoopStep::ApplyPreyLock { target }
+                | PredatorLoopStep::ConsumePreyLockPayoff { target }
+                | PredatorLoopStep::Expire { target } => Some(target),
+                PredatorLoopStep::EnterBerserk | PredatorLoopStep::Tick => None,
+            },
+            amount: 0,
+            attempted: Some(attempted),
+            reason: None,
+        }
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PredatorLoopDesignTag {

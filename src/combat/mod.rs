@@ -114,6 +114,8 @@ pub mod plugin;
 // ─── Re-exports ──────────────────────────────────────────────────────────────
 // Stable shortcuts for the most-imported types.
 
+pub use battery_loop::{BatteryLoopBlockedReason, BatteryLoopChargeKind, BatteryLoopRequestKind, BatteryLoopSignal, BatteryLoopStep, BatteryLoopTransition};
+pub use blueprints::dorumon::{PredatorLoopBlockedReason, PredatorLoopCapKind, PredatorLoopDesignTag, PredatorLoopRequestKind, PredatorLoopSignal, PredatorLoopStep, PredatorLoopTransition};
 pub use plugin::CombatPlugin;
 #[allow(deprecated)]
 pub use status_effect::{StatusBag, StatusEffectKind};

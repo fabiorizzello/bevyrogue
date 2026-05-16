@@ -14,6 +14,7 @@ use bevyrogue::combat::{
     ultimate::{UltAccumulationTrigger, UltimateCharge},
     unit::Unit,
 };
+use bevyrogue::combat::api::SignalPayload;
 use bevyrogue::data::{
     SkillBookHandle,
     skills_ron::{
@@ -314,6 +315,25 @@ fn s09_event_stream_observes_all_variants() {
             transition: CombatKernelTransition::Blueprint { owner, .. },
         } if owner == "twin_core"
     )));
+
+    for owner in ["twin_core", "dorumon", "tentomon"] {
+        let event = CombatEvent {
+            kind: CombatEventKind::OnKernelTransition {
+                transition: CombatKernelTransition::Blueprint {
+                    owner: owner.to_string(),
+                    name: "signal".to_string(),
+                    payload: SignalPayload::Amount(1),
+                },
+            },
+            source: UnitId(1),
+            target: UnitId(2),
+            follow_up_depth: 0,
+            cast_id: bevyrogue::combat::api::intent::CastId::ROOT,
+        };
+        let serialized = serde_json::to_string(&event).expect("serialize blueprint event");
+        assert!(serialized.contains(owner), "{serialized}");
+        assert!(serialized.contains("Blueprint"), "{serialized}");
+    }
     // Suppress unused-import warning until T02 emits these variants.
     let _ = ActionIntentKind::Basic;
 }

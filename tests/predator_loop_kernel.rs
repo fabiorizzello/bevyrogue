@@ -1,13 +1,12 @@
 use bevyrogue::combat::api::intent::CastId;
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
-use bevyrogue::combat::kernel::{
+use bevyrogue::combat::blueprints::dorumon::{
     PredatorLoopBlockedReason, PredatorLoopCapKind, PredatorLoopSignal,
-    PredatorLoopStep, PredatorLoopTransition,
+    PredatorLoopSnapshot, PredatorLoopState, PredatorLoopStep, PredatorLoopTransition,
 };
 use bevyrogue::combat::observability::{
     ValidationSnapshot, ValidationTwinCoreSnapshot, format_validation_snapshot,
 };
-use bevyrogue::combat::blueprints::dorumon::{PredatorLoopSnapshot, PredatorLoopState};
 use bevyrogue::combat::state::CombatPhase;
 use bevyrogue::combat::types::UnitId;
 

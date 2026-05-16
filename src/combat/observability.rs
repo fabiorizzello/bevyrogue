@@ -5,18 +5,15 @@ use serde::{Deserialize, Serialize};
 
 use crate::combat::{
     av::ActionValue,
-    battery_loop::BatteryLoopState,
+    battery_loop::{BatteryLoopBlockedReason, BatteryLoopSignal, BatteryLoopTransition, BatteryLoopState},
+    blueprints::{dorumon::{PredatorLoopSnapshot, PredatorLoopState, PredatorLoopSignal, PredatorLoopTransition}, patamon::HolySupportSnapshot, twin_core::{TwinCoreSignal, TwinCoreTransition}},
     floating::FloatingDamage,
-    blueprints::patamon::HolySupportSnapshot,
-    blueprints::twin_core::{TwinCoreSignal, TwinCoreTransition},
     kernel::{
-        BatteryLoopBlockedReason, BatteryLoopTransition, PrecisionCommitment,
-        PrecisionMindGamePhase, PrecisionMindGameTransition, PrecisionOutcome, PrecisionReveal,
-        PrecisionWindowKind, PredatorLoopTransition,
+        PrecisionCommitment, PrecisionMindGamePhase, PrecisionMindGameTransition, PrecisionOutcome,
+        PrecisionReveal, PrecisionWindowKind,
     },
     log::{ActionLog, LogEntry},
     precision_mind_game::PrecisionMindGameSnapshot,
-    blueprints::dorumon::{PredatorLoopSnapshot, PredatorLoopState},
     sp::SpPool,
     state::{CombatPhase, CombatState},
     status_effect::{StatusBag, StatusEffectKind},
@@ -469,29 +466,29 @@ fn format_predator_targets(
 
 fn format_predator_loop_transition(transition: PredatorLoopTransition) -> String {
     let signal = match transition.signal {
-        crate::combat::kernel::PredatorLoopSignal::BuildExploit => "build-exploit",
-        crate::combat::kernel::PredatorLoopSignal::ApplyPreyLock => "prey-lock",
-        crate::combat::kernel::PredatorLoopSignal::ConsumePreyLockPayoff => "payoff",
-        crate::combat::kernel::PredatorLoopSignal::EnterBerserk => "berserk",
-        crate::combat::kernel::PredatorLoopSignal::Tick => "tick",
-        crate::combat::kernel::PredatorLoopSignal::Expire => "expire",
-        crate::combat::kernel::PredatorLoopSignal::Rejected => "rejected",
-        crate::combat::kernel::PredatorLoopSignal::Ignored => "ignored",
+        PredatorLoopSignal::BuildExploit => "build-exploit",
+        PredatorLoopSignal::ApplyPreyLock => "prey-lock",
+        PredatorLoopSignal::ConsumePreyLockPayoff => "payoff",
+        PredatorLoopSignal::EnterBerserk => "berserk",
+        PredatorLoopSignal::Tick => "tick",
+        PredatorLoopSignal::Expire => "expire",
+        PredatorLoopSignal::Rejected => "rejected",
+        PredatorLoopSignal::Ignored => "ignored",
     };
     match transition.signal {
-        crate::combat::kernel::PredatorLoopSignal::BuildExploit
-        | crate::combat::kernel::PredatorLoopSignal::ApplyPreyLock
-        | crate::combat::kernel::PredatorLoopSignal::ConsumePreyLockPayoff
-        | crate::combat::kernel::PredatorLoopSignal::EnterBerserk
-        | crate::combat::kernel::PredatorLoopSignal::Expire => {
+        PredatorLoopSignal::BuildExploit
+        | PredatorLoopSignal::ApplyPreyLock
+        | PredatorLoopSignal::ConsumePreyLockPayoff
+        | PredatorLoopSignal::EnterBerserk
+        | PredatorLoopSignal::Expire => {
             format!(
                 "{signal}(target={:?};amount={})",
                 transition.target, transition.amount
             )
         }
-        crate::combat::kernel::PredatorLoopSignal::Tick => signal.to_string(),
-        crate::combat::kernel::PredatorLoopSignal::Rejected
-        | crate::combat::kernel::PredatorLoopSignal::Ignored => {
+        PredatorLoopSignal::Tick => signal.to_string(),
+        PredatorLoopSignal::Rejected
+        | PredatorLoopSignal::Ignored => {
             match (transition.attempted, transition.reason) {
                 (Some(attempted), Some(reason)) => format!(
                     "{signal}({};reason={reason:?})",
@@ -610,28 +607,28 @@ pub fn format_battery_loop_snapshot(snapshot: &BatteryLoopSnapshot) -> String {
 
 fn format_battery_loop_transition(transition: BatteryLoopTransition) -> String {
     match transition.signal {
-        super::kernel::BatteryLoopSignal::BuildStaticCharge => {
+        BatteryLoopSignal::BuildStaticCharge => {
             format!("build-static({})", transition.amount)
         }
-        super::kernel::BatteryLoopSignal::BuildCircuitCharge => {
+        BatteryLoopSignal::BuildCircuitCharge => {
             format!("build-circuit({})", transition.amount)
         }
-        super::kernel::BatteryLoopSignal::SpendCircuitCharge => {
+        BatteryLoopSignal::SpendCircuitCharge => {
             format!("spend-circuit({})", transition.amount)
         }
-        super::kernel::BatteryLoopSignal::BlockReady => "block-ready".to_string(),
-        super::kernel::BatteryLoopSignal::BlockProc => "block-proc".to_string(),
-        super::kernel::BatteryLoopSignal::GrantEnergy => {
+        BatteryLoopSignal::BlockReady => "block-ready".to_string(),
+        BatteryLoopSignal::BlockProc => "block-proc".to_string(),
+        BatteryLoopSignal::GrantEnergy => {
             format!("grant({})", transition.amount)
         }
-        super::kernel::BatteryLoopSignal::SelfEnergyGain => {
+        BatteryLoopSignal::SelfEnergyGain => {
             format!("self-gain({})", transition.amount)
         }
-        super::kernel::BatteryLoopSignal::TransferEnergy => {
+        BatteryLoopSignal::TransferEnergy => {
             format!("transfer({})", transition.amount)
         }
-        super::kernel::BatteryLoopSignal::CycleReset => "cycle-reset".to_string(),
-        super::kernel::BatteryLoopSignal::Rejected => {
+        BatteryLoopSignal::CycleReset => "cycle-reset".to_string(),
+        BatteryLoopSignal::Rejected => {
             match (transition.attempted, transition.reason) {
                 (Some(attempted), Some(reason)) => {
                     format!(
@@ -645,7 +642,7 @@ fn format_battery_loop_transition(transition: BatteryLoopTransition) -> String {
                 _ => "rejected".to_string(),
             }
         }
-        super::kernel::BatteryLoopSignal::Ignored => match transition.attempted {
+        BatteryLoopSignal::Ignored => match transition.attempted {
             Some(attempted) => format!("ignored({})", format_battery_loop_step(attempted)),
             None => "ignored".to_string(),
         },
