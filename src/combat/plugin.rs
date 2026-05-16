@@ -14,7 +14,7 @@ use crate::combat::{
         timeline::{validate_timeline_refs, TimelineLibrary},
     },
     modifiers::DamageModifierLedger,
-    kernel::register_combat_kernel_runtime,
+    kernel::{register_canonical_passive_runners, register_combat_kernel_runtime},
     rng::CombatRng,
 };
 
@@ -54,6 +54,8 @@ impl Plugin for CombatPlugin {
             let mut regs = app.world_mut().resource_mut::<ExtRegistries>();
             register_kernel_builtins(&mut regs);
         }
+
+        register_canonical_passive_runners(app);
 
         // Register kernel-side signals in SignalTaxonomy so ult-driven passive
         // activations pass the debug_assert! gate in intent_applier.
