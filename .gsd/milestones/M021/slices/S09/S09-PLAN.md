@@ -38,21 +38,21 @@ Upstream surfaces consumed: `CombatKernelTransition::Blueprint`, Dorumon/Tentomo
   - Verify: cargo test --test dorumon_blueprint
 cargo test --test dorumon_predator_runtime
 
-- [ ] **T02: Move Tentomon Battery Loop onto Blueprint owner transitions** `est:1h`
+- [x] **T02: Move Tentomon Battery Loop onto Blueprint owner transitions** `est:1h`
   Skills: `bevy`, `rust-best-practices`, `tdd`.
   - Files: `src/combat/blueprints/tentomon.rs`, `src/combat/battery_loop.rs`, `tests/tentomon_blueprint.rs`, `tests/battery_loop_kernel.rs`, `tests/passive_reactive_canon.rs`
   - Verify: cargo test --test tentomon_blueprint
 cargo test --test battery_loop_kernel
 cargo test --test passive_reactive_canon
 
-- [ ] **T03: Remove kernel-local Predator/Battery transition ownership and update shared observability surfaces** `est:1h`
+- [x] **T03: Remove kernel-local Predator/Battery transition ownership and update shared observability surfaces** `est:1h`
   Skills: `bevy`, `rust-best-practices`, `tdd`.
   - Files: `src/combat/kernel.rs`, `src/combat/events.rs`, `src/combat/observability.rs`, `src/combat/blueprints/dorumon/mod.rs`, `src/combat/blueprints/dorumon/identity.rs`, `src/combat/battery_loop.rs`, `tests/predator_loop_kernel.rs`, `tests/event_stream.rs`
   - Verify: cargo test --test event_stream
 cargo test --test predator_loop_kernel
 cargo check
 
-- [ ] **T04: Run the slice verification sweep across headless and windowed builds** `est:20m`
+- [x] **T04: Run the slice verification sweep across headless and windowed builds** `est:20m`
   Skills: `bevy`, `tdd`, `verify-before-complete`.
   - Verify: cargo test --test dorumon_blueprint
 cargo test --test dorumon_predator_runtime
