@@ -1,13 +1,14 @@
 use bevy::{ecs::message::MessageCursor, prelude::*};
-use bevyrogue::combat::blueprints;
+use bevyrogue::combat::api::SignalPayload;
 use bevyrogue::combat::api::intent::CastId;
+use bevyrogue::combat::blueprints;
+use bevyrogue::combat::blueprints::dorumon::PredatorLoopState;
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::kernel::{
-    register_combat_kernel_runtime, CombatKernelTransition, PredatorLoopTransition,
+    CombatKernelTransition, PredatorLoopTransition, register_combat_kernel_runtime,
 };
 use bevyrogue::combat::log::ActionLog;
 use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
-use bevyrogue::combat::blueprints::dorumon::PredatorLoopState;
 use bevyrogue::combat::sp::SpPool;
 use bevyrogue::combat::state::{CombatState, ResolvedAction, UltEffect};
 use bevyrogue::combat::team::Team;
@@ -118,16 +119,19 @@ fn dorumon_runtime_transitions_flow_through_canonical_predator_events() {
     assert_eq!(
         transitions,
         vec![
-            CombatKernelTransition::PredatorLoop(PredatorLoopTransition::build_exploit(
-                action.target,
-                2,
-            )),
-            CombatKernelTransition::PredatorLoop(PredatorLoopTransition::apply_prey_lock(
-                action.target,
-                0,
-            )),
+            CombatKernelTransition::Blueprint {
+                owner: "dorumon".to_string(),
+                name: "build_exploit".to_string(),
+                payload: SignalPayload::Amount(2),
+            },
+            CombatKernelTransition::Blueprint {
+                owner: "dorumon".to_string(),
+                name: "apply_prey_lock".to_string(),
+                payload: SignalPayload::Amount(0),
+            },
         ]
     );
+
     let expected_predator_results = vec![
         PredatorLoopTransition::build_exploit(action.target, 2),
         PredatorLoopTransition::apply_prey_lock(action.target, 2),
@@ -196,4 +200,47 @@ fn dorumon_runtime_transitions_flow_through_canonical_predator_events() {
         "{formatted}"
     );
     assert!(formatted.contains("blocked=none"), "{formatted}");
+}
+
+#[test]
+fn dorumon_runtime_ignores_non_dorumon_and_malformed_blueprint_events() {
+    let mut app = app_with_dorumon_runtime();
+    let baseline = app.world().resource::<PredatorLoopState>().snapshot();
+
+    app.world_mut().write_message(CombatEvent {
+        kind: CombatEventKind::OnKernelTransition {
+            transition: CombatKernelTransition::Blueprint {
+                owner: "other".to_string(),
+                name: "build_exploit".to_string(),
+                payload: SignalPayload::Amount(3),
+            },
+        },
+        source: UnitId(7),
+        target: UnitId(8),
+        follow_up_depth: 0,
+        cast_id: CastId::ROOT,
+    });
+    app.world_mut().write_message(CombatEvent {
+        kind: CombatEventKind::OnKernelTransition {
+            transition: CombatKernelTransition::Blueprint {
+                owner: "dorumon".to_string(),
+                name: "build_exploit".to_string(),
+                payload: SignalPayload::Empty,
+            },
+        },
+        source: UnitId(7),
+        target: UnitId(8),
+        follow_up_depth: 0,
+        cast_id: CastId::ROOT,
+    });
+
+    app.update();
+    app.update();
+
+    let state = app.world().resource::<PredatorLoopState>();
+    assert_eq!(state.snapshot(), baseline);
+
+    let mut reader = cursor(&mut app);
+    let events = drain(&mut reader, &app);
+    assert!(events.is_empty(), "unexpected resolved events: {events:?}");
 }

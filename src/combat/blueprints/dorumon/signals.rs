@@ -1,14 +1,28 @@
-use crate::combat::kernel::{CombatKernelTransition, PredatorLoopTransition};
+use crate::combat::api::SignalPayload;
+use crate::combat::kernel::CombatKernelTransition;
 use crate::combat::state::ResolvedAction;
 use crate::data::skills_ron::{CustomSignalPayload, SkillCustomSignal};
 
 use super::super::CustomSignalDispatchError;
 
 pub const OWNER: &str = "dorumon";
+pub const SIGNAL_BUILD_EXPLOIT: &str = "build_exploit";
+pub const SIGNAL_APPLY_PREY_LOCK: &str = "apply_prey_lock";
+pub const SIGNAL_CONSUME_PREY_LOCK_PAYOFF: &str = "consume_prey_lock_payoff";
+pub const SIGNAL_ENTER_BERSERK: &str = "enter_berserk";
+pub const SIGNAL_TICK: &str = "tick";
+
+pub(crate) fn blueprint_transition(name: &'static str, amount: i64) -> CombatKernelTransition {
+    CombatKernelTransition::Blueprint {
+        owner: OWNER.to_string(),
+        name: name.to_string(),
+        payload: SignalPayload::Amount(amount),
+    }
+}
 
 pub fn dispatch(
     signal: &SkillCustomSignal,
-    action: &ResolvedAction,
+    _action: &ResolvedAction,
 ) -> Result<Vec<CombatKernelTransition>, CustomSignalDispatchError> {
     if signal.owner() != OWNER {
         return Err(CustomSignalDispatchError::UnknownOwner {
@@ -17,36 +31,24 @@ pub fn dispatch(
     }
 
     match signal.signal() {
-        "build_exploit" => {
+        SIGNAL_BUILD_EXPLOIT => {
             let amount = match signal.payload() {
-                CustomSignalPayload::Amount { amount } => amount as u16,
+                CustomSignalPayload::Amount { amount } => amount as i64,
                 _ => {
                     return Err(CustomSignalDispatchError::MalformedPayload {
                         owner: OWNER.to_string(),
-                        signal: "build_exploit".to_string(),
+                        signal: SIGNAL_BUILD_EXPLOIT.to_string(),
                         detail: "expected Amount payload".to_string(),
                     });
                 }
             };
-            Ok(vec![CombatKernelTransition::PredatorLoop(
-                PredatorLoopTransition::build_exploit(action.target, amount),
-            )])
+            Ok(vec![blueprint_transition(SIGNAL_BUILD_EXPLOIT, amount)])
         }
-        "apply_prey_lock" => {
-            let amount = match signal.payload() {
-                CustomSignalPayload::Amount { amount } => amount as u16,
-                _ => 0,
-            };
-            Ok(vec![CombatKernelTransition::PredatorLoop(
-                PredatorLoopTransition::apply_prey_lock(action.target, amount),
-            )])
+        SIGNAL_APPLY_PREY_LOCK => Ok(vec![blueprint_transition(SIGNAL_APPLY_PREY_LOCK, 0)]),
+        SIGNAL_CONSUME_PREY_LOCK_PAYOFF => {
+            Ok(vec![blueprint_transition(SIGNAL_CONSUME_PREY_LOCK_PAYOFF, 1)])
         }
-        "consume_prey_lock_payoff" => Ok(vec![CombatKernelTransition::PredatorLoop(
-            PredatorLoopTransition::consume_prey_lock_payoff(action.target, 1),
-        )]),
-        "enter_berserk" => Ok(vec![CombatKernelTransition::PredatorLoop(
-            PredatorLoopTransition::enter_berserk(0),
-        )]),
+        SIGNAL_ENTER_BERSERK => Ok(vec![blueprint_transition(SIGNAL_ENTER_BERSERK, 0)]),
         other => Err(CustomSignalDispatchError::UnknownSignal {
             owner: OWNER.to_string(),
             signal: other.to_string(),

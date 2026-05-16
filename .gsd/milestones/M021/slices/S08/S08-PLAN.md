@@ -36,7 +36,7 @@ Upstream: S06 (CompiledTimeline + ExtRegistries active skills), S07 (PassiveRunn
   - Files: `src/combat/blueprints/agumon/mod.rs`, `assets/data/skills.ron`, `src/combat/api/registry.rs`
   - Verify: cargo check
 
-- [ ] **T04: Write deterministic end-to-end tests for Twin Core Blueprint path and Bouncing Fire OFF=baseline** `est:1h`
+- [x] **T04: Write deterministic end-to-end tests for Twin Core Blueprint path and Bouncing Fire OFF=baseline** `est:1h`
   **Why:** The twin_core_integration and twin_core_mechanics tests currently pump `CombatKernelTransition::TwinCore(...)` directly. After T01 that variant is gone. T01 already updates imports, but this task ensures the tests exercise the new `Blueprint { owner: \"twin_core\" }` event path end-to-end, and adds the Bouncing Fire deterministic test.
   - Files: `tests/bouncing_fire_off_baseline.rs`, `tests/twin_core_integration.rs`, `tests/twin_core_mechanics.rs`
   - Verify: cargo test --test bouncing_fire_off_baseline && cargo test twin_core && cargo test

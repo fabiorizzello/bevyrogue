@@ -4,14 +4,14 @@ use crate::combat::{
     api::applier::intent_applier,
     events::{CombatEvent, CombatEventKind},
     kernel::{
-        CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition, PredatorLoopTransition,
-        TacticalCycleTransition,
+        CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition, TacticalCycleTransition,
     },
     types::UnitId,
     unit::Unit,
 };
 
 use super::identity::{PredatorLoopHook, PredatorLoopState};
+use super::signals::{blueprint_transition, SIGNAL_TICK};
 
 impl CombatKernelHook for PredatorLoopHook {
     fn domain(&self) -> CombatKernelHookDomain {
@@ -30,9 +30,7 @@ impl CombatKernelHook for PredatorLoopHook {
                 ..
             })
         ) {
-            out.push(CombatKernelTransition::PredatorLoop(
-                PredatorLoopTransition::tick(),
-            ));
+            out.push(blueprint_transition(SIGNAL_TICK, 0));
         }
     }
 }

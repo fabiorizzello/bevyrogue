@@ -1,15 +1,21 @@
 use std::collections::HashMap;
+use std::convert::TryFrom;
 
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::combat::api::intent::CastId;
+use crate::combat::api::SignalPayload;
 use crate::combat::events::{CombatEvent, CombatEventKind};
 use crate::combat::kernel::{
     CombatKernelState, CombatKernelTransition, PredatorLoopBlockedReason, PredatorLoopCapKind,
     PredatorLoopSignal, PredatorLoopStep, PredatorLoopTransition,
 };
 use crate::combat::types::UnitId;
+use super::signals::{
+    OWNER, SIGNAL_APPLY_PREY_LOCK, SIGNAL_BUILD_EXPLOIT, SIGNAL_CONSUME_PREY_LOCK_PAYOFF,
+    SIGNAL_ENTER_BERSERK, SIGNAL_TICK,
+};
 
 pub const DEFAULT_EXPLOIT_CAP: u8 = 3;
 pub const DEFAULT_PREY_LOCK_DURATION: u8 = 2;
@@ -221,6 +227,37 @@ pub fn apply_predator_loop_transition(
     record_applied_transition(state, applied)
 }
 
+fn decode_predator_loop_transition(
+    transition: &CombatKernelTransition,
+    target: UnitId,
+    strain_current: u16,
+) -> Option<PredatorLoopTransition> {
+    let CombatKernelTransition::Blueprint { owner, name, payload } = transition else {
+        return None;
+    };
+
+    if owner != OWNER {
+        return None;
+    }
+
+    let SignalPayload::Amount(amount) = payload else {
+        return None;
+    };
+
+    let amount = u16::try_from(*amount).ok()?;
+
+    match name.as_str() {
+        SIGNAL_BUILD_EXPLOIT => Some(PredatorLoopTransition::build_exploit(target, amount)),
+        SIGNAL_APPLY_PREY_LOCK => Some(PredatorLoopTransition::apply_prey_lock(target, amount)),
+        SIGNAL_CONSUME_PREY_LOCK_PAYOFF => Some(
+            PredatorLoopTransition::consume_prey_lock_payoff(target, amount),
+        ),
+        SIGNAL_ENTER_BERSERK => Some(PredatorLoopTransition::enter_berserk(strain_current)),
+        SIGNAL_TICK => Some(PredatorLoopTransition::tick()),
+        _ => None,
+    }
+}
+
 pub fn apply_predator_loop_transitions_system(
     mut messages: ParamSet<(MessageReader<CombatEvent>, MessageWriter<CombatEvent>)>,
     kernel: Res<CombatKernelState>,
@@ -234,12 +271,14 @@ pub fn apply_predator_loop_transitions_system(
                 return None;
             };
 
-            let CombatKernelTransition::PredatorLoop(predator_transition) = transition else {
-                return None;
-            };
+            let predator_transition = decode_predator_loop_transition(
+                transition,
+                event.target,
+                kernel.strain.current,
+            )?;
 
             Some((
-                *predator_transition,
+                predator_transition,
                 event.source,
                 event.target,
                 event.follow_up_depth,
