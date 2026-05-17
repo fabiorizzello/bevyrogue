@@ -5,7 +5,14 @@
 //! The function assumes every `TargetInfo` in the slice is a valid, living, non-commander
 //! ally. Violating this precondition may cause incorrect targeting.
 
-use crate::combat::{kit::UnitSkills, turn_system::ActionIntent, types::UnitId};
+use std::cmp::Ordering;
+
+use crate::combat::{
+    kit::UnitSkills,
+    preview::PreviewDamageSummary,
+    turn_system::ActionIntent,
+    types::{SkillId, UnitId},
+};
 
 /// Snapshot of a single potential target, populated by the caller from Bevy components.
 #[derive(Debug, Clone)]
@@ -25,38 +32,127 @@ pub struct EnemyTurnContext<'a> {
     pub targets: &'a [TargetInfo],
 }
 
+#[derive(Debug, Clone)]
+struct PreviewScoredAction {
+    intent: ActionIntent,
+    damage: i32,
+    action_rank: u8,
+    target_id: UnitId,
+    skill_rank: usize,
+}
+
+fn action_rank(intent: &ActionIntent) -> u8 {
+    match intent {
+        ActionIntent::Basic { .. } => 0,
+        ActionIntent::Skill { .. } => 1,
+        ActionIntent::Ultimate { .. } => 2,
+    }
+}
+
+fn compare_scored_action(a: &PreviewScoredAction, b: &PreviewScoredAction) -> Ordering {
+    a.damage
+        .cmp(&b.damage)
+        .then_with(|| a.action_rank.cmp(&b.action_rank))
+        .then_with(|| b.target_id.0.cmp(&a.target_id.0))
+        .then_with(|| b.skill_rank.cmp(&a.skill_rank))
+}
+
+fn build_basic_intent(attacker_id: UnitId, target: UnitId) -> ActionIntent {
+    ActionIntent::Basic { attacker: attacker_id, target }
+}
+
+fn build_skill_intent(attacker_id: UnitId, skill_id: SkillId, target: UnitId) -> ActionIntent {
+    ActionIntent::Skill {
+        attacker: attacker_id,
+        skill_id,
+        target,
+    }
+}
+
+fn build_ultimate_intent(attacker_id: UnitId, target: UnitId) -> ActionIntent {
+    ActionIntent::Ultimate { attacker: attacker_id, target }
+}
+
 /// Select an `ActionIntent` for an enemy unit.
 ///
-/// Decision priority:
-/// 1. **Ultimate** — if `attacker_ult_ready` and at least one target exists.
-/// 2. **Skill** — if `attacker_skills.skills` is non-empty (uses the first skill id).
-/// 3. **Basic** — fallback.
+/// If preview data is available, the best action/target pair is the one with the
+/// highest summed preview damage. Ties are deterministic: ultimate beats skill,
+/// skill beats basic, lower `UnitId` wins on the target axis, and earlier skills
+/// in the list win when all else is equal.
 ///
-/// In all branches the target is the ally with the lowest
-/// `toughness_current / toughness_max` ratio, ties broken by lowest `UnitId.0`.
-/// Returns `None` only when `targets` is empty.
+/// If no preview data can be produced for any candidate, the function falls back
+/// to the legacy deterministic routing: ultimate if ready, otherwise first skill,
+/// otherwise basic, all against the lowest-toughness target.
 pub fn pick_enemy_action(ctx: &EnemyTurnContext<'_>) -> Option<ActionIntent> {
-    let target = pick_target(ctx.targets)?;
+    pick_enemy_action_with_preview(ctx, |_skill_id, _target| None)
+}
 
-    let intent = if ctx.attacker_ult_ready {
-        ActionIntent::Ultimate {
-            attacker: ctx.attacker_id,
-            target,
-        }
+/// Preview-aware variant used by the runtime bridge and preview-driven tests.
+pub fn pick_enemy_action_with_preview<F>(
+    ctx: &EnemyTurnContext<'_>,
+    mut preview_for: F,
+) -> Option<ActionIntent>
+where
+    F: FnMut(&SkillId, UnitId) -> Option<PreviewDamageSummary>,
+{
+    let fallback_target = pick_target(ctx.targets)?;
+    let fallback_intent = if ctx.attacker_ult_ready {
+        build_ultimate_intent(ctx.attacker_id, fallback_target)
     } else if let Some(skill_id) = ctx.attacker_skills.skills.first() {
-        ActionIntent::Skill {
-            attacker: ctx.attacker_id,
-            skill_id: skill_id.clone(),
-            target,
-        }
+        build_skill_intent(ctx.attacker_id, skill_id.clone(), fallback_target)
     } else {
-        ActionIntent::Basic {
-            attacker: ctx.attacker_id,
-            target,
-        }
+        build_basic_intent(ctx.attacker_id, fallback_target)
     };
 
-    Some(intent)
+    let mut scored_actions = Vec::new();
+    let mut targets: Vec<UnitId> = ctx.targets.iter().map(|target| target.id).collect();
+    targets.sort_by(|a, b| a.0.cmp(&b.0));
+
+    for target in targets.iter().copied() {
+        if let Some(summary) = preview_for(&ctx.attacker_skills.basic, target) {
+            scored_actions.push(PreviewScoredAction {
+                intent: build_basic_intent(ctx.attacker_id, target),
+                damage: summary.total_damage,
+                action_rank: 0,
+                target_id: target,
+                skill_rank: 0,
+            });
+        }
+    }
+
+    for (skill_rank, skill_id) in ctx.attacker_skills.skills.iter().enumerate() {
+        for target in targets.iter().copied() {
+            if let Some(summary) = preview_for(skill_id, target) {
+                scored_actions.push(PreviewScoredAction {
+                    intent: build_skill_intent(ctx.attacker_id, skill_id.clone(), target),
+                    damage: summary.total_damage,
+                    action_rank: 1,
+                    target_id: target,
+                    skill_rank,
+                });
+            }
+        }
+    }
+
+    if ctx.attacker_ult_ready {
+        for target in targets.iter().copied() {
+            if let Some(summary) = preview_for(&ctx.attacker_skills.ultimate, target) {
+                scored_actions.push(PreviewScoredAction {
+                    intent: build_ultimate_intent(ctx.attacker_id, target),
+                    damage: summary.total_damage,
+                    action_rank: 2,
+                    target_id: target,
+                    skill_rank: 0,
+                });
+            }
+        }
+    }
+
+    scored_actions
+        .into_iter()
+        .max_by(compare_scored_action)
+        .map(|choice| choice.intent)
+        .or(Some(fallback_intent))
 }
 
 /// Returns the `UnitId` of the target with the lowest toughness ratio,

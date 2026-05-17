@@ -29,6 +29,7 @@ use bevyrogue::combat::turn_order::{TurnAdvanced, TurnOrder};
 use bevyrogue::combat::turn_system::ActionIntent;
 use bevyrogue::combat::turn_system::{
     advance_turn_system, check_victory_system, resolve_action_system,
+    resolve_enemy_turn_action_system,
 };
 use bevyrogue::combat::types::UnitId;
 use bevyrogue::combat::ultimate::UltGainQueue;
@@ -1226,6 +1227,7 @@ fn main() -> AppExit {
     .init_resource::<ActionLog>()
     .init_resource::<CombatState>()
     .init_resource::<UltGainQueue>()
+    .init_resource::<bevyrogue::combat::turn_system::EnemyTurnRequestQueue>()
     .init_resource::<PlayerActed>()
     .insert_resource(IsInteractive(is_terminal))
     .insert_resource(SelectedAllies(selected_ids))
@@ -1258,6 +1260,7 @@ fn main() -> AppExit {
             ult_accumulation_system,
             flush_ult_gain_system,
             advance_turn_system,
+            resolve_enemy_turn_action_system,
             check_victory_system,
             player_action_system,
             combat_dashboard_system,

@@ -199,13 +199,13 @@ pub fn summarize_preview_damage(pending: &VecDeque<Intent>) -> PreviewDamageSumm
 /// The helper runs the shared timeline through `BeatRunner` in `SkillCtxMode::Preview`
 /// and returns the deferred `Intent` queue. Callers are responsible for any later
 /// world mutation; this seam intentionally does not touch `intent_applier`.
-pub fn query_skill_preview(
+pub fn try_query_skill_preview(
     world: &mut World,
     skill_id: &SkillId,
     cast_id: CastId,
     caster: UnitId,
     primary_target: UnitId,
-) -> VecDeque<Intent> {
+) -> Option<VecDeque<Intent>> {
     let mut _fallback_regs = None;
     let regs_ptr: *const ExtRegistries = if let Some(regs) = world.get_resource::<ExtRegistries>() {
         regs as *const _
@@ -220,7 +220,7 @@ pub fn query_skill_preview(
 
     let regs = unsafe { &*regs_ptr };
     let Some(timeline) = resolve_compiled_skill_timeline(world, skill_id, regs) else {
-        return VecDeque::new();
+        return None;
     };
 
     let mut pending = VecDeque::new();
@@ -235,5 +235,19 @@ pub fn query_skill_preview(
         );
     }
 
-    pending
+    Some(pending)
+}
+
+/// Build the pending intent stream for a skill cast without applying queued intents.
+///
+/// This convenience wrapper preserves the existing call sites that only care about the
+/// preview stream and can treat an unavailable preview as an empty queue.
+pub fn query_skill_preview(
+    world: &mut World,
+    skill_id: &SkillId,
+    cast_id: CastId,
+    caster: UnitId,
+    primary_target: UnitId,
+) -> VecDeque<Intent> {
+    try_query_skill_preview(world, skill_id, cast_id, caster, primary_target).unwrap_or_default()
 }

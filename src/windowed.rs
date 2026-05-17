@@ -14,6 +14,7 @@ use crate::combat::observability::{capture_validation_snapshot, format_validatio
 use crate::combat::turn_order::{TurnAdvanced, TurnOrder};
 use crate::combat::turn_system::{
     advance_turn_system, check_victory_system, resolve_action_system,
+    resolve_enemy_turn_action_system,
 };
 use crate::combat::types::{Attribute, UnitId};
 use crate::combat::ultimate::{flush_ult_gain_system, ult_accumulation_system};
@@ -105,7 +106,8 @@ pub fn register(app: &mut App, validation: Option<WindowedValidationConfig>) {
 }
 
 pub fn register_combat_systems(app: &mut App) {
-    app.add_systems(
+    app.init_resource::<crate::combat::turn_system::EnemyTurnRequestQueue>()
+        .add_systems(
         Update,
         (
             resolve_action_system,
@@ -115,6 +117,7 @@ pub fn register_combat_systems(app: &mut App) {
             ult_accumulation_system,
             flush_ult_gain_system,
             advance_turn_system,
+            resolve_enemy_turn_action_system,
             check_victory_system,
         )
             .chain(),

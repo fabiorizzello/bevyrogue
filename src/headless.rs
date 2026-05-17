@@ -28,8 +28,8 @@ use crate::combat::team::Team;
 use crate::combat::toughness::{Toughness, visible_toughness};
 use crate::combat::turn_order::{TurnAdvanced, TurnOrder};
 use crate::combat::turn_system::{
-    ActionIntent, advance_turn_system, apply_av_ops_system, check_victory_system,
-    resolve_action_system,
+    ActionIntent, EnemyTurnRequestQueue, advance_turn_system, apply_av_ops_system,
+    check_victory_system, resolve_action_system, resolve_enemy_turn_action_system,
 };
 use crate::combat::types::UnitId;
 use crate::combat::ultimate::{UltimateCharge, flush_ult_gain_system, ult_accumulation_system};
@@ -131,7 +131,7 @@ pub fn register(app: &mut App) {
 }
 
 pub fn register_combat_systems(app: &mut App) {
-    app.add_systems(
+    app.init_resource::<EnemyTurnRequestQueue>().add_systems(
         Update,
         (
             resolve_action_system,
@@ -142,6 +142,7 @@ pub fn register_combat_systems(app: &mut App) {
             flush_ult_gain_system,
             apply_av_ops_system,
             advance_turn_system,
+            resolve_enemy_turn_action_system,
             check_victory_system,
             jsonl_logger_system,
         )
