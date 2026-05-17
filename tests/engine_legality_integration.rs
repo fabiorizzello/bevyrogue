@@ -241,15 +241,6 @@ fn snapshot_unit(fixture: &UnitFixture, is_active: bool) -> UnitQuerySnapshot {
         energy_external_gained: 0,
         skills: fixture.skills.clone(),
         toughness: None,
-        enemy_traits: fixture
-            .counterplay
-            .as_ref()
-            .map(|kit| kit.enemy_traits.clone())
-            .unwrap_or_default(),
-        charged_attack: fixture
-            .counterplay
-            .as_ref()
-            .and_then(|kit| kit.charged_attack.clone()),
         ..Default::default()
     }
 }

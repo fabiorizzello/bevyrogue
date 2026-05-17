@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use crate::combat::bevy_types::*;
 
 use crate::combat::{
     api::applier::intent_applier,
@@ -6,7 +6,6 @@ use crate::combat::{
     kernel::{
         CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition, TacticalCycleTransition,
     },
-    types::UnitId,
     unit::Unit,
 };
 

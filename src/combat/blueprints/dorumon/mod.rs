@@ -4,22 +4,21 @@
 //! (Predator Loop resource, applier system, hook) so adding or removing
 //! the digimon is a single `add_plugins` line at the call site.
 
-use bevy::prelude::*;
+use crate::combat::bevy_types::*;
 
 use crate::combat::api::registry::{ValidationField, ValidationSection};
 use crate::combat::kernel::CombatKernelRegistry;
-use crate::combat::observability::{format_predator_loop_transition, format_predator_targets};
+use crate::combat::blueprints::dorumon::identity::format_predator_loop_transition;
+use crate::combat::observability::format_predator_targets;
 
 pub mod hooks;
 pub mod identity;
 pub mod signals;
 
 pub use identity::{
-    DEFAULT_BERSERK_STRAIN_THRESHOLD, DEFAULT_EXPLOIT_CAP, DEFAULT_PREY_LOCK_DURATION,
-    PredatorLockState, PredatorLoopBlockedReason, PredatorLoopCapKind, PredatorLoopDesignTag,
-    PredatorLoopHook, PredatorLoopRequestKind, PredatorLoopSignal, PredatorLoopSnapshot,
-    PredatorLoopState, PredatorLoopStep, PredatorLoopTransition, PredatorTargetSnapshot,
-    PredatorTargetState, apply_predator_loop_transition, apply_predator_loop_transitions_system,
+    PredatorLoopBlockedReason, PredatorLoopCapKind, PredatorLoopSignal, PredatorLoopSnapshot,
+    PredatorLoopState, PredatorLoopStep, PredatorLoopTransition,
+    apply_predator_loop_transitions_system,
 };
 pub use signals::{OWNER, dispatch};
 
@@ -62,6 +61,11 @@ fn predator_validation_section(world: &World) -> Option<ValidationSection> {
 }
 
 pub struct DorumonPlugin;
+
+/// Register only the Dorumon extension-point functions into an `ExtRegistries`.
+pub fn register_dorumon_ext(_regs: &mut crate::combat::api::ExtRegistries) {
+    // Dorumon is currently driven by Bevy systems, no fn-by-id extensions yet.
+}
 
 impl Plugin for DorumonPlugin {
     fn build(&self, app: &mut App) {

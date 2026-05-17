@@ -139,6 +139,11 @@ const BLUEPRINTS: &[BlueprintRegistration] = &[
 /// (like `"agumon/has_bouncing_fire"`) resolve correctly.
 pub fn register_all_blueprint_exts(regs: &mut crate::combat::api::ExtRegistries) {
     agumon::register_agumon_ext(regs);
+    gabumon::register_gabumon_ext(regs);
+    patamon::register_patamon_ext(regs);
+    renamon::register_renamon_ext(regs);
+    tentomon::register_tentomon_ext(regs);
+    dorumon::register_dorumon_ext(regs);
 }
 
 pub fn register_all_blueprint_validation_exts(regs: &mut crate::combat::api::ExtRegistries) {
@@ -147,8 +152,18 @@ pub fn register_all_blueprint_validation_exts(regs: &mut crate::combat::api::Ext
     twin_core::register_validation_ext(regs);
     patamon::register_validation_ext(regs);
     dorumon::register_validation_ext(regs);
-    tentomon::register_validation_ext(regs);
-    renamon::register_validation_ext(regs);
+    tentomon::register_tentomon_ext(regs);
+    renamon::register_renamon_ext(regs);
+}
+
+pub fn add_runtime_plugins(app: &mut crate::combat::bevy_types::App) {
+    app.add_plugins((
+        twin_core::TwinCorePlugin,
+        patamon::PatamonPlugin,
+        dorumon::DorumonPlugin,
+        tentomon::TentomonPlugin,
+        renamon::RenamonPlugin,
+    ));
 }
 
 pub fn dispatch_custom_signal(

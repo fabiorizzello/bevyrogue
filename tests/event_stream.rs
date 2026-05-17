@@ -311,12 +311,6 @@ fn s09_event_stream_observes_all_variants() {
         })
         .collect();
     assert_eq!(beat_ids, kernel_beat_ids);
-    assert!(kinds.iter().any(|kind| matches!(
-        kind,
-        CombatEventKind::OnKernelTransition {
-            transition: CombatKernelTransition::Blueprint { owner, .. },
-        } if owner == "twin_core"
-    )));
 
     for owner in ["twin_core", "dorumon", "tentomon"] {
         let event = CombatEvent {

@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 use bevyrogue::combat::api::{SignalPayload, intent::CastId};
+use bevyrogue::combat::blueprints;
 use bevyrogue::combat::battery_loop::{
     BATTERY_ENERGY_GRANT, BatteryLoopBlockedReason, BatteryLoopChargeKind, BatteryLoopSignal,
     BatteryLoopState, BatteryLoopStep, BatteryLoopTransition, apply_battery_loop_transition,
@@ -14,7 +15,7 @@ use bevyrogue::combat::kernel::{
     CombatKernelHook, CombatKernelTransition, TacticalCycleStep, TacticalCycleTransition,
     register_combat_kernel_runtime,
 };
-use bevyrogue::combat::observability::{BatteryLoopSnapshot, format_battery_loop_snapshot};
+use bevyrogue::combat::battery_loop::{BatteryLoopSnapshot, format_battery_loop_snapshot};
 use bevyrogue::combat::types::UnitId;
 
 fn app_with_battery_loop() -> App {
@@ -49,6 +50,7 @@ fn runtime_registration_applies_battery_loop_transition_once() {
     let mut app = App::new();
     app.add_message::<CombatEvent>();
     register_combat_kernel_runtime(&mut app);
+    blueprints::add_runtime_plugins(&mut app);
 
     emit_kernel_transition(
         &mut app,

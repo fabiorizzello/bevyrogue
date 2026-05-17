@@ -32,7 +32,8 @@ pub mod skill_ctx;
 pub mod timeline;
 
 // Stable re-exports for the most-imported types.
-pub use applier::IntentQueue;
+#[allow(unused_imports)]
+pub use applier::{IntentExecutionMeta, IntentQueue, intent_applier};
 pub use blueprint_state::BlueprintState;
 pub use builtins::register_kernel_builtins;
 pub use clock::Clock;
@@ -40,15 +41,11 @@ pub use event_bridge::combat_event_to_signal_system;
 pub use event_filter::EventFilter;
 pub use intent::{CastId, CastIdGen, Intent};
 pub use passive_runner::{PassiveListeners, PassiveRunner, passive_dispatch_system};
-pub use registry::{
-    AiUtilityExt, CueExt, ExtPoint, ExtRegistries, FormulaExt, HookExt, PredicateExt, Registry,
-    SelectorExt, TickExt, ValidationExt, ValidationField, ValidationSection,
-};
-pub use rng::CastRng;
-pub use runner::{BeatRunner, LoopFrame, StepOutcome};
+pub use registry::{ExtRegistries, Registry, ValidationSection};
+pub use runner::StepOutcome;
 pub use signal::{Signal, SignalBus, SignalPayload, SignalTaxonomy};
 pub use skill_ctx::{SkillCtx, SkillCtxMode};
 pub use timeline::{
-    Beat, BeatEdge, BeatEvent, BeatId, BeatKind, BeatPayload, CompiledTimeline, CueCtx,
-    Presentation, SelectorCtx, TimelineLibrary, ValidationError, validate_timeline_refs,
+    Beat, BeatEdge, BeatEvent, BeatId, BeatKind, BeatPayload, CompiledTimeline, Presentation,
+    SelectorCtx, TimelineLibrary, ValidationError, validate_timeline_refs,
 };

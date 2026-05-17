@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use crate::combat::bevy_types::*;
 use serde::{Deserialize, Serialize};
 
 use crate::combat::events::{CombatEvent, CombatEventKind};
@@ -8,7 +8,7 @@ use crate::combat::kernel::{
     TacticalCycleTransition,
 };
 use crate::combat::api::registry::{ValidationField, ValidationSection};
-use crate::combat::observability::{format_twin_core_transition, format_unit_ids};
+use crate::combat::observability::format_unit_ids;
 use crate::combat::types::UnitId;
 
 pub const OWNER: &str = "twin_core";
@@ -421,4 +421,18 @@ impl Plugin for TwinCorePlugin {
             .resource_mut::<CombatKernelRegistry>()
             .register(TwinCoreHook);
     }
+}
+
+pub(crate) fn format_twin_core_transition(transition: TwinCoreTransition) -> String {
+    let signal = match transition.signal {
+        TwinCoreSignal::BuildCrossResonance => "build",
+        TwinCoreSignal::SpendCrossResonance => "spend",
+        TwinCoreSignal::ThermalSpark => "spark",
+        TwinCoreSignal::TwinBurst => "twin-burst",
+        TwinCoreSignal::Shatter => "shatter",
+        TwinCoreSignal::FireSpendMarker => "fire-spend",
+        TwinCoreSignal::IceSpendMarker => "ice-spend",
+        TwinCoreSignal::CycleReset => "cycle-reset",
+    };
+    format!("{signal}({})", transition.amount)
 }

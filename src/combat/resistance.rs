@@ -5,11 +5,6 @@ use bevy::prelude::*;
 /// Prevents single-skill AV swings beyond ±50% of MAX_AV.
 pub const CAP_PCT: u32 = 50;
 
-/// Units cannot be delayed such that their AV drops below `-MIN_ACTION_THRESHOLD_AV`.
-/// With MAX_AV = 10_000, a fully-floored unit still needs 25_000 AV gain to act —
-/// preventing infinite-delay lock but allowing meaningful delay punishment.
-pub const MIN_ACTION_THRESHOLD_AV: i32 = 15_000;
-
 /// Diminishing returns component for repeated Delay effects (e.g. on bosses).
 /// Stack 0 (fresh): 100% effective. Stack 1: 50%. Stack 2+: 25%.
 #[derive(Component, Debug, Default, Clone, PartialEq, Eq)]
@@ -34,8 +29,6 @@ impl TempoResistance {
     }
 }
 
-// ── New split primitives (T01) ─────────────────────────────────────────────
-
 /// Advances `av` by `pct` percent of MAX_AV.
 ///
 /// `pct` is defensively capped at [`CAP_PCT`] (50) before computation.
@@ -52,12 +45,8 @@ pub fn apply_advance(av: &mut ActionValue, pct: u32) -> i32 {
 /// Delays `av` by `pct` percent of MAX_AV, with optional `TempoResistance` attenuation.
 ///
 /// `pct` is defensively capped at [`CAP_PCT`] (50) before computation.
-/// Resistance applies the diminishing-returns curve (delay-only).
-/// AV is clamped to `[0, 2*MAX_AV]` — floor 0 replaces the old `MIN_ACTION_THRESHOLD_AV`.
+/// AV is clamped to `[0, 2*MAX_AV]` after addition.
 /// Returns the actual AV delta (non-positive).
-///
-/// Rationale for floor 0: cap ±50% per call + `TempoResistance` curve (25% asymptote on
-/// bosses) + Speed accumulator guarantees no infinite-delay lock without a negative floor.
 pub fn apply_delay(
     av: &mut ActionValue,
     pct: u32,
@@ -73,49 +62,6 @@ pub fn apply_delay(
     av.0 = (av.0 - eff).clamp(0, 2 * MAX_AV);
     if let Some(r) = resistance {
         r.record_delay_hit();
-    }
-    av.0 - old
-}
-
-// ── Legacy shims (kept until callers migrate in T02+) ─────────────────────
-
-/// Converts a `TurnAdvance` percentage into a raw AV delta, applying resistance
-/// for negative (delay) amounts.
-///
-/// `amount_pct` follows the skill DSL sign convention:
-/// - positive = advance (pull forward)
-/// - negative = delay  (push back)
-///
-/// Advances bypass resistance entirely; only delays are attenuated.
-pub fn compute_av_change(amount_pct: i32, resistance: Option<&TempoResistance>) -> i32 {
-    let raw = amount_pct * MAX_AV / 100;
-    if raw < 0 {
-        if let Some(r) = resistance {
-            return (raw as f64 * r.multiplier()).round() as i32;
-        }
-    }
-    raw
-}
-
-/// Applies a `TurnAdvance`-style AV mutation to `av`, respecting resistance and the
-/// MIN_ACTION_THRESHOLD_AV floor.
-///
-/// Returns the actual AV delta applied (negative = unit was delayed, positive = advanced).
-/// The resistance stack is incremented only when a delay is applied.
-pub fn apply_av_change(
-    av: &mut ActionValue,
-    resistance: Option<&mut TempoResistance>,
-    amount_pct: i32,
-) -> i32 {
-    let eff = compute_av_change(amount_pct, resistance.as_deref());
-    let old = av.0;
-    if eff < 0 {
-        av.0 = (av.0 + eff).max(-MIN_ACTION_THRESHOLD_AV);
-        if let Some(r) = resistance {
-            r.record_delay_hit();
-        }
-    } else {
-        av.0 = (av.0 + eff).min(MAX_AV);
     }
     av.0 - old
 }

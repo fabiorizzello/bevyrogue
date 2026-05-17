@@ -1,19 +1,9 @@
 use std::fmt;
 
 use bevy::prelude::World;
-use serde::{Deserialize, Serialize};
 
 use crate::combat::{
     av::ActionValue,
-    battery_loop::{
-        BatteryLoopBlockedReason, BatteryLoopSignal, BatteryLoopState, BatteryLoopStep,
-        BatteryLoopTransition,
-    },
-    blueprints::{
-        dorumon::{PredatorLoopSignal, PredatorLoopStep, PredatorLoopTransition},
-        patamon::identity::{HolySupportSignal, HolySupportStep, HolySupportTransition},
-        twin_core::{TwinCoreSignal, TwinCoreTransition},
-    },
     floating::FloatingDamage,
     log::{ActionLog, LogEntry},
     sp::SpPool,
@@ -26,7 +16,7 @@ use crate::combat::{
     ultimate::UltimateCharge,
     unit::{Ko, Unit},
 };
-pub use crate::combat::api::registry::{ValidationField, ValidationSection};
+pub use crate::combat::api::registry::ValidationSection;
 use crate::combat::api::ExtRegistries;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -45,37 +35,6 @@ pub struct ValidationSnapshot {
 impl ValidationSnapshot {
     pub fn section(&self, owner: &str) -> Option<&ValidationSection> {
         self.owner_sections.iter().find(|section| section.owner == owner)
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct BatteryLoopSnapshot {
-    pub static_charge: u8,
-    pub static_charge_cap: u8,
-    pub circuit_charge: u8,
-    pub circuit_charge_cap: u8,
-    pub static_charge_threshold: u8,
-    pub threshold_grant_emitted_this_cycle: bool,
-    pub block_reaction_armed: bool,
-    pub last_block_reaction_cast_id: Option<crate::combat::api::intent::CastId>,
-    pub last_transition: Option<BatteryLoopTransition>,
-    pub last_blocked_reason: Option<BatteryLoopBlockedReason>,
-}
-
-impl From<&BatteryLoopState> for BatteryLoopSnapshot {
-    fn from(state: &BatteryLoopState) -> Self {
-        Self {
-            static_charge: state.static_charge,
-            static_charge_cap: state.static_charge_cap,
-            circuit_charge: state.circuit_charge,
-            circuit_charge_cap: state.circuit_charge_cap,
-            static_charge_threshold: state.static_charge_threshold,
-            threshold_grant_emitted_this_cycle: state.threshold_grant_emitted_this_cycle,
-            block_reaction_armed: state.block_reaction_armed,
-            last_block_reaction_cast_id: state.last_block_reaction_cast_id,
-            last_transition: state.last_transition,
-            last_blocked_reason: state.last_blocked_reason,
-        }
     }
 }
 
@@ -455,66 +414,8 @@ fn validation_field<'a>(section: &'a ValidationSection, key: &str) -> &'a str {
     section.field(key).unwrap_or("none")
 }
 
-pub(crate) fn format_twin_core_transition(transition: TwinCoreTransition) -> String {
-    let signal = match transition.signal {
-        TwinCoreSignal::BuildCrossResonance => "build",
-        TwinCoreSignal::SpendCrossResonance => "spend",
-        TwinCoreSignal::ThermalSpark => "spark",
-        TwinCoreSignal::TwinBurst => "twin-burst",
-        TwinCoreSignal::Shatter => "shatter",
-        TwinCoreSignal::FireSpendMarker => "fire-spend",
-        TwinCoreSignal::IceSpendMarker => "ice-spend",
-        TwinCoreSignal::CycleReset => "cycle-reset",
-    };
-    format!("{signal}({})", transition.amount)
-}
-
-pub(crate) fn format_holy_support_transition(transition: HolySupportTransition) -> String {
-    let signal = match transition.signal {
-        HolySupportSignal::BuildGrace => "build",
-        HolySupportSignal::SpendGrace => "spend",
-        HolySupportSignal::MarkMartyrLight => "mark-martyr",
-        HolySupportSignal::ConsumeMartyrLight => "consume-martyr",
-        HolySupportSignal::CycleReset => "cycle-reset",
-        HolySupportSignal::Rejected => "rejected",
-        HolySupportSignal::Ignored => "ignored",
-    };
-
-    match transition.signal {
-        HolySupportSignal::BuildGrace
-        | HolySupportSignal::SpendGrace => {
-            format!("{signal}({})", transition.amount)
-        }
-        HolySupportSignal::Rejected | HolySupportSignal::Ignored => {
-            match (transition.attempted, transition.reason) {
-                (Some(attempted), Some(reason)) => {
-                    format!(
-                        "{signal}({};reason={reason:?})",
-                        format_holy_support_step(attempted)
-                    )
-                }
-                (Some(attempted), None) => {
-                    format!("{signal}({})", format_holy_support_step(attempted))
-                }
-                _ => signal.to_string(),
-            }
-        }
-        _ => signal.to_string(),
-    }
-}
-
-fn format_holy_support_step(step: HolySupportStep) -> String {
-    match step {
-        HolySupportStep::BuildGrace { amount } => format!("build({amount})"),
-        HolySupportStep::SpendGrace { amount } => format!("spend({amount})"),
-        HolySupportStep::MarkMartyrLight => "mark-martyr".to_string(),
-        HolySupportStep::ConsumeMartyrLight => "consume-martyr".to_string(),
-        HolySupportStep::CycleReset => "cycle-reset".to_string(),
-    }
-}
-
 pub(crate) fn format_predator_targets(
-    targets: &[crate::combat::blueprints::dorumon::PredatorTargetSnapshot],
+    targets: &[crate::combat::blueprints::dorumon::identity::PredatorTargetSnapshot],
 ) -> String {
     let joined = targets
         .iter()
@@ -536,169 +437,6 @@ pub(crate) fn format_predator_targets(
         .collect::<Vec<_>>()
         .join(",");
     format!("[{joined}]")
-}
-
-pub(crate) fn format_predator_loop_transition(
-    transition: PredatorLoopTransition,
-) -> String {
-    let signal = match transition.signal {
-        PredatorLoopSignal::BuildExploit => "build-exploit",
-        PredatorLoopSignal::ApplyPreyLock => "prey-lock",
-        PredatorLoopSignal::ConsumePreyLockPayoff => "payoff",
-        PredatorLoopSignal::EnterBerserk => "berserk",
-        PredatorLoopSignal::Tick => "tick",
-        PredatorLoopSignal::Expire => "expire",
-        PredatorLoopSignal::Rejected => "rejected",
-        PredatorLoopSignal::Ignored => "ignored",
-    };
-    match transition.signal {
-        PredatorLoopSignal::BuildExploit
-        | PredatorLoopSignal::ApplyPreyLock
-        | PredatorLoopSignal::ConsumePreyLockPayoff
-        | PredatorLoopSignal::EnterBerserk
-        | PredatorLoopSignal::Expire => {
-            format!(
-                "{signal}(target={:?};amount={})",
-                transition.target, transition.amount
-            )
-        }
-        PredatorLoopSignal::Tick => signal.to_string(),
-        PredatorLoopSignal::Rejected | PredatorLoopSignal::Ignored => {
-            match (transition.attempted, transition.reason) {
-                (Some(attempted), Some(reason)) => format!(
-                    "{signal}({};reason={reason:?})",
-                    format_predator_loop_step(attempted)
-                ),
-                (Some(attempted), None) => {
-                    format!("{signal}({})", format_predator_loop_step(attempted))
-                }
-                _ => signal.to_string(),
-            }
-        }
-    }
-}
-
-fn format_predator_loop_step(step: PredatorLoopStep) -> String {
-    match step {
-        PredatorLoopStep::BuildExploit { target, amount } => {
-            format!("build({}:{})", target.0, amount)
-        }
-        PredatorLoopStep::ApplyPreyLock { target } => {
-            format!("prey-lock({})", target.0)
-        }
-        PredatorLoopStep::ConsumePreyLockPayoff { target } => {
-            format!("payoff({})", target.0)
-        }
-        PredatorLoopStep::EnterBerserk => "berserk".to_string(),
-        PredatorLoopStep::Tick => "tick".to_string(),
-        PredatorLoopStep::Expire { target } => {
-            format!("expire({})", target.0)
-        }
-    }
-}
-
-pub fn format_battery_loop_snapshot(snapshot: &BatteryLoopSnapshot) -> String {
-    format!(
-        "static={}/{} circuit={}/{} threshold={} grant_guard={} block_ready={} last_block_cast={} last={} blocked={}",
-        snapshot.static_charge,
-        snapshot.static_charge_cap,
-        snapshot.circuit_charge,
-        snapshot.circuit_charge_cap,
-        snapshot.static_charge_threshold,
-        snapshot.threshold_grant_emitted_this_cycle,
-        snapshot.block_reaction_armed,
-        snapshot
-            .last_block_reaction_cast_id
-            .map(|cast_id| cast_id.0.get().to_string())
-            .unwrap_or_else(|| "none".to_string()),
-        snapshot
-            .last_transition
-            .map(format_battery_loop_transition)
-            .unwrap_or_else(|| "none".to_string()),
-        snapshot
-            .last_blocked_reason
-            .map(format_battery_loop_blocked_reason)
-            .unwrap_or_else(|| "none".to_string()),
-    )
-}
-
-pub(crate) fn format_battery_loop_transition(transition: BatteryLoopTransition) -> String {
-    match transition.signal {
-        BatteryLoopSignal::BuildStaticCharge => {
-            format!("build-static({})", transition.amount)
-        }
-        BatteryLoopSignal::BuildCircuitCharge => {
-            format!("build-circuit({})", transition.amount)
-        }
-        BatteryLoopSignal::SpendCircuitCharge => {
-            format!("spend-circuit({})", transition.amount)
-        }
-        BatteryLoopSignal::BlockReady => "block-ready".to_string(),
-        BatteryLoopSignal::BlockProc => "block-proc".to_string(),
-        BatteryLoopSignal::GrantEnergy => {
-            format!("grant({})", transition.amount)
-        }
-        BatteryLoopSignal::SelfEnergyGain => {
-            format!("self-gain({})", transition.amount)
-        }
-        BatteryLoopSignal::TransferEnergy => {
-            format!("transfer({})", transition.amount)
-        }
-        BatteryLoopSignal::CycleReset => "cycle-reset".to_string(),
-        BatteryLoopSignal::Rejected => match (transition.attempted, transition.reason) {
-            (Some(attempted), Some(reason)) => {
-                format!(
-                    "rejected({};reason={reason:?})",
-                    format_battery_loop_step(attempted)
-                )
-            }
-            (Some(attempted), None) => {
-                format!("rejected({})", format_battery_loop_step(attempted))
-            }
-            _ => "rejected".to_string(),
-        },
-        BatteryLoopSignal::Ignored => match transition.attempted {
-            Some(attempted) => format!("ignored({})", format_battery_loop_step(attempted)),
-            None => "ignored".to_string(),
-        },
-    }
-}
-
-fn format_battery_loop_step(step: BatteryLoopStep) -> String {
-    match step {
-        BatteryLoopStep::BuildStaticCharge { amount } => {
-            format!("build-static({amount})")
-        }
-        BatteryLoopStep::BuildCircuitCharge { amount } => {
-            format!("build-circuit({amount})")
-        }
-        BatteryLoopStep::SpendCircuitCharge { amount } => {
-            format!("spend-circuit({amount})")
-        }
-        BatteryLoopStep::BlockReady => "block-ready".to_string(),
-        BatteryLoopStep::BlockProc => "block-proc".to_string(),
-        BatteryLoopStep::GrantEnergy { amount } => format!("grant({amount})"),
-        BatteryLoopStep::SelfEnergyGain { amount } => {
-            format!("self-gain({amount})")
-        }
-        BatteryLoopStep::TransferEnergy { amount } => format!("transfer({amount})"),
-        BatteryLoopStep::CycleReset => "cycle-reset".to_string(),
-    }
-}
-
-fn format_battery_loop_blocked_reason(reason: BatteryLoopBlockedReason) -> String {
-    match reason {
-        BatteryLoopBlockedReason::ChargeCapReached { charge } => {
-            format!("cap-reached({charge:?})")
-        }
-        BatteryLoopBlockedReason::ChargeUnderflow { charge } => {
-            format!("underflow({charge:?})")
-        }
-        BatteryLoopBlockedReason::MissingPreExistingShock => "missing-shock".to_string(),
-        BatteryLoopBlockedReason::NoEligibleAlly => "no-eligible-ally".to_string(),
-        BatteryLoopBlockedReason::UnsupportedRequest => "unsupported".to_string(),
-        BatteryLoopBlockedReason::MalformedData => "malformed".to_string(),
-    }
 }
 
 fn format_action_log_tail(events: &[ValidationLogEntry]) -> String {

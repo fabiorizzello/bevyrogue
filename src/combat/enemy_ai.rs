@@ -41,14 +41,6 @@ struct PreviewScoredAction {
     skill_rank: usize,
 }
 
-fn action_rank(intent: &ActionIntent) -> u8 {
-    match intent {
-        ActionIntent::Basic { .. } => 0,
-        ActionIntent::Skill { .. } => 1,
-        ActionIntent::Ultimate { .. } => 2,
-    }
-}
-
 fn compare_scored_action(a: &PreviewScoredAction, b: &PreviewScoredAction) -> Ordering {
     a.damage
         .cmp(&b.damage)

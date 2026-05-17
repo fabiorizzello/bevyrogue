@@ -85,6 +85,13 @@ fn app_with_dorumon_runtime() -> App {
     let mut app = App::new();
     app.add_message::<CombatEvent>();
     register_combat_kernel_runtime(&mut app);
+    blueprints::add_runtime_plugins(&mut app);
+    {
+        let mut regs = app
+            .world_mut()
+            .resource_mut::<bevyrogue::combat::api::ExtRegistries>();
+        blueprints::register_all_blueprint_validation_exts(&mut regs);
+    }
     app.init_resource::<CombatState>();
     app.init_resource::<SpPool>();
     app.init_resource::<ActionLog>();

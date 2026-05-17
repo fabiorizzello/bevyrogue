@@ -3,7 +3,7 @@ use bevy::prelude::*;
 
 use bevyrogue::combat::api::intent::CastId;
 use bevyrogue::combat::blueprints::renamon::dispatch as renamon_dispatch;
-use bevyrogue::combat::blueprints::{self, agumon::TwinCoreState, patamon::HolySupportState};
+use bevyrogue::combat::blueprints::{self, twin_core::TwinCoreState, patamon::HolySupportState};
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::kernel::register_canonical_passive_runners;
 use bevyrogue::combat::plugin::CombatPlugin;

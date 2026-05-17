@@ -421,7 +421,6 @@ pub fn advance_turn_system(
     mut state: ResMut<CombatState>,
     mut turn_flow: ParamSet<(MessageReader<TurnAdvanced>, MessageWriter<TurnAdvanced>)>,
     mut event_writer: MessageWriter<CombatEvent>,
-    mut intents_out: MessageWriter<ActionIntent>,
     mut av_event_writer: MessageWriter<ActionValueUpdated>,
     mut enemy_turn_requests: Option<ResMut<EnemyTurnRequestQueue>>,
     _combat_rng: Option<ResMut<CombatRng>>,
@@ -434,13 +433,6 @@ pub fn advance_turn_system(
         team: Team,
         is_stunned: bool,
         is_paralyzed: bool,
-        hp_current: i32,
-        hp_max: i32,
-        toughness_current: i32,
-        toughness_max: i32,
-        is_commander: bool,
-        skills: Option<UnitSkills>,
-        ult_ready: bool,
     }
     let snapshots: Vec<Snap> = query
         .iter_mut()
@@ -454,10 +446,10 @@ pub fn advance_turn_system(
                 _,
                 stunned,
                 status_bag,
-                skills,
-                ult,
-                toughness,
-                commander,
+                _,
+                _,
+                _,
+                _,
                 _,
                 _,
                 _,
@@ -471,13 +463,6 @@ pub fn advance_turn_system(
                         .as_ref()
                         .map(|b| b.has(&StatusEffectKind::Paralyzed))
                         .unwrap_or(false),
-                    hp_current: unit.hp_current,
-                    hp_max: unit.hp_max,
-                    toughness_current: toughness.map(|t| t.current).unwrap_or(0),
-                    toughness_max: toughness.map(|t| t.max).unwrap_or(1),
-                    is_commander: commander.is_some(),
-                    skills: skills.cloned(),
-                    ult_ready: ult.map(|u| u.ready()).unwrap_or(false),
                 }
             },
         )
@@ -667,7 +652,7 @@ pub fn advance_turn_system(
 
         // Enemy turns are bridged out to the preview-aware world-backed resolver.
         if snap.team == Team::Enemy && !shock_cancelled && !snap.is_stunned && !snap.is_paralyzed {
-            if let Some(mut requests) = enemy_turn_requests.as_mut() {
+            if let Some(requests) = enemy_turn_requests.as_mut() {
                 requests.0.push(snap.id);
             }
         }

@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use crate::combat::bevy_types::*;
 use serde::{Deserialize, Serialize};
 
 use crate::combat::api::SignalPayload;
@@ -404,4 +404,40 @@ fn apply_holy_support_transition(
         state.martyr_light_consumed_this_cycle,
         state.last_signal,
     );
+}
+
+pub(crate) fn format_holy_support_transition(transition: HolySupportTransition) -> String {
+    let signal = match transition.signal {
+        HolySupportSignal::BuildGrace => "build",
+        HolySupportSignal::SpendGrace => "spend",
+        HolySupportSignal::MarkMartyrLight => "mark-martyr",
+        HolySupportSignal::ConsumeMartyrLight => "consume-martyr",
+        HolySupportSignal::CycleReset => "cycle-reset",
+        HolySupportSignal::Rejected => "rejected",
+        HolySupportSignal::Ignored => "ignored",
+    };
+
+    match transition.signal {
+        HolySupportSignal::BuildGrace | HolySupportSignal::SpendGrace => {
+            format!("{signal}({})", transition.amount)
+        }
+        HolySupportSignal::Rejected | HolySupportSignal::Ignored => match (transition.attempted, transition.reason) {
+            (Some(attempted), Some(reason)) => {
+                format!("{signal}({};reason={reason:?})", format_holy_support_step(attempted))
+            }
+            (Some(attempted), None) => format!("{signal}({})", format_holy_support_step(attempted)),
+            _ => signal.to_string(),
+        },
+        _ => signal.to_string(),
+    }
+}
+
+fn format_holy_support_step(step: HolySupportStep) -> String {
+    match step {
+        HolySupportStep::BuildGrace { amount } => format!("build({amount})"),
+        HolySupportStep::SpendGrace { amount } => format!("spend({amount})"),
+        HolySupportStep::MarkMartyrLight => "mark-martyr".to_string(),
+        HolySupportStep::ConsumeMartyrLight => "consume-martyr".to_string(),
+        HolySupportStep::CycleReset => "cycle-reset".to_string(),
+    }
 }

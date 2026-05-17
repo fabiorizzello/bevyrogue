@@ -177,30 +177,6 @@ pub fn status_amp_pct(bag: &StatusBag, tag: DamageTag) -> i32 {
 /// Backward-compat shim. Single-instance Component superseded by `StatusBag + StatusInstance`.
 /// Remove after T02 migrates all call sites.
 #[allow(deprecated)]
-#[deprecated(note = "migrate to StatusBag (M017/S02/T02)")]
-#[derive(Component, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct StatusEffect {
-    pub kind: StatusEffectKind,
-    pub duration_remaining: u32,
-}
-
-#[allow(deprecated)]
-impl StatusEffect {
-    pub fn new(kind: StatusEffectKind, duration: u32) -> Self {
-        StatusEffect {
-            kind,
-            duration_remaining: duration,
-        }
-    }
-    pub fn refresh(&mut self, new_duration: u32) {
-        self.duration_remaining = self.duration_remaining.max(new_duration);
-    }
-    pub fn tick(&mut self) -> bool {
-        self.duration_remaining = self.duration_remaining.saturating_sub(1);
-        self.duration_remaining == 0
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

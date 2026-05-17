@@ -12,7 +12,7 @@ use crate::combat::{
     team::Team,
     toughness::{DamageKind, Toughness, can_apply_toughness_damage, classify},
     turn_system::ActionIntent,
-    types::{EvoStage, SkillId, UnitId},
+    types::{EvoStage, UnitId},
     ultimate::UltimateCharge,
     unit::{BasicStreak, Unit},
 };
@@ -22,17 +22,6 @@ use crate::data::skills_ron::{
 
 /// Emit one `OnSkillCast` per granted free-skill slot, using the provided ally basic skill ids.
 /// Callers (e.g. `execute_action_intent`) collect the ally basics and call this; the function is
-/// extracted here so resolution unit-tests can exercise it without a Bevy world.
-pub fn grant_free_skill_events(count: usize, ally_basics: &[SkillId]) -> Vec<CombatEventKind> {
-    ally_basics
-        .iter()
-        .take(count)
-        .map(|skill_id| CombatEventKind::OnSkillCast {
-            skill_id: skill_id.clone(),
-        })
-        .collect()
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ResolutionOutcome {
     pub amount: i32,
@@ -913,7 +902,7 @@ mod tests {
         team::Team,
         toughness::Toughness,
         turn_system::ActionIntent,
-        types::{Attribute, DamageTag, EvoStage, UnitId},
+        types::{Attribute, DamageTag, EvoStage, SkillId, UnitId},
         ultimate::UltAccumulationTrigger,
         unit::BasicStreak,
     };
@@ -951,6 +940,15 @@ mod tests {
             qte: None,
             ..Default::default()
         }
+    }
+
+    fn grant_free_skill_events(count: usize, ally_basics: &[SkillId]) -> Vec<CombatEventKind> {
+        ally_basics
+            .iter()
+            .take(count)
+            .cloned()
+            .map(|skill_id| CombatEventKind::OnSkillCast { skill_id })
+            .collect()
     }
 
     fn unit(id: u32, attribute: Attribute, hp_current: i32) -> Unit {
@@ -1525,7 +1523,7 @@ mod tests {
         assert_eq!(events.len(), 4, "expected exactly 4 OnSkillCast events");
         for (i, event) in events.iter().enumerate() {
             assert!(
-                matches!(event, CombatEventKind::OnSkillCast { skill_id } if *skill_id == SkillId(format!("basic_{}", i + 1))),
+                matches!(event, CombatEventKind::OnSkillCast { skill_id } if skill_id == &SkillId(format!("basic_{}", i + 1))),
                 "event {i} should be OnSkillCast for basic_{}",
                 i + 1
             );

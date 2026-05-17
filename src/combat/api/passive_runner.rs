@@ -9,7 +9,7 @@ use crate::combat::{
         event_filter::EventFilter,
         intent::CastIdGen,
         runner::{BeatRunner, StepOutcome},
-        signal::{Signal, SignalBus},
+        signal::Signal,
         skill_ctx::SkillCtxMode,
         timeline::CompiledTimeline,
     },

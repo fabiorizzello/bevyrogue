@@ -1,11 +1,12 @@
 use bevyrogue::combat::api::intent::CastId;
+use bevyrogue::combat::api::registry::ValidationField;
 use bevyrogue::combat::blueprints::dorumon::{
     PredatorLoopBlockedReason, PredatorLoopCapKind, PredatorLoopSignal, PredatorLoopSnapshot,
     PredatorLoopState, PredatorLoopStep, PredatorLoopTransition,
 };
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::observability::{
-    ValidationField, ValidationSection, ValidationSnapshot, format_validation_snapshot,
+    ValidationSection, ValidationSnapshot, format_validation_snapshot,
 };
 use bevyrogue::combat::state::CombatPhase;
 use bevyrogue::combat::types::UnitId;

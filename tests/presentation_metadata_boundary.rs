@@ -257,13 +257,13 @@ fn kernel_beats(events: &[CombatEvent]) -> Vec<CombatBeatId> {
         .collect()
 }
 
-fn holy_support_transitions(events: &[CombatEvent]) -> Vec<HolySupportTransition> {
+fn holy_support_transitions(events: &[CombatEvent]) -> Vec<String> {
     events
         .iter()
-        .filter_map(|event| match event.kind {
+        .filter_map(|event| match &event.kind {
             CombatEventKind::OnKernelTransition {
-                transition: CombatKernelTransition::HolySupport(transition),
-            } => Some(transition),
+                transition: CombatKernelTransition::Blueprint { owner, name, .. },
+            } if owner == "patamon" => Some(name.clone()),
             _ => None,
         })
         .collect()

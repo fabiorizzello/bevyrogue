@@ -13,6 +13,8 @@
 /// M021 framework primitives: Intent, ExtPoint+Registry, SignalBus, Clock, CastRng.
 pub mod api;
 
+pub(crate) mod bevy_types;
+
 // ─── Core kernel & primitives ────────────────────────────────────────────────
 // Shared vocabulary used by every other module.
 

@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use bevyrogue::combat::api::{SignalPayload, intent::CastId};
-use bevyrogue::combat::blueprints::agumon::TwinCoreState;
+use bevyrogue::combat::blueprints::twin_core::TwinCoreState;
 use bevyrogue::combat::blueprints::patamon::{
     GRACE_CAP, HolySupportDesignTag, HolySupportHook, HolySupportRejectReason, HolySupportState,
     HolySupportStep, HolySupportTransition, classify_holy_support_tag, holy_support_design_tag,
@@ -9,10 +9,10 @@ use bevyrogue::combat::blueprints::patamon::{
 };
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::api::ExtRegistries;
+use bevyrogue::combat::blueprints::patamon::identity::HolySupportSignal;
 use bevyrogue::combat::kernel::{
     CombatKernelRegistry, CombatKernelTransition, CombatTagChangeKind, CombatTagState,
-    CombatTagTransition, HolySupportSignal, TacticalCyclePhase, TacticalCycleStep,
-    TacticalCycleTransition,
+    CombatTagTransition, TacticalCyclePhase, TacticalCycleStep, TacticalCycleTransition,
 };
 use bevyrogue::combat::log::ActionLog;
 use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
@@ -24,6 +24,7 @@ fn app_with_holy_support() -> App {
     let mut app = App::new();
     app.add_message::<CombatEvent>();
     bevyrogue::combat::kernel::register_combat_kernel_runtime(&mut app);
+    bevyrogue::combat::blueprints::add_runtime_plugins(&mut app);
     app
 }
 

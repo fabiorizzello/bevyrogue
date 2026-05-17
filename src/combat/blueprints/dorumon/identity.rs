@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
-use bevy::prelude::*;
+use crate::combat::bevy_types::*;
 use serde::{Deserialize, Serialize};
 
 use super::signals::{
@@ -648,4 +648,45 @@ fn record_applied_transition(
         state.last_blocked_reason,
     );
     transition
+}
+
+pub(crate) fn format_predator_loop_transition(transition: PredatorLoopTransition) -> String {
+    let signal = match transition.signal {
+        PredatorLoopSignal::BuildExploit => "build-exploit",
+        PredatorLoopSignal::ApplyPreyLock => "prey-lock",
+        PredatorLoopSignal::ConsumePreyLockPayoff => "payoff",
+        PredatorLoopSignal::EnterBerserk => "berserk",
+        PredatorLoopSignal::Tick => "tick",
+        PredatorLoopSignal::Expire => "expire",
+        PredatorLoopSignal::Rejected => "rejected",
+        PredatorLoopSignal::Ignored => "ignored",
+    };
+    match transition.signal {
+        PredatorLoopSignal::BuildExploit
+        | PredatorLoopSignal::ApplyPreyLock
+        | PredatorLoopSignal::ConsumePreyLockPayoff
+        | PredatorLoopSignal::EnterBerserk
+        | PredatorLoopSignal::Expire => {
+            format!("{signal}(target={:?};amount={})", transition.target, transition.amount)
+        }
+        PredatorLoopSignal::Tick => signal.to_string(),
+        PredatorLoopSignal::Rejected | PredatorLoopSignal::Ignored => match (transition.attempted, transition.reason) {
+            (Some(attempted), Some(reason)) => {
+                format!("{signal}({};reason={reason:?})", format_predator_loop_step(attempted))
+            }
+            (Some(attempted), None) => format!("{signal}({})", format_predator_loop_step(attempted)),
+            _ => signal.to_string(),
+        },
+    }
+}
+
+fn format_predator_loop_step(step: PredatorLoopStep) -> String {
+    match step {
+        PredatorLoopStep::BuildExploit { target, amount } => format!("build({}:{})", target.0, amount),
+        PredatorLoopStep::ApplyPreyLock { target } => format!("prey-lock({})", target.0),
+        PredatorLoopStep::ConsumePreyLockPayoff { target } => format!("payoff({})", target.0),
+        PredatorLoopStep::EnterBerserk => "berserk".to_string(),
+        PredatorLoopStep::Tick => "tick".to_string(),
+        PredatorLoopStep::Expire { target } => format!("expire({})", target.0),
+    }
 }

@@ -1,7 +1,3 @@
-use crate::combat::counterplay::LegalityReasonCode as CounterplayLegalityReasonCode;
-use crate::combat::counterplay::{
-    ChargedAttackDeclaration, EnemyCounterplayKind, EnemyTraitDeclaration,
-};
 use crate::combat::energy::EnergyGainSource;
 use crate::combat::energy::{Energy, RoundEnergyTracker};
 use crate::combat::kit::UnitSkills;
@@ -19,7 +15,6 @@ use crate::data::skills_ron::{
     LegalityReasonCode, SelfTargetRule, SkillBook, SkillDef, SkillImplementation, TargetHpRule,
     TargetLife, TargetShape, TargetSide,
 };
-use crate::data::units_ron::EnemyCounterplayStatus;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CombatQuerySnapshot {
@@ -48,8 +43,6 @@ pub struct UnitQuerySnapshot {
     pub energy_external_gained: i32,
     pub skills: Option<UnitSkills>,
     pub toughness: Option<Toughness>,
-    pub enemy_traits: Vec<EnemyTraitDeclaration>,
-    pub charged_attack: Option<ChargedAttackDeclaration>,
 }
 
 impl Default for UnitQuerySnapshot {
@@ -72,8 +65,6 @@ impl Default for UnitQuerySnapshot {
             energy_external_gained: 0,
             skills: None,
             toughness: None,
-            enemy_traits: vec![],
-            charged_attack: None,
         }
     }
 }
@@ -137,7 +128,7 @@ pub fn build_snapshot_from_ecs_with_sp(
         skills,
         ult,
         toughness,
-        enemy_counterplay,
+        _enemy_counterplay,
         is_ko,
         is_stunned,
         is_commander,
@@ -169,10 +160,6 @@ pub fn build_snapshot_from_ecs_with_sp(
             energy_external_gained: energy_tracker.map(|t| t.external_gained).unwrap_or(0),
             skills: skills.cloned(),
             toughness: toughness.cloned(),
-            enemy_traits: enemy_counterplay
-                .map(|kit| kit.enemy_traits.clone())
-                .unwrap_or_default(),
-            charged_attack: enemy_counterplay.and_then(|kit| kit.charged_attack.clone()),
         });
     }
 
@@ -200,8 +187,6 @@ pub fn build_snapshot_from_ecs_with_sp(
                 energy_external_gained: 0,
                 skills: None,
                 toughness: None,
-                enemy_traits: vec![],
-                charged_attack: None,
             }
         });
 
@@ -263,10 +248,6 @@ pub struct TargetAffordance {
 pub enum ResourceKind {
     Sp,
     Ultimate,
-    TamerGauge,
-    TamerCommand,
-    ChargedTelegraph,
-    EnemyTrait,
     EnergyCap,
 }
 
@@ -290,102 +271,35 @@ pub struct ActionAffordance<'a> {
     pub toughness: ToughnessAffordance,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct EnemyTraitAffordance {
-    pub kind: EnemyCounterplayKind,
-    pub implementation: ImplementationStatus,
-    pub resource: ResourceAffordanceDetail,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ChargedTelegraphAffordance {
-    pub skill_id: SkillId,
-    pub lead_turns: u32,
-    pub implementation: ImplementationStatus,
-    pub resource: ResourceAffordanceDetail,
-}
-
-fn counterplay_reason(reason: &CounterplayLegalityReasonCode) -> CounterplayLegalityReasonCode {
-    *reason
-}
-
-fn enemy_trait_implementation(status: &EnemyCounterplayStatus) -> ImplementationStatus {
-    match status {
-        EnemyCounterplayStatus::Implemented => ImplementationStatus::Implemented,
-        EnemyCounterplayStatus::Deferred { reason } => ImplementationStatus::Deferred {
-            reason: counterplay_reason(reason),
-        },
-        EnemyCounterplayStatus::Hidden { reason } => ImplementationStatus::Hidden {
-            reason: counterplay_reason(reason),
-        },
-    }
-}
-
-fn enemy_trait_resource_detail(status: &ImplementationStatus) -> ResourceAffordanceDetail {
-    match status {
-        ImplementationStatus::Implemented => ResourceAffordanceDetail {
-            kind: ResourceKind::EnemyTrait,
-            status: ResourceStatus::Enabled,
-            current: Some(1),
-            required: Some(1),
-        },
-        ImplementationStatus::Deferred { reason } => {
-            deferred_resource_detail(ResourceKind::EnemyTrait, reason.clone())
-        }
-        ImplementationStatus::Hidden { reason } => {
-            hidden_resource_detail(ResourceKind::EnemyTrait, reason.clone())
-        }
-    }
-}
-
-fn charged_telegraph_implementation(status: &EnemyCounterplayStatus) -> ImplementationStatus {
-    enemy_trait_implementation(status)
-}
-
-fn charged_telegraph_resource_detail(status: &ImplementationStatus) -> ResourceAffordanceDetail {
-    match status {
-        ImplementationStatus::Implemented => ResourceAffordanceDetail {
-            kind: ResourceKind::ChargedTelegraph,
-            status: ResourceStatus::Enabled,
-            current: Some(1),
-            required: Some(1),
-        },
-        ImplementationStatus::Deferred { reason } => {
-            deferred_resource_detail(ResourceKind::ChargedTelegraph, reason.clone())
-        }
-        ImplementationStatus::Hidden { reason } => {
-            hidden_resource_detail(ResourceKind::ChargedTelegraph, reason.clone())
-        }
-    }
-}
-
-pub fn query_enemy_trait_affordances(unit: &UnitQuerySnapshot) -> Vec<EnemyTraitAffordance> {
-    unit.enemy_traits
-        .iter()
-        .map(|decl| {
-            let implementation = enemy_trait_implementation(&decl.status);
-            let resource = enemy_trait_resource_detail(&implementation);
-            EnemyTraitAffordance {
-                kind: decl.kind,
-                implementation,
-                resource,
-            }
-        })
-        .collect()
-}
-
-pub fn query_charged_telegraph_affordance(
+pub fn query_energy_cap_affordance(
     unit: &UnitQuerySnapshot,
-) -> Option<ChargedTelegraphAffordance> {
-    let decl = unit.charged_attack.as_ref()?;
-    let implementation = charged_telegraph_implementation(&decl.status);
-    let resource = charged_telegraph_resource_detail(&implementation);
-    Some(ChargedTelegraphAffordance {
-        skill_id: decl.skill_id.clone(),
-        lead_turns: decl.lead_turns as u32,
-        implementation,
-        resource,
-    })
+    source: EnergyGainSource,
+    requested: i32,
+) -> ResourceAffordanceDetail {
+    let cap = match source {
+        EnergyGainSource::SecondaryAction => 10,
+        EnergyGainSource::External => 30,
+    };
+    let used = match source {
+        EnergyGainSource::SecondaryAction => unit.energy_secondary_gained,
+        EnergyGainSource::External => unit.energy_external_gained,
+    };
+    let current = (cap - used).max(0);
+
+    let status = if current >= requested {
+        ResourceStatus::Enabled
+    } else {
+        ResourceStatus::Disabled {
+            reason: LegalityReasonCode::EnergyCapReached,
+        }
+    };
+
+    ResourceAffordanceDetail {
+        kind: ResourceKind::EnergyCap,
+        status,
+        current: Some(current),
+        required: Some(requested),
+    }
 }
 
 fn snapshot_units(snapshot: &CombatQuerySnapshot) -> Vec<UnitQuerySnapshot> {
@@ -417,39 +331,6 @@ fn implementation_status(skill_def: &SkillDef) -> ImplementationStatus {
         SkillImplementation::Hidden { reason } => ImplementationStatus::Hidden {
             reason: reason.clone(),
         },
-    }
-}
-
-fn target_toughness_affordance(
-    skill_def: &SkillDef,
-    target: &UnitQuerySnapshot,
-) -> (
-    ToughnessAffordance,
-    Option<ToughnessView>,
-    Option<LegalityReasonCode>,
-) {
-    match &skill_def.implementation {
-        SkillImplementation::Implemented => {
-            if !exposes_toughness_affordance(target.team, target.toughness.as_ref()) {
-                return (
-                    ToughnessAffordance::Hidden,
-                    None,
-                    Some(LegalityReasonCode::ToughnessEnemyOnly),
-                );
-            }
-
-            match visible_toughness(target.team, target.toughness.as_ref()) {
-                Some(view) => (ToughnessAffordance::Visible, Some(view), None),
-                None => (
-                    ToughnessAffordance::Hidden,
-                    None,
-                    Some(LegalityReasonCode::ToughnessEnemyOnly),
-                ),
-            }
-        }
-        SkillImplementation::Deferred { reason } | SkillImplementation::Hidden { reason } => {
-            (ToughnessAffordance::Hidden, None, Some(reason.clone()))
-        }
     }
 }
 
@@ -553,6 +434,39 @@ fn target_status_for_unit(
     TargetStatus::Enabled
 }
 
+fn target_toughness_affordance(
+    skill_def: &SkillDef,
+    target: &UnitQuerySnapshot,
+) -> (
+    ToughnessAffordance,
+    Option<ToughnessView>,
+    Option<LegalityReasonCode>,
+) {
+    match &skill_def.implementation {
+        SkillImplementation::Implemented => {
+            if !exposes_toughness_affordance(target.team, target.toughness.as_ref()) {
+                return (
+                    ToughnessAffordance::Hidden,
+                    None,
+                    Some(LegalityReasonCode::ToughnessEnemyOnly),
+                );
+            }
+
+            match visible_toughness(target.team, target.toughness.as_ref()) {
+                Some(view) => (ToughnessAffordance::Visible, Some(view), None),
+                None => (
+                    ToughnessAffordance::Hidden,
+                    None,
+                    Some(LegalityReasonCode::ToughnessEnemyOnly),
+                ),
+            }
+        }
+        SkillImplementation::Deferred { reason } | SkillImplementation::Hidden { reason } => {
+            (ToughnessAffordance::Hidden, None, Some(reason.clone()))
+        }
+    }
+}
+
 pub fn query_target_affordance(
     snapshot: &CombatQuerySnapshot,
     actor_id: UnitId,
@@ -590,11 +504,6 @@ pub fn query_all_target_affordances(
         .collect()
 }
 
-/// Returns only the target ids that are enabled in the affordance snapshot.
-///
-/// This helper intentionally stays dumb: it filters the query output without
-/// adding any extra legality rules, so CLI/windowed consumers can reuse it
-/// without re-encoding KO/team/target-side logic.
 pub fn enabled_target_ids(affordance: &ActionAffordance<'_>) -> Vec<UnitId> {
     affordance
         .targets
@@ -603,8 +512,6 @@ pub fn enabled_target_ids(affordance: &ActionAffordance<'_>) -> Vec<UnitId> {
         .collect()
 }
 
-/// Returns the first enabled target id from the affordance snapshot, preserving
-/// the query order for simple default-selection consumers.
 pub fn first_enabled_target_id(affordance: &ActionAffordance<'_>) -> Option<UnitId> {
     enabled_target_ids(affordance).into_iter().next()
 }
@@ -663,10 +570,6 @@ fn resource_detail_status(
             reason: match kind {
                 ResourceKind::Sp => LegalityReasonCode::SpShortfall,
                 ResourceKind::Ultimate => LegalityReasonCode::UltimateNotReady,
-                ResourceKind::TamerGauge => LegalityReasonCode::TamerGaugeDeferred,
-                ResourceKind::TamerCommand => LegalityReasonCode::TamerCommandDeferred,
-                ResourceKind::ChargedTelegraph => LegalityReasonCode::ChargedTelegraphDeferred,
-                ResourceKind::EnemyTrait => LegalityReasonCode::EnemyTraitDeferred,
                 ResourceKind::EnergyCap => LegalityReasonCode::EnergyCapReached,
             },
         }
@@ -680,119 +583,58 @@ fn resource_detail_status(
     }
 }
 
-fn hidden_resource_detail(
-    kind: ResourceKind,
-    reason: LegalityReasonCode,
-) -> ResourceAffordanceDetail {
-    ResourceAffordanceDetail {
-        kind,
-        status: ResourceStatus::Hidden { reason },
-        current: None,
-        required: None,
-    }
-}
-
-fn deferred_resource_detail(
-    kind: ResourceKind,
-    reason: LegalityReasonCode,
-) -> ResourceAffordanceDetail {
-    ResourceAffordanceDetail {
-        kind,
-        status: ResourceStatus::Deferred { reason },
-        current: None,
-        required: None,
-    }
-}
-
-fn energy_cap_remaining(unit: &UnitQuerySnapshot, source: EnergyGainSource) -> i32 {
-    let cap = match source {
-        EnergyGainSource::SecondaryAction => 10,
-        EnergyGainSource::External => 30,
-    };
-
-    let used = match source {
-        EnergyGainSource::SecondaryAction => unit.energy_secondary_gained,
-        EnergyGainSource::External => unit.energy_external_gained,
-    };
-
-    (cap - used).max(0)
-}
-
-pub fn query_energy_cap_affordance(
-    unit: &UnitQuerySnapshot,
-    source: EnergyGainSource,
-    requested: i32,
-) -> ResourceAffordanceDetail {
-    let current = energy_cap_remaining(unit, source);
-    if current >= requested {
-        resource_detail_status(ResourceKind::EnergyCap, current, requested)
-    } else {
-        ResourceAffordanceDetail {
-            kind: ResourceKind::EnergyCap,
-            status: ResourceStatus::Disabled {
-                reason: LegalityReasonCode::EnergyCapReached,
-            },
-            current: Some(current),
-            required: Some(requested),
-        }
-    }
-}
-
-pub fn query_tamer_gauge_affordance() -> ResourceAffordanceDetail {
-    deferred_resource_detail(
-        ResourceKind::TamerGauge,
-        LegalityReasonCode::TamerGaugeDeferred,
-    )
-}
-
-pub fn query_tamer_command_affordances() -> Vec<ResourceAffordanceDetail> {
-    [20, 50, 100]
-        .into_iter()
-        .map(|cost| ResourceAffordanceDetail {
-            kind: ResourceKind::TamerCommand,
-            status: ResourceStatus::Deferred {
-                reason: LegalityReasonCode::TamerCommandDeferred,
-            },
-            current: None,
-            required: Some(cost),
-        })
-        .collect()
-}
-
 fn build_resource_details(
     actor: &UnitQuerySnapshot,
     skill_def: &SkillDef,
-    kind: &ActionQueryKind<'_>,
+    _kind: &ActionQueryKind<'_>,
     implementation: &ImplementationStatus,
 ) -> Vec<ResourceAffordanceDetail> {
     match implementation {
         ImplementationStatus::Hidden { reason } => vec![
-            hidden_resource_detail(ResourceKind::Sp, reason.clone()),
-            hidden_resource_detail(ResourceKind::Ultimate, reason.clone()),
+            ResourceAffordanceDetail {
+                kind: ResourceKind::Sp,
+                status: ResourceStatus::Hidden {
+                    reason: reason.clone(),
+                },
+                current: None,
+                required: None,
+            },
+            ResourceAffordanceDetail {
+                kind: ResourceKind::Ultimate,
+                status: ResourceStatus::Hidden {
+                    reason: reason.clone(),
+                },
+                current: None,
+                required: None,
+            },
         ],
         ImplementationStatus::Deferred { reason } => vec![
-            deferred_resource_detail(ResourceKind::Sp, reason.clone()),
-            deferred_resource_detail(ResourceKind::Ultimate, reason.clone()),
+            ResourceAffordanceDetail {
+                kind: ResourceKind::Sp,
+                status: ResourceStatus::Deferred {
+                    reason: reason.clone(),
+                },
+                current: None,
+                required: None,
+            },
+            ResourceAffordanceDetail {
+                kind: ResourceKind::Ultimate,
+                status: ResourceStatus::Deferred {
+                    reason: reason.clone(),
+                },
+                current: None,
+                required: None,
+            },
         ],
         ImplementationStatus::Implemented => {
-            let mut details = vec![
+            vec![
                 resource_detail_status(ResourceKind::Sp, actor.sp, skill_def.sp_cost),
                 resource_detail_status(
                     ResourceKind::Ultimate,
                     actor.ultimate_current,
                     actor.ultimate_trigger,
                 ),
-            ];
-
-            if matches!(kind, ActionQueryKind::Ultimate) {
-                details[1] = resource_detail_status(
-                    ResourceKind::Ultimate,
-                    actor.ultimate_current,
-                    actor.ultimate_trigger,
-                );
-            }
-
-            details
+            ]
         }
     }
 }
@@ -931,67 +773,6 @@ fn action_and_resource_status_for_snapshot(
     (ActionStatus::Enabled, ResourceStatus::Enabled)
 }
 
-fn implementation_block(
-    skill_def: &SkillDef,
-) -> Option<(
-    ActionStatus,
-    ResourceStatus,
-    TargetStatus,
-    ImplementationStatus,
-)> {
-    match &skill_def.implementation {
-        SkillImplementation::Deferred { reason } => Some((
-            ActionStatus::Deferred {
-                reason: reason.clone(),
-            },
-            ResourceStatus::Deferred {
-                reason: reason.clone(),
-            },
-            TargetStatus::Deferred {
-                reason: reason.clone(),
-            },
-            ImplementationStatus::Deferred {
-                reason: reason.clone(),
-            },
-        )),
-        SkillImplementation::Hidden { reason } => Some((
-            ActionStatus::Hidden {
-                reason: reason.clone(),
-            },
-            ResourceStatus::Hidden {
-                reason: reason.clone(),
-            },
-            TargetStatus::Hidden {
-                reason: reason.clone(),
-            },
-            ImplementationStatus::Hidden {
-                reason: reason.clone(),
-            },
-        )),
-        SkillImplementation::Implemented => None,
-    }
-}
-
-fn missing_skill_affordance<'a>(kind: ActionQueryKind<'a>) -> ActionAffordance<'a> {
-    let reason = LegalityReasonCode::MissingSkill;
-    ActionAffordance {
-        kind,
-        action: ActionStatus::Disabled {
-            reason: reason.clone(),
-        },
-        target: TargetStatus::Disabled {
-            reason: reason.clone(),
-        },
-        targets: vec![],
-        resource: ResourceStatus::Disabled {
-            reason: reason.clone(),
-        },
-        resource_details: vec![],
-        implementation: ImplementationStatus::Implemented,
-        toughness: ToughnessAffordance::Hidden,
-    }
-}
-
 pub fn query_action_affordance<'a>(
     snapshot: &CombatQuerySnapshot,
     skill_book: &SkillBook,
@@ -999,30 +780,24 @@ pub fn query_action_affordance<'a>(
     kind: ActionQueryKind<'a>,
 ) -> ActionAffordance<'a> {
     let Ok((actor, skill_def)) = resolve_action_skill(snapshot, skill_book, actor_id, &kind) else {
-        return missing_skill_affordance(kind);
-    };
-
-    if let Some((action, resource, target, implementation)) = implementation_block(skill_def) {
-        let targets = query_all_target_affordances(snapshot, actor_id, skill_def);
-        let resource_details = build_resource_details(&actor, skill_def, &kind, &implementation);
-        let toughness = targets
-            .iter()
-            .any(|(_, affordance)| matches!(affordance.toughness, ToughnessAffordance::Visible));
+        let reason = LegalityReasonCode::MissingSkill;
         return ActionAffordance {
             kind,
-            action,
-            target,
-            targets,
-            resource,
-            resource_details,
-            implementation,
-            toughness: if toughness {
-                ToughnessAffordance::Visible
-            } else {
-                ToughnessAffordance::Hidden
+            action: ActionStatus::Disabled {
+                reason: reason.clone(),
             },
+            target: TargetStatus::Disabled {
+                reason: reason.clone(),
+            },
+            targets: vec![],
+            resource: ResourceStatus::Disabled {
+                reason: reason.clone(),
+            },
+            resource_details: vec![],
+            implementation: ImplementationStatus::Implemented,
+            toughness: ToughnessAffordance::Hidden,
         };
-    }
+    };
 
     let targets = query_all_target_affordances(snapshot, actor_id, skill_def);
     let target = aggregate_target_status(&targets, &ImplementationStatus::Implemented);

@@ -136,12 +136,16 @@ fn passive_proc(evt: &BeatEvent, ctx: &mut SkillCtx<'_>) {
     });
 }
 
-fn register_passive_hooks(app: &mut bevy::prelude::App) {
-    let mut regs = app
-        .world_mut()
-        .resource_mut::<crate::combat::api::ExtRegistries>();
+pub fn register_gabumon_ext(regs: &mut crate::combat::api::ExtRegistries) {
     regs.predicates
         .register("gabumon/twin_core/passive_trigger", passive_trigger);
     regs.hooks
         .register("gabumon/twin_core/passive_proc", passive_proc);
+}
+
+fn register_passive_hooks(app: &mut bevy::prelude::App) {
+    let mut regs = app
+        .world_mut()
+        .resource_mut::<crate::combat::api::ExtRegistries>();
+    register_gabumon_ext(&mut regs);
 }

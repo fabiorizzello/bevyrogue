@@ -3,18 +3,16 @@ use bevyrogue::combat::api::intent::CastId;
 use bevyrogue::combat::{
     api::{ExtRegistries, SignalPayload},
     blueprints::{self, dorumon::PredatorLoopState, patamon::HolySupportState},
+    blueprints::patamon::identity::HolySupportTransition,
     blueprints::twin_core::{TwinCoreState, TwinCoreTransition},
     events::{CombatEvent, CombatEventKind},
     floating::FloatingDamage,
-    kernel::{
-        CombatKernelTransition, HolySupportTransition, PrecisionWindowKind,
-        register_combat_kernel_runtime,
-    },
+    kernel::{CombatKernelTransition, register_combat_kernel_runtime},
     log::{ActionLog, LogEntry},
     observability::{
         ValidationStatusSnapshot, capture_validation_snapshot, format_validation_snapshot,
     },
-    precision_mind_game::PrecisionMindGameState,
+    precision_mind_game::{PrecisionMindGameState, PrecisionWindowKind},
     sp::SpPool,
     state::{CombatPhase, CombatState},
     status_effect::{StatusBag, StatusEffectKind},

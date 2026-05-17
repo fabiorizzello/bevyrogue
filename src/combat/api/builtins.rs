@@ -4,13 +4,11 @@ use crate::combat::{
     api::{
         intent::Intent,
         registry::ExtRegistries,
-        signal::SignalPayload,
         timeline::{BeatEvent, BeatPayload, SelectorCtx},
     },
     resolution::{TargetEntry, TargetableSnapshot, resolve_targets},
-    status_effect::StatusEffectKind,
     team::Team,
-    types::{DamageTag, UnitId},
+    types::UnitId,
     unit::{Ko, SlotIndex, Unit},
 };
 use crate::data::skills_ron::TargetShape;
@@ -308,8 +306,9 @@ fn enqueue_targets<F>(
 }
 
 fn snapshot_targets(world: &World) -> TargetableSnapshot {
-    let Some(mut q) = world.try_query::<(&Unit, &Team, Option<&Ko>, Option<&SlotIndex>)>() else {
-        return TargetableSnapshot { entries: vec![] };
+    let mut q = match world.try_query::<(&Unit, &Team, Option<&Ko>, Option<&SlotIndex>)>() {
+        Some(q) => q,
+        None => return TargetableSnapshot { entries: vec![] },
     };
     let entries = q
         .iter(world)
@@ -332,7 +331,7 @@ fn snapshot_targets(world: &World) -> TargetableSnapshot {
 mod tests {
     use super::*;
     use crate::combat::api::timeline::{Beat, BeatEdge, BeatKind, CompiledTimeline};
-    use crate::combat::api::{intent::CastId, timeline::BeatPayload, validate_timeline_refs};
+    use crate::combat::api::{SignalPayload, intent::CastId, timeline::BeatPayload, validate_timeline_refs};
     use bevy::prelude::World;
     use std::{
         collections::{HashSet, VecDeque},

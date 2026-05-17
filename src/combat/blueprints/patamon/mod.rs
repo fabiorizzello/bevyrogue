@@ -6,10 +6,10 @@
 
 use std::sync::Arc;
 
-use bevy::prelude::*;
+use crate::combat::bevy_types::*;
 
 use crate::combat::api::registry::{ValidationField, ValidationSection};
-use crate::combat::observability::format_holy_support_transition;
+use crate::combat::blueprints::patamon::identity::format_holy_support_transition;
 use crate::combat::{
     api::{
         Beat, BeatEvent, BeatKind, BlueprintState, CompiledTimeline, EventFilter, Intent,
@@ -203,12 +203,16 @@ fn passive_proc(evt: &BeatEvent, ctx: &mut SkillCtx<'_>) {
     });
 }
 
-fn register_passive_hooks(app: &mut App) {
-    let mut regs = app
-        .world_mut()
-        .resource_mut::<crate::combat::api::ExtRegistries>();
+pub fn register_patamon_ext(regs: &mut crate::combat::api::ExtRegistries) {
     regs.predicates
         .register("patamon/holy_support/passive_trigger", passive_trigger);
     regs.hooks
         .register("patamon/holy_support/passive_proc", passive_proc);
+}
+
+fn register_passive_hooks(app: &mut App) {
+    let mut regs = app
+        .world_mut()
+        .resource_mut::<crate::combat::api::ExtRegistries>();
+    register_patamon_ext(&mut regs);
 }

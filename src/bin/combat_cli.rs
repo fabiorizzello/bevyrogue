@@ -13,7 +13,6 @@ use bevyrogue::combat::api::intent::CastId;
 use bevyrogue::combat::bootstrap::{
     EncounterPreset, SelectionRequest, apply_composition, bootstrap_encounter,
 };
-use bevyrogue::combat::enemy_counterplay::EnemyCounterplayKit;
 use bevyrogue::combat::events::CombatEvent;
 use bevyrogue::combat::events::CombatEventKind;
 use bevyrogue::combat::follow_up::{FollowUpIntent, FollowUpTrace};
@@ -41,15 +40,13 @@ use bevyrogue::data::{
 };
 
 use bevyrogue::combat::action_query::{
-    ActionAffordance, ActionQueryKind, ActionStatus, CombatQuerySnapshot, ImplementationStatus,
-    ResourceAffordanceDetail, ResourceKind, ResourceStatus, TargetAffordance, TargetStatus,
-    build_snapshot_from_ecs_with_sp, first_enabled_target_id, query_action_affordance,
-    query_charged_telegraph_affordance, query_enemy_trait_affordances,
+    ActionAffordance, ActionQueryKind, ActionStatus, CombatQuerySnapshot, TargetAffordance,
+    TargetStatus, build_snapshot_from_ecs_with_sp, first_enabled_target_id, query_action_affordance,
 };
 use bevyrogue::combat::av::{ActionValue, ActionValueUpdated, MAX_AV};
 use bevyrogue::combat::energy::{Energy, RoundEnergyTracker};
 use bevyrogue::combat::kit::UnitSkills;
-use bevyrogue::combat::resistance::{TempoResistance, apply_advance, apply_delay};
+use bevyrogue::combat::resistance::{apply_advance, apply_delay};
 use bevyrogue::combat::resolution::{TargetEntry, TargetableSnapshot, resolve_targets};
 use bevyrogue::combat::stun::Stunned;
 use bevyrogue::combat::team::Team;
@@ -300,15 +297,6 @@ fn action_status_label(status: &ActionStatus) -> String {
     }
 }
 
-fn resource_status_label(status: &ResourceStatus) -> String {
-    match status {
-        ResourceStatus::Enabled => "enabled".to_string(),
-        ResourceStatus::Disabled { reason } => format!("disabled({reason:?})"),
-        ResourceStatus::Deferred { reason } => format!("deferred({reason:?})"),
-        ResourceStatus::Hidden { reason } => format!("hidden({reason:?})"),
-    }
-}
-
 fn target_status_label(status: &TargetStatus) -> String {
     match status {
         TargetStatus::Enabled => "enabled".to_string(),
@@ -318,46 +306,11 @@ fn target_status_label(status: &TargetStatus) -> String {
     }
 }
 
-fn resource_detail_label(detail: &ResourceAffordanceDetail) -> String {
-    let kind = match detail.kind {
-        ResourceKind::Sp => "SP",
-        ResourceKind::Ultimate => "ULT",
-        ResourceKind::TamerGauge => "TamerGauge",
-        ResourceKind::TamerCommand => "TamerCommand",
-        ResourceKind::ChargedTelegraph => "ChargedTelegraph",
-        ResourceKind::EnemyTrait => "EnemyTrait",
-        ResourceKind::EnergyCap => "EnergyCap",
-    };
-
-    match (detail.current, detail.required) {
-        (Some(current), Some(required)) => {
-            format!(
-                "{kind} {current}/{required} {}",
-                resource_status_label(&detail.status)
-            )
-        }
-        _ => format!("{kind} {}", resource_status_label(&detail.status)),
-    }
-}
-
 fn action_entry_label(entry: &ActionMenuEntry<'_>) -> String {
-    let resource_summary = if entry.affordance.resource_details.is_empty() {
-        "none".to_string()
-    } else {
-        entry
-            .affordance
-            .resource_details
-            .iter()
-            .map(resource_detail_label)
-            .collect::<Vec<_>>()
-            .join(" | ")
-    };
-
     format!(
-        "{} [{}] {}",
+        "{} [{}]",
         action_kind_label(entry.kind),
         action_status_label(&entry.affordance.action),
-        resource_summary,
     )
 }
 
@@ -374,56 +327,6 @@ fn target_entry_label(unit: &Unit, team: &Team, affordance: &TargetAffordance) -
         unit.hp_max,
         target_status_label(&affordance.status)
     )
-}
-
-fn counterplay_implementation_label(status: &ImplementationStatus) -> &'static str {
-    match status {
-        ImplementationStatus::Implemented => "implemented",
-        ImplementationStatus::Deferred { .. } => "deferred",
-        ImplementationStatus::Hidden { .. } => "hidden",
-    }
-}
-
-fn print_enemy_counterplay_labels(snapshot: &CombatQuerySnapshot) {
-    let enemies: Vec<_> = snapshot
-        .units
-        .iter()
-        .filter(|u| u.team == Team::Enemy)
-        .collect();
-    if enemies.is_empty() {
-        return;
-    }
-    let has_any = enemies.iter().any(|u| {
-        !query_enemy_trait_affordances(u).is_empty()
-            || query_charged_telegraph_affordance(u).is_some()
-    });
-    if !has_any {
-        return;
-    }
-    println!("\n  Enemy declarations:");
-    for enemy in enemies {
-        let traits = query_enemy_trait_affordances(enemy);
-        let charged = query_charged_telegraph_affordance(enemy);
-        if traits.is_empty() && charged.is_none() {
-            continue;
-        }
-        println!("    [ID:{:?}]", enemy.id);
-        for t in &traits {
-            println!(
-                "      trait {:?} [{}]",
-                t.kind,
-                counterplay_implementation_label(&t.implementation)
-            );
-        }
-        if let Some(c) = charged {
-            println!(
-                "      charged {} T-{} [{}]",
-                c.skill_id.0,
-                c.lead_turns,
-                counterplay_implementation_label(&c.implementation)
-            );
-        }
-    }
 }
 
 fn build_action_entries<'a>(
@@ -496,7 +399,7 @@ fn player_action_system(
         Option<&Ko>,
         Option<&Commander>,
         Option<&Toughness>,
-        Option<&EnemyCounterplayKit>,
+        Option<&bevyrogue::combat::enemy_counterplay::EnemyCounterplayKit>,
         Option<&Stunned>,
         Option<&Energy>,
         Option<&RoundEnergyTracker>,
@@ -608,7 +511,6 @@ fn player_action_system(
 
     let action_entries = build_action_entries(&snapshot, skill_book, actor_id, actor_skills);
     print_action_entries(&action_entries);
-    print_enemy_counterplay_labels(&snapshot);
 
     let basic_entry = action_entries
         .iter()
@@ -663,7 +565,7 @@ fn player_action_system(
             }
             println!(
                 "[QUERY] Auto-selected action has no enabled target: {}",
-                target_status_label(&entry.affordance.target)
+                action_status_label(&entry.affordance.action)
             );
         } else if let Some(entry) = basic_entry {
             println!(
@@ -739,7 +641,7 @@ fn player_action_system(
         println!(
             "[QUERY] No enabled targets for {}: {}",
             action_kind_label(selected_entry.kind),
-            target_status_label(&selected_entry.affordance.target)
+            action_status_label(&selected_entry.affordance.action)
         );
         player_acted.0 = true;
         order.active_unit = None;
@@ -902,19 +804,16 @@ fn run_advance_delay_cap_scenario() {
     struct MockUnit {
         name: &'static str,
         av: ActionValue,
-        resistance: Option<TempoResistance>,
     }
 
     let mut units = [
         MockUnit {
             name: "Agumon",
             av: ActionValue(0),
-            resistance: None,
         },
         MockUnit {
             name: "Gabumon",
             av: ActionValue(MAX_AV / 2),
-            resistance: Some(TempoResistance::default()),
         },
     ];
 
@@ -944,7 +843,7 @@ fn run_advance_delay_cap_scenario() {
         let delta = if *kind == "AdvanceTurn" {
             apply_advance(&mut unit.av, *amount_pct)
         } else {
-            apply_delay(&mut unit.av, *amount_pct, unit.resistance.as_mut())
+            apply_delay(&mut unit.av, *amount_pct, None)
         };
 
         let av_post = unit.av.0;

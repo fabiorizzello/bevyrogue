@@ -303,7 +303,6 @@ struct FormIdentitySnapshot {
     form_identity: Option<FormIdentityConfig>,
     form_identity_used: bool,
     is_ko: bool,
-    is_stunned: bool,
 }
 
 type FormIdentityRosterQuery<'w, 's> = Query<
@@ -374,13 +373,12 @@ pub fn form_identity_listener_system(
     let fi_snapshots: Vec<FormIdentitySnapshot> = roster
         .iter()
         .map(
-            |(unit, team, fi_kit, ko, stunned, flags)| FormIdentitySnapshot {
+            |(unit, team, fi_kit, ko, _stunned, flags)| FormIdentitySnapshot {
                 id: unit.id,
                 team: *team,
                 form_identity: fi_kit.map(|k| k.config.clone()),
                 form_identity_used: flags.map(|f| f.form_identity_used).unwrap_or(false),
                 is_ko: ko.is_some(),
-                is_stunned: stunned.is_some(),
             },
         )
         .collect();

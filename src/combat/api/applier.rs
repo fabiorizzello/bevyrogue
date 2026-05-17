@@ -18,10 +18,10 @@ use crate::combat::{
     modifiers::{DamageModifierLedger, ModifierChain, ModifierLayer},
     rng::CombatRng,
     round_flags::RoundFlags,
-    status_effect::{StatusBag, StatusEffectKind, classify_buff_kind},
+    status_effect::{StatusBag, StatusEffectKind},
     stun::Stunned,
     team::Team,
-    toughness::{DamageKind, Toughness, can_apply_toughness_damage, classify},
+    toughness::{DamageKind, Toughness, can_apply_toughness_damage},
     types::{DamageTag, UnitId},
     unit::{Ko, SlotIndex, Unit},
 };
@@ -163,9 +163,6 @@ pub fn intent_applier(world: &mut World) {
                 cast_id,
             } => {
                 apply_set_blueprint_state(world, actor, key, value, cast_id);
-            }
-            other => {
-                log::warn!("intent_applier: unimplemented intent variant {:?}", other);
             }
         }
     }
@@ -360,6 +357,20 @@ fn apply_deal_damage(
         return;
     };
 
+    emit_event(
+        world,
+        CombatEventKind::IncomingDamage {
+            raw_amount: base_damage,
+            damage_tag: tag,
+        },
+        source,
+        target,
+        cast_id,
+    );
+
+    let tentomon_block_triggered =
+        crate::combat::blueprints::tentomon::resolve_block_reaction_in_world(world, target, cast_id);
+
     let reaction_chain = world
         .get_resource_mut::<DamageModifierLedger>()
         .map(|mut ledger| ledger.drain(target))
@@ -380,40 +391,6 @@ fn apply_deal_damage(
         modifier_chain.push(ModifierLayer::Status, 115);
     }
     modifier_chain.extend(reaction_chain.clone());
-
-    emit_event(
-        world,
-        CombatEventKind::IncomingDamage {
-            raw_amount: base_damage,
-            damage_tag: tag,
-        },
-        source,
-        target,
-        cast_id,
-    );
-
-    let mut tentomon_block_triggered = false;
-    if tgt.unit.name == "Tentomon"
-        && world.contains_resource::<crate::combat::battery_loop::BatteryLoopState>()
-        && world.contains_resource::<CombatRng>()
-    {
-        world.resource_scope(
-            |world, mut state: Mut<crate::combat::battery_loop::BatteryLoopState>| {
-                if state.block_reaction_ready()
-                    && state.last_block_reaction_cast_id != Some(cast_id)
-                {
-                    state.last_block_reaction_cast_id = Some(cast_id);
-                    world.resource_scope(|_world, mut rng: Mut<CombatRng>| {
-                        if rng.roll_pct(30) {
-                            modifier_chain.push(ModifierLayer::Passive, 50);
-                            tentomon_block_triggered = true;
-                            let _ = state.proc_block_reaction();
-                        }
-                    });
-                }
-            },
-        );
-    }
 
     let modifier_trace = modifier_chain.apply_to(base_damage);
 
@@ -456,7 +433,7 @@ fn apply_deal_damage(
     );
 
     if let Some(mitigated_pct) =
-        block_reaction_mitigated_pct.or_else(|| tentomon_block_triggered.then_some(50))
+        block_reaction_mitigated_pct.or_else(|| tentomon_block_triggered.map(|p| p as u8))
     {
         emit_event(
             world,

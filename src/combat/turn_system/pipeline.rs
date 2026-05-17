@@ -670,7 +670,7 @@ pub(crate) fn step_app(
                 return;
             }
 
-            let Some(mut att_ult) = att_ult_opt else {
+            let Some(att_ult) = att_ult_opt else {
                 return;
             };
 
@@ -1174,7 +1174,7 @@ pub(crate) fn step_app(
                 return;
             }
 
-            let Some(mut att_ult) = att_ult_opt else {
+            let Some(att_ult) = att_ult_opt else {
                 return;
             };
 
@@ -2022,7 +2022,7 @@ pub(crate) fn step_app(
         _,
         mut defender_round_flags,
         _defender_slot,
-        mut defender_dr,
+        defender_dr,
     ) = defender;
 
     if attacker_stunned.is_some() {

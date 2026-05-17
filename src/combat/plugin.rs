@@ -1,22 +1,15 @@
 use bevy::prelude::*;
 
-use crate::combat::{
-    api::{
-        applier::{IntentExecutionMeta, IntentQueue, intent_applier},
-        blueprint_state::BlueprintState,
-        builtins::register_kernel_builtins,
-        clock::Clock,
-        event_bridge::combat_event_to_signal_system,
-        intent::CastIdGen,
-        passive_runner::{PassiveListeners, passive_dispatch_system},
-        registry::ExtRegistries,
-        signal::{SignalBus, SignalTaxonomy},
-        timeline::{TimelineLibrary, validate_timeline_refs},
-    },
-    kernel::{register_canonical_passive_runners, register_combat_kernel_runtime},
-    modifiers::DamageModifierLedger,
-    rng::CombatRng,
+use crate::combat::api::{
+    BlueprintState, Clock, ExtRegistries, IntentQueue, PassiveListeners, SignalBus,
+    SignalTaxonomy, TimelineLibrary, combat_event_to_signal_system, passive_dispatch_system,
+    register_kernel_builtins, validate_timeline_refs,
 };
+use crate::combat::api::applier::{IntentExecutionMeta, intent_applier};
+use crate::combat::api::intent::CastIdGen;
+use crate::combat::kernel::{register_canonical_passive_runners, register_combat_kernel_runtime};
+use crate::combat::modifiers::DamageModifierLedger;
+use crate::combat::rng::CombatRng;
 
 /// Bevy plugin that registers the full combat runtime.
 ///
@@ -50,9 +43,12 @@ impl Plugin for CombatPlugin {
                 ),
             );
 
+        crate::combat::blueprints::add_runtime_plugins(app);
+
         {
             let mut regs = app.world_mut().resource_mut::<ExtRegistries>();
             register_kernel_builtins(&mut regs);
+            crate::combat::blueprints::register_all_blueprint_validation_exts(&mut regs);
         }
 
         register_canonical_passive_runners(app);

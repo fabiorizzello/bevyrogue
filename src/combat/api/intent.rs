@@ -5,7 +5,7 @@ use bevy::prelude::Resource;
 use crate::combat::{
     modifiers::ModifierLayer,
     status_effect::StatusEffectKind,
-    types::{DamageTag, SkillId, UnitId},
+    types::{DamageTag, UnitId},
 };
 
 /// Unique identifier for a single cast pipeline invocation.
@@ -63,21 +63,11 @@ pub enum Intent {
         tag: DamageTag,
         cast_id: CastId,
     },
-    HealHp {
-        target: UnitId,
-        amount: i32,
-        cast_id: CastId,
-    },
     ApplyStatus {
         source: UnitId,
         target: UnitId,
         kind: StatusEffectKind,
         duration_turns: u32,
-        cast_id: CastId,
-    },
-    RemoveStatus {
-        target: UnitId,
-        kind: StatusEffectKind,
         cast_id: CastId,
     },
     ApplyBuff {
@@ -90,11 +80,6 @@ pub enum Intent {
         target: UnitId,
         layer: ModifierLayer,
         multiplier_pct: i32,
-        cast_id: CastId,
-    },
-    RemoveBuff {
-        target: UnitId,
-        kind: StatusEffectKind,
         cast_id: CastId,
     },
     AdvanceTurn {
@@ -118,11 +103,6 @@ pub enum Intent {
         count: usize,
         cast_id: CastId,
     },
-    EnqueueFollowUp {
-        source: UnitId,
-        skill_id: SkillId,
-        cast_id: CastId,
-    },
     BreakToughness {
         source: UnitId,
         target: UnitId,
@@ -130,27 +110,9 @@ pub enum Intent {
         tag: DamageTag,
         cast_id: CastId,
     },
-    ChargeUltimate {
-        target: UnitId,
-        amount: i32,
-        cast_id: CastId,
-    },
-    ModifySp {
-        delta: i32,
-        cast_id: CastId,
-    },
     AddEnergy {
         target: UnitId,
         amount: i32,
-        cast_id: CastId,
-    },
-    RemoveEnergy {
-        target: UnitId,
-        amount: i32,
-        cast_id: CastId,
-    },
-    KoUnit {
-        target: UnitId,
         cast_id: CastId,
     },
     /// Cross-blueprint signal dispatched to the owning unit's blueprint handler.
@@ -171,10 +133,5 @@ pub enum Intent {
         key: String,
         value: i64,
         cast_id: CastId,
-    },
-    /// Explicitly discard a pending action (e.g. predicate-gate failure).
-    Reject {
-        cast_id: CastId,
-        reason: String,
     },
 }

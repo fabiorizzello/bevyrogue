@@ -1,4 +1,4 @@
-use bevy::prelude::{App, Resource, Update};
+use bevy::prelude::{App, Resource};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -130,19 +130,6 @@ impl Strain {
             kind: StrainChangeKind::Spent,
         }
     }
-
-    pub fn decay(&mut self, amount: u16) -> StrainTransition {
-        let before = self.current;
-        let after = before.saturating_sub(amount);
-        self.current = after;
-        StrainTransition {
-            before,
-            after,
-            requested: amount,
-            applied: before - after,
-            kind: StrainChangeKind::Decayed,
-        }
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -185,31 +172,6 @@ impl FlowState {
             kind: match before {
                 Self::Dormant => FlowChangeKind::Entered,
                 Self::Active { .. } => FlowChangeKind::Intensified,
-            },
-        }
-    }
-
-    pub fn decay(&mut self, config: &CombatKernelConfig) -> FlowTransition {
-        let before = *self;
-        let after = match before {
-            Self::Dormant => Self::Dormant,
-            Self::Active { momentum } => {
-                let next = momentum.saturating_sub(config.flow_decay_per_advance);
-                if next == 0 {
-                    Self::Dormant
-                } else {
-                    Self::Active { momentum: next }
-                }
-            }
-        };
-        *self = after;
-        FlowTransition {
-            before,
-            after,
-            kind: match (before, after) {
-                (Self::Dormant, Self::Dormant) => FlowChangeKind::Decayed,
-                (_, Self::Dormant) => FlowChangeKind::Exited,
-                _ => FlowChangeKind::Decayed,
             },
         }
     }
@@ -276,35 +238,6 @@ impl Fatigue {
             applied: after - before,
             carried_over: self.carried_over,
             kind: FatigueChangeKind::Gained,
-        }
-    }
-
-    pub fn carry_over(&mut self, config: &CombatKernelConfig) -> FatigueTransition {
-        let before = self.current;
-        let carried_over = before.min(config.fatigue_carryover_cap);
-        self.current = 0;
-        self.carried_over = carried_over;
-        FatigueTransition {
-            before,
-            after: 0,
-            requested: before,
-            applied: before,
-            carried_over,
-            kind: FatigueChangeKind::CarriedOver,
-        }
-    }
-
-    pub fn reset(&mut self) -> FatigueTransition {
-        let before = self.current;
-        self.current = 0;
-        self.carried_over = 0;
-        FatigueTransition {
-            before,
-            after: 0,
-            requested: before,
-            applied: before,
-            carried_over: 0,
-            kind: FatigueChangeKind::Reset,
         }
     }
 }
@@ -503,36 +436,11 @@ impl CombatKernelRegistry {
 }
 
 pub fn register_combat_kernel_runtime(app: &mut App) {
-    let mut registry = CombatKernelRegistry::new();
-    registry.register(crate::combat::battery_loop::BatteryLoopHook);
-
     app.init_resource::<CombatKernelState>()
-        .init_resource::<crate::combat::battery_loop::BatteryLoopState>()
         .init_resource::<crate::combat::modifiers::DamageModifierLedger>()
         .init_resource::<crate::combat::rng::CombatRng>()
         .init_resource::<crate::combat::api::ExtRegistries>()
-        .add_systems(
-            Update,
-            crate::combat::battery_loop::apply_battery_loop_transitions_system,
-        )
-        .insert_resource(registry);
-
-    // Digimon-owned wiring (resource + applier system + kernel hook) is bundled
-    // into per-digimon plugins so removing a digimon is a single-line change.
-    // Added here so every callsite of `register_combat_kernel_runtime` keeps
-    // working without touching ~15 test files.
-    app.add_plugins((
-        crate::combat::blueprints::twin_core::TwinCorePlugin,
-        crate::combat::blueprints::patamon::PatamonPlugin,
-        crate::combat::blueprints::dorumon::DorumonPlugin,
-        crate::combat::blueprints::tentomon::TentomonPlugin,
-        crate::combat::blueprints::renamon::RenamonPlugin,
-    ));
-
-    {
-        let mut regs = app.world_mut().resource_mut::<crate::combat::api::ExtRegistries>();
-        crate::combat::blueprints::register_all_blueprint_validation_exts(&mut regs);
-    }
+        .insert_resource(CombatKernelRegistry::new());
 }
 
 pub fn register_canonical_passive_runners(app: &mut App) {
@@ -593,32 +501,12 @@ impl CombatKernelState {
         self.strain.spend(amount)
     }
 
-    pub fn decay_strain(&mut self) -> StrainTransition {
-        self.strain.decay(self.config.strain_decay_per_advance)
-    }
-
     pub fn enter_flow(&mut self) -> FlowTransition {
         self.flow.enter(&self.config)
     }
 
-    pub fn decay_flow(&mut self) -> FlowTransition {
-        self.flow.decay(&self.config)
-    }
-
-    pub fn exit_flow(&mut self) -> FlowTransition {
-        self.flow.exit()
-    }
-
     pub fn gain_fatigue(&mut self, amount: u16) -> FatigueTransition {
         self.fatigue.gain(amount, &self.config)
-    }
-
-    pub fn carry_over_fatigue(&mut self) -> FatigueTransition {
-        self.fatigue.carry_over(&self.config)
-    }
-
-    pub fn reset_fatigue(&mut self) -> FatigueTransition {
-        self.fatigue.reset()
     }
 
     pub fn advance_tactical_cycle(&mut self) -> TacticalCycleTransition {
@@ -642,10 +530,6 @@ impl CombatKernelState {
         let tag = self.tags.iter_mut().find(|tag| &tag.id == id)?;
         Some(tag.consume())
     }
-
-    pub fn tick_tags(&mut self) -> Vec<CombatTagTransition> {
-        self.tags.iter_mut().map(CombatTagState::tick).collect()
-    }
 }
 
 #[cfg(test)]
@@ -666,14 +550,10 @@ mod tests {
         assert_eq!(strain.current, 20);
         assert_eq!(spend.kind, StrainChangeKind::Spent);
         assert_eq!(spend.applied, 80);
-
-        let decay = strain.decay(50);
-        assert_eq!(strain.current, 0);
-        assert_eq!(decay.applied, 20);
     }
 
     #[test]
-    fn flow_enters_decays_and_exits() {
+    fn flow_enters_and_exits() {
         let config = CombatKernelConfig::default();
         let mut flow = FlowState::default();
 
@@ -686,11 +566,13 @@ mod tests {
             }
         );
 
-        let decayed = flow.decay(&config);
-        assert_eq!(decayed.kind, FlowChangeKind::Decayed);
+        let intensified = flow.enter(&config);
+        assert_eq!(intensified.kind, FlowChangeKind::Intensified);
         assert_eq!(
-            flow.momentum(),
-            config.flow_default_momentum - config.flow_decay_per_advance
+            flow,
+            FlowState::Active {
+                momentum: config.flow_default_momentum
+            }
         );
 
         let exited = flow.exit();
@@ -699,24 +581,18 @@ mod tests {
     }
 
     #[test]
-    fn fatigue_carryover_and_reset_are_deterministic() {
+    fn fatigue_gain_clamps_deterministically() {
         let config = CombatKernelConfig::default();
         let mut fatigue = Fatigue::default();
 
         let gained = fatigue.gain(80, &config);
         assert_eq!(fatigue.current, 80);
         assert_eq!(gained.applied, 80);
+        assert_eq!(gained.kind, FatigueChangeKind::Gained);
 
-        let carried = fatigue.carry_over(&config);
-        assert_eq!(carried.kind, FatigueChangeKind::CarriedOver);
-        assert_eq!(fatigue.current, 0);
-        assert_eq!(fatigue.carried_over, config.fatigue_carryover_cap);
-        assert_eq!(carried.carried_over, config.fatigue_carryover_cap);
-
-        let reset = fatigue.reset();
-        assert_eq!(reset.kind, FatigueChangeKind::Reset);
-        assert_eq!(fatigue.current, 0);
-        assert_eq!(fatigue.carried_over, 0);
+        let capped = fatigue.gain(config.fatigue_max, &config);
+        assert_eq!(fatigue.current, config.fatigue_max);
+        assert_eq!(capped.after, config.fatigue_max);
     }
 
     #[test]

@@ -1,11 +1,7 @@
 use bevyrogue::combat::action_query::{
-    ActionQueryKind, ActionStatus, CombatQuerySnapshot, ImplementationStatus, ResourceKind,
-    ResourceStatus, TargetStatus, build_snapshot_from_ecs, build_snapshot_from_ecs_with_sp,
-    enabled_target_ids, first_enabled_target_id, query_action_affordance,
-    query_charged_telegraph_affordance, query_enemy_trait_affordances,
-};
-use bevyrogue::combat::counterplay::{
-    ChargedAttackDeclaration, EnemyCounterplayKind, EnemyCounterplayStatus, EnemyTraitDeclaration,
+    ActionQueryKind, ActionStatus, CombatQuerySnapshot, ResourceKind, ResourceStatus,
+    TargetStatus, build_snapshot_from_ecs, build_snapshot_from_ecs_with_sp, enabled_target_ids,
+    first_enabled_target_id, query_action_affordance,
 };
 use bevyrogue::combat::enemy_counterplay::EnemyCounterplayKit;
 use bevyrogue::combat::energy::{Energy, RoundEnergyTracker};
@@ -707,20 +703,28 @@ fn deferred_actions_are_excluded_from_enabled_selection() {
     ]
     .into_iter()
     .filter_map(|(label, affordance)| {
-        matches!(affordance.action, ActionStatus::Enabled).then_some(label)
+        first_enabled_target_id(affordance).is_some().then_some(label)
     })
     .collect();
 
     assert_eq!(enabled_labels, vec!["Basic"]);
     assert!(matches!(
         deferred_affordance.action,
-        ActionStatus::Deferred {
-            reason: LegalityReasonCode::UnimplementedTargetShape
+        ActionStatus::Disabled {
+            reason: LegalityReasonCode::NoValidTargets
+        }
+    ));
+    assert!(enabled_target_ids(&deferred_affordance).is_empty());
+    assert!(first_enabled_target_id(&deferred_affordance).is_none());
+    assert!(matches!(
+        deferred_affordance.target,
+        TargetStatus::Disabled {
+            reason: LegalityReasonCode::NoValidTargets
         }
     ));
     assert!(matches!(
-        deferred_affordance.target,
-        TargetStatus::Deferred {
+        deferred_affordance.implementation,
+        bevyrogue::combat::action_query::ImplementationStatus::Deferred {
             reason: LegalityReasonCode::UnimplementedTargetShape
         }
     ));
@@ -774,214 +778,4 @@ fn combat_cli_source_does_not_hardcode_counterplay_names() {
         !source.contains("signature_traits"),
         "combat_cli must not branch on signature_traits"
     );
-}
-
-fn enemy_fixture_with_traits(
-    id: u32,
-    traits: Vec<EnemyTraitDeclaration>,
-    charged: Option<ChargedAttackDeclaration>,
-) -> Fixture {
-    Fixture {
-        id: UnitId(id),
-        team: Team::Enemy,
-        hp_current: 100,
-        hp_max: 100,
-        is_ko: false,
-        is_stunned: false,
-        is_commander: false,
-        skills: None,
-        ultimate: None,
-        toughness: None,
-        energy: None,
-        tracker: None,
-        counterplay: Some(bevyrogue::combat::enemy_counterplay::EnemyCounterplayKit {
-            enemy_traits: traits,
-            charged_attack: charged,
-        }),
-    }
-}
-
-#[test]
-fn counterplay_snapshot_exposes_implemented_trait() {
-    let fixture = enemy_fixture_with_traits(
-        99,
-        vec![EnemyTraitDeclaration {
-            kind: EnemyCounterplayKind::TempoAnchor,
-            status: EnemyCounterplayStatus::Implemented,
-        }],
-        None,
-    );
-    let snapshot = snapshot_from_fixtures(
-        &[fixture],
-        UnitId(99),
-        UnitId(99),
-        CombatPhase::WaitingAction,
-        None,
-        0,
-    );
-    let unit = snapshot.units.iter().find(|u| u.id == UnitId(99)).unwrap();
-    let affordances = query_enemy_trait_affordances(unit);
-
-    assert_eq!(affordances.len(), 1);
-    assert_eq!(affordances[0].kind, EnemyCounterplayKind::TempoAnchor);
-    assert!(matches!(
-        affordances[0].implementation,
-        ImplementationStatus::Implemented
-    ));
-}
-
-#[test]
-fn counterplay_snapshot_exposes_deferred_trait() {
-    let fixture = enemy_fixture_with_traits(
-        98,
-        vec![EnemyTraitDeclaration {
-            kind: EnemyCounterplayKind::BreakSeal,
-            status: EnemyCounterplayStatus::Deferred {
-                reason: bevyrogue::data::skills_ron::LegalityReasonCode::EnemyTraitDeferred,
-            },
-        }],
-        None,
-    );
-    let snapshot = snapshot_from_fixtures(
-        &[fixture],
-        UnitId(98),
-        UnitId(98),
-        CombatPhase::WaitingAction,
-        None,
-        0,
-    );
-    let unit = snapshot.units.iter().find(|u| u.id == UnitId(98)).unwrap();
-    let affordances = query_enemy_trait_affordances(unit);
-
-    assert_eq!(affordances.len(), 1);
-    assert_eq!(affordances[0].kind, EnemyCounterplayKind::BreakSeal);
-    assert!(matches!(
-        affordances[0].implementation,
-        ImplementationStatus::Deferred {
-            reason: bevyrogue::data::skills_ron::LegalityReasonCode::EnemyTraitDeferred
-        }
-    ));
-}
-
-#[test]
-fn counterplay_snapshot_exposes_hidden_charged_telegraph() {
-    let fixture = enemy_fixture_with_traits(
-        97,
-        vec![],
-        Some(ChargedAttackDeclaration {
-            skill_id: SkillId("some_charged_skill".into()),
-            lead_turns: 2,
-            status: EnemyCounterplayStatus::Hidden {
-                reason: bevyrogue::data::skills_ron::LegalityReasonCode::ChargedTelegraphDeferred,
-            },
-        }),
-    );
-    let snapshot = snapshot_from_fixtures(
-        &[fixture],
-        UnitId(97),
-        UnitId(97),
-        CombatPhase::WaitingAction,
-        None,
-        0,
-    );
-    let unit = snapshot.units.iter().find(|u| u.id == UnitId(97)).unwrap();
-    let affordance = query_charged_telegraph_affordance(unit).expect("expected charged telegraph");
-
-    assert!(matches!(
-        affordance.implementation,
-        ImplementationStatus::Hidden { .. }
-    ));
-    assert_eq!(affordance.lead_turns, 2);
-}
-
-#[test]
-fn empty_enemy_returns_no_counterplay_affordances() {
-    let fixture = Fixture {
-        id: UnitId(96),
-        team: Team::Enemy,
-        hp_current: 50,
-        hp_max: 50,
-        is_ko: false,
-        is_stunned: false,
-        is_commander: false,
-        skills: None,
-        ultimate: None,
-        toughness: None,
-        energy: None,
-        tracker: None,
-        counterplay: None,
-    };
-    let snapshot = snapshot_from_fixtures(
-        &[fixture],
-        UnitId(96),
-        UnitId(96),
-        CombatPhase::WaitingAction,
-        None,
-        0,
-    );
-    let unit = snapshot.units.iter().find(|u| u.id == UnitId(96)).unwrap();
-
-    assert!(query_enemy_trait_affordances(unit).is_empty());
-    assert!(query_charged_telegraph_affordance(unit).is_none());
-}
-
-#[test]
-fn counterplay_deferred_reason_codes_remain_visible_in_resource_status() {
-    let fixture = enemy_fixture_with_traits(
-        95,
-        vec![
-            EnemyTraitDeclaration {
-                kind: EnemyCounterplayKind::TempoAnchor,
-                status: EnemyCounterplayStatus::Implemented,
-            },
-            EnemyTraitDeclaration {
-                kind: EnemyCounterplayKind::ReactiveArmor,
-                status: EnemyCounterplayStatus::Deferred {
-                    reason: bevyrogue::data::skills_ron::LegalityReasonCode::EnemyTraitDeferred,
-                },
-            },
-        ],
-        Some(ChargedAttackDeclaration {
-            skill_id: SkillId("boss_charged".into()),
-            lead_turns: 1,
-            status: EnemyCounterplayStatus::Deferred {
-                reason: bevyrogue::data::skills_ron::LegalityReasonCode::ChargedTelegraphDeferred,
-            },
-        }),
-    );
-    let snapshot = snapshot_from_fixtures(
-        &[fixture],
-        UnitId(95),
-        UnitId(95),
-        CombatPhase::WaitingAction,
-        None,
-        0,
-    );
-    let unit = snapshot.units.iter().find(|u| u.id == UnitId(95)).unwrap();
-
-    let traits = query_enemy_trait_affordances(unit);
-    assert_eq!(traits.len(), 2);
-    assert!(matches!(
-        traits[0].implementation,
-        ImplementationStatus::Implemented
-    ));
-    assert!(matches!(
-        traits[1].implementation,
-        ImplementationStatus::Deferred { .. }
-    ));
-    // deferred resource status carries the reason code
-    assert!(matches!(
-        traits[1].resource.status,
-        bevyrogue::combat::action_query::ResourceStatus::Deferred { .. }
-    ));
-
-    let charged = query_charged_telegraph_affordance(unit).expect("charged telegraph");
-    assert!(matches!(
-        charged.implementation,
-        ImplementationStatus::Deferred { .. }
-    ));
-    assert!(matches!(
-        charged.resource.status,
-        bevyrogue::combat::action_query::ResourceStatus::Deferred { .. }
-    ));
 }

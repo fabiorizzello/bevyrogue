@@ -8,12 +8,11 @@ use moonshine_kind::Instance;
 #[cfg(feature = "windowed")]
 use crate::combat::{
     action_query::{
-        ActionAffordance, ActionQueryKind, ActionStatus, CombatQuerySnapshot, ImplementationStatus,
-        ResourceAffordanceDetail, ResourceKind, ResourceStatus, TargetAffordance, TargetStatus,
+        ActionAffordance, ActionQueryKind, ActionStatus, CombatQuerySnapshot,
+        TargetAffordance, TargetStatus,
         build_snapshot_from_ecs_with_sp, first_enabled_target_id, query_action_affordance,
-        query_charged_telegraph_affordance, query_enemy_trait_affordances,
     },
-    api::CastIdGen,
+    api::intent::CastIdGen,
     enemy_counterplay::EnemyCounterplayKit,
     energy::{Energy, RoundEnergyTracker},
     floating::{FLOATING_LIFETIME_SECS, FloatingDamage},
@@ -238,15 +237,6 @@ type CombatPanelUnitsQuery<'w, 's> = Query<
 >;
 
 #[cfg(feature = "windowed")]
-fn counterplay_implementation_label(status: &ImplementationStatus) -> &'static str {
-    match status {
-        ImplementationStatus::Implemented => "implemented",
-        ImplementationStatus::Deferred { .. } => "deferred",
-        ImplementationStatus::Hidden { .. } => "hidden",
-    }
-}
-
-#[cfg(feature = "windowed")]
 fn pending_label(kind: &PendingKind) -> String {
     match kind {
         PendingKind::Basic => "Basic".to_string(),
@@ -284,39 +274,6 @@ fn target_status_label(status: &TargetStatus) -> String {
 }
 
 #[cfg(feature = "windowed")]
-fn resource_status_label(status: &ResourceStatus) -> String {
-    match status {
-        ResourceStatus::Enabled => "enabled".to_string(),
-        ResourceStatus::Disabled { reason } => format!("disabled({reason:?})"),
-        ResourceStatus::Deferred { reason } => format!("deferred({reason:?})"),
-        ResourceStatus::Hidden { reason } => format!("hidden({reason:?})"),
-    }
-}
-
-#[cfg(feature = "windowed")]
-fn resource_detail_label(detail: &ResourceAffordanceDetail) -> String {
-    let kind = match detail.kind {
-        ResourceKind::Sp => "SP",
-        ResourceKind::Ultimate => "ULT",
-        ResourceKind::TamerGauge => "TamerGauge",
-        ResourceKind::TamerCommand => "TamerCommand",
-        ResourceKind::ChargedTelegraph => "ChargedTelegraph",
-        ResourceKind::EnemyTrait => "EnemyTrait",
-        ResourceKind::EnergyCap => "EnergyCap",
-    };
-
-    match (detail.current, detail.required) {
-        (Some(current), Some(required)) => {
-            format!(
-                "{kind} {current}/{required} {}",
-                resource_status_label(&detail.status)
-            )
-        }
-        _ => format!("{kind} {}", resource_status_label(&detail.status)),
-    }
-}
-
-#[cfg(feature = "windowed")]
 fn action_button_label(base: &str, status: &ActionStatus) -> String {
     match status {
         ActionStatus::Enabled => base.to_string(),
@@ -326,16 +283,6 @@ fn action_button_label(base: &str, status: &ActionStatus) -> String {
 
 #[cfg(feature = "windowed")]
 fn action_tooltip(base: &str, affordance: &ActionAffordance<'_>, preview: Option<&str>) -> String {
-    let resources = if affordance.resource_details.is_empty() {
-        "none".to_string()
-    } else {
-        affordance
-            .resource_details
-            .iter()
-            .map(resource_detail_label)
-            .collect::<Vec<_>>()
-            .join(" | ")
-    };
     let targets = if affordance.targets.is_empty() {
         "none".to_string()
     } else {
@@ -348,9 +295,8 @@ fn action_tooltip(base: &str, affordance: &ActionAffordance<'_>, preview: Option
     };
 
     let mut tooltip = format!(
-        "{base}\naction: {}\nresource: {}\ntargets: {}",
+        "{base}\naction: {}\ntargets: {}",
         action_status_label(&affordance.action),
-        resources,
         targets,
     );
     if let Some(preview) = preview {
@@ -439,7 +385,6 @@ pub fn combat_panel(
         ult_trigger: i32,
         ult_cap: i32,
         skills: Vec<SkillDisplay>,
-        ultimate_ready: bool,
         is_ko: bool,
         is_stunned: bool,
         is_commander: bool,
@@ -503,7 +448,6 @@ pub fn combat_panel(
                     id,
                 })
                 .collect(),
-            ultimate_ready: ult.ready(),
             is_ko: ko.is_some(),
             is_stunned: stunned.is_some(),
             is_commander: commander.is_some(),
@@ -965,25 +909,6 @@ HP: {}/{}
                         }
                         if toughness.broken {
                             ui.label(egui::RichText::new("BROKEN").color(egui::Color32::RED));
-                        }
-                    }
-                    if let Some(snapshot) = action_snapshot.as_ref() {
-                        if let Some(snap_unit) = snapshot.units.iter().find(|u| u.id == enemy.id) {
-                            for t in query_enemy_trait_affordances(snap_unit) {
-                                ui.label(format!(
-                                    "trait {:?} [{}]",
-                                    t.kind,
-                                    counterplay_implementation_label(&t.implementation)
-                                ));
-                            }
-                            if let Some(c) = query_charged_telegraph_affordance(snap_unit) {
-                                ui.label(format!(
-                                    "charged {} T-{} [{}]",
-                                    c.skill_id.0,
-                                    c.lead_turns,
-                                    counterplay_implementation_label(&c.implementation)
-                                ));
-                            }
                         }
                     }
                     if enemy.is_ko {

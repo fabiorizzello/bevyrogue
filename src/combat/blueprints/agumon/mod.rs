@@ -2,10 +2,9 @@
 //!
 //! Twin Core (shared with Gabumon) lives in `blueprints::twin_core`.
 
-use std::collections::HashMap;
 use std::sync::Arc;
 
-use bevy::prelude::*;
+use crate::combat::bevy_types::*;
 
 use crate::combat::{
     api::{
@@ -19,12 +18,7 @@ use crate::combat::{
 
 pub mod signals;
 
-/// Per-unit talent ranks. Keys are `"owner::talent_name"` (e.g. `"agumon::bouncing_fire"`).
-/// Default rank is 0 (talent disabled).
-#[derive(Resource, Default)]
-pub struct TalentRanks(pub HashMap<String, u8>);
-
-pub use crate::combat::blueprints::twin_core::{
+use crate::combat::blueprints::twin_core::{
     TAG_CHILLED, TAG_DEEP_CRACK, TAG_HEATED, TAG_MELTDOWN_CRACK, TAG_PRIMED, TAG_THERMAL_SPARK,
     TwinCoreDesignTag, TwinCoreHook, TwinCoreState, apply_twin_core_transitions_system,
     classify_twin_core_tag, twin_core_added_tag_transition, twin_core_design_tag,
@@ -32,12 +26,13 @@ pub use crate::combat::blueprints::twin_core::{
 };
 pub use signals::{OWNER, dispatch};
 
+#[derive(Resource, Default)]
+pub struct TalentRanks(pub std::collections::HashMap<String, u8>);
+
 const PASSIVE_SIGNAL_NAME: &str = "apply_heated";
 const PASSIVE_TRIGGER_KEY: &str = "agumon/twin_core/triggered";
 const PASSIVE_TIMELINE_ID: &str = "agumon_twin_core_passive";
 const PASSIVE_OWNER: UnitId = UnitId(1);
-
-pub struct AgumonPlugin;
 
 /// Register only the Agumon extension-point functions (hooks, predicates, selectors)
 /// into an `ExtRegistries` without requiring a full `App`.

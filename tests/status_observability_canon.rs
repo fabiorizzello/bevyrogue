@@ -15,7 +15,7 @@ use bevy::prelude::*;
 use bevyrogue::combat::{
     StatusBag, StatusEffectKind,
     av::ActionValueUpdated,
-    blueprints::agumon::TwinCoreState,
+    blueprints::twin_core::TwinCoreState,
     events::CombatEvent,
     log::ActionLog,
     observability::{ValidationStatusSnapshot, capture_validation_snapshot},

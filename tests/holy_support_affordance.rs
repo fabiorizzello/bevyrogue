@@ -1,13 +1,14 @@
 use bevy::prelude::*;
-use bevyrogue::combat::api::{SignalPayload, intent::CastId};
 use bevyrogue::combat::api::ExtRegistries;
-use bevyrogue::combat::blueprints::agumon::TwinCoreState;
+use bevyrogue::combat::api::{SignalPayload, intent::CastId};
+use bevyrogue::combat::blueprints::twin_core::TwinCoreState;
 use bevyrogue::combat::blueprints::patamon::{
-    HolySupportRejectReason, HolySupportState, HolySupportStep, HolySupportTransition,
-    apply_holy_support_transitions_system, register_validation_ext,
+    HolySupportState, HolySupportTransition, apply_holy_support_transitions_system,
+    register_validation_ext,
 };
+use bevyrogue::combat::blueprints::patamon::identity::HolySupportSignal;
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
-use bevyrogue::combat::kernel::{CombatKernelTransition, HolySupportSignal};
+use bevyrogue::combat::kernel::CombatKernelTransition;
 use bevyrogue::combat::log::ActionLog;
 use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
 use bevyrogue::combat::sp::SpPool;
@@ -48,25 +49,18 @@ fn app_without_holy_support() -> App {
 
 fn emit_holy_transition(app: &mut App, transition: HolySupportTransition) {
     let (name, payload) = match transition.signal {
-        bevyrogue::combat::kernel::HolySupportSignal::BuildGrace => (
+        HolySupportSignal::BuildGrace => (
             "build_holy_support_grace",
             SignalPayload::Amount(i64::from(transition.amount)),
         ),
-        bevyrogue::combat::kernel::HolySupportSignal::SpendGrace => (
+        HolySupportSignal::SpendGrace => (
             "spend_holy_support_grace",
             SignalPayload::Amount(i64::from(transition.amount)),
         ),
-        bevyrogue::combat::kernel::HolySupportSignal::MarkMartyrLight => {
-            ("mark_martyr_light", SignalPayload::Empty)
-        }
-        bevyrogue::combat::kernel::HolySupportSignal::ConsumeMartyrLight => {
-            ("consume_martyr_light", SignalPayload::Empty)
-        }
-        bevyrogue::combat::kernel::HolySupportSignal::CycleReset => {
-            ("cycle_reset", SignalPayload::Empty)
-        }
-        bevyrogue::combat::kernel::HolySupportSignal::Rejected
-        | bevyrogue::combat::kernel::HolySupportSignal::Ignored => {
+        HolySupportSignal::MarkMartyrLight => ("mark_martyr_light", SignalPayload::Empty),
+        HolySupportSignal::ConsumeMartyrLight => ("consume_martyr_light", SignalPayload::Empty),
+        HolySupportSignal::CycleReset => ("cycle_reset", SignalPayload::Empty),
+        HolySupportSignal::Rejected | HolySupportSignal::Ignored => {
             ("rejected", SignalPayload::Empty)
         }
     };

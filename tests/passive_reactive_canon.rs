@@ -20,6 +20,7 @@ fn setup_app(seed: u64) -> App {
         .insert_resource(CombatRng::from_seed(seed))
         .add_systems(Update, intent_applier);
     register_combat_kernel_runtime(&mut app);
+    bevyrogue::combat::blueprints::add_runtime_plugins(&mut app);
     app
 }
 

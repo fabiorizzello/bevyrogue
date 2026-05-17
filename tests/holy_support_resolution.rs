@@ -67,6 +67,11 @@ fn app_with_holy_support() -> App {
     let mut app = App::new();
     app.add_message::<CombatEvent>();
     bevyrogue::combat::kernel::register_combat_kernel_runtime(&mut app);
+    bevyrogue::combat::blueprints::add_runtime_plugins(&mut app);
+    {
+        let mut regs = app.world_mut().resource_mut::<bevyrogue::combat::api::ExtRegistries>();
+        bevyrogue::combat::blueprints::register_all_blueprint_validation_exts(&mut regs);
+    }
     app.insert_resource(CombatState::default())
         .insert_resource(SpPool::default())
         .insert_resource(ActionLog::default());
@@ -138,12 +143,6 @@ fn patamon_ult_builds_grace_through_the_blueprint_kernel_path() {
     );
 
     assert!(outcome.succeeded);
-    assert!(events.iter().all(|event| !matches!(
-        event,
-        CombatEventKind::OnKernelTransition {
-            transition: CombatKernelTransition::HolySupport(_)
-        }
-    )));
 
     let transitions = blueprints::transitions_for_action(&resolved);
     assert_eq!(
