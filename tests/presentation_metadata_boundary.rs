@@ -175,6 +175,13 @@ fn drain(cursor: &mut MessageCursor<CombatEvent>, app: &App) -> Vec<CombatEvent>
 fn app_with_skill_book(book: SkillBook, skill_id: &SkillId) -> App {
     let mut app = App::new();
     register_combat_kernel_runtime(&mut app);
+    bevyrogue::combat::blueprints::add_runtime_plugins(&mut app);
+    {
+        let mut regs = app
+            .world_mut()
+            .resource_mut::<bevyrogue::combat::api::ExtRegistries>();
+        bevyrogue::combat::blueprints::register_all_blueprint_validation_exts(&mut regs);
+    }
     app.init_resource::<CombatState>()
         .init_resource::<TurnOrder>()
         .init_resource::<SpPool>()

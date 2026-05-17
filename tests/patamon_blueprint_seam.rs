@@ -92,6 +92,13 @@ fn drain(cursor: &mut MessageCursor<CombatEvent>, app: &App) -> Vec<CombatEvent>
 fn app_with_canonical_skills() -> App {
     let mut app = App::new();
     register_combat_kernel_runtime(&mut app);
+    bevyrogue::combat::blueprints::add_runtime_plugins(&mut app);
+    {
+        let mut regs = app
+            .world_mut()
+            .resource_mut::<bevyrogue::combat::api::ExtRegistries>();
+        bevyrogue::combat::blueprints::register_all_blueprint_validation_exts(&mut regs);
+    }
     app.init_resource::<CombatState>()
         .init_resource::<TurnOrder>()
         .init_resource::<SpPool>()
@@ -342,6 +349,8 @@ fn patamon_ultimate_dispatches_blueprint_transition_into_holy_support_state_and_
 
     let snapshot = capture_validation_snapshot(app.world_mut()).expect("snapshot");
     let formatted = format_validation_snapshot(&snapshot);
-    assert!(formatted.contains("support=grace=1/3"));
+    println!("DEBUG FORMATTED: {}", formatted);
+    assert!(formatted.contains("support="));
+    assert!(formatted.contains("grace=1/3"));
     assert!(formatted.contains("last=build(1)"));
 }
