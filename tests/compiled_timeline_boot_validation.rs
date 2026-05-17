@@ -1,10 +1,12 @@
 use std::collections::HashSet;
 
+use bevy::prelude::*;
 use bevyrogue::{
     combat::types::SkillId,
     combat::{
-        api::{ExtRegistries, register_kernel_builtins},
+        api::{ExtRegistries, TimelineLibrary, register_kernel_builtins},
         blueprints::register_all_blueprint_exts,
+        plugin::CombatPlugin,
     },
     data::{
         skill_timeline::compile_skill_book_timelines,
@@ -101,4 +103,48 @@ fn asset_typo_in_hook_id_fails_with_skill_and_beat_site() {
     assert_eq!(err.skill_id, SkillId("baby_flame".into()));
     assert_eq!(err.site, "beat impact_damage");
     assert!(err.detail.contains("core/deal_damge"));
+}
+
+#[test]
+fn invalid_timeline_ids_fail_during_app_finish() {
+    let panic = std::panic::catch_unwind(|| {
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins);
+        app.add_plugins(CombatPlugin);
+
+        app.world_mut().resource_mut::<TimelineLibrary<String>>().timelines.push(
+            bevyrogue::combat::api::timeline::CompiledTimeline {
+                id: "bad_boot_timeline".into(),
+                entry: "cast".into(),
+                beats: vec![bevyrogue::combat::api::timeline::Beat {
+                    id: "cast".into(),
+                    kind: bevyrogue::combat::api::timeline::BeatKind::Cast,
+                    hook: Some("missing_boot_hook".into()),
+                    selector: None,
+                    presentation: None,
+                    payload: None,
+                }],
+                edges: vec![bevyrogue::combat::api::timeline::BeatEdge {
+                    from: "cast".into(),
+                    to: "impact".into(),
+                    gate: Some("missing_boot_pred".into()),
+                }],
+            },
+        );
+
+        app.finish();
+    });
+
+    let err = panic.expect_err("invalid boot timelines must panic during App::finish");
+    let panic_msg = match err.downcast::<String>() {
+        Ok(msg) => *msg,
+        Err(err) => match err.downcast::<&str>() {
+            Ok(msg) => (*msg).to_string(),
+            Err(_) => panic!("panic payload should be a string"),
+        },
+    };
+
+    assert!(panic_msg.contains("CombatPlugin::finish — dangling timeline references"));
+    assert!(panic_msg.contains("[hook] missing 'missing_boot_hook' at beat cast"));
+    assert!(panic_msg.contains("[predicate] missing 'missing_boot_pred' at edge cast->impact"));
 }

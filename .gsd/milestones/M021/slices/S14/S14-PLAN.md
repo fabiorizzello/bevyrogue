@@ -24,13 +24,13 @@ This slice closes the validation gap between isolated migration slices by provin
 
 ## Tasks
 
-- [ ] **T01: Prove HeadlessAuto and Windowed intent-stream parity** `est:0.75d`
+- [x] **T01: Prove HeadlessAuto and Windowed intent-stream parity** `est:0.75d`
   Add or tighten an explicit two-clock parity test that drives the same encounter or compiled timeline under HeadlessAuto and Windowed semantics, then asserts identical emitted intent streams and end-of-cast outcomes.
   - Files: `src/combat/api/clock.rs`, `src/combat/api/runner.rs`, `src/windowed.rs`, `src/headless.rs`, `tests`
   - Verify: cargo test -- --nocapture windowed || true
 cargo test -- --nocapture parity || true
 
-- [ ] **T02: Prove blueprint isolation and no-Bevy shared boundaries** `est:0.5d`
+- [x] **T02: Prove blueprint isolation and no-Bevy shared boundaries** `est:0.5d`
   Audit blueprint modules for forbidden Bevy imports and the one-module one-register contract. Add a focused structural proof or test fixture that shows blueprint integration remains isolated to owner modules and shared registries.
   - Files: `src/combat/blueprints`, `tests`
   - Verify: rg "use bevy" src/combat/blueprints/

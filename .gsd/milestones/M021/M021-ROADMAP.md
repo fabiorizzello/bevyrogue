@@ -54,10 +54,10 @@
 - [x] **S12: S12** `risk:low` `depends:[]`
   > After this: Test 'add new digimon' modifica solo le 2 dir; suite verde.
 
-- [ ] **S13: S13** `risk:high` `depends:[]`
+- [x] **S13: S13** `risk:high` `depends:[]`
   > After this: After this: cast_id, UltInstant, and 5-step turn pipeline are covered by fresh proof; DryRun equals Execute is green; invalid timeline ids fail at boot with explicit evidence.
 
-- [ ] **S14: Prove two-clock parity and extension boundaries** `risk:medium` `depends:[S13]`
+- [ ] **S14: S14** `risk:medium` `depends:[]`
   > After this: After this: HeadlessAuto and Windowed produce equivalent intent streams; blueprint modules stay bevy-free; add-new-digimon isolation and single-register boundaries are evidenced.
 
 - [ ] **S15: Final milestone closeout evidence** `risk:medium` `depends:[S14]`

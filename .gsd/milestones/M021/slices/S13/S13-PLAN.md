@@ -38,7 +38,7 @@ cargo test -- --nocapture turn_phase || true
   - Verify: cargo test --test skill_preview -- --nocapture
 cargo test -- --nocapture dry_run || true
 
-- [ ] **T03: Prove strict boot validation for invalid timeline ids** `est:0.5d`
+- [x] **T03: Prove strict boot validation for invalid timeline ids** `est:0.5d`
   Exercise boot-time timeline validation directly: prove a bad registry reference fails at `App::finish()` with a deterministic test or focused harness, and align the resulting evidence with the M021 strict-boot-validation criterion.
   - Files: `src/combat/plugin.rs`, `src/combat/api/timeline.rs`, `tests`
   - Verify: cargo test -- --nocapture timeline_refs || true
