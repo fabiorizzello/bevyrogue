@@ -1,10 +1,12 @@
 use bevy::ecs::message::{MessageCursor, Messages};
 use bevy::prelude::*;
 use bevyrogue::combat::{
-    api::{register_kernel_builtins, ExtRegistries, SignalBus, SignalTaxonomy},
-    blueprints::register_all_blueprint_exts,
+    api::timeline::TimelineLibrary,
+    api::{ExtRegistries, SignalBus, SignalTaxonomy, register_kernel_builtins},
     av::{ActionValue, ActionValueUpdated, MAX_AV},
+    blueprints::register_all_blueprint_exts,
     events::{CombatEvent, CombatEventKind},
+    kit::UnitSkills,
     log::ActionLog,
     rng::CombatRng,
     sp::SpPool,
@@ -14,17 +16,15 @@ use bevyrogue::combat::{
     team::Team,
     toughness::Toughness,
     turn_order::{TurnAdvanced, TurnOrder},
-    turn_system::{apply_av_ops_system, resolve_action_system, ActionIntent},
+    turn_system::{ActionIntent, apply_av_ops_system, resolve_action_system},
     types::{Attribute, DamageTag, EvoStage, SkillId, UnitId},
-    unit::Unit,
     ultimate::{UltAccumulationTrigger, UltimateCharge},
-    kit::UnitSkills,
-    api::timeline::TimelineLibrary,
+    unit::Unit,
 };
 use bevyrogue::data::{
+    SkillBookHandle,
     skill_timeline::compile_skill_book_timelines,
     skills_ron::{SkillBook, validate_skill_book},
-    SkillBookHandle,
 };
 
 fn canonical_book() -> SkillBook {
@@ -47,7 +47,10 @@ fn build_app(book: &SkillBook) -> App {
         .insert_resource(SkillBookHandle(handle))
         .init_resource::<CombatState>()
         .init_resource::<TurnOrder>()
-        .insert_resource(SpPool { current: 99, max: 99 })
+        .insert_resource(SpPool {
+            current: 99,
+            max: 99,
+        })
         .init_resource::<ActionLog>()
         .init_resource::<Time>()
         .insert_resource(CombatRng::from_seed(7))
@@ -67,7 +70,9 @@ fn build_app(book: &SkillBook) -> App {
         register_all_blueprint_exts(&mut regs);
         let compiled = compile_skill_book_timelines(book, &regs)
             .expect("canonical timeline book must compile");
-        app.world_mut().resource_mut::<TimelineLibrary<String>>().timelines = compiled;
+        app.world_mut()
+            .resource_mut::<TimelineLibrary<String>>()
+            .timelines = compiled;
     }
 
     app
@@ -142,7 +147,10 @@ fn collect_events(app: &App, cursor: &mut MessageCursor<CombatEvent>) -> Vec<Com
 }
 
 fn event_pos(events: &[CombatEvent], predicate: impl Fn(&CombatEvent) -> bool) -> usize {
-    events.iter().position(predicate).expect("expected event not found")
+    events
+        .iter()
+        .position(predicate)
+        .expect("expected event not found")
 }
 
 #[test]
@@ -166,28 +174,71 @@ fn petit_thunder_timeline_backed_path_preserves_break_status_and_signal_order() 
     let events = collect_events(&app, &mut cursor);
     let dump: Vec<_> = events.iter().map(|e| format!("{:?}", e.kind)).collect();
 
-    let pos_damage = event_pos(&events, |e| matches!(e.kind, CombatEventKind::OnDamageDealt { .. }));
-    let pos_break = event_pos(&events, |e| matches!(e.kind, CombatEventKind::OnBreak { .. }));
-    let pos_status = event_pos(&events, |e| matches!(&e.kind, CombatEventKind::OnStatusApplied { kind } if *kind == StatusEffectKind::Paralyzed));
-    let pos_applied = event_pos(&events, |e| matches!(e.kind, CombatEventKind::OnActionApplied));
-    let pos_resolved = event_pos(&events, |e| matches!(e.kind, CombatEventKind::OnActionResolved));
-    let pos_signal = event_pos(&events, |e| matches!(
-        &e.kind,
-        CombatEventKind::OnKernelTransition {
-            transition: bevyrogue::combat::kernel::CombatKernelTransition::Blueprint { owner, name, .. }
-        } if owner == "tentomon" && name == "build_static_charge"
-    ));
+    let pos_damage = event_pos(&events, |e| {
+        matches!(e.kind, CombatEventKind::OnDamageDealt { .. })
+    });
+    let pos_break = event_pos(&events, |e| {
+        matches!(e.kind, CombatEventKind::OnBreak { .. })
+    });
+    let pos_status = event_pos(
+        &events,
+        |e| matches!(&e.kind, CombatEventKind::OnStatusApplied { kind } if *kind == StatusEffectKind::Paralyzed),
+    );
+    let pos_applied = event_pos(&events, |e| {
+        matches!(e.kind, CombatEventKind::OnActionApplied)
+    });
+    let pos_resolved = event_pos(&events, |e| {
+        matches!(e.kind, CombatEventKind::OnActionResolved)
+    });
+    let pos_signal = event_pos(&events, |e| {
+        matches!(
+            &e.kind,
+            CombatEventKind::OnKernelTransition {
+                transition: bevyrogue::combat::kernel::CombatKernelTransition::Blueprint { owner, name, .. }
+            } if owner == "tentomon" && name == "build_static_charge"
+        )
+    });
 
-    assert!(pos_damage < pos_break, "damage must precede break: {dump:?}");
-    assert!(pos_break < pos_status, "break must precede paralyze: {dump:?}");
-    assert!(pos_status < pos_signal, "status must precede signal: {dump:?}");
-    assert!(pos_signal < pos_applied, "signal must precede action applied: {dump:?}");
-    assert!(pos_applied < pos_resolved, "action applied must precede resolved: {dump:?}");
+    assert!(
+        pos_damage < pos_break,
+        "damage must precede break: {dump:?}"
+    );
+    assert!(
+        pos_break < pos_status,
+        "break must precede paralyze: {dump:?}"
+    );
+    assert!(
+        pos_status < pos_signal,
+        "status must precede signal: {dump:?}"
+    );
+    assert!(
+        pos_signal < pos_applied,
+        "signal must precede action applied: {dump:?}"
+    );
+    assert!(
+        pos_applied < pos_resolved,
+        "action applied must precede resolved: {dump:?}"
+    );
 
-    let target_unit = app.world().get::<Unit>(target).expect("target unit missing");
-    assert!(target_unit.hp_current < 200, "timeline skill should deal damage");
-    assert!(app.world().get::<Stunned>(target).is_some(), "BreakToughness should stun the target");
+    let target_unit = app
+        .world()
+        .get::<Unit>(target)
+        .expect("target unit missing");
+    assert!(
+        target_unit.hp_current < 200,
+        "timeline skill should deal damage"
+    );
+    assert!(
+        app.world().get::<Stunned>(target).is_some(),
+        "BreakToughness should stun the target"
+    );
 
-    let status_bag = app.world().get::<StatusBag>(target).expect("target status bag missing");
-    assert!(status_bag.has(&StatusEffectKind::Paralyzed), "Paralyzed must be applied");
+    let status_bag = app
+        .world()
+        .get::<StatusBag>(target)
+        .expect("target status bag missing");
+    assert!(
+        status_bag.has(&StatusEffectKind::Paralyzed),
+        "Paralyzed must be applied"
+    );
 }

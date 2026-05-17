@@ -209,10 +209,18 @@ pub fn validate_timeline_refs<Id: AsRef<str>>(
         }
     }
 
-    if errors.is_empty() { Ok(()) } else { Err(errors) }
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(errors)
+    }
 }
 
-fn validate_beat<Id: AsRef<str>>(beat: &Beat<Id>, regs: &ExtRegistries, errors: &mut Vec<ValidationError>) {
+fn validate_beat<Id: AsRef<str>>(
+    beat: &Beat<Id>,
+    regs: &ExtRegistries,
+    errors: &mut Vec<ValidationError>,
+) {
     let site = format!("beat {}", beat.id.as_ref());
 
     if let Some(hook_id) = beat.hook.as_ref() {
@@ -267,14 +275,22 @@ mod tests {
                 presentation: None,
                 payload: None,
             }],
-            edges: vec![BeatEdge { from: "cast", to: "impact", gate: Some("my_pred") }],
+            edges: vec![BeatEdge {
+                from: "cast",
+                to: "impact",
+                gate: Some("my_pred"),
+            }],
         }
     }
 
     fn populated_regs() -> ExtRegistries {
         fn noop_hook(_: &BeatEvent, _: &mut crate::combat::api::skill_ctx::SkillCtx<'_>) {}
-        fn noop_selector(_: &SelectorCtx<'_>) -> Vec<UnitId> { vec![] }
-        fn noop_pred(_: &BeatEvent, _: &crate::combat::api::skill_ctx::SkillCtx<'_>) -> bool { false }
+        fn noop_selector(_: &SelectorCtx<'_>) -> Vec<UnitId> {
+            vec![]
+        }
+        fn noop_pred(_: &BeatEvent, _: &crate::combat::api::skill_ctx::SkillCtx<'_>) -> bool {
+            false
+        }
         let mut regs = ExtRegistries::default();
         regs.hooks.register("my_hook", noop_hook);
         regs.selectors.register("my_selector", noop_selector);
@@ -317,8 +333,19 @@ mod tests {
         let tl = CompiledTimeline {
             id: "bad_gate",
             entry: "cast",
-            beats: vec![Beat { id: "cast", kind: BeatKind::Cast, hook: None, selector: None, presentation: None, payload: None }],
-            edges: vec![BeatEdge { from: "cast", to: "impact", gate: Some("missing_gate") }],
+            beats: vec![Beat {
+                id: "cast",
+                kind: BeatKind::Cast,
+                hook: None,
+                selector: None,
+                presentation: None,
+                payload: None,
+            }],
+            edges: vec![BeatEdge {
+                from: "cast",
+                to: "impact",
+                gate: Some("missing_gate"),
+            }],
         };
         let regs = ExtRegistries::default();
         let err = validate_timeline_refs(&tl, &regs).unwrap_err();

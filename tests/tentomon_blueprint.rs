@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevyrogue::combat::{battery_loop::BatteryLoopState, blueprints};
 use bevyrogue::combat::blueprints::tentomon::{
     OWNER as TENTOMON_OWNER, SIG_BUILD_CIRCUIT_CHARGE, SIG_BUILD_STATIC_CHARGE,
     SIG_SPEND_CIRCUIT_CHARGE,
@@ -7,6 +6,7 @@ use bevyrogue::combat::blueprints::tentomon::{
 use bevyrogue::combat::kernel::{CombatKernelTransition, register_combat_kernel_runtime};
 use bevyrogue::combat::state::{ResolvedAction, UltEffect};
 use bevyrogue::combat::types::{DamageTag, SkillId, UnitId};
+use bevyrogue::combat::{battery_loop::BatteryLoopState, blueprints};
 use bevyrogue::data::skills_ron::{CustomSignalPayload, SkillCustomSignal, TargetShape};
 
 fn base_action() -> ResolvedAction {

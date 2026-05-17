@@ -14,8 +14,8 @@ use bevyrogue::combat::{
 use bevyrogue::data::{
     SkillBookHandle,
     skills_ron::{
-        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
-        SkillTargeting, TargetLife, TargetShape, TargetSide,
+        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation, SkillTargeting,
+        TargetLife, TargetShape, TargetSide,
     },
 };
 
@@ -60,7 +60,7 @@ fn s06_encounter_e2e_2v2_victory() {
                 Effect::Damage {
                     amount: 15,
                     target: TargetShape::Single,
-                per_hop: Default::default(),
+                    per_hop: Default::default(),
                 },
                 Effect::ToughnessHit(5),
             ],
@@ -87,7 +87,7 @@ fn s06_encounter_e2e_2v2_victory() {
                 Effect::Damage {
                     amount: 30,
                     target: TargetShape::Single,
-                per_hop: Default::default(),
+                    per_hop: Default::default(),
                 },
                 Effect::ToughnessHit(20),
             ],
@@ -114,7 +114,7 @@ fn s06_encounter_e2e_2v2_victory() {
                 Effect::Damage {
                     amount: 15,
                     target: TargetShape::Single,
-                per_hop: Default::default(),
+                    per_hop: Default::default(),
                 },
                 Effect::ToughnessHit(5),
             ],
@@ -141,7 +141,7 @@ fn s06_encounter_e2e_2v2_victory() {
                 Effect::Damage {
                     amount: 30,
                     target: TargetShape::Single,
-                per_hop: Default::default(),
+                    per_hop: Default::default(),
                 },
                 Effect::ToughnessHit(20),
             ],

@@ -9,10 +9,10 @@ use bevy::app::ScheduleRunnerPlugin;
 use bevy::prelude::*;
 use moonshine_kind::Instance;
 
+use crate::combat::api::intent::CastId;
 use crate::combat::bootstrap::{
     EncounterPreset, SelectionRequest, apply_composition, bootstrap_encounter,
 };
-use crate::combat::api::intent::CastId;
 use crate::combat::events::{CombatEvent, CombatEventKind};
 use crate::combat::follow_up::{
     follow_up_listener_system, form_identity_listener_system, resolve_follow_up_action_system,

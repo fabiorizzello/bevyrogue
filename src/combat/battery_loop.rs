@@ -1,16 +1,16 @@
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
+use super::blueprints::tentomon::{
+    OWNER as TENTOMON_OWNER, SIG_BUILD_CIRCUIT_CHARGE, SIG_BUILD_STATIC_CHARGE, SIG_CYCLE_RESET,
+    SIG_SPEND_CIRCUIT_CHARGE,
+};
 use super::events::{CombatEvent, CombatEventKind};
 use super::kernel::{
     CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition, TacticalCycleTransition,
 };
 use super::observability::BatteryLoopSnapshot;
-use super::blueprints::tentomon::{
-    OWNER as TENTOMON_OWNER, SIG_BUILD_CIRCUIT_CHARGE, SIG_BUILD_STATIC_CHARGE,
-    SIG_CYCLE_RESET, SIG_SPEND_CIRCUIT_CHARGE,
-};
-use crate::combat::api::{intent::CastId, SignalPayload};
+use crate::combat::api::{SignalPayload, intent::CastId};
 
 pub const STATIC_CHARGE_THRESHOLD: u8 = 3;
 pub const CIRCUIT_CHARGE_CAP: u8 = 3;
@@ -21,7 +21,6 @@ pub enum BatteryLoopChargeKind {
     Static,
     Circuit,
 }
-
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BatteryLoopBlockedReason {
@@ -313,7 +312,12 @@ pub fn apply_battery_loop_transitions_system(
             continue;
         };
 
-        let CombatKernelTransition::Blueprint { owner, name, payload } = transition else {
+        let CombatKernelTransition::Blueprint {
+            owner,
+            name,
+            payload,
+        } = transition
+        else {
             continue;
         };
 

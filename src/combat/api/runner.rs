@@ -191,7 +191,8 @@ impl BeatRunner {
 
             if !just_resumed {
                 let params = self.make_params(world, regs, mode, pending);
-                let beat_targets = crate::combat::api::runner_common::fire_beat(&cur_beat, hop_index, params);
+                let beat_targets =
+                    crate::combat::api::runner_common::fire_beat(&cur_beat, hop_index, params);
                 if matches!(cur_beat.kind, BeatKind::Impact) {
                     self.last_beat_targets = beat_targets;
                 }
@@ -225,12 +226,17 @@ impl BeatRunner {
                 beat_targets: self.last_beat_targets.clone(),
             };
             let mut params = self.make_params(world, regs, mode, pending);
-            let should_exit = crate::combat::api::runner_common::eval_predicate(exit_when, &exit_evt, &mut params);
+            let should_exit = crate::combat::api::runner_common::eval_predicate(
+                exit_when,
+                &exit_evt,
+                &mut params,
+            );
             if should_exit {
                 self.loop_stack.pop();
                 // F1: first passing edge from the enclosing Loop beat becomes the next cursor.
                 let mut params = self.make_params(world, regs, mode, pending);
-                let next = crate::combat::api::runner_common::next_beat(enclosing, &exit_evt, &mut params);
+                let next =
+                    crate::combat::api::runner_common::next_beat(enclosing, &exit_evt, &mut params);
                 self.cursor = next;
                 return StepOutcome::LoopExited;
             } else {
@@ -272,7 +278,8 @@ impl BeatRunner {
             _ => {
                 if !just_resumed {
                     let params = self.make_params(world, regs, mode, pending);
-                    let beat_targets = crate::combat::api::runner_common::fire_beat(&beat, 0, params);
+                    let beat_targets =
+                        crate::combat::api::runner_common::fire_beat(&beat, 0, params);
                     if matches!(beat.kind, BeatKind::Impact) {
                         self.last_beat_targets = beat_targets;
                     }
@@ -291,7 +298,8 @@ impl BeatRunner {
                     beat_targets: self.last_beat_targets.clone(),
                 };
                 let mut params = self.make_params(world, regs, mode, pending);
-                let next = crate::combat::api::runner_common::next_beat(beat_id, &gate_evt, &mut params);
+                let next =
+                    crate::combat::api::runner_common::next_beat(beat_id, &gate_evt, &mut params);
                 self.cursor = next;
                 if self.cursor.is_none() {
                     StepOutcome::Done
@@ -374,11 +382,7 @@ mod tests {
         skill_ctx::{SkillCtx, SkillCtxMode},
         timeline::{Beat, BeatEdge, BeatEvent, BeatKind, CompiledTimeline, Presentation},
     };
-    use std::{
-        collections::VecDeque,
-        num::NonZeroU32,
-        sync::Arc,
-    };
+    use std::{collections::VecDeque, num::NonZeroU32, sync::Arc};
 
     fn cast_id() -> CastId {
         CastId(NonZeroU32::new(2).unwrap())
@@ -412,7 +416,7 @@ mod tests {
                     hook: Some("count_hook"),
                     selector: None,
                     presentation: None,
-                payload: None,
+                    payload: None,
                 },
                 Beat {
                     id: "impact",
@@ -420,10 +424,14 @@ mod tests {
                     hook: Some("count_hook"),
                     selector: None,
                     presentation: None,
-                payload: None,
+                    payload: None,
                 },
             ],
-            edges: vec![BeatEdge { from: "cast", to: "impact", gate: None }],
+            edges: vec![BeatEdge {
+                from: "cast",
+                to: "impact",
+                gate: None,
+            }],
         });
 
         HOOK_CALLS.store(0, Ordering::Relaxed);
@@ -437,14 +445,20 @@ mod tests {
         let o2 = runner.step(&mut world, &regs, SkillCtxMode::Execute, &mut pending);
         assert_eq!(o2, StepOutcome::Done);
 
-        assert_eq!(HOOK_CALLS.load(Ordering::Relaxed), 2, "both beats should fire hooks");
+        assert_eq!(
+            HOOK_CALLS.load(Ordering::Relaxed),
+            2,
+            "both beats should fire hooks"
+        );
     }
 
     // ── Test (b): Loop with exit_when="always_true" exits after one body pass ──
 
     #[test]
     fn loop_with_always_true_exits_after_one_pass() {
-        fn always_true(_evt: &BeatEvent, _ctx: &SkillCtx<'_>) -> bool { true }
+        fn always_true(_evt: &BeatEvent, _ctx: &SkillCtx<'_>) -> bool {
+            true
+        }
 
         let mut regs = ExtRegistries::default();
         regs.predicates.register("always_true", always_true);
@@ -461,7 +475,7 @@ mod tests {
                         hook: None,
                         selector: None,
                         presentation: None,
-                payload: None,
+                        payload: None,
                     }],
                     exit_when: "always_true",
                 },
@@ -494,7 +508,9 @@ mod tests {
 
     #[test]
     fn loop_with_never_exit_halts_at_circuit_breaker() {
-        fn never(_evt: &BeatEvent, _ctx: &SkillCtx<'_>) -> bool { false }
+        fn never(_evt: &BeatEvent, _ctx: &SkillCtx<'_>) -> bool {
+            false
+        }
 
         let mut regs = ExtRegistries::default();
         regs.predicates.register("never", never);
@@ -511,7 +527,7 @@ mod tests {
                         hook: None,
                         selector: None,
                         presentation: None,
-                payload: None,
+                        payload: None,
                     }],
                     exit_when: "never",
                 },
@@ -564,7 +580,11 @@ mod tests {
                     payload: None,
                 },
             ],
-            edges: vec![BeatEdge { from: "cast", to: "impact", gate: None }],
+            edges: vec![BeatEdge {
+                from: "cast",
+                to: "impact",
+                gate: None,
+            }],
         })
     }
 
@@ -589,7 +609,11 @@ mod tests {
         let mut pending = VecDeque::new();
 
         let o1 = runner.step(&mut world, &regs, SkillCtxMode::Execute, &mut pending);
-        assert_eq!(o1, StepOutcome::Advanced, "HeadlessAuto must not stall on presentation");
+        assert_eq!(
+            o1,
+            StepOutcome::Advanced,
+            "HeadlessAuto must not stall on presentation"
+        );
 
         let o2 = runner.step(&mut world, &regs, SkillCtxMode::Execute, &mut pending);
         assert_eq!(o2, StepOutcome::Done);
@@ -632,7 +656,11 @@ mod tests {
 
         // Step 2 without resume: still stalled.
         let o2 = runner.step(&mut world, &regs, SkillCtxMode::Execute, &mut pending);
-        assert_eq!(o2, StepOutcome::AwaitingCue, "still stalled before resume_cue");
+        assert_eq!(
+            o2,
+            StepOutcome::AwaitingCue,
+            "still stalled before resume_cue"
+        );
         assert_eq!(
             WINDOWED_HOOK_CALLS.load(Ordering::Relaxed),
             1,
@@ -644,7 +672,11 @@ mod tests {
 
         // Step 3: cursor advances to "impact" (no re-fire of "cast").
         let o3 = runner.step(&mut world, &regs, SkillCtxMode::Execute, &mut pending);
-        assert_eq!(o3, StepOutcome::Advanced, "must advance past presentation beat after resume");
+        assert_eq!(
+            o3,
+            StepOutcome::Advanced,
+            "must advance past presentation beat after resume"
+        );
         assert_eq!(
             WINDOWED_HOOK_CALLS.load(Ordering::Relaxed),
             1,
@@ -654,7 +686,11 @@ mod tests {
         // Step 4: fires "impact" hook → Done.
         let o4 = runner.step(&mut world, &regs, SkillCtxMode::Execute, &mut pending);
         assert_eq!(o4, StepOutcome::Done);
-        assert_eq!(WINDOWED_HOOK_CALLS.load(Ordering::Relaxed), 2, "impact hook fires once");
+        assert_eq!(
+            WINDOWED_HOOK_CALLS.load(Ordering::Relaxed),
+            2,
+            "impact hook fires once"
+        );
     }
 
     // ── Test (f): HeadlessAuto pending == Windowed pending (stream parity) ────
@@ -685,8 +721,7 @@ mod tests {
         // HeadlessAuto run.
         PARITY_HOOK_CALLS.store(0, Ordering::Relaxed);
         let mut pending_headless = VecDeque::new();
-        let mut runner_headless =
-            BeatRunner::new(Arc::clone(&timeline), cast_id(), CASTER, TARGET);
+        let mut runner_headless = BeatRunner::new(Arc::clone(&timeline), cast_id(), CASTER, TARGET);
         runner_headless.run_to_completion(
             &mut world,
             &regs,
@@ -698,9 +733,8 @@ mod tests {
         // Windowed run (auto-resumed via run_to_completion).
         PARITY_HOOK_CALLS.store(0, Ordering::Relaxed);
         let mut pending_windowed = VecDeque::new();
-        let mut runner_windowed =
-            BeatRunner::new(Arc::clone(&timeline), cast_id(), CASTER, TARGET)
-                .with_clock(Clock::Windowed);
+        let mut runner_windowed = BeatRunner::new(Arc::clone(&timeline), cast_id(), CASTER, TARGET)
+            .with_clock(Clock::Windowed);
         runner_windowed.run_to_completion(
             &mut world,
             &regs,
@@ -710,10 +744,8 @@ mod tests {
         );
 
         // Compare normalized intent streams.
-        let headless_str: Vec<String> =
-            pending_headless.iter().map(|i| format!("{i:?}")).collect();
-        let windowed_str: Vec<String> =
-            pending_windowed.iter().map(|i| format!("{i:?}")).collect();
+        let headless_str: Vec<String> = pending_headless.iter().map(|i| format!("{i:?}")).collect();
+        let windowed_str: Vec<String> = pending_windowed.iter().map(|i| format!("{i:?}")).collect();
         assert_eq!(
             headless_str, windowed_str,
             "HeadlessAuto and Windowed must produce identical Intent streams"

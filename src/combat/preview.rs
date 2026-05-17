@@ -8,14 +8,14 @@ use crate::combat::{
         registry::ExtRegistries,
         runner::{BeatRunner, StepOutcome},
         skill_ctx::SkillCtxMode,
-        timeline::{Beat, BeatEdge, BeatKind, BeatPayload, CompiledTimeline, Presentation, TimelineLibrary},
+        timeline::{
+            Beat, BeatEdge, BeatKind, BeatPayload, CompiledTimeline, Presentation, TimelineLibrary,
+        },
     },
     types::{SkillId, UnitId},
 };
 use crate::data::{
-    SkillBookHandle,
-    skill_timeline::compile_skill_book_timelines,
-    skills_ron::SkillBook,
+    SkillBookHandle, skill_timeline::compile_skill_book_timelines, skills_ron::SkillBook,
 };
 
 fn intern_timeline_id(value: &str) -> &'static str {
@@ -27,17 +27,29 @@ pub(crate) fn intern_compiled_timeline(
 ) -> CompiledTimeline<&'static str> {
     fn intern_payload(payload: &BeatPayload) -> BeatPayload {
         match payload {
-            BeatPayload::DealDamage { amount, tag, target } => BeatPayload::DealDamage {
+            BeatPayload::DealDamage {
+                amount,
+                tag,
+                target,
+            } => BeatPayload::DealDamage {
                 amount: *amount,
                 tag: *tag,
                 target: target.clone(),
             },
-            BeatPayload::BreakToughness { amount, tag, target } => BeatPayload::BreakToughness {
+            BeatPayload::BreakToughness {
+                amount,
+                tag,
+                target,
+            } => BeatPayload::BreakToughness {
                 amount: *amount,
                 tag: *tag,
                 target: target.clone(),
             },
-            BeatPayload::ApplyStatus { kind, duration, target } => BeatPayload::ApplyStatus {
+            BeatPayload::ApplyStatus {
+                kind,
+                duration,
+                target,
+            } => BeatPayload::ApplyStatus {
                 kind: kind.clone(),
                 duration: *duration,
                 target: target.clone(),
@@ -50,7 +62,11 @@ pub(crate) fn intern_compiled_timeline(
                 amount_pct: *amount_pct,
                 target: target.clone(),
             },
-            BeatPayload::ApplyBuff { kind, duration, target } => BeatPayload::ApplyBuff {
+            BeatPayload::ApplyBuff {
+                kind,
+                duration,
+                target,
+            } => BeatPayload::ApplyBuff {
                 kind: kind.clone(),
                 duration: *duration,
                 target: target.clone(),
@@ -64,7 +80,11 @@ pub(crate) fn intern_compiled_timeline(
             BeatPayload::SelfAdvance { amount_pct } => BeatPayload::SelfAdvance {
                 amount_pct: *amount_pct,
             },
-            BeatPayload::BlueprintSignal { owner, name, payload } => BeatPayload::BlueprintSignal {
+            BeatPayload::BlueprintSignal {
+                owner,
+                name,
+                payload,
+            } => BeatPayload::BlueprintSignal {
                 owner: owner.clone(),
                 name: name.clone(),
                 payload: payload.clone(),
@@ -159,7 +179,10 @@ pub(crate) fn resolve_compiled_skill_timeline(
         return None;
     };
 
-    let Some(timeline) = compiled.into_iter().find(|timeline| timeline.id == skill_id.0) else {
+    let Some(timeline) = compiled
+        .into_iter()
+        .find(|timeline| timeline.id == skill_id.0)
+    else {
         log::warn!(
             "skill timeline {:?} skipped: compiled timeline not found",
             skill_id
@@ -228,11 +251,7 @@ pub fn try_query_skill_preview(
     let outcome = runner.run_to_completion(world, regs, SkillCtxMode::Preview, &mut pending, 1024);
 
     if outcome != StepOutcome::Done {
-        log::warn!(
-            "skill preview {:?} ended with {:?}",
-            skill_id,
-            outcome
-        );
+        log::warn!("skill preview {:?} ended with {:?}", skill_id, outcome);
     }
 
     Some(pending)

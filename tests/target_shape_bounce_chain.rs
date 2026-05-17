@@ -137,7 +137,11 @@ fn bounce_skill(
     base_damage: i32,
     curve: DamageCurve,
 ) -> SkillBook {
-    let shape = TargetShape::Bounce { hops, selector, repeat };
+    let shape = TargetShape::Bounce {
+        hops,
+        selector,
+        repeat,
+    };
     SkillBook(vec![SkillDef {
         id: SkillId(skill_id.into()),
         name: skill_id.into(),
@@ -235,7 +239,11 @@ fn bounce_lowest_hp_no_repeat_constant_full_chain() {
     );
 
     // Constant curve: every hop deals 20.
-    assert_eq!(amounts, vec![20, 20, 20], "Case 1: Constant curve must be 20 each hop");
+    assert_eq!(
+        amounts,
+        vec![20, 20, 20],
+        "Case 1: Constant curve must be 20 each hop"
+    );
 
     // Order: E12 (lowest %) → E11 → E10 (highest %).
     assert_eq!(
@@ -246,11 +254,7 @@ fn bounce_lowest_hp_no_repeat_constant_full_chain() {
 
     // SP consumed exactly once.
     let sp_after = app.world().resource::<SpPool>().current;
-    assert_eq!(
-        sp_after,
-        sp_before - 2,
-        "Case 1: SP consumed once (cost=2)"
-    );
+    assert_eq!(sp_after, sp_before - 2, "Case 1: SP consumed once (cost=2)");
 }
 
 // ── Case 2: NextSlotAlive + NoRepeat + Falloff, KO mid-chain ─────────────────

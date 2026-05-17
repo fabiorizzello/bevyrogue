@@ -2,19 +2,19 @@ use bevy::prelude::*;
 
 use crate::combat::{
     api::{
-        applier::{intent_applier, IntentExecutionMeta, IntentQueue},
+        applier::{IntentExecutionMeta, IntentQueue, intent_applier},
         blueprint_state::BlueprintState,
         builtins::register_kernel_builtins,
         clock::Clock,
         event_bridge::combat_event_to_signal_system,
         intent::CastIdGen,
-        passive_runner::{passive_dispatch_system, PassiveListeners},
+        passive_runner::{PassiveListeners, passive_dispatch_system},
         registry::ExtRegistries,
         signal::{SignalBus, SignalTaxonomy},
-        timeline::{validate_timeline_refs, TimelineLibrary},
+        timeline::{TimelineLibrary, validate_timeline_refs},
     },
-    modifiers::DamageModifierLedger,
     kernel::{register_canonical_passive_runners, register_combat_kernel_runtime},
+    modifiers::DamageModifierLedger,
     rng::CombatRng,
 };
 

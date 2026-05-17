@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevyrogue::combat::{
-    api::{applier::intent_applier, intent::CastId, Intent, IntentQueue},
+    api::{Intent, IntentQueue, applier::intent_applier, intent::CastId},
     battery_loop::BatteryLoopState,
     blueprints::dorumon::PredatorLoopState,
     events::{CombatEvent, CombatEventKind},
@@ -87,7 +87,10 @@ fn dorumon_enemy_kill_listener_reuses_predator_loop_state() {
     app.update();
 
     let state = app.world().resource::<PredatorLoopState>();
-    let tracked = state.targets.get(&target).expect("target should be tracked");
+    let tracked = state
+        .targets
+        .get(&target)
+        .expect("target should be tracked");
     assert!(tracked.exploit_stacks >= 1);
     assert!(tracked.prey_lock.is_some());
     assert_eq!(state.last_blocked_reason, None);
@@ -107,13 +110,16 @@ fn run_tentomon_case(seed: u64, armed: bool) -> (i32, Vec<CombatEvent>) {
             .block_reaction_armed = true;
     }
 
-    app.world_mut().resource_mut::<IntentQueue>().0.push_back(Intent::DealDamage {
-        source: attacker,
-        target: tentomon,
-        amount: 100,
-        tag: DamageTag::Physical,
-        cast_id: CastId::ROOT,
-    });
+    app.world_mut()
+        .resource_mut::<IntentQueue>()
+        .0
+        .push_back(Intent::DealDamage {
+            source: attacker,
+            target: tentomon,
+            amount: 100,
+            tag: DamageTag::Physical,
+            cast_id: CastId::ROOT,
+        });
 
     app.update();
 
@@ -133,22 +139,31 @@ fn tentomon_block_reaction_is_deterministic_when_armed() {
     let seed = block_hit_seed();
 
     let (baseline_hp, baseline_events) = run_tentomon_case(seed, false);
-    assert!(baseline_events
-        .iter()
-        .any(|ev| matches!(ev.kind, CombatEventKind::IncomingDamage { .. })));
-    assert!(baseline_events
-        .iter()
-        .all(|ev| !matches!(ev.kind, CombatEventKind::BlockReactionTriggered { .. })));
+    assert!(
+        baseline_events
+            .iter()
+            .any(|ev| matches!(ev.kind, CombatEventKind::IncomingDamage { .. }))
+    );
+    assert!(
+        baseline_events
+            .iter()
+            .all(|ev| !matches!(ev.kind, CombatEventKind::BlockReactionTriggered { .. }))
+    );
 
     let (armed_hp, armed_events) = run_tentomon_case(seed, true);
     let (armed_hp_replay, armed_events_replay) = run_tentomon_case(seed, true);
 
     assert_eq!(armed_hp, armed_hp_replay);
     assert_eq!(armed_events, armed_events_replay);
-    assert!(armed_hp > baseline_hp, "armed Tentomon should take less damage");
-    assert!(armed_events
-        .iter()
-        .any(|ev| matches!(ev.kind, CombatEventKind::BlockReactionTriggered { .. })));
+    assert!(
+        armed_hp > baseline_hp,
+        "armed Tentomon should take less damage"
+    );
+    assert!(
+        armed_events
+            .iter()
+            .any(|ev| matches!(ev.kind, CombatEventKind::BlockReactionTriggered { .. }))
+    );
 }
 
 #[test]
@@ -158,7 +173,10 @@ fn tentomon_block_reaction_stays_off_when_guard_conditions_fail() {
     let (baseline_hp, baseline_events) = run_tentomon_case(seed, false);
     let (miss_hp, miss_events) = run_tentomon_case(seed, true);
 
-    assert_eq!(baseline_hp, miss_hp, "missed block should match baseline damage");
+    assert_eq!(
+        baseline_hp, miss_hp,
+        "missed block should match baseline damage"
+    );
     assert_eq!(
         baseline_events
             .iter()

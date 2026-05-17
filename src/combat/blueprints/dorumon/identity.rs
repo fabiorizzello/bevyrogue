@@ -4,15 +4,14 @@ use std::convert::TryFrom;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::combat::api::intent::CastId;
-use crate::combat::api::SignalPayload;
-use crate::combat::events::{CombatEvent, CombatEventKind};
-use crate::combat::kernel::{CombatKernelState, CombatKernelTransition};
-use crate::combat::types::UnitId;
 use super::signals::{
     OWNER, SIGNAL_APPLY_PREY_LOCK, SIGNAL_BUILD_EXPLOIT, SIGNAL_CONSUME_PREY_LOCK_PAYOFF,
     SIGNAL_ENTER_BERSERK, SIGNAL_TICK,
 };
+use crate::combat::api::SignalPayload;
+use crate::combat::events::{CombatEvent, CombatEventKind};
+use crate::combat::kernel::{CombatKernelState, CombatKernelTransition};
+use crate::combat::types::UnitId;
 
 pub const DEFAULT_EXPLOIT_CAP: u8 = 3;
 pub const DEFAULT_PREY_LOCK_DURATION: u8 = 2;
@@ -372,7 +371,12 @@ fn decode_predator_loop_transition(
     target: UnitId,
     strain_current: u16,
 ) -> Option<PredatorLoopTransition> {
-    let CombatKernelTransition::Blueprint { owner, name, payload } = transition else {
+    let CombatKernelTransition::Blueprint {
+        owner,
+        name,
+        payload,
+    } = transition
+    else {
         return None;
     };
 
@@ -389,9 +393,9 @@ fn decode_predator_loop_transition(
     match name.as_str() {
         SIGNAL_BUILD_EXPLOIT => Some(PredatorLoopTransition::build_exploit(target, amount)),
         SIGNAL_APPLY_PREY_LOCK => Some(PredatorLoopTransition::apply_prey_lock(target, amount)),
-        SIGNAL_CONSUME_PREY_LOCK_PAYOFF => Some(
-            PredatorLoopTransition::consume_prey_lock_payoff(target, amount),
-        ),
+        SIGNAL_CONSUME_PREY_LOCK_PAYOFF => Some(PredatorLoopTransition::consume_prey_lock_payoff(
+            target, amount,
+        )),
         SIGNAL_ENTER_BERSERK => Some(PredatorLoopTransition::enter_berserk(strain_current)),
         SIGNAL_TICK => Some(PredatorLoopTransition::tick()),
         _ => None,
@@ -399,34 +403,25 @@ fn decode_predator_loop_transition(
 }
 
 pub fn apply_predator_loop_transitions_system(
-    mut messages: ParamSet<(MessageReader<CombatEvent>, MessageWriter<CombatEvent>)>,
+    mut events: MessageReader<CombatEvent>,
     kernel: Res<CombatKernelState>,
     mut state: ResMut<PredatorLoopState>,
 ) {
-    let events = messages
-        .p0()
+    let events = events
         .read()
         .filter_map(|event| {
             let CombatEventKind::OnKernelTransition { transition } = &event.kind else {
                 return None;
             };
 
-            let predator_transition = decode_predator_loop_transition(
-                transition,
-                event.target,
-                kernel.strain.current,
-            )?;
+            let predator_transition =
+                decode_predator_loop_transition(transition, event.target, kernel.strain.current)?;
 
-            Some((
-                predator_transition,
-                event.source,
-                event.target,
-                event.follow_up_depth,
-            ))
+            Some(predator_transition)
         })
         .collect::<Vec<_>>();
 
-    for (predator_transition, source, target, follow_up_depth) in events {
+    for predator_transition in events {
         let applied = match predator_transition.signal {
             PredatorLoopSignal::EnterBerserk => apply_predator_loop_transition(
                 &mut state,
@@ -435,17 +430,7 @@ pub fn apply_predator_loop_transitions_system(
             _ => apply_predator_loop_transition(&mut state, predator_transition),
         };
 
-        messages.p1().write(CombatEvent {
-            kind: CombatEventKind::PredatorLoopResolved {
-                transition: applied,
-            },
-            source,
-            target,
-            follow_up_depth,
-            cast_id: CastId::ROOT,
-        });
-
-        debug!("PredatorLoopResolved {:?}", applied);
+        debug!("PredatorLoop applied {:?}", applied);
     }
 }
 

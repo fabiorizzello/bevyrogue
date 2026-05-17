@@ -16,8 +16,8 @@ use bevyrogue::combat::{
 use bevyrogue::data::{
     SkillBookHandle,
     skills_ron::{
-        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
-        SkillTargeting, TargetLife, TargetShape, TargetSide,
+        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation, SkillTargeting,
+        TargetLife, TargetShape, TargetSide,
     },
 };
 
@@ -41,7 +41,7 @@ fn build_app() -> App {
             Effect::Damage {
                 amount: 20,
                 target: TargetShape::Single,
-            per_hop: Default::default(),
+                per_hop: Default::default(),
             },
             Effect::ToughnessHit(10),
         ],

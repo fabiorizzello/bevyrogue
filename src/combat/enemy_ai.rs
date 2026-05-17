@@ -58,7 +58,10 @@ fn compare_scored_action(a: &PreviewScoredAction, b: &PreviewScoredAction) -> Or
 }
 
 fn build_basic_intent(attacker_id: UnitId, target: UnitId) -> ActionIntent {
-    ActionIntent::Basic { attacker: attacker_id, target }
+    ActionIntent::Basic {
+        attacker: attacker_id,
+        target,
+    }
 }
 
 fn build_skill_intent(attacker_id: UnitId, skill_id: SkillId, target: UnitId) -> ActionIntent {
@@ -70,7 +73,10 @@ fn build_skill_intent(attacker_id: UnitId, skill_id: SkillId, target: UnitId) ->
 }
 
 fn build_ultimate_intent(attacker_id: UnitId, target: UnitId) -> ActionIntent {
-    ActionIntent::Ultimate { attacker: attacker_id, target }
+    ActionIntent::Ultimate {
+        attacker: attacker_id,
+        target,
+    }
 }
 
 /// Select an `ActionIntent` for an enemy unit.

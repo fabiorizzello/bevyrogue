@@ -5,7 +5,7 @@ use bevy::prelude::{Resource, World};
 
 use crate::combat::{
     api::{
-        applier::{intent_applier, IntentQueue},
+        applier::{IntentQueue, intent_applier},
         event_filter::EventFilter,
         intent::CastIdGen,
         runner::{BeatRunner, StepOutcome},
@@ -27,11 +27,7 @@ pub struct PassiveRunner {
 }
 
 impl PassiveRunner {
-    pub fn new(
-        timeline: Arc<CompiledTimeline>,
-        owner: UnitId,
-        filters: Vec<EventFilter>,
-    ) -> Self {
+    pub fn new(timeline: Arc<CompiledTimeline>, owner: UnitId, filters: Vec<EventFilter>) -> Self {
         Self {
             timeline,
             owner,
@@ -61,7 +57,12 @@ impl PassiveRunner {
         let cast_id = cast_id_gen.next();
         let primary_target = signal.primary_target(self.owner);
 
-        let mut runner = BeatRunner::new(Arc::clone(&self.timeline), cast_id, self.owner, primary_target);
+        let mut runner = BeatRunner::new(
+            Arc::clone(&self.timeline),
+            cast_id,
+            self.owner,
+            primary_target,
+        );
 
         for step_index in 0..1_024 {
             let outcome = runner.step(world, regs, mode, pending);
@@ -87,9 +88,7 @@ impl PassiveRunner {
             }
         }
 
-        panic!(
-            "PassiveRunner::react exceeded max_steps=1024; possible infinite loop"
-        );
+        panic!("PassiveRunner::react exceeded max_steps=1024; possible infinite loop");
     }
 }
 
@@ -251,7 +250,9 @@ mod tests {
         let mut runner = PassiveRunner::new(
             timeline,
             UnitId(1),
-            vec![EventFilter::custom(|signal| matches!(signal, Signal::CombatEvent(_)))],
+            vec![EventFilter::custom(|signal| {
+                matches!(signal, Signal::CombatEvent(_))
+            })],
         );
 
         let mut world = World::new();
@@ -269,7 +270,14 @@ mod tests {
             cast_id: CastId::ROOT,
         });
 
-        runner.react(&signal, &mut world, &regs, SkillCtxMode::Execute, &mut pending, &mut cast_id_gen);
+        runner.react(
+            &signal,
+            &mut world,
+            &regs,
+            SkillCtxMode::Execute,
+            &mut pending,
+            &mut cast_id_gen,
+        );
         world.insert_resource(IntentQueue(pending));
         intent_applier(&mut world);
 

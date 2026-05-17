@@ -227,7 +227,7 @@ fn all_enemies_skill_is_rejected_before_mutation_or_lifecycle() {
             Effect::Damage {
                 amount: 20,
                 target: TargetShape::AllEnemies,
-            per_hop: Default::default(),
+                per_hop: Default::default(),
             },
             Effect::ToughnessHit(10),
         ],
@@ -315,7 +315,7 @@ fn single_target_skill_still_executes_normally() {
             Effect::Damage {
                 amount: 20,
                 target: TargetShape::Single,
-            per_hop: Default::default(),
+                per_hop: Default::default(),
             },
             Effect::ToughnessHit(10),
         ],

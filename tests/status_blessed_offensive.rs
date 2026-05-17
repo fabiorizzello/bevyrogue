@@ -1,3 +1,4 @@
+use bevyrogue::combat::sp::RoundSpTracker;
 /// Integration test for §H.1 Blessed offensive bonus (S05/T02):
 /// attacker with Blessed deals ×1.15 damage; without Blessed, baseline.
 ///
@@ -15,7 +16,6 @@ use bevyrogue::combat::{
     ultimate::{UltAccumulationTrigger, UltimateCharge},
     unit::{BasicStreak, Unit},
 };
-use bevyrogue::combat::sp::RoundSpTracker;
 
 fn attacker_unit() -> Unit {
     Unit {
@@ -118,7 +118,10 @@ fn blessed_attacker_deals_115_pct_damage() {
     bag.apply(StatusEffectKind::Blessed, 2);
 
     let dmg = run_apply(100, Some(&bag));
-    assert_eq!(dmg, 115, "Blessed must apply ×1.15 mult: expected 115, got {dmg}");
+    assert_eq!(
+        dmg, 115,
+        "Blessed must apply ×1.15 mult: expected 115, got {dmg}"
+    );
 }
 
 /// No-Blessed attacker: base=100, all modifiers 1.0 → 100.
@@ -133,7 +136,10 @@ fn no_blessed_attacker_deals_baseline_damage() {
 fn empty_bag_attacker_deals_baseline_damage() {
     let bag = StatusBag::default();
     let dmg = run_apply(100, Some(&bag));
-    assert_eq!(dmg, 100, "Empty bag must not activate Blessed mult: expected 100, got {dmg}");
+    assert_eq!(
+        dmg, 100,
+        "Empty bag must not activate Blessed mult: expected 100, got {dmg}"
+    );
 }
 
 /// Verify that non-Blessed statuses on attacker do not activate the ×1.15 bonus.

@@ -45,9 +45,10 @@ pub fn dispatch(
             Ok(vec![blueprint_transition(SIGNAL_BUILD_EXPLOIT, amount)])
         }
         SIGNAL_APPLY_PREY_LOCK => Ok(vec![blueprint_transition(SIGNAL_APPLY_PREY_LOCK, 0)]),
-        SIGNAL_CONSUME_PREY_LOCK_PAYOFF => {
-            Ok(vec![blueprint_transition(SIGNAL_CONSUME_PREY_LOCK_PAYOFF, 1)])
-        }
+        SIGNAL_CONSUME_PREY_LOCK_PAYOFF => Ok(vec![blueprint_transition(
+            SIGNAL_CONSUME_PREY_LOCK_PAYOFF,
+            1,
+        )]),
         SIGNAL_ENTER_BERSERK => Ok(vec![blueprint_transition(SIGNAL_ENTER_BERSERK, 0)]),
         other => Err(CustomSignalDispatchError::UnknownSignal {
             owner: OWNER.to_string(),

@@ -98,9 +98,10 @@ fn unit_died_carries_defender_status_snapshot() {
     let died = events
         .iter()
         .find_map(|e| match e {
-            CombatEventKind::UnitDied { status_remaining, heated_remaining } => {
-                Some((status_remaining.clone(), *heated_remaining))
-            }
+            CombatEventKind::UnitDied {
+                status_remaining,
+                heated_remaining,
+            } => Some((status_remaining.clone(), *heated_remaining)),
             _ => None,
         })
         .expect("UnitDied must be emitted on lethal hit");
@@ -174,7 +175,9 @@ fn unit_died_not_emitted_on_survival() {
     );
 
     assert!(
-        !events.iter().any(|e| matches!(e, CombatEventKind::UnitDied { .. })),
+        !events
+            .iter()
+            .any(|e| matches!(e, CombatEventKind::UnitDied { .. })),
         "UnitDied must not be emitted when defender survives"
     );
 }

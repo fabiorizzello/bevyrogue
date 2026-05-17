@@ -58,7 +58,10 @@ impl StatusBag {
         if let Some(inst) = self.0.iter_mut().find(|i| i.kind == kind) {
             inst.duration_remaining = inst.duration_remaining.max(dur);
         } else {
-            self.0.push(StatusInstance { kind, duration_remaining: dur });
+            self.0.push(StatusInstance {
+                kind,
+                duration_remaining: dur,
+            });
         }
     }
 
@@ -134,7 +137,10 @@ impl StatusBag {
     }
 
     pub fn get_dur(&self, kind: &StatusEffectKind) -> Option<u32> {
-        self.0.iter().find(|i| &i.kind == kind).map(|i| i.duration_remaining)
+        self.0
+            .iter()
+            .find(|i| &i.kind == kind)
+            .map(|i| i.duration_remaining)
     }
 
     pub fn is_empty(&self) -> bool {
@@ -149,7 +155,11 @@ impl StatusBag {
 /// Returns the speed delta for a Chilled unit: `-(base_speed / 5)` (integer division, rounds
 /// toward zero), else 0. Derived read — never mutates SpeedModifier.
 pub fn chilled_speed_delta(bag: &StatusBag, base_speed: i32) -> i32 {
-    if bag.has(&StatusEffectKind::Chilled) { -(base_speed / 5) } else { 0 }
+    if bag.has(&StatusEffectKind::Chilled) {
+        -(base_speed / 5)
+    } else {
+        0
+    }
 }
 
 /// Returns the damage amplifier percentage for a given status bag and damage tag.
@@ -177,7 +187,10 @@ pub struct StatusEffect {
 #[allow(deprecated)]
 impl StatusEffect {
     pub fn new(kind: StatusEffectKind, duration: u32) -> Self {
-        StatusEffect { kind, duration_remaining: duration }
+        StatusEffect {
+            kind,
+            duration_remaining: duration,
+        }
     }
     pub fn refresh(&mut self, new_duration: u32) {
         self.duration_remaining = self.duration_remaining.max(new_duration);
@@ -222,13 +235,34 @@ mod tests {
 
     #[test]
     fn classify_buff_kind_totality() {
-        assert_eq!(classify_buff_kind(&StatusEffectKind::Heated),    BuffKind::Debuff);
-        assert_eq!(classify_buff_kind(&StatusEffectKind::Chilled),   BuffKind::Debuff);
-        assert_eq!(classify_buff_kind(&StatusEffectKind::Paralyzed), BuffKind::Debuff);
-        assert_eq!(classify_buff_kind(&StatusEffectKind::Slowed),    BuffKind::Debuff);
-        assert_eq!(classify_buff_kind(&StatusEffectKind::Blessed),   BuffKind::Buff);
-        assert_eq!(classify_buff_kind(&StatusEffectKind::Burn),      BuffKind::Debuff);
-        assert_eq!(classify_buff_kind(&StatusEffectKind::Shock),     BuffKind::Debuff);
+        assert_eq!(
+            classify_buff_kind(&StatusEffectKind::Heated),
+            BuffKind::Debuff
+        );
+        assert_eq!(
+            classify_buff_kind(&StatusEffectKind::Chilled),
+            BuffKind::Debuff
+        );
+        assert_eq!(
+            classify_buff_kind(&StatusEffectKind::Paralyzed),
+            BuffKind::Debuff
+        );
+        assert_eq!(
+            classify_buff_kind(&StatusEffectKind::Slowed),
+            BuffKind::Debuff
+        );
+        assert_eq!(
+            classify_buff_kind(&StatusEffectKind::Blessed),
+            BuffKind::Buff
+        );
+        assert_eq!(
+            classify_buff_kind(&StatusEffectKind::Burn),
+            BuffKind::Debuff
+        );
+        assert_eq!(
+            classify_buff_kind(&StatusEffectKind::Shock),
+            BuffKind::Debuff
+        );
     }
 
     #[test]
@@ -325,12 +359,15 @@ mod tests {
     #[test]
     fn cleanse_n_orders_by_duration_desc() {
         let mut bag = StatusBag::default();
-        bag.apply(StatusEffectKind::Heated, 1);   // idx 0, dur 1
-        bag.apply(StatusEffectKind::Slowed, 3);   // idx 1, dur 3
+        bag.apply(StatusEffectKind::Heated, 1); // idx 0, dur 1
+        bag.apply(StatusEffectKind::Slowed, 3); // idx 1, dur 3
         bag.apply(StatusEffectKind::Paralyzed, 2); // idx 2, dur 2
         let removed = bag.cleanse_n(Some(2));
         // Should remove Slowed (dur 3) and Paralyzed (dur 2) first
-        assert_eq!(removed, vec![StatusEffectKind::Slowed, StatusEffectKind::Paralyzed]);
+        assert_eq!(
+            removed,
+            vec![StatusEffectKind::Slowed, StatusEffectKind::Paralyzed]
+        );
         assert!(bag.has(&StatusEffectKind::Heated));
         assert!(!bag.has(&StatusEffectKind::Slowed));
         assert!(!bag.has(&StatusEffectKind::Paralyzed));
@@ -339,12 +376,15 @@ mod tests {
     #[test]
     fn cleanse_n_idx_asc_tiebreak_on_equal_duration() {
         let mut bag = StatusBag::default();
-        bag.apply(StatusEffectKind::Heated, 2);    // idx 0, dur 2
-        bag.apply(StatusEffectKind::Slowed, 2);    // idx 1, dur 2
+        bag.apply(StatusEffectKind::Heated, 2); // idx 0, dur 2
+        bag.apply(StatusEffectKind::Slowed, 2); // idx 1, dur 2
         bag.apply(StatusEffectKind::Paralyzed, 2); // idx 2, dur 2
         let removed = bag.cleanse_n(Some(2));
         // duration all equal → insertion idx ASC: idx 0 (Heated) then idx 1 (Slowed)
-        assert_eq!(removed, vec![StatusEffectKind::Heated, StatusEffectKind::Slowed]);
+        assert_eq!(
+            removed,
+            vec![StatusEffectKind::Heated, StatusEffectKind::Slowed]
+        );
         assert!(!bag.has(&StatusEffectKind::Heated));
         assert!(!bag.has(&StatusEffectKind::Slowed));
         assert!(bag.has(&StatusEffectKind::Paralyzed));

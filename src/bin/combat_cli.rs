@@ -8,11 +8,12 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 // Use the library modules
+use bevyrogue::CombatPlugin;
+use bevyrogue::combat::api::intent::CastId;
 use bevyrogue::combat::bootstrap::{
     EncounterPreset, SelectionRequest, apply_composition, bootstrap_encounter,
 };
 use bevyrogue::combat::enemy_counterplay::EnemyCounterplayKit;
-use bevyrogue::combat::api::intent::CastId;
 use bevyrogue::combat::events::CombatEvent;
 use bevyrogue::combat::events::CombatEventKind;
 use bevyrogue::combat::follow_up::{FollowUpIntent, FollowUpTrace};
@@ -20,7 +21,6 @@ use bevyrogue::combat::follow_up::{
     follow_up_listener_system, form_identity_listener_system, resolve_follow_up_action_system,
 };
 use bevyrogue::combat::jsonl_logger::jsonl_logger_system;
-use bevyrogue::CombatPlugin;
 use bevyrogue::combat::log::ActionLog;
 use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
 use bevyrogue::combat::sp::SpPool;
@@ -48,15 +48,15 @@ use bevyrogue::combat::action_query::{
 };
 use bevyrogue::combat::av::{ActionValue, ActionValueUpdated, MAX_AV};
 use bevyrogue::combat::energy::{Energy, RoundEnergyTracker};
+use bevyrogue::combat::kit::UnitSkills;
 use bevyrogue::combat::resistance::{TempoResistance, apply_advance, apply_delay};
 use bevyrogue::combat::resolution::{TargetEntry, TargetableSnapshot, resolve_targets};
-use bevyrogue::data::skills_ron::TargetShape;
-use bevyrogue::combat::kit::UnitSkills;
 use bevyrogue::combat::stun::Stunned;
 use bevyrogue::combat::team::Team;
 use bevyrogue::combat::toughness::Toughness;
 use bevyrogue::combat::ultimate::UltimateCharge;
 use bevyrogue::data::skills_ron::SkillBook;
+use bevyrogue::data::skills_ron::TargetShape;
 
 const DEFAULT_CLI_PROOF_TICK_LIMIT: u32 = 120;
 
@@ -906,8 +906,16 @@ fn run_advance_delay_cap_scenario() {
     }
 
     let mut units = [
-        MockUnit { name: "Agumon", av: ActionValue(0), resistance: None },
-        MockUnit { name: "Gabumon", av: ActionValue(MAX_AV / 2), resistance: Some(TempoResistance::default()) },
+        MockUnit {
+            name: "Agumon",
+            av: ActionValue(0),
+            resistance: None,
+        },
+        MockUnit {
+            name: "Gabumon",
+            av: ActionValue(MAX_AV / 2),
+            resistance: Some(TempoResistance::default()),
+        },
     ];
 
     #[derive(serde::Serialize)]
@@ -942,7 +950,8 @@ fn run_advance_delay_cap_scenario() {
         let av_post = unit.av.0;
         let bar_width = 40usize;
         let fill = ((av_post.max(0) as f64 / (2.0 * MAX_AV as f64)) * bar_width as f64) as usize;
-        let bar: String = "#".repeat(fill.min(bar_width)) + &".".repeat(bar_width - fill.min(bar_width));
+        let bar: String =
+            "#".repeat(fill.min(bar_width)) + &".".repeat(bar_width - fill.min(bar_width));
 
         println!(
             "[{kind}] {name} pct={amount_pct}(cap={capped}) AV {av_pre:>6} → {av_post:>6} (Δ{delta:+}) [{bar}]",
@@ -992,9 +1001,24 @@ fn run_aoe_blast_scenario() {
 
     let attacker_id = UnitId(0);
     let mut enemies = vec![
-        MockUnit { id: UnitId(1), name: "GobA", slot_index: 0, hp: 60 },
-        MockUnit { id: UnitId(2), name: "GobB", slot_index: 1, hp: 60 },
-        MockUnit { id: UnitId(3), name: "GobC", slot_index: 2, hp: 60 },
+        MockUnit {
+            id: UnitId(1),
+            name: "GobA",
+            slot_index: 0,
+            hp: 60,
+        },
+        MockUnit {
+            id: UnitId(2),
+            name: "GobB",
+            slot_index: 1,
+            hp: 60,
+        },
+        MockUnit {
+            id: UnitId(3),
+            name: "GobC",
+            slot_index: 2,
+            hp: 60,
+        },
     ];
 
     let build_snapshot = |units: &[MockUnit]| TargetableSnapshot {
@@ -1085,7 +1109,10 @@ fn run_aoe_blast_scenario() {
     // --- Final HP gauge ---
     println!("\n--- Final HP ---");
     for enemy in &enemies {
-        println!("  {} (slot {}): HP {}", enemy.name, enemy.slot_index, enemy.hp);
+        println!(
+            "  {} (slot {}): HP {}",
+            enemy.name, enemy.slot_index, enemy.hp
+        );
     }
     println!("=== scenario complete ===");
 }

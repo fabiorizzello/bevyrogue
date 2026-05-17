@@ -4,11 +4,11 @@ use crate::combat::{
     StatusEffectKind,
     buffs::DrBag,
     damage::{AttackContext, DamageBreakdown, calculate_damage},
-    status_effect::StatusBag,
     events::CombatEventKind,
     kit::UnitSkills,
     sp::RoundSpTracker,
     state::{ResolvedAction, UltEffect},
+    status_effect::StatusBag,
     team::Team,
     toughness::{DamageKind, Toughness, can_apply_toughness_damage, classify},
     turn_system::ActionIntent,
@@ -16,7 +16,9 @@ use crate::combat::{
     ultimate::UltimateCharge,
     unit::{BasicStreak, Unit},
 };
-use crate::data::skills_ron::{BounceSelector, DamageCurve, Effect, RepeatPolicy, SkillBook, TargetShape};
+use crate::data::skills_ron::{
+    BounceSelector, DamageCurve, Effect, RepeatPolicy, SkillBook, TargetShape,
+};
 
 /// Emit one `OnSkillCast` per granted free-skill slot, using the provided ally basic skill ids.
 /// Callers (e.g. `execute_action_intent`) collect the ally basics and call this; the function is
@@ -123,7 +125,11 @@ pub fn resolve_targets(
             targets.sort_by_key(|e| e.slot_index);
             targets.iter().map(|e| e.id).collect()
         }
-        TargetShape::Bounce { hops, selector, repeat } => {
+        TargetShape::Bounce {
+            hops,
+            selector,
+            repeat,
+        } => {
             let enemy_team = primary_entry.team;
             let mut chain: Vec<UnitId> = Vec::with_capacity(*hops as usize);
             let mut already_hit: HashSet<UnitId> = HashSet::new();
@@ -187,15 +193,9 @@ pub fn select_bounce_hop(
         .collect();
 
     match selector {
-        BounceSelector::LowestHpPctAlive => {
-            select_lowest_hp_pct_alive(&candidates)
-        }
-        BounceSelector::NextSlotAlive => {
-            select_next_slot_alive(&candidates, last_target_slot)
-        }
-        BounceSelector::AdjLowest => {
-            select_adj_lowest(&candidates, last_target_slot)
-        }
+        BounceSelector::LowestHpPctAlive => select_lowest_hp_pct_alive(&candidates),
+        BounceSelector::NextSlotAlive => select_next_slot_alive(&candidates, last_target_slot),
+        BounceSelector::AdjLowest => select_adj_lowest(&candidates, last_target_slot),
     }
 }
 
@@ -323,7 +323,11 @@ pub fn compute_hop_damage(base_damage: i32, curve: &DamageCurve, hop: usize) -> 
             }
             // Floor at 1 if original base_damage was > 0.
             let result = dmg.floor() as i32;
-            if base_damage > 0 { result.max(1) } else { result }
+            if base_damage > 0 {
+                result.max(1)
+            } else {
+                result
+            }
         }
         DamageCurve::PerHop(v) => {
             // Clamp index to last element to stay total.
@@ -357,7 +361,9 @@ fn skill_heal_pct(legacy_ops: &[Effect]) -> u32 {
     legacy_ops
         .iter()
         .find_map(|effect| match effect {
-            Effect::Heal { amount_pct_max_hp, .. } => Some(*amount_pct_max_hp),
+            Effect::Heal {
+                amount_pct_max_hp, ..
+            } => Some(*amount_pct_max_hp),
             _ => None,
         })
         .unwrap_or(0)
@@ -539,7 +545,11 @@ pub fn apply_damage_only(
             defender_tough
                 .as_deref_mut()
                 .map(|t| {
-                    t.apply_hit(resolved.damage_tag, resolved.toughness_damage, defender_break_sealed)
+                    t.apply_hit(
+                        resolved.damage_tag,
+                        resolved.toughness_damage,
+                        defender_break_sealed,
+                    )
                 })
                 .unwrap_or(false)
         } else {
@@ -566,11 +576,16 @@ pub fn apply_damage_only(
             damage_tag: resolved.damage_tag,
         });
         if broke {
-            events.push(CombatEventKind::OnBreak { damage_tag: resolved.damage_tag });
+            events.push(CombatEventKind::OnBreak {
+                damage_tag: resolved.damage_tag,
+            });
         }
         if ko {
             let (status_remaining, heated_remaining) = ko_payload(defender_status);
-            events.push(CombatEventKind::UnitDied { status_remaining, heated_remaining });
+            events.push(CombatEventKind::UnitDied {
+                status_remaining,
+                heated_remaining,
+            });
         }
     }
 
@@ -586,7 +601,13 @@ pub fn apply_heal_only(
     defender_unit: &mut Unit,
 ) -> (ResolutionOutcome, Vec<CombatEventKind>) {
     if defender_unit.is_ko() {
-        return (ResolutionOutcome { sp_ok: true, ..ResolutionOutcome::default() }, vec![]);
+        return (
+            ResolutionOutcome {
+                sp_ok: true,
+                ..ResolutionOutcome::default()
+            },
+            vec![],
+        );
     }
 
     let hp_max = defender_unit.hp_max as i64;
@@ -602,7 +623,13 @@ pub fn apply_heal_only(
     outcome.amount = healed;
     outcome.sp_ok = true;
     outcome.succeeded = true;
-    (outcome, vec![CombatEventKind::OnHealed { amount: healed, hp_after }])
+    (
+        outcome,
+        vec![CombatEventKind::OnHealed {
+            amount: healed,
+            hp_after,
+        }],
+    )
 }
 
 /// Apply cleanse to a single target. KO targets are silently skipped (no event emitted).
@@ -613,13 +640,23 @@ pub fn apply_cleanse_only(
     defender_alive: bool,
 ) -> (ResolutionOutcome, Vec<CombatEventKind>) {
     if !defender_alive {
-        return (ResolutionOutcome { sp_ok: true, ..ResolutionOutcome::default() }, vec![]);
+        return (
+            ResolutionOutcome {
+                sp_ok: true,
+                ..ResolutionOutcome::default()
+            },
+            vec![],
+        );
     }
     let inner_count = action
         .cleanse_count
         .expect("apply_cleanse_only called on action without cleanse_count");
     let kinds = bag.cleanse_n(inner_count);
-    let outcome = ResolutionOutcome { sp_ok: true, succeeded: true, ..ResolutionOutcome::default() };
+    let outcome = ResolutionOutcome {
+        sp_ok: true,
+        succeeded: true,
+        ..ResolutionOutcome::default()
+    };
     (outcome, vec![CombatEventKind::OnCleansed { kinds }])
 }
 
@@ -659,7 +696,13 @@ pub fn apply_legacy_ops(
     // Heal no-op on KO: sp_ok=true, no event, no SP consumed (resources not yet spent here).
     if resolved.heal_pct > 0 {
         if defender_unit.is_ko() {
-            return (ResolutionOutcome { sp_ok: true, ..ResolutionOutcome::default() }, events);
+            return (
+                ResolutionOutcome {
+                    sp_ok: true,
+                    ..ResolutionOutcome::default()
+                },
+                events,
+            );
         }
     } else if resolved.revive_pct > 0 {
         if !defender_unit.is_ko() {
@@ -732,7 +775,13 @@ pub fn apply_legacy_ops(
                 is_break: false,
             };
             let attacker_dmg_mult = attacker_statuses
-                .map(|bag| if bag.has(&StatusEffectKind::Blessed) { 1.15_f32 } else { 1.0_f32 })
+                .map(|bag| {
+                    if bag.has(&StatusEffectKind::Blessed) {
+                        1.15_f32
+                    } else {
+                        1.0_f32
+                    }
+                })
                 .unwrap_or(1.0_f32);
             let DamageBreakdown {
                 final_damage: amount,
@@ -791,7 +840,10 @@ pub fn apply_legacy_ops(
             }
             if ko {
                 let (status_remaining, heated_remaining) = ko_payload(defender_status);
-                events.push(CombatEventKind::UnitDied { status_remaining, heated_remaining });
+                events.push(CombatEventKind::UnitDied {
+                    status_remaining,
+                    heated_remaining,
+                });
             }
         }
     }
@@ -1837,7 +1889,10 @@ mod tests {
             (UnitId(1), Team::Ally, 0, true),
             (UnitId(2), Team::Enemy, 0, true),
         ]);
-        assert_eq!(resolve_targets(&TargetShape::Single, UnitId(2), &s), vec![UnitId(2)]);
+        assert_eq!(
+            resolve_targets(&TargetShape::Single, UnitId(2), &s),
+            vec![UnitId(2)]
+        );
     }
 
     #[test]
@@ -1976,9 +2031,7 @@ mod tests {
     fn bounce_lowest_hp_pct_allow_repeat_can_repick_same() {
         // Only one alive enemy; with NoRepeat it would return None (already in set),
         // but AllowRepeat allows re-selecting it.
-        let s = snap_hp(vec![
-            (UnitId(10), Team::Enemy, 0, true, 100),
-        ]);
+        let s = snap_hp(vec![(UnitId(10), Team::Enemy, 0, true, 100)]);
         let mut already_hit = HashSet::new();
         already_hit.insert(UnitId(10));
         let result = select_bounce_hop(
@@ -1989,7 +2042,11 @@ mod tests {
             Team::Enemy,
             None,
         );
-        assert_eq!(result, Some(UnitId(10)), "AllowRepeat should re-pick the only target");
+        assert_eq!(
+            result,
+            Some(UnitId(10)),
+            "AllowRepeat should re-pick the only target"
+        );
 
         // Confirm NoRepeat returns None in same scenario
         let result_no_repeat = select_bounce_hop(
@@ -2000,15 +2057,16 @@ mod tests {
             Team::Enemy,
             None,
         );
-        assert_eq!(result_no_repeat, None, "NoRepeat should return None when only target already hit");
+        assert_eq!(
+            result_no_repeat, None,
+            "NoRepeat should return None when only target already hit"
+        );
     }
 
     #[test]
     fn bounce_lowest_hp_pct_empty_pool_returns_none() {
         // No alive enemies at all
-        let s = snap_hp(vec![
-            (UnitId(10), Team::Enemy, 0, false, 0),
-        ]);
+        let s = snap_hp(vec![(UnitId(10), Team::Enemy, 0, false, 0)]);
         let already_hit = HashSet::new();
         let result = select_bounce_hop(
             BounceSelector::LowestHpPctAlive,
@@ -2152,7 +2210,7 @@ mod tests {
     fn bounce_ignores_ally_team() {
         // Ally team entries should never be returned regardless of HP
         let s = snap_hp(vec![
-            (UnitId(1), Team::Ally, 0, true, 50),   // ally, very low HP
+            (UnitId(1), Team::Ally, 0, true, 50), // ally, very low HP
             (UnitId(10), Team::Enemy, 0, true, 900),
         ]);
         let already_hit = HashSet::new();
@@ -2198,6 +2256,10 @@ mod tests {
             Team::Enemy,
             None,
         );
-        assert_eq!(second, Some(UnitId(11)), "AllowRepeat: same lowest-HP target can be picked again");
+        assert_eq!(
+            second,
+            Some(UnitId(11)),
+            "AllowRepeat: same lowest-HP target can be picked again"
+        );
     }
 }

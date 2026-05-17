@@ -69,7 +69,12 @@ impl ModifierChain {
 
     pub fn extend(&mut self, other: ModifierChain) {
         self.next_seq = self.next_seq.max(other.next_seq);
-        self.terms.extend(other.terms.into_iter().filter(|term| term.multiplier_pct != 100));
+        self.terms.extend(
+            other
+                .terms
+                .into_iter()
+                .filter(|term| term.multiplier_pct != 100),
+        );
     }
 
     pub fn len(&self) -> usize {
@@ -134,7 +139,9 @@ impl DamageModifierLedger {
     }
 
     pub fn is_armed(&self, target: UnitId) -> bool {
-        self.armed.get(&target).is_some_and(|terms| !terms.is_empty())
+        self.armed
+            .get(&target)
+            .is_some_and(|terms| !terms.is_empty())
     }
 }
 
@@ -150,7 +157,14 @@ mod tests {
         chain.push(ModifierLayer::Buff, 90);
 
         let applied = chain.apply_to(100);
-        assert_eq!(applied.applied_layers, vec![ModifierLayer::Status, ModifierLayer::Buff, ModifierLayer::Passive]);
+        assert_eq!(
+            applied.applied_layers,
+            vec![
+                ModifierLayer::Status,
+                ModifierLayer::Buff,
+                ModifierLayer::Passive
+            ]
+        );
     }
 
     #[test]

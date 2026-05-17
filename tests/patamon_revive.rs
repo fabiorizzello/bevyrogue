@@ -1,6 +1,9 @@
 use bevy::prelude::*;
 use bevyrogue::combat::{
-    api::{register_kernel_builtins, timeline::{Beat, BeatEdge, BeatKind, BeatPayload, TimelineLibrary}, ExtRegistries},
+    api::{
+        ExtRegistries, register_kernel_builtins,
+        timeline::{Beat, BeatEdge, BeatKind, BeatPayload, TimelineLibrary},
+    },
     kit::UnitSkills,
     log::{ActionLog, LogEntry},
     sp::SpPool,
@@ -14,12 +17,12 @@ use bevyrogue::combat::{
     unit::{Ko, Unit},
 };
 use bevyrogue::data::{
-    skill_timeline::{compile_skill_book_timelines, SkillTimeline},
+    SkillBookHandle,
+    skill_timeline::{SkillTimeline, compile_skill_book_timelines},
     skills_ron::{
         SelfTargetRule, SkillBook, SkillDef, SkillImplementation, SkillTargeting, TargetLife,
         TargetShape, TargetSide,
     },
-    SkillBookHandle,
 };
 
 fn build_app() -> App {

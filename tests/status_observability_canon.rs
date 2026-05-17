@@ -15,6 +15,7 @@ use bevy::prelude::*;
 use bevyrogue::combat::{
     StatusBag, StatusEffectKind,
     av::ActionValueUpdated,
+    blueprints::agumon::TwinCoreState,
     events::CombatEvent,
     log::ActionLog,
     observability::{ValidationStatusSnapshot, capture_validation_snapshot},
@@ -24,7 +25,6 @@ use bevyrogue::combat::{
     team::Team,
     turn_order::{TurnAdvanced, TurnOrder},
     turn_system::{ActionIntent, advance_turn_system},
-    blueprints::agumon::TwinCoreState,
     types::{Attribute, EvoStage, UnitId},
     ultimate::{UltAccumulationTrigger, UltimateCharge},
     unit::Unit,
@@ -80,7 +80,8 @@ fn canon_status_vocab_in_jsonl_stream_and_validation_snapshot() {
     for (id, kind) in &unit_statuses {
         let mut bag = StatusBag::default();
         bag.apply(kind.clone(), 2);
-        app.world_mut().spawn((make_unit(*id), Team::Ally, bag, default_ult()));
+        app.world_mut()
+            .spawn((make_unit(*id), Team::Ally, bag, default_ult()));
     }
 
     // Cursor initialized at current write-head — reads only events emitted after this point.
@@ -101,7 +102,10 @@ fn canon_status_vocab_in_jsonl_stream_and_validation_snapshot() {
 
         let frame_strings: Vec<String> = {
             let msgs = app.world().resource::<Messages<CombatEvent>>();
-            event_cursor.read(msgs).map(|ev| serde_json::to_string(ev).unwrap()).collect()
+            event_cursor
+                .read(msgs)
+                .map(|ev| serde_json::to_string(ev).unwrap())
+                .collect()
         };
         all_event_strings.extend(frame_strings);
     }
@@ -118,7 +122,10 @@ fn canon_status_vocab_in_jsonl_stream_and_validation_snapshot() {
             .unwrap_or_else(|| panic!("unit {id} missing from snapshot"));
         assert_eq!(
             unit_snap.statuses,
-            vec![ValidationStatusSnapshot { kind: kind.clone(), duration_remaining: 1 }],
+            vec![ValidationStatusSnapshot {
+                kind: kind.clone(),
+                duration_remaining: 1
+            }],
             "unit {id} ({kind:?}): unexpected statuses in snapshot"
         );
     }
@@ -130,7 +137,10 @@ fn canon_status_vocab_in_jsonl_stream_and_validation_snapshot() {
 
         let frame_strings: Vec<String> = {
             let msgs = app.world().resource::<Messages<CombatEvent>>();
-            event_cursor.read(msgs).map(|ev| serde_json::to_string(ev).unwrap()).collect()
+            event_cursor
+                .read(msgs)
+                .map(|ev| serde_json::to_string(ev).unwrap())
+                .collect()
         };
         all_event_strings.extend(frame_strings);
     }

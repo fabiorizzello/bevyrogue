@@ -1,3 +1,4 @@
+use bevy::ecs::message::Messages;
 /// Integration tests for the AdvanceTurn/DelayTurn split primitives (M018/S01).
 ///
 /// Boundary coverage:
@@ -8,7 +9,6 @@
 ///   (f) DelayTurn(50) + TempoResistance(0.25 multiplier) → reduced delay
 ///   (g) event already carries amount_pct ≤ 50 when skill specified 80
 use bevy::prelude::*;
-use bevy::ecs::message::Messages;
 use bevyrogue::combat::{
     StatusBag,
     av::{ActionValue, ActionValueUpdated, MAX_AV},
@@ -79,7 +79,11 @@ struct Setup {
     target: Entity,
 }
 
-fn build_app(skills: Vec<SkillDef>, target_av: i32, target_resistance: Option<TempoResistance>) -> Setup {
+fn build_app(
+    skills: Vec<SkillDef>,
+    target_av: i32,
+    target_resistance: Option<TempoResistance>,
+) -> Setup {
     let mut app = App::new();
 
     let mut assets = Assets::<SkillBook>::default();
@@ -89,7 +93,10 @@ fn build_app(skills: Vec<SkillDef>, target_av: i32, target_resistance: Option<Te
         .insert_resource(SkillBookHandle(handle))
         .init_resource::<CombatState>()
         .init_resource::<TurnOrder>()
-        .insert_resource(SpPool { current: 100, max: 100 })
+        .insert_resource(SpPool {
+            current: 100,
+            max: 100,
+        })
         .init_resource::<ActionLog>()
         .init_resource::<Time>()
         .insert_resource(CombatRng::from_seed(0))
@@ -97,10 +104,7 @@ fn build_app(skills: Vec<SkillDef>, target_av: i32, target_resistance: Option<Te
         .add_message::<TurnAdvanced>()
         .add_message::<CombatEvent>()
         .add_message::<ActionValueUpdated>()
-        .add_systems(
-            Update,
-            (resolve_action_system, apply_av_ops_system).chain(),
-        );
+        .add_systems(Update, (resolve_action_system, apply_av_ops_system).chain());
 
     let skill_id = skills
         .first()
@@ -158,7 +162,11 @@ fn build_app(skills: Vec<SkillDef>, target_av: i32, target_resistance: Option<Te
     }
     let target = target_builder.id();
 
-    Setup { app, attacker, target }
+    Setup {
+        app,
+        attacker,
+        target,
+    }
 }
 
 fn fire_skill(app: &mut App, skill_id: &str) {
@@ -184,15 +192,22 @@ fn collect_events(
 fn delay_turn_80_capped_to_50_reduces_av_by_5000() {
     let mut s = build_app(vec![delay_skill("delay80", 80)], MAX_AV, None);
 
-    let mut cursor = s.app.world().resource::<Messages<CombatEvent>>().get_cursor_current();
+    let mut cursor = s
+        .app
+        .world()
+        .resource::<Messages<CombatEvent>>()
+        .get_cursor_current();
     fire_skill(&mut s.app, "delay80");
 
     let events = collect_events(&s.app, &mut cursor);
 
-    let delay_event = events.iter().find(|e| {
-        matches!(&e.kind, CombatEventKind::DelayTurn { target: t, .. } if *t == UnitId(2))
-    });
-    assert!(delay_event.is_some(), "expected DelayTurn event; got: {events:?}");
+    let delay_event = events.iter().find(
+        |e| matches!(&e.kind, CombatEventKind::DelayTurn { target: t, .. } if *t == UnitId(2)),
+    );
+    assert!(
+        delay_event.is_some(),
+        "expected DelayTurn event; got: {events:?}"
+    );
     if let Some(e) = delay_event {
         if let CombatEventKind::DelayTurn { amount_pct, .. } = &e.kind {
             assert_eq!(
@@ -203,7 +218,10 @@ fn delay_turn_80_capped_to_50_reduces_av_by_5000() {
     }
 
     let av = s.app.world().get::<ActionValue>(s.target).unwrap().0;
-    assert_eq!(av, 5000, "AV must drop from 10000 to 5000 (50% cap applied); got {av}");
+    assert_eq!(
+        av, 5000,
+        "AV must drop from 10000 to 5000 (50% cap applied); got {av}"
+    );
 }
 
 // ── (b) AdvanceTurn(80) capped to 50 ──────────────────────────────────────────
@@ -212,23 +230,36 @@ fn delay_turn_80_capped_to_50_reduces_av_by_5000() {
 fn advance_turn_80_capped_to_50_increases_av_by_5000() {
     let mut s = build_app(vec![advance_skill("advance80", 80)], 0, None);
 
-    let mut cursor = s.app.world().resource::<Messages<CombatEvent>>().get_cursor_current();
+    let mut cursor = s
+        .app
+        .world()
+        .resource::<Messages<CombatEvent>>()
+        .get_cursor_current();
     fire_skill(&mut s.app, "advance80");
 
     let events = collect_events(&s.app, &mut cursor);
 
-    let advance_event = events.iter().find(|e| {
-        matches!(&e.kind, CombatEventKind::AdvanceTurn { target: t, .. } if *t == UnitId(2))
-    });
-    assert!(advance_event.is_some(), "expected AdvanceTurn event; got: {events:?}");
+    let advance_event = events.iter().find(
+        |e| matches!(&e.kind, CombatEventKind::AdvanceTurn { target: t, .. } if *t == UnitId(2)),
+    );
+    assert!(
+        advance_event.is_some(),
+        "expected AdvanceTurn event; got: {events:?}"
+    );
     if let Some(e) = advance_event {
         if let CombatEventKind::AdvanceTurn { amount_pct, .. } = &e.kind {
-            assert_eq!(*amount_pct, 50, "event amount_pct must be capped to 50; got {amount_pct}");
+            assert_eq!(
+                *amount_pct, 50,
+                "event amount_pct must be capped to 50; got {amount_pct}"
+            );
         }
     }
 
     let av = s.app.world().get::<ActionValue>(s.target).unwrap().0;
-    assert_eq!(av, 5000, "AV must rise from 0 to 5000 (50% cap applied); got {av}");
+    assert_eq!(
+        av, 5000,
+        "AV must rise from 0 to 5000 (50% cap applied); got {av}"
+    );
 }
 
 // ── (c)+(d) double/triple AdvanceTurn ceiling at 2*MAX_AV ─────────────────────
@@ -245,7 +276,12 @@ fn advance_turn_ceiling_at_2x_max_av() {
     // Second advance: 15000 + 5000 = 20000
     fire_skill(&mut s.app, "advance50");
     let av2 = s.app.world().get::<ActionValue>(s.target).unwrap().0;
-    assert_eq!(av2, 2 * MAX_AV, "after 2nd advance: expected ceiling {}, got {av2}", 2 * MAX_AV);
+    assert_eq!(
+        av2,
+        2 * MAX_AV,
+        "after 2nd advance: expected ceiling {}, got {av2}",
+        2 * MAX_AV
+    );
 
     // Third advance: already at ceiling → stays at 20000
     fire_skill(&mut s.app, "advance50");
@@ -266,7 +302,10 @@ fn delay_turn_floor_no_negative_av() {
     fire_skill(&mut s.app, "delay50");
 
     let av = s.app.world().get::<ActionValue>(s.target).unwrap().0;
-    assert_eq!(av, 0, "AV must clamp to 0 (floor), not go negative; got {av}");
+    assert_eq!(
+        av, 0,
+        "AV must clamp to 0 (floor), not go negative; got {av}"
+    );
 }
 
 // ── (f) DelayTurn + TempoResistance 0.25 multiplier ──────────────────────────
@@ -282,7 +321,10 @@ fn delay_turn_tempo_resistance_quarter_multiplier() {
     // raw = 50 * 10000 / 100 = 5000; effective = 5000 * 0.25 = 1250
     // AV: 10000 - 1250 = 8750
     let av = s.app.world().get::<ActionValue>(s.target).unwrap().0;
-    assert_eq!(av, 8750, "TempoResistance(0.25) must reduce delay from 5000 to 1250; got {av}");
+    assert_eq!(
+        av, 8750,
+        "TempoResistance(0.25) must reduce delay from 5000 to 1250; got {av}"
+    );
 }
 
 // ── (g) Event amount_pct already capped at emission site ─────────────────────
@@ -291,7 +333,11 @@ fn delay_turn_tempo_resistance_quarter_multiplier() {
 fn advance_turn_event_pct_already_capped_before_apply() {
     let mut s = build_app(vec![advance_skill("advance_over", 80)], 0, None);
 
-    let mut cursor = s.app.world().resource::<Messages<CombatEvent>>().get_cursor_current();
+    let mut cursor = s
+        .app
+        .world()
+        .resource::<Messages<CombatEvent>>()
+        .get_cursor_current();
     fire_skill(&mut s.app, "advance_over");
 
     let events = collect_events(&s.app, &mut cursor);

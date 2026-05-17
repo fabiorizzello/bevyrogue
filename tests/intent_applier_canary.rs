@@ -134,5 +134,8 @@ fn intent_queue_is_empty_after_applier_runs() {
     app.update();
 
     let remaining = app.world().resource::<IntentQueue>().0.len();
-    assert_eq!(remaining, 0, "IntentQueue should be empty after applier drains it");
+    assert_eq!(
+        remaining, 0,
+        "IntentQueue should be empty after applier drains it"
+    );
 }

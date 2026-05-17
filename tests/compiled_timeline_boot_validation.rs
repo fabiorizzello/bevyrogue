@@ -1,11 +1,11 @@
 use std::collections::HashSet;
 
 use bevyrogue::{
+    combat::types::SkillId,
     combat::{
         api::{ExtRegistries, register_kernel_builtins},
         blueprints::register_all_blueprint_exts,
     },
-    combat::types::SkillId,
     data::{
         skill_timeline::compile_skill_book_timelines,
         skills_ron::{SkillBook, validate_skill_book},
@@ -31,23 +31,45 @@ fn canonical_asset_compiles_timeline_backed_skills_into_library_shape() {
     let compiled = compile_skill_book_timelines(&book, &canonical_regs())
         .expect("timeline-backed skills must compile");
 
-    let ids: HashSet<_> = compiled.iter().map(|timeline| timeline.id.as_str()).collect();
-    assert_eq!(ids.len(), 15, "expected 15 timeline-backed canon skills after child-roster migration");
+    let ids: HashSet<_> = compiled
+        .iter()
+        .map(|timeline| timeline.id.as_str())
+        .collect();
+    assert_eq!(
+        ids.len(),
+        15,
+        "expected 15 timeline-backed canon skills after child-roster migration"
+    );
 
     // child basic/active skills
     for required in [
-        "baby_flame", "bubble_blast", "draconic_edge", "diamond_storm", "holy_breeze",
-        "tentomon_basic", "patamon_revive",
+        "baby_flame",
+        "bubble_blast",
+        "draconic_edge",
+        "diamond_storm",
+        "holy_breeze",
+        "tentomon_basic",
+        "patamon_revive",
     ] {
-        assert!(ids.contains(required), "missing child-basic timeline: {required}");
+        assert!(
+            ids.contains(required),
+            "missing child-basic timeline: {required}"
+        );
     }
 
     // child follow-up skills
     for required in [
-        "agumon_follow_up", "gabumon_follow_up", "dorumon_follow_up",
-        "renamon_follow_up", "patamon_follow_up", "tentomon_follow_up",
+        "agumon_follow_up",
+        "gabumon_follow_up",
+        "dorumon_follow_up",
+        "renamon_follow_up",
+        "patamon_follow_up",
+        "tentomon_follow_up",
     ] {
-        assert!(ids.contains(required), "missing child-follow-up timeline: {required}");
+        assert!(
+            ids.contains(required),
+            "missing child-follow-up timeline: {required}"
+        );
     }
 
     // previously migrated
@@ -65,7 +87,11 @@ fn canonical_asset_compiles_timeline_backed_skills_into_library_shape() {
 
 #[test]
 fn asset_typo_in_hook_id_fails_with_skill_and_beat_site() {
-    let bad_ron = include_str!("../assets/data/skills.ron").replacen("core/deal_damage", "core/deal_damge", 1);
+    let bad_ron = include_str!("../assets/data/skills.ron").replacen(
+        "core/deal_damage",
+        "core/deal_damge",
+        1,
+    );
     let book: SkillBook = ron::from_str(&bad_ron).expect("parse tweaked skills.ron");
 
     let err = compile_skill_book_timelines(&book, &canonical_regs())

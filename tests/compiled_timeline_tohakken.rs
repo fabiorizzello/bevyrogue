@@ -1,10 +1,12 @@
 use bevy::ecs::message::{MessageCursor, Messages};
 use bevy::prelude::*;
 use bevyrogue::combat::{
-    api::{register_kernel_builtins, ExtRegistries, SignalBus, SignalTaxonomy},
-    blueprints::register_all_blueprint_exts,
+    api::timeline::TimelineLibrary,
+    api::{ExtRegistries, SignalBus, SignalTaxonomy, register_kernel_builtins},
     av::{ActionValue, ActionValueUpdated, MAX_AV},
+    blueprints::register_all_blueprint_exts,
     events::{CombatEvent, CombatEventKind},
+    kit::UnitSkills,
     log::ActionLog,
     rng::CombatRng,
     sp::SpPool,
@@ -13,17 +15,15 @@ use bevyrogue::combat::{
     team::Team,
     toughness::Toughness,
     turn_order::{TurnAdvanced, TurnOrder},
-    turn_system::{apply_av_ops_system, resolve_action_system, ActionIntent},
+    turn_system::{ActionIntent, apply_av_ops_system, resolve_action_system},
     types::{Attribute, EvoStage, SkillId, UnitId},
-    unit::Unit,
     ultimate::{UltAccumulationTrigger, UltimateCharge},
-    kit::UnitSkills,
-    api::timeline::TimelineLibrary,
+    unit::Unit,
 };
 use bevyrogue::data::{
+    SkillBookHandle,
     skill_timeline::compile_skill_book_timelines,
     skills_ron::{SkillBook, validate_skill_book},
-    SkillBookHandle,
 };
 
 fn canonical_book() -> SkillBook {
@@ -46,7 +46,10 @@ fn build_app(book: &SkillBook) -> App {
         .insert_resource(SkillBookHandle(handle))
         .init_resource::<CombatState>()
         .init_resource::<TurnOrder>()
-        .insert_resource(SpPool { current: 99, max: 99 })
+        .insert_resource(SpPool {
+            current: 99,
+            max: 99,
+        })
         .init_resource::<ActionLog>()
         .init_resource::<Time>()
         .insert_resource(CombatRng::from_seed(7))
@@ -66,7 +69,9 @@ fn build_app(book: &SkillBook) -> App {
         register_all_blueprint_exts(&mut regs);
         let compiled = compile_skill_book_timelines(book, &regs)
             .expect("canonical timeline book must compile");
-        app.world_mut().resource_mut::<TimelineLibrary<String>>().timelines = compiled;
+        app.world_mut()
+            .resource_mut::<TimelineLibrary<String>>()
+            .timelines = compiled;
     }
 
     app
@@ -148,7 +153,10 @@ fn event_pos(
     events.iter().position(predicate).unwrap_or_else(|| {
         panic!(
             "expected {label} event not found; events={:?}",
-            events.iter().map(|e| format!("{:?}", e.kind)).collect::<Vec<_>>()
+            events
+                .iter()
+                .map(|e| format!("{:?}", e.kind))
+                .collect::<Vec<_>>()
         )
     })
 }
@@ -174,21 +182,72 @@ fn renamon_ult_timeline_backed_path_applies_delay_and_ally_blessed() {
     let events = collect_events(&app, &mut cursor);
     let dump: Vec<_> = events.iter().map(|e| format!("{:?}", e.kind)).collect();
 
-    let pos_damage = event_pos(&events, |e| matches!(e.kind, CombatEventKind::OnDamageDealt { .. }), "damage");
-    let pos_delay = event_pos(&events, |e| matches!(e.kind, CombatEventKind::DelayTurn { amount_pct: 50, .. }), "delay");
-    let pos_blessed = event_pos(&events, |e| matches!(&e.kind, CombatEventKind::OnStatusApplied { kind } if *kind == StatusEffectKind::Blessed), "blessed status");
-    let pos_applied = event_pos(&events, |e| matches!(e.kind, CombatEventKind::OnActionApplied), "action applied");
-    let pos_resolved = event_pos(&events, |e| matches!(e.kind, CombatEventKind::OnActionResolved), "action resolved");
+    let pos_damage = event_pos(
+        &events,
+        |e| matches!(e.kind, CombatEventKind::OnDamageDealt { .. }),
+        "damage",
+    );
+    let pos_delay = event_pos(
+        &events,
+        |e| matches!(e.kind, CombatEventKind::DelayTurn { amount_pct: 50, .. }),
+        "delay",
+    );
+    let pos_blessed = event_pos(
+        &events,
+        |e| matches!(&e.kind, CombatEventKind::OnStatusApplied { kind } if *kind == StatusEffectKind::Blessed),
+        "blessed status",
+    );
+    let pos_applied = event_pos(
+        &events,
+        |e| matches!(e.kind, CombatEventKind::OnActionApplied),
+        "action applied",
+    );
+    let pos_resolved = event_pos(
+        &events,
+        |e| matches!(e.kind, CombatEventKind::OnActionResolved),
+        "action resolved",
+    );
 
-    assert!(pos_damage < pos_delay, "damage must precede enemy delay: {dump:?}");
-    assert!(pos_delay < pos_blessed, "enemy delay must precede caster buff: {dump:?}");
-    assert!(pos_blessed < pos_applied, "buff must precede action applied: {dump:?}");
-    assert!(pos_applied < pos_resolved, "action applied must precede resolved: {dump:?}");
+    assert!(
+        pos_damage < pos_delay,
+        "damage must precede enemy delay: {dump:?}"
+    );
+    assert!(
+        pos_delay < pos_blessed,
+        "enemy delay must precede caster buff: {dump:?}"
+    );
+    assert!(
+        pos_blessed < pos_applied,
+        "buff must precede action applied: {dump:?}"
+    );
+    assert!(
+        pos_applied < pos_resolved,
+        "action applied must precede resolved: {dump:?}"
+    );
 
-    let target_unit = app.world().get::<Unit>(target).expect("target unit missing");
-    assert!(target_unit.hp_current < 200, "timeline skill should deal damage");
-    assert_eq!(app.world().get::<ActionValue>(target).expect("target AV missing").0, 5000, "DelayTurn should flow through apply_av_ops_system");
+    let target_unit = app
+        .world()
+        .get::<Unit>(target)
+        .expect("target unit missing");
+    assert!(
+        target_unit.hp_current < 200,
+        "timeline skill should deal damage"
+    );
+    assert_eq!(
+        app.world()
+            .get::<ActionValue>(target)
+            .expect("target AV missing")
+            .0,
+        5000,
+        "DelayTurn should flow through apply_av_ops_system"
+    );
 
-    let caster_bag = app.world().get::<StatusBag>(caster).expect("caster status bag missing");
-    assert!(caster_bag.has(&StatusEffectKind::Blessed), "caster must receive Blessed");
+    let caster_bag = app
+        .world()
+        .get::<StatusBag>(caster)
+        .expect("caster status bag missing");
+    assert!(
+        caster_bag.has(&StatusEffectKind::Blessed),
+        "caster must receive Blessed"
+    );
 }

@@ -1,9 +1,12 @@
 use bevy::prelude::*;
 
-use bevyrogue::combat::blueprints;
 use bevyrogue::combat::api::intent::CastId;
+use bevyrogue::combat::blueprints;
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
-use bevyrogue::combat::kernel::{PrecisionWindowKind, PrecisionCommitment, PrecisionReveal, PrecisionOutcome, register_combat_kernel_runtime};
+use bevyrogue::combat::kernel::{
+    PrecisionCommitment, PrecisionOutcome, PrecisionReveal, PrecisionWindowKind,
+    register_combat_kernel_runtime,
+};
 use bevyrogue::combat::kit::UnitSkills;
 use bevyrogue::combat::log::ActionLog;
 use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
@@ -29,7 +32,12 @@ fn find_skill<'a>(book: &'a SkillBook, id: &str) -> &'a SkillDef {
         .unwrap_or_else(|| panic!("missing canonical skill {id}"))
 }
 
-fn resolve_skill(book: &SkillBook, skill_id: &str, attacker: UnitId, target: UnitId) -> bevyrogue::combat::state::ResolvedAction {
+fn resolve_skill(
+    book: &SkillBook,
+    skill_id: &str,
+    attacker: UnitId,
+    target: UnitId,
+) -> bevyrogue::combat::state::ResolvedAction {
     let skill = find_skill(book, skill_id);
     let kit = UnitSkills {
         basic: skill.id.clone(),
@@ -96,7 +104,7 @@ fn renamon_precision_loop_runtime_proof() {
     ));
 
     let book = canonical_skill_book();
-    
+
     // 1. Open Momentum Window
     let resolved = resolve_skill(&book, "diamond_storm", renamon_id, target_id);
     let transitions = blueprints::transitions_for_action_checked(&resolved)
@@ -117,13 +125,16 @@ fn renamon_precision_loop_runtime_proof() {
 
     let precision = app.world().resource::<PrecisionMindGameState>();
     assert!(precision.is_window_open());
-    assert_eq!(precision.current_window, Some(PrecisionWindowKind::Momentum));
+    assert_eq!(
+        precision.current_window,
+        Some(PrecisionWindowKind::Momentum)
+    );
 
     // 2. Commit Press (Renamon Ult)
     let resolved = resolve_skill(&book, "renamon_ult", renamon_id, target_id);
     let transitions = blueprints::transitions_for_action_checked(&resolved)
         .expect("renamon blueprint dispatch succeeds");
-    
+
     for transition in transitions {
         app.world_mut().write_message(CombatEvent {
             kind: CombatEventKind::OnKernelTransition { transition },
@@ -143,7 +154,7 @@ fn renamon_precision_loop_runtime_proof() {
     let resolved = resolve_skill(&book, "onibidama", renamon_id, target_id);
     let transitions = blueprints::transitions_for_action_checked(&resolved)
         .expect("renamon blueprint dispatch succeeds");
-    
+
     for transition in transitions {
         app.world_mut().write_message(CombatEvent {
             kind: CombatEventKind::OnKernelTransition { transition },
@@ -163,7 +174,7 @@ fn renamon_precision_loop_runtime_proof() {
     let resolved = resolve_skill(&book, "koenryu", renamon_id, target_id);
     let transitions = blueprints::transitions_for_action_checked(&resolved)
         .expect("renamon blueprint dispatch succeeds");
-    
+
     for transition in transitions {
         app.world_mut().write_message(CombatEvent {
             kind: CombatEventKind::OnKernelTransition { transition },
@@ -182,6 +193,6 @@ fn renamon_precision_loop_runtime_proof() {
     // Final Validation Snapshot check
     let snapshot = capture_validation_snapshot(app.world_mut()).expect("snapshot should build");
     let formatted = format_validation_snapshot(&snapshot);
-    
-    assert!(formatted.contains("precision=phase=Resolved,window_index=1,window=Momentum,commitment=Press,reveal=Baited,outcome=Success"), "Snapshot format mismatch: {formatted}");
+
+    assert!(formatted.contains("mind_game=phase=Resolved,window_index=1,window=Momentum,commitment=Press,reveal=Baited,outcome=Success"), "Snapshot format mismatch: {formatted}");
 }

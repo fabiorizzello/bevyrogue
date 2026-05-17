@@ -14,8 +14,8 @@ use bevyrogue::combat::{
 use bevyrogue::data::{
     SkillBookHandle,
     skills_ron::{
-        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
-        SkillTargeting, TargetLife, TargetShape, TargetSide,
+        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation, SkillTargeting,
+        TargetLife, TargetShape, TargetSide,
     },
 };
 
@@ -219,4 +219,3 @@ fn s12_revive_semantics() {
             .any(|e| matches!(e, LogEntry::ActionFailed { reason } if reason == "TargetKo"))
     );
 }
-

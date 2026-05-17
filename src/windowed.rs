@@ -89,7 +89,10 @@ pub fn register(app: &mut App, validation: Option<WindowedValidationConfig>) {
     .add_plugins(EguiPlugin::default())
     .init_resource::<crate::ui::combat_panel::PendingAction>()
     .init_resource::<crate::ui::combat_panel::PreviewDamageCache>()
-    .add_systems(Update, crate::ui::combat_panel::refresh_preview_damage_cache)
+    .add_systems(
+        Update,
+        crate::ui::combat_panel::refresh_preview_damage_cache,
+    )
     .add_systems(Startup, setup)
     .add_systems(EguiPrimaryContextPass, roster_panel)
     .add_systems(EguiPrimaryContextPass, turn_order_panel)
@@ -108,20 +111,20 @@ pub fn register(app: &mut App, validation: Option<WindowedValidationConfig>) {
 pub fn register_combat_systems(app: &mut App) {
     app.init_resource::<crate::combat::turn_system::EnemyTurnRequestQueue>()
         .add_systems(
-        Update,
-        (
-            resolve_action_system,
-            follow_up_listener_system,
-            form_identity_listener_system,
-            resolve_follow_up_action_system,
-            ult_accumulation_system,
-            flush_ult_gain_system,
-            advance_turn_system,
-            resolve_enemy_turn_action_system,
-            check_victory_system,
-        )
-            .chain(),
-    );
+            Update,
+            (
+                resolve_action_system,
+                follow_up_listener_system,
+                form_identity_listener_system,
+                resolve_follow_up_action_system,
+                ult_accumulation_system,
+                flush_ult_gain_system,
+                advance_turn_system,
+                resolve_enemy_turn_action_system,
+                check_victory_system,
+            )
+                .chain(),
+        );
 }
 
 fn setup(mut commands: Commands) {

@@ -95,9 +95,7 @@ fn passive_trigger(evt: &BeatEvent, ctx: &SkillCtx<'_>) -> bool {
         return false;
     };
 
-    let Some((self_unit, self_team)) = units
-        .iter(world)
-        .find(|(unit, _)| unit.id == ctx.caster)
+    let Some((self_unit, self_team)) = units.iter(world).find(|(unit, _)| unit.id == ctx.caster)
     else {
         return false;
     };
@@ -135,8 +133,11 @@ fn passive_proc(evt: &BeatEvent, ctx: &mut SkillCtx<'_>) {
 }
 
 fn register_passive_hooks(app: &mut bevy::prelude::App) {
-    let mut regs = app.world_mut().resource_mut::<crate::combat::api::ExtRegistries>();
+    let mut regs = app
+        .world_mut()
+        .resource_mut::<crate::combat::api::ExtRegistries>();
     regs.predicates
         .register("gabumon/twin_core/passive_trigger", passive_trigger);
-    regs.hooks.register("gabumon/twin_core/passive_proc", passive_proc);
+    regs.hooks
+        .register("gabumon/twin_core/passive_proc", passive_proc);
 }

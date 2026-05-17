@@ -31,8 +31,8 @@ use bevyrogue::combat::{
 use bevyrogue::data::{
     SkillBookHandle,
     skills_ron::{
-        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
-        SkillTargeting, TargetLife, TargetShape, TargetSide,
+        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation, SkillTargeting,
+        TargetLife, TargetShape, TargetSide,
     },
 };
 
@@ -68,7 +68,6 @@ fn fire_skill() -> SkillDef {
         timeline: None,
     }
 }
-
 
 /// Spawn a minimal headless Bevy app wired for `resolve_action_system`.
 /// `defender_resists` and `defender_weaknesses` control the tag mod.

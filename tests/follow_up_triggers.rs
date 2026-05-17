@@ -190,8 +190,14 @@ fn event_kind_json(event: &CombatEventKind) -> String {
         CombatEventKind::OnBreak { damage_tag } => {
             format!("{{\"kind\":\"OnBreak\",\"element\":\"{:?}\"}}", damage_tag)
         }
-        CombatEventKind::UnitDied { status_remaining, heated_remaining } => {
-            format!("{{\"kind\":\"UnitDied\",\"status_remaining\":{:?},\"heated_remaining\":{}}}", status_remaining, heated_remaining)
+        CombatEventKind::UnitDied {
+            status_remaining,
+            heated_remaining,
+        } => {
+            format!(
+                "{{\"kind\":\"UnitDied\",\"status_remaining\":{:?},\"heated_remaining\":{}}}",
+                status_remaining, heated_remaining
+            )
         }
         CombatEventKind::OnAllyLowHp => "{\"kind\":\"OnAllyLowHp\"}".to_string(),
         CombatEventKind::OnEnemyKill => "{\"kind\":\"OnEnemyKill\"}".to_string(),

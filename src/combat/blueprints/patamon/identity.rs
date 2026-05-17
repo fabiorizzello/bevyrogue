@@ -3,15 +3,15 @@ use serde::{Deserialize, Serialize};
 
 use crate::combat::api::SignalPayload;
 use crate::combat::events::{CombatEvent, CombatEventKind};
-pub use crate::combat::kernel::{HolySupportRejectReason, HolySupportStep, HolySupportTransition};
 use crate::combat::kernel::{
     CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition, CombatTagChangeKind,
     CombatTagId, CombatTagState, CombatTagTransition, HolySupportSignal, TacticalCycleTransition,
 };
+pub use crate::combat::kernel::{HolySupportRejectReason, HolySupportStep, HolySupportTransition};
 use crate::combat::types::UnitId;
 
 use super::{
-    SIGNAL_BUILD_HOLY_SUPPORT_GRACE, SIGNAL_CYCLE_RESET, SIGNAL_CONSUME_MARTYR_LIGHT,
+    SIGNAL_BUILD_HOLY_SUPPORT_GRACE, SIGNAL_CONSUME_MARTYR_LIGHT, SIGNAL_CYCLE_RESET,
     SIGNAL_MARK_MARTYR_LIGHT, SIGNAL_SPEND_HOLY_SUPPORT_GRACE,
 };
 
@@ -131,18 +131,14 @@ impl CombatKernelHook for HolySupportHook {
             {
                 if let Some(tag) = classify_holy_support_tag(&tag_transition.after.id) {
                     match tag {
-                        HolySupportDesignTag::Grace => {
-                            out.push(blueprint_transition(
-                                SIGNAL_BUILD_HOLY_SUPPORT_GRACE,
-                                SignalPayload::Amount(1),
-                            ))
-                        }
-                        HolySupportDesignTag::MartyrLight => {
-                            out.push(blueprint_transition(
-                                SIGNAL_MARK_MARTYR_LIGHT,
-                                SignalPayload::Empty,
-                            ))
-                        }
+                        HolySupportDesignTag::Grace => out.push(blueprint_transition(
+                            SIGNAL_BUILD_HOLY_SUPPORT_GRACE,
+                            SignalPayload::Amount(1),
+                        )),
+                        HolySupportDesignTag::MartyrLight => out.push(blueprint_transition(
+                            SIGNAL_MARK_MARTYR_LIGHT,
+                            SignalPayload::Empty,
+                        )),
                     }
                 }
             }
@@ -152,18 +148,14 @@ impl CombatKernelHook for HolySupportHook {
             {
                 if let Some(tag) = classify_holy_support_tag(&tag_transition.after.id) {
                     match tag {
-                        HolySupportDesignTag::Grace => {
-                            out.push(blueprint_transition(
-                                SIGNAL_SPEND_HOLY_SUPPORT_GRACE,
-                                SignalPayload::Amount(1),
-                            ))
-                        }
-                        HolySupportDesignTag::MartyrLight => {
-                            out.push(blueprint_transition(
-                                SIGNAL_CONSUME_MARTYR_LIGHT,
-                                SignalPayload::Empty,
-                            ))
-                        }
+                        HolySupportDesignTag::Grace => out.push(blueprint_transition(
+                            SIGNAL_SPEND_HOLY_SUPPORT_GRACE,
+                            SignalPayload::Amount(1),
+                        )),
+                        HolySupportDesignTag::MartyrLight => out.push(blueprint_transition(
+                            SIGNAL_CONSUME_MARTYR_LIGHT,
+                            SignalPayload::Empty,
+                        )),
                     }
                 }
             }
@@ -191,9 +183,11 @@ pub fn apply_holy_support_transitions_system(
         };
 
         match transition {
-            CombatKernelTransition::Blueprint { owner, name, payload }
-                if owner == super::signals::OWNER =>
-            {
+            CombatKernelTransition::Blueprint {
+                owner,
+                name,
+                payload,
+            } if owner == super::signals::OWNER => {
                 let Some(holy_transition) = decode_holy_support_blueprint_transition(name, payload)
                 else {
                     continue;

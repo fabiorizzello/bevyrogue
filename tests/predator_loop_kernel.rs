@@ -1,9 +1,9 @@
 use bevyrogue::combat::api::intent::CastId;
-use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::blueprints::dorumon::{
-    PredatorLoopBlockedReason, PredatorLoopCapKind, PredatorLoopSignal,
-    PredatorLoopSnapshot, PredatorLoopState, PredatorLoopStep, PredatorLoopTransition,
+    PredatorLoopBlockedReason, PredatorLoopCapKind, PredatorLoopSignal, PredatorLoopSnapshot,
+    PredatorLoopState, PredatorLoopStep, PredatorLoopTransition,
 };
+use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::observability::{
     ValidationSnapshot, ValidationTwinCoreSnapshot, format_validation_snapshot,
 };
@@ -260,27 +260,34 @@ fn predator_loop_event_and_snapshot_surfaces_are_serializable_and_readable() {
         precision_mind_game: None,
     };
     let rendered = format_validation_snapshot(&validation);
-    assert!(rendered.contains("predator"));
-    assert!(rendered.contains("battery_loop=none"));
+    assert!(rendered.contains("predator_loop"));
+    assert!(rendered.contains("battery=none"));
     assert!(rendered.contains("exploit_cap=3"));
     assert!(rendered.contains("targets=[7"));
 
     let transition = PredatorLoopTransition::build_exploit(target, 2);
-    let event = CombatEvent {
-        kind: CombatEventKind::PredatorLoopResolved { transition },
+    let event = bevyrogue::combat::events::CombatEvent {
+        kind: bevyrogue::combat::events::CombatEventKind::OnKernelTransition {
+            transition: bevyrogue::combat::kernel::CombatKernelTransition::Blueprint {
+                owner: "dorumon".to_string(),
+                name: "build_exploit".to_string(),
+                payload: bevyrogue::combat::api::SignalPayload::Amount(2),
+            },
+        },
         source: target,
         target,
         follow_up_depth: 0,
         cast_id: CastId::ROOT,
     };
-    let json = serde_json::to_string(&event).expect("serialize predator event");
-    assert!(json.contains("PredatorLoopResolved"));
-    assert!(json.contains("BuildExploit"));
+    let json = serde_json::to_string(&event).expect("serialize predator_loop event");
+    assert!(json.contains("OnKernelTransition"));
+    assert!(json.contains("Blueprint"));
+    assert!(json.contains("build_exploit"));
     assert!(json.contains("7"));
 
     let transition_json =
-        serde_json::to_string(&transition).expect("serialize predator transition");
+        serde_json::to_string(&transition).expect("serialize predator_loop transition");
     let roundtrip: PredatorLoopTransition =
-        serde_json::from_str(&transition_json).expect("roundtrip predator transition");
+        serde_json::from_str(&transition_json).expect("roundtrip predator_loop transition");
     assert_eq!(roundtrip, transition);
 }

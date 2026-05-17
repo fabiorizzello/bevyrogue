@@ -1,6 +1,7 @@
 use super::*;
+use crate::combat::api::timeline::{Beat, BeatKind, TimelineLibrary};
 use crate::combat::{
-    api::{register_kernel_builtins, ExtRegistries},
+    api::{ExtRegistries, register_kernel_builtins},
     events::CombatEvent,
     kit::UnitSkills,
     log::{ActionLog, LogEntry},
@@ -9,14 +10,13 @@ use crate::combat::{
     types::{Attribute, DamageTag, EvoStage},
     ultimate::UltAccumulationTrigger,
 };
-use crate::combat::api::timeline::{Beat, BeatKind, TimelineLibrary};
 use crate::data::{
+    SkillBookHandle,
     skill_timeline::compile_skill_book_timelines,
     skills_ron::{
-        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
-        SkillTargeting, TargetLife, TargetShape, TargetSide,
+        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation, SkillTargeting,
+        TargetLife, TargetShape, TargetSide,
     },
-    SkillBookHandle,
 };
 
 fn unit(id: u32, attribute: Attribute, hp_current: i32) -> Unit {
@@ -96,9 +96,11 @@ fn build_app(book: SkillBook) -> App {
         .add_systems(Update, resolve_action_system);
 
     let regs = ExtRegistries::default();
-    let compiled = compile_skill_book_timelines(&book, &regs)
-        .expect("test skill book must compile timelines");
-    app.world_mut().resource_mut::<TimelineLibrary<String>>().timelines = compiled;
+    let compiled =
+        compile_skill_book_timelines(&book, &regs).expect("test skill book must compile timelines");
+    app.world_mut()
+        .resource_mut::<TimelineLibrary<String>>()
+        .timelines = compiled;
 
     app
 }

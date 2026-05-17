@@ -56,8 +56,16 @@ fn slot_indices_are_0_1_2_per_team() {
     let ally_slots: HashSet<u8> = collect_slots(&mut app, Team::Ally).into_iter().collect();
     let enemy_slots: HashSet<u8> = collect_slots(&mut app, Team::Enemy).into_iter().collect();
 
-    assert_eq!(ally_slots, HashSet::from([0, 1, 2]), "ally slots must be {{0,1,2}}");
-    assert_eq!(enemy_slots, HashSet::from([0, 1, 2]), "enemy slots must be {{0,1,2}}");
+    assert_eq!(
+        ally_slots,
+        HashSet::from([0, 1, 2]),
+        "ally slots must be {{0,1,2}}"
+    );
+    assert_eq!(
+        enemy_slots,
+        HashSet::from([0, 1, 2]),
+        "enemy slots must be {{0,1,2}}"
+    );
 }
 
 /// SlotIndex values are unique within each team.
@@ -77,6 +85,14 @@ fn slot_indices_unique_per_team() {
     let ally_unique: HashSet<_> = ally_slots.iter().copied().collect();
     let enemy_unique: HashSet<_> = enemy_slots.iter().copied().collect();
 
-    assert_eq!(ally_slots.len(), ally_unique.len(), "ally slots must be unique");
-    assert_eq!(enemy_slots.len(), enemy_unique.len(), "enemy slots must be unique");
+    assert_eq!(
+        ally_slots.len(),
+        ally_unique.len(),
+        "ally slots must be unique"
+    );
+    assert_eq!(
+        enemy_slots.len(),
+        enemy_unique.len(),
+        "enemy slots must be unique"
+    );
 }

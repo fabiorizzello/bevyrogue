@@ -53,7 +53,10 @@ mod tests {
             .init_resource::<CapturedSignals>()
             .add_systems(
                 Update,
-                (combat_event_to_signal_system, drain_system.after(combat_event_to_signal_system)),
+                (
+                    combat_event_to_signal_system,
+                    drain_system.after(combat_event_to_signal_system),
+                ),
             );
         app
     }
@@ -82,12 +85,19 @@ mod tests {
         );
         match &captured.0[0] {
             Signal::CombatEvent(event) => {
-                assert!(matches!(&event.kind, CombatEventKind::UltimateUsed { unit_id: seen } if *seen == unit_id));
+                assert!(
+                    matches!(&event.kind, CombatEventKind::UltimateUsed { unit_id: seen } if *seen == unit_id)
+                );
             }
             other => panic!("expected combat envelope first, got: {:?}", other),
         }
         match &captured.0[1] {
-            Signal::Blueprint { owner, name, payload, cast_id } => {
+            Signal::Blueprint {
+                owner,
+                name,
+                payload,
+                cast_id,
+            } => {
                 assert_eq!(owner, "kernel");
                 assert_eq!(name, "ult_used");
                 assert_eq!(*payload, SignalPayload::UnitTarget(unit_id));
@@ -115,7 +125,12 @@ mod tests {
         app.update();
 
         let captured = app.world().resource::<CapturedSignals>();
-        assert_eq!(captured.0.len(), 1, "non-ult event should bridge as combat envelope only, got: {:?}", captured.0);
+        assert_eq!(
+            captured.0.len(),
+            1,
+            "non-ult event should bridge as combat envelope only, got: {:?}",
+            captured.0
+        );
         assert!(matches!(captured.0[0], Signal::CombatEvent(_)));
     }
 
@@ -143,6 +158,11 @@ mod tests {
         app.update();
 
         let captured = app.world().resource::<CapturedSignals>();
-        assert_eq!(captured.0.len(), 4, "expected two combat envelopes + two blueprint signals, got: {:?}", captured.0);
+        assert_eq!(
+            captured.0.len(),
+            4,
+            "expected two combat envelopes + two blueprint signals, got: {:?}",
+            captured.0
+        );
     }
 }

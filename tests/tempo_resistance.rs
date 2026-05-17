@@ -97,9 +97,9 @@ fn advance_does_not_exceed_2x_max_av() {
 // ──────────────────────────────────────────────────────────────────────────────
 
 use bevy::ecs::message::Messages;
+use bevyrogue::combat::api::intent::CastId;
 use bevyrogue::combat::av::ActionValueUpdated;
 use bevyrogue::combat::bootstrap::spawn_unit_from_def;
-use bevyrogue::combat::api::intent::CastId;
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::state::CombatState;
 use bevyrogue::combat::team::Team;
@@ -252,8 +252,7 @@ fn devimon_def() -> bevyrogue::data::units_ron::UnitDef {
         enemy_traits: vec![],
         charged_attack: None,
         form_identity: None,
-        twin_core: Default::default(),
-        holy_support: Default::default(),
+        blueprint_metadata: Default::default(),
         resists: vec![DamageTag::Fire, DamageTag::Ice],
         toughness_max: 100,
         weaknesses: vec![DamageTag::Light],
@@ -291,8 +290,7 @@ fn ally_def() -> bevyrogue::data::units_ron::UnitDef {
         enemy_traits: vec![],
         charged_attack: None,
         form_identity: None,
-        twin_core: Default::default(),
-        holy_support: Default::default(),
+        blueprint_metadata: Default::default(),
         resists: vec![],
         toughness_max: 50,
         weaknesses: vec![DamageTag::Ice],

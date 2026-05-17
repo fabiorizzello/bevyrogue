@@ -82,7 +82,7 @@ fn fixture_onturnstart_kills_target() {
             hook: Some("test/ko_target"),
             selector: None,
             presentation: None,
-                payload: None,
+            payload: None,
         }],
         edges: vec![],
     });
@@ -97,11 +97,18 @@ fn fixture_onturnstart_kills_target() {
         &mut pending,
         64,
     );
-    assert_eq!(outcome, StepOutcome::Done, "timeline should finish normally");
+    assert_eq!(
+        outcome,
+        StepOutcome::Done,
+        "timeline should finish normally"
+    );
     assert_eq!(pending.len(), 1, "exactly one DealDamage intent expected");
 
     // Transfer intents to the queue and let intent_applier run.
-    app.world_mut().resource_mut::<IntentQueue>().0.extend(pending);
+    app.world_mut()
+        .resource_mut::<IntentQueue>()
+        .0
+        .extend(pending);
     app.update();
 
     // Enemy HP must be ≤ 0 (KO'd by 9999 damage).

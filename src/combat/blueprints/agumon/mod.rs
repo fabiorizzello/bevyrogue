@@ -10,7 +10,7 @@ use bevy::prelude::*;
 use crate::combat::{
     api::{
         Beat, BeatEvent, BeatKind, BlueprintState, CompiledTimeline, EventFilter, Intent,
-        PassiveListeners, PassiveRunner, SignalPayload, SignalTaxonomy, SkillCtx, SelectorCtx,
+        PassiveListeners, PassiveRunner, SelectorCtx, SignalPayload, SignalTaxonomy, SkillCtx,
     },
     team::Team,
     types::{DamageTag, UnitId},
@@ -26,9 +26,9 @@ pub struct TalentRanks(pub HashMap<String, u8>);
 
 pub use crate::combat::blueprints::twin_core::{
     TAG_CHILLED, TAG_DEEP_CRACK, TAG_HEATED, TAG_MELTDOWN_CRACK, TAG_PRIMED, TAG_THERMAL_SPARK,
-    TwinCoreDesignTag, TwinCoreHook, TwinCoreState,
-    apply_twin_core_transitions_system, classify_twin_core_tag,
-    twin_core_added_tag_transition, twin_core_design_tag, twin_core_design_tag_name,
+    TwinCoreDesignTag, TwinCoreHook, TwinCoreState, apply_twin_core_transitions_system,
+    classify_twin_core_tag, twin_core_added_tag_transition, twin_core_design_tag,
+    twin_core_design_tag_name,
 };
 pub use signals::{OWNER, dispatch};
 
@@ -43,11 +43,15 @@ pub struct AgumonPlugin;
 /// into an `ExtRegistries` without requiring a full `App`.
 /// Useful for timeline validation in tests that build a bare registry.
 pub fn register_agumon_ext(regs: &mut crate::combat::api::ExtRegistries) {
-    regs.predicates.register("agumon/twin_core/passive_trigger", passive_trigger);
-    regs.hooks.register("agumon/twin_core/passive_proc", passive_proc);
-    regs.predicates.register("agumon/has_bouncing_fire", has_bouncing_fire);
+    regs.predicates
+        .register("agumon/twin_core/passive_trigger", passive_trigger);
+    regs.hooks
+        .register("agumon/twin_core/passive_proc", passive_proc);
+    regs.predicates
+        .register("agumon/has_bouncing_fire", has_bouncing_fire);
     regs.predicates.register("agumon/bounce_exit", bounce_exit);
-    regs.selectors.register("agumon/bounce_pick_next", bounce_pick_next);
+    regs.selectors
+        .register("agumon/bounce_pick_next", bounce_pick_next);
     regs.hooks.register("agumon/on_bounce_hop", on_bounce_hop);
 }
 
@@ -128,9 +132,7 @@ fn passive_trigger(evt: &BeatEvent, ctx: &SkillCtx<'_>) -> bool {
         return false;
     };
 
-    let Some((self_unit, self_team)) = units
-        .iter(world)
-        .find(|(unit, _)| unit.id == ctx.caster)
+    let Some((self_unit, self_team)) = units.iter(world).find(|(unit, _)| unit.id == ctx.caster)
     else {
         return false;
     };
@@ -193,9 +195,7 @@ fn bounce_exit(_evt: &BeatEvent, ctx: &SkillCtx<'_>) -> bool {
     };
 
     !units.iter(world).any(|(unit, team)| {
-        *team != caster_team
-            && unit.hp_current > 0
-            && !ctx.cast_hit_set.contains(&unit.id)
+        *team != caster_team && unit.hp_current > 0 && !ctx.cast_hit_set.contains(&unit.id)
     })
 }
 
@@ -219,10 +219,7 @@ fn bounce_pick_next(ctx: &SelectorCtx<'_>) -> Vec<UnitId> {
     units
         .iter(world)
         .find_map(|(unit, team)| {
-            if *team != caster_team
-                && unit.hp_current > 0
-                && !ctx.cast_hit_set.contains(&unit.id)
-            {
+            if *team != caster_team && unit.hp_current > 0 && !ctx.cast_hit_set.contains(&unit.id) {
                 Some(vec![unit.id])
             } else {
                 None
@@ -245,6 +242,8 @@ fn on_bounce_hop(evt: &BeatEvent, ctx: &mut SkillCtx<'_>) {
 }
 
 fn register_passive_hooks(app: &mut App) {
-    let mut regs = app.world_mut().resource_mut::<crate::combat::api::ExtRegistries>();
+    let mut regs = app
+        .world_mut()
+        .resource_mut::<crate::combat::api::ExtRegistries>();
     register_agumon_ext(&mut regs);
 }

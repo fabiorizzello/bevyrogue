@@ -12,7 +12,9 @@ use bevyrogue::combat::{
     team::Team,
     toughness::Toughness,
     turn_order::{TurnAdvanced, TurnOrder},
-    turn_system::{ActionIntent, EnemyTurnRequestQueue, advance_turn_system, resolve_enemy_turn_action_system},
+    turn_system::{
+        ActionIntent, EnemyTurnRequestQueue, advance_turn_system, resolve_enemy_turn_action_system,
+    },
     types::{Attribute, EvoStage, SkillId, UnitId},
     ultimate::{UltAccumulationTrigger, UltimateCharge},
     unit::Unit,
@@ -32,7 +34,10 @@ fn setup_app() -> App {
         .add_message::<bevyrogue::combat::av::ActionValueUpdated>()
         .add_message::<ActionIntent>()
         .add_message::<bevyrogue::combat::events::CombatEvent>()
-        .add_systems(Update, (advance_turn_system, resolve_enemy_turn_action_system).chain());
+        .add_systems(
+            Update,
+            (advance_turn_system, resolve_enemy_turn_action_system).chain(),
+        );
     app
 }
 

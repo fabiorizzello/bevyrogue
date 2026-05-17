@@ -3,9 +3,9 @@ use std::sync::Arc;
 use bevy::prelude::*;
 use bevyrogue::combat::{
     api::{
-        applier::intent_applier, combat_event_to_signal_system, passive_dispatch_system,
         BlueprintState, CastId, CastIdGen, EventFilter, ExtRegistries, Intent, IntentQueue,
         PassiveListeners, PassiveRunner, Signal, SignalBus, SignalPayload, SignalTaxonomy,
+        applier::intent_applier, combat_event_to_signal_system, passive_dispatch_system,
     },
     events::{CombatEvent, CombatEventKind},
     types::UnitId,
@@ -54,7 +54,9 @@ fn register_hooks(app: &mut App) {
 fn register_passives(app: &mut App) {
     let composite_filter = EventFilter::all([
         EventFilter::any([
-            EventFilter::combat(|event| matches!(&event.kind, CombatEventKind::UltimateUsed { .. })),
+            EventFilter::combat(|event| {
+                matches!(&event.kind, CombatEventKind::UltimateUsed { .. })
+            }),
             EventFilter::blueprint("kernel", "ult_used"),
         ]),
         EventFilter::custom(|signal| matches!(signal, Signal::CombatEvent(_))),
@@ -86,7 +88,10 @@ fn register_passives(app: &mut App) {
     ));
 }
 
-fn build_single_beat_timeline(id: &'static str, hook: &'static str) -> Arc<bevyrogue::combat::api::CompiledTimeline> {
+fn build_single_beat_timeline(
+    id: &'static str,
+    hook: &'static str,
+) -> Arc<bevyrogue::combat::api::CompiledTimeline> {
     Arc::new(bevyrogue::combat::api::CompiledTimeline {
         id,
         entry: "start",
@@ -128,7 +133,10 @@ fn build_loop_timeline() -> Arc<bevyrogue::combat::api::CompiledTimeline> {
     })
 }
 
-fn composite_hook(evt: &bevyrogue::combat::api::BeatEvent, ctx: &mut bevyrogue::combat::api::SkillCtx<'_>) {
+fn composite_hook(
+    evt: &bevyrogue::combat::api::BeatEvent,
+    ctx: &mut bevyrogue::combat::api::SkillCtx<'_>,
+) {
     ctx.enqueue(Intent::SetBlueprintState {
         actor: ctx.caster,
         key: TRACE_KEY.to_string(),
@@ -144,7 +152,10 @@ fn composite_hook(evt: &bevyrogue::combat::api::BeatEvent, ctx: &mut bevyrogue::
     });
 }
 
-fn ult_seen_hook(evt: &bevyrogue::combat::api::BeatEvent, ctx: &mut bevyrogue::combat::api::SkillCtx<'_>) {
+fn ult_seen_hook(
+    evt: &bevyrogue::combat::api::BeatEvent,
+    ctx: &mut bevyrogue::combat::api::SkillCtx<'_>,
+) {
     ctx.enqueue(Intent::SetBlueprintState {
         actor: ctx.caster,
         key: ULT_KEY.to_string(),
@@ -153,7 +164,10 @@ fn ult_seen_hook(evt: &bevyrogue::combat::api::BeatEvent, ctx: &mut bevyrogue::c
     });
 }
 
-fn cascade_seen_hook(evt: &bevyrogue::combat::api::BeatEvent, ctx: &mut bevyrogue::combat::api::SkillCtx<'_>) {
+fn cascade_seen_hook(
+    evt: &bevyrogue::combat::api::BeatEvent,
+    ctx: &mut bevyrogue::combat::api::SkillCtx<'_>,
+) {
     ctx.enqueue(Intent::SetBlueprintState {
         actor: ctx.caster,
         key: TRACE_KEY.to_string(),
@@ -162,7 +176,10 @@ fn cascade_seen_hook(evt: &bevyrogue::combat::api::BeatEvent, ctx: &mut bevyrogu
     });
 }
 
-fn loop_tick_hook(evt: &bevyrogue::combat::api::BeatEvent, ctx: &mut bevyrogue::combat::api::SkillCtx<'_>) {
+fn loop_tick_hook(
+    evt: &bevyrogue::combat::api::BeatEvent,
+    ctx: &mut bevyrogue::combat::api::SkillCtx<'_>,
+) {
     use std::sync::atomic::{AtomicU32, Ordering};
 
     static LOOP_CALLS: AtomicU32 = AtomicU32::new(0);
@@ -176,7 +193,10 @@ fn loop_tick_hook(evt: &bevyrogue::combat::api::BeatEvent, ctx: &mut bevyrogue::
     });
 }
 
-fn never_exit(_evt: &bevyrogue::combat::api::BeatEvent, _ctx: &bevyrogue::combat::api::SkillCtx<'_>) -> bool {
+fn never_exit(
+    _evt: &bevyrogue::combat::api::BeatEvent,
+    _ctx: &bevyrogue::combat::api::SkillCtx<'_>,
+) -> bool {
     false
 }
 
@@ -204,6 +224,14 @@ fn composite_matching_same_frame_cascade_and_loop_breaker_all_hold_together() {
     assert_eq!(state.map.get(&(OWNER, ULT_KEY.to_string())), Some(&1));
     assert_eq!(state.map.get(&(OWNER, LOOP_KEY.to_string())), Some(&256));
 
-    let drained: Vec<_> = app.world_mut().resource_mut::<SignalBus>().drain().collect();
-    assert!(drained.is_empty(), "SignalBus should be empty after passive dispatch, got: {:?}", drained);
+    let drained: Vec<_> = app
+        .world_mut()
+        .resource_mut::<SignalBus>()
+        .drain()
+        .collect();
+    assert!(
+        drained.is_empty(),
+        "SignalBus should be empty after passive dispatch, got: {:?}",
+        drained
+    );
 }

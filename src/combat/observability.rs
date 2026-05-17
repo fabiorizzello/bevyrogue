@@ -5,8 +5,18 @@ use serde::{Deserialize, Serialize};
 
 use crate::combat::{
     av::ActionValue,
-    battery_loop::{BatteryLoopBlockedReason, BatteryLoopSignal, BatteryLoopTransition, BatteryLoopState},
-    blueprints::{dorumon::{PredatorLoopSnapshot, PredatorLoopState, PredatorLoopSignal, PredatorLoopTransition}, patamon::HolySupportSnapshot, twin_core::{TwinCoreSignal, TwinCoreTransition}},
+    battery_loop::{
+        BatteryLoopBlockedReason, BatteryLoopSignal, BatteryLoopState, BatteryLoopStep,
+        BatteryLoopTransition,
+    },
+    blueprints::{
+        dorumon::{
+            PredatorLoopSignal, PredatorLoopSnapshot, PredatorLoopState, PredatorLoopStep,
+            PredatorLoopTransition,
+        },
+        patamon::HolySupportSnapshot,
+        twin_core::{TwinCoreSignal, TwinCoreTransition},
+    },
     floating::FloatingDamage,
     kernel::{
         PrecisionCommitment, PrecisionMindGamePhase, PrecisionMindGameTransition, PrecisionOutcome,
@@ -341,7 +351,7 @@ pub fn capture_validation_snapshot(
 
 pub fn format_validation_snapshot(snapshot: &ValidationSnapshot) -> String {
     format!(
-        "phase={} winner={} sp={}/{} twin_core={} holy_support={} predator_loop={} precision={} battery_loop={} turn_preview={} action_log_tail={} floating_live={} units={}",
+        "phase={} winner={} sp={}/{} twin_core={} support={} predator={} mind_game={} battery={} turn_preview={} action_log_tail={} floating_live={} units={}",
         format_phase(snapshot.phase),
         format_winner(snapshot.winner),
         snapshot.sp_current,
@@ -350,7 +360,11 @@ pub fn format_validation_snapshot(snapshot: &ValidationSnapshot) -> String {
         format_holy_support_snapshot(snapshot.holy_support.as_ref()),
         format_predator_loop_snapshot(snapshot.predator_loop.as_ref()),
         format_precision_mind_game_snapshot(snapshot.precision_mind_game.as_ref()),
-        snapshot.battery_loop.as_ref().map(format_battery_loop_snapshot).unwrap_or_else(|| "none".to_string()),
+        snapshot
+            .battery_loop
+            .as_ref()
+            .map(format_battery_loop_snapshot)
+            .unwrap_or_else(|| "none".to_string()),
         format_unit_ids(&snapshot.turn_preview),
         format_action_log_tail(&snapshot.action_log_tail),
         snapshot.floating_live,
@@ -487,8 +501,7 @@ fn format_predator_loop_transition(transition: PredatorLoopTransition) -> String
             )
         }
         PredatorLoopSignal::Tick => signal.to_string(),
-        PredatorLoopSignal::Rejected
-        | PredatorLoopSignal::Ignored => {
+        PredatorLoopSignal::Rejected | PredatorLoopSignal::Ignored => {
             match (transition.attempted, transition.reason) {
                 (Some(attempted), Some(reason)) => format!(
                     "{signal}({};reason={reason:?})",
@@ -503,20 +516,20 @@ fn format_predator_loop_transition(transition: PredatorLoopTransition) -> String
     }
 }
 
-fn format_predator_loop_step(step: crate::combat::kernel::PredatorLoopStep) -> String {
+fn format_predator_loop_step(step: PredatorLoopStep) -> String {
     match step {
-        crate::combat::kernel::PredatorLoopStep::BuildExploit { target, amount } => {
+        PredatorLoopStep::BuildExploit { target, amount } => {
             format!("build({}:{})", target.0, amount)
         }
-        crate::combat::kernel::PredatorLoopStep::ApplyPreyLock { target } => {
+        PredatorLoopStep::ApplyPreyLock { target } => {
             format!("prey-lock({})", target.0)
         }
-        crate::combat::kernel::PredatorLoopStep::ConsumePreyLockPayoff { target } => {
+        PredatorLoopStep::ConsumePreyLockPayoff { target } => {
             format!("payoff({})", target.0)
         }
-        crate::combat::kernel::PredatorLoopStep::EnterBerserk => "berserk".to_string(),
-        crate::combat::kernel::PredatorLoopStep::Tick => "tick".to_string(),
-        crate::combat::kernel::PredatorLoopStep::Expire { target } => {
+        PredatorLoopStep::EnterBerserk => "berserk".to_string(),
+        PredatorLoopStep::Tick => "tick".to_string(),
+        PredatorLoopStep::Expire { target } => {
             format!("expire({})", target.0)
         }
     }
@@ -628,20 +641,18 @@ fn format_battery_loop_transition(transition: BatteryLoopTransition) -> String {
             format!("transfer({})", transition.amount)
         }
         BatteryLoopSignal::CycleReset => "cycle-reset".to_string(),
-        BatteryLoopSignal::Rejected => {
-            match (transition.attempted, transition.reason) {
-                (Some(attempted), Some(reason)) => {
-                    format!(
-                        "rejected({};reason={reason:?})",
-                        format_battery_loop_step(attempted)
-                    )
-                }
-                (Some(attempted), None) => {
-                    format!("rejected({})", format_battery_loop_step(attempted))
-                }
-                _ => "rejected".to_string(),
+        BatteryLoopSignal::Rejected => match (transition.attempted, transition.reason) {
+            (Some(attempted), Some(reason)) => {
+                format!(
+                    "rejected({};reason={reason:?})",
+                    format_battery_loop_step(attempted)
+                )
             }
-        }
+            (Some(attempted), None) => {
+                format!("rejected({})", format_battery_loop_step(attempted))
+            }
+            _ => "rejected".to_string(),
+        },
         BatteryLoopSignal::Ignored => match transition.attempted {
             Some(attempted) => format!("ignored({})", format_battery_loop_step(attempted)),
             None => "ignored".to_string(),
@@ -649,25 +660,25 @@ fn format_battery_loop_transition(transition: BatteryLoopTransition) -> String {
     }
 }
 
-fn format_battery_loop_step(step: super::kernel::BatteryLoopStep) -> String {
+fn format_battery_loop_step(step: BatteryLoopStep) -> String {
     match step {
-        super::kernel::BatteryLoopStep::BuildStaticCharge { amount } => {
+        BatteryLoopStep::BuildStaticCharge { amount } => {
             format!("build-static({amount})")
         }
-        super::kernel::BatteryLoopStep::BuildCircuitCharge { amount } => {
+        BatteryLoopStep::BuildCircuitCharge { amount } => {
             format!("build-circuit({amount})")
         }
-        super::kernel::BatteryLoopStep::SpendCircuitCharge { amount } => {
+        BatteryLoopStep::SpendCircuitCharge { amount } => {
             format!("spend-circuit({amount})")
         }
-        super::kernel::BatteryLoopStep::BlockReady => "block-ready".to_string(),
-        super::kernel::BatteryLoopStep::BlockProc => "block-proc".to_string(),
-        super::kernel::BatteryLoopStep::GrantEnergy { amount } => format!("grant({amount})"),
-        super::kernel::BatteryLoopStep::SelfEnergyGain { amount } => {
+        BatteryLoopStep::BlockReady => "block-ready".to_string(),
+        BatteryLoopStep::BlockProc => "block-proc".to_string(),
+        BatteryLoopStep::GrantEnergy { amount } => format!("grant({amount})"),
+        BatteryLoopStep::SelfEnergyGain { amount } => {
             format!("self-gain({amount})")
         }
-        super::kernel::BatteryLoopStep::TransferEnergy { amount } => format!("transfer({amount})"),
-        super::kernel::BatteryLoopStep::CycleReset => "cycle-reset".to_string(),
+        BatteryLoopStep::TransferEnergy { amount } => format!("transfer({amount})"),
+        BatteryLoopStep::CycleReset => "cycle-reset".to_string(),
     }
 }
 

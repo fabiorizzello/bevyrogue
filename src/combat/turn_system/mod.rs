@@ -12,8 +12,8 @@ use crate::combat::{
     events::{ActionIntentKind, CombatEvent, CombatEventKind},
     kernel::{CombatBeatId, CombatKernelRegistry, CombatKernelTransition},
     kit::UnitSkills,
-    preview::{summarize_preview_damage, try_query_skill_preview},
     log::ActionLog,
+    preview::{summarize_preview_damage, try_query_skill_preview},
     round_flags::RoundFlags,
     sp::SpPool,
     speed::Speed,
@@ -328,7 +328,11 @@ pub fn resolve_action_system(
         let use_timeline = skill_book_handle
             .as_ref()
             .and_then(|h| skill_books.get(&h.0))
-            .and_then(|book| book.0.iter().find(|skill| skill.id == inflight.action.skill_id))
+            .and_then(|book| {
+                book.0
+                    .iter()
+                    .find(|skill| skill.id == inflight.action.skill_id)
+            })
             .and_then(|skill| skill.timeline.as_ref())
             .is_some();
 
@@ -441,7 +445,23 @@ pub fn advance_turn_system(
     let snapshots: Vec<Snap> = query
         .iter_mut()
         .map(
-            |(entity, unit, team, _, _, _, stunned, status_bag, skills, ult, toughness, commander, _, _, _)| {
+            |(
+                entity,
+                unit,
+                team,
+                _,
+                _,
+                _,
+                stunned,
+                status_bag,
+                skills,
+                ult,
+                toughness,
+                commander,
+                _,
+                _,
+                _,
+            )| {
                 Snap {
                     entity,
                     id: unit.id,
@@ -529,7 +549,10 @@ pub fn advance_turn_system(
                         emit_combat_event(
                             &mut event_writer,
                             // No StatusBag in scope at stun-damage site; payload left empty.
-                            CombatEventKind::UnitDied { status_remaining: vec![], heated_remaining: 0 },
+                            CombatEventKind::UnitDied {
+                                status_remaining: vec![],
+                                heated_remaining: 0,
+                            },
                             active_id,
                             active_id,
                             0,
@@ -580,7 +603,9 @@ pub fn advance_turn_system(
                 }
                 emit_combat_event(
                     &mut event_writer,
-                    CombatEventKind::OnActionFailed { reason: "paralyzed".to_string() },
+                    CombatEventKind::OnActionFailed {
+                        reason: "paralyzed".to_string(),
+                    },
                     active_id,
                     active_id,
                     0,
@@ -655,8 +680,23 @@ pub fn advance_turn_system(
 
     let mut units_ready: Vec<(UnitId, Entity, i32)> = Vec::new();
 
-    for (entity, unit, _, speed_opt, speed_mod_opt, av_opt, stunned, status_bag_opt, _, _, _, _, _, _, _) in
-        query.iter_mut()
+    for (
+        entity,
+        unit,
+        _,
+        speed_opt,
+        speed_mod_opt,
+        av_opt,
+        stunned,
+        status_bag_opt,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+    ) in query.iter_mut()
     {
         if stunned.is_some() {
             continue;
@@ -756,10 +796,9 @@ pub fn resolve_enemy_turn_action_system(world: &mut World) {
     }
 
     for attacker_id in requests {
-        let Some(attacker) = snapshots
-            .iter()
-            .find(|snapshot| snapshot.id == attacker_id && snapshot.team == Team::Enemy && snapshot.alive)
-        else {
+        let Some(attacker) = snapshots.iter().find(|snapshot| {
+            snapshot.id == attacker_id && snapshot.team == Team::Enemy && snapshot.alive
+        }) else {
             continue;
         };
 
@@ -778,7 +817,9 @@ pub fn resolve_enemy_turn_action_system(world: &mut World) {
 
         let ally_targets: Vec<enemy_ai::TargetInfo> = snapshots
             .iter()
-            .filter(|snapshot| snapshot.team == Team::Ally && !snapshot.is_commander && snapshot.alive)
+            .filter(|snapshot| {
+                snapshot.team == Team::Ally && !snapshot.is_commander && snapshot.alive
+            })
             .map(|snapshot| enemy_ai::TargetInfo {
                 id: snapshot.id,
                 toughness_current: snapshot.toughness_current,
@@ -796,7 +837,8 @@ pub fn resolve_enemy_turn_action_system(world: &mut World) {
         };
 
         if let Some(intent) = enemy_ai::pick_enemy_action_with_preview(&ctx, |skill_id, target| {
-            let pending = try_query_skill_preview(world, skill_id, CastId::ROOT, attacker_id, target)?;
+            let pending =
+                try_query_skill_preview(world, skill_id, CastId::ROOT, attacker_id, target)?;
             Some(summarize_preview_damage(&pending))
         }) {
             world.write_message(intent);

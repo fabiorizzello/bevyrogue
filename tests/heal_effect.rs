@@ -62,7 +62,10 @@ fn single_heal_on_damaged_ally() {
     assert_eq!(events.len(), 1);
     assert!(matches!(
         events[0],
-        CombatEventKind::OnHealed { amount: 40, hp_after: 100 }
+        CombatEventKind::OnHealed {
+            amount: 40,
+            hp_after: 100
+        }
     ));
 }
 
@@ -76,7 +79,10 @@ fn single_heal_at_full_hp_emits_zero_amount() {
     assert_eq!(events.len(), 1);
     assert!(matches!(
         events[0],
-        CombatEventKind::OnHealed { amount: 0, hp_after: 100 }
+        CombatEventKind::OnHealed {
+            amount: 0,
+            hp_after: 100
+        }
     ));
 }
 
@@ -116,7 +122,10 @@ fn all_allies_fan_out_ko_skipped_alive_healed_slot_order() {
     assert_eq!(events0.len(), 1);
     assert!(matches!(
         events0[0],
-        CombatEventKind::OnHealed { amount: 30, hp_after: 80 }
+        CombatEventKind::OnHealed {
+            amount: 30,
+            hp_after: 80
+        }
     ));
 
     // slot2 healed by 30, reaches hp_max
@@ -124,7 +133,10 @@ fn all_allies_fan_out_ko_skipped_alive_healed_slot_order() {
     assert_eq!(events2.len(), 1);
     assert!(matches!(
         events2[0],
-        CombatEventKind::OnHealed { amount: 30, hp_after: 100 }
+        CombatEventKind::OnHealed {
+            amount: 30,
+            hp_after: 100
+        }
     ));
 }
 
@@ -138,6 +150,9 @@ fn heal_cap_at_hp_max() {
     assert_eq!(events.len(), 1);
     assert!(matches!(
         events[0],
-        CombatEventKind::OnHealed { amount: 3, hp_after: 100 }
+        CombatEventKind::OnHealed {
+            amount: 3,
+            hp_after: 100
+        }
     ));
 }

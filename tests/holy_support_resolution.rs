@@ -1,10 +1,10 @@
 use bevy::prelude::*;
 
-use bevyrogue::combat::blueprints;
-use bevyrogue::combat::api::intent::CastId;
-use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
-use bevyrogue::combat::blueprints::patamon::{HolySupportState, HolySupportTransition};
 use bevyrogue::combat::api::SignalPayload;
+use bevyrogue::combat::api::intent::CastId;
+use bevyrogue::combat::blueprints;
+use bevyrogue::combat::blueprints::patamon::{HolySupportState, HolySupportTransition};
+use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::kernel::{CombatKernelRegistry, CombatKernelTransition};
 use bevyrogue::combat::kit::UnitSkills;
 use bevyrogue::combat::log::ActionLog;
@@ -176,7 +176,7 @@ fn patamon_ult_builds_grace_through_the_blueprint_kernel_path() {
 
     let snapshot = capture_validation_snapshot(app.world_mut()).expect("snapshot");
     let formatted = format_validation_snapshot(&snapshot);
-    assert!(formatted.contains("holy_support=grace=1/3"));
+    assert!(formatted.contains("support=grace=1/3"));
     assert!(formatted.contains("last=build(1)"));
 }
 

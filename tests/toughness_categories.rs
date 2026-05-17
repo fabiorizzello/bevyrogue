@@ -19,8 +19,8 @@ use bevyrogue::combat::{
 use bevyrogue::data::{
     SkillBookHandle,
     skills_ron::{
-        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
-        SkillTargeting, TargetLife, TargetShape, TargetSide,
+        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation, SkillTargeting,
+        TargetLife, TargetShape, TargetSide,
     },
 };
 
@@ -56,7 +56,6 @@ fn skill_book() -> SkillBook {
         timeline: None,
     }])
 }
-
 
 fn build_app() -> App {
     let mut app = App::new();

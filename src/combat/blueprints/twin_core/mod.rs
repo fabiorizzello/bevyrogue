@@ -98,35 +98,59 @@ pub struct TwinCoreTransition {
 
 impl TwinCoreTransition {
     pub const fn build_cross_resonance(amount: u8) -> Self {
-        Self { signal: TwinCoreSignal::BuildCrossResonance, amount }
+        Self {
+            signal: TwinCoreSignal::BuildCrossResonance,
+            amount,
+        }
     }
 
     pub const fn spend_cross_resonance(amount: u8) -> Self {
-        Self { signal: TwinCoreSignal::SpendCrossResonance, amount }
+        Self {
+            signal: TwinCoreSignal::SpendCrossResonance,
+            amount,
+        }
     }
 
     pub const fn thermal_spark(amount: u8) -> Self {
-        Self { signal: TwinCoreSignal::ThermalSpark, amount }
+        Self {
+            signal: TwinCoreSignal::ThermalSpark,
+            amount,
+        }
     }
 
     pub const fn twin_burst(amount: u8) -> Self {
-        Self { signal: TwinCoreSignal::TwinBurst, amount }
+        Self {
+            signal: TwinCoreSignal::TwinBurst,
+            amount,
+        }
     }
 
     pub const fn shatter(amount: u8) -> Self {
-        Self { signal: TwinCoreSignal::Shatter, amount }
+        Self {
+            signal: TwinCoreSignal::Shatter,
+            amount,
+        }
     }
 
     pub const fn fire_spend_marker(amount: u8) -> Self {
-        Self { signal: TwinCoreSignal::FireSpendMarker, amount }
+        Self {
+            signal: TwinCoreSignal::FireSpendMarker,
+            amount,
+        }
     }
 
     pub const fn ice_spend_marker(amount: u8) -> Self {
-        Self { signal: TwinCoreSignal::IceSpendMarker, amount }
+        Self {
+            signal: TwinCoreSignal::IceSpendMarker,
+            amount,
+        }
     }
 
     pub const fn cycle_reset() -> Self {
-        Self { signal: TwinCoreSignal::CycleReset, amount: 0 }
+        Self {
+            signal: TwinCoreSignal::CycleReset,
+            amount: 0,
+        }
     }
 }
 
@@ -232,7 +256,12 @@ pub fn apply_twin_core_transitions_system(
             continue;
         };
 
-        let CombatKernelTransition::Blueprint { owner, name, payload } = transition else {
+        let CombatKernelTransition::Blueprint {
+            owner,
+            name,
+            payload,
+        } = transition
+        else {
             continue;
         };
 

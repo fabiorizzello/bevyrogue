@@ -1,11 +1,13 @@
 use bevy::ecs::message::{MessageCursor, Messages};
 use bevy::prelude::*;
 use bevyrogue::combat::{
-    api::{register_kernel_builtins, ExtRegistries, SignalBus, SignalTaxonomy},
-    blueprints::register_all_blueprint_exts,
+    api::timeline::TimelineLibrary,
+    api::{ExtRegistries, SignalBus, SignalTaxonomy, register_kernel_builtins},
     av::{ActionValue, ActionValueUpdated, MAX_AV},
+    blueprints::register_all_blueprint_exts,
     events::{CombatEvent, CombatEventKind},
     kernel::CombatKernelTransition,
+    kit::UnitSkills,
     log::ActionLog,
     rng::CombatRng,
     sp::SpPool,
@@ -14,17 +16,15 @@ use bevyrogue::combat::{
     team::Team,
     toughness::Toughness,
     turn_order::{TurnAdvanced, TurnOrder},
-    turn_system::{apply_av_ops_system, resolve_action_system, ActionIntent},
+    turn_system::{ActionIntent, apply_av_ops_system, resolve_action_system},
     types::{Attribute, DamageTag, EvoStage, SkillId, UnitId},
-    unit::Unit,
     ultimate::{UltAccumulationTrigger, UltimateCharge},
-    kit::UnitSkills,
-    api::timeline::TimelineLibrary,
+    unit::Unit,
 };
 use bevyrogue::data::{
+    SkillBookHandle,
     skill_timeline::compile_skill_book_timelines,
     skills_ron::{SkillBook, validate_skill_book},
-    SkillBookHandle,
 };
 use std::collections::HashSet;
 
@@ -89,7 +89,10 @@ fn build_app(book: &SkillBook) -> App {
         .insert_resource(SkillBookHandle(handle))
         .init_resource::<CombatState>()
         .init_resource::<TurnOrder>()
-        .insert_resource(SpPool { current: 99, max: 99 })
+        .insert_resource(SpPool {
+            current: 99,
+            max: 99,
+        })
         .init_resource::<ActionLog>()
         .init_resource::<Time>()
         .insert_resource(CombatRng::from_seed(42))
@@ -109,7 +112,9 @@ fn build_app(book: &SkillBook) -> App {
         register_all_blueprint_exts(&mut regs);
         let compiled = compile_skill_book_timelines(book, &regs)
             .expect("canonical timeline book must compile");
-        app.world_mut().resource_mut::<TimelineLibrary<String>>().timelines = compiled;
+        app.world_mut()
+            .resource_mut::<TimelineLibrary<String>>()
+            .timelines = compiled;
     }
 
     app
@@ -229,8 +234,14 @@ fn baby_flame_timeline_path_delivers_damage_before_break_then_signal() {
         })
         .expect("apply_heated signal must fire");
 
-    assert!(pos_damage < pos_break, "damage must precede break: {dump:?}");
-    assert!(pos_break < pos_signal, "break must precede signal: {dump:?}");
+    assert!(
+        pos_damage < pos_break,
+        "damage must precede break: {dump:?}"
+    );
+    assert!(
+        pos_break < pos_signal,
+        "break must precede signal: {dump:?}"
+    );
 
     // target should have taken damage
     let mut q = app.world_mut().query::<(&Unit, &Team)>();
@@ -245,8 +256,8 @@ fn baby_flame_timeline_path_delivers_damage_before_break_then_signal() {
 #[test]
 fn dangling_hook_in_child_roster_skill_fails_at_compile_with_skill_and_site() {
     // Inject a typo into the first deal_damage hook (baby_flame's impact_damage beat)
-    let bad_ron = include_str!("../assets/data/skills.ron")
-        .replacen("core/deal_damage", "core/deal_dmge", 1);
+    let bad_ron =
+        include_str!("../assets/data/skills.ron").replacen("core/deal_damage", "core/deal_dmge", 1);
     let book: SkillBook = ron::from_str(&bad_ron).expect("parse tweaked skills.ron");
 
     let err = compile_skill_book_timelines(&book, &canonical_regs())
@@ -265,14 +276,17 @@ fn dangling_hook_in_child_roster_skill_fails_at_compile_with_skill_and_site() {
 #[test]
 fn dangling_selector_in_child_roster_skill_fails_at_compile() {
     // Inject a typo into the first selector (bubble_blast or baby_flame)
-    let bad_ron = include_str!("../assets/data/skills.ron")
-        .replacen("core/primary", "core/priimary", 1);
+    let bad_ron =
+        include_str!("../assets/data/skills.ron").replacen("core/primary", "core/priimary", 1);
     let book: SkillBook = ron::from_str(&bad_ron).expect("parse tweaked skills.ron");
 
     let err = compile_skill_book_timelines(&book, &canonical_regs())
         .expect_err("dangling selector must fail at compile");
 
-    assert!(!err.skill_id.0.is_empty(), "error must name the owning skill");
+    assert!(
+        !err.skill_id.0.is_empty(),
+        "error must name the owning skill"
+    );
     assert!(
         err.detail.contains("core/priimary"),
         "error detail must name the missing selector: {}",

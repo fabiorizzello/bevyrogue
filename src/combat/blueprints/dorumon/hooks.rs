@@ -11,7 +11,7 @@ use crate::combat::{
 };
 
 use super::identity::{PredatorLoopHook, PredatorLoopState};
-use super::signals::{blueprint_transition, SIGNAL_TICK};
+use super::signals::{SIGNAL_TICK, blueprint_transition};
 
 impl CombatKernelHook for PredatorLoopHook {
     fn domain(&self) -> CombatKernelHookDomain {

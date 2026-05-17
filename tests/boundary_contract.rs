@@ -1,6 +1,10 @@
 use bevy::prelude::*;
+use bevyrogue::combat::api::timeline::{Beat, BeatEdge, BeatKind, BeatPayload};
 use bevyrogue::combat::{
-    api::{register_kernel_builtins, timeline::TimelineLibrary, ExtRegistries, SignalBus, SignalTaxonomy},
+    api::{
+        ExtRegistries, SignalBus, SignalTaxonomy, register_kernel_builtins,
+        timeline::TimelineLibrary,
+    },
     events::CombatEvent,
     kit::UnitSkills,
     log::ActionLog,
@@ -15,16 +19,15 @@ use bevyrogue::combat::{
     ultimate::{UltAccumulationTrigger, UltimateCharge},
     unit::Unit,
 };
+use bevyrogue::data::skill_timeline::SkillTimeline;
 use bevyrogue::data::{
+    SkillBookHandle,
     skill_timeline::compile_skill_book_timelines,
     skills_ron::{
         Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation, SkillTargeting,
         TargetLife, TargetShape, TargetSide,
     },
-    SkillBookHandle,
 };
-use bevyrogue::data::skill_timeline::SkillTimeline;
-use bevyrogue::combat::api::timeline::{Beat, BeatEdge, BeatKind, BeatPayload};
 
 fn unit(id: u32, attribute: Attribute, hp: i32) -> Unit {
     Unit {
@@ -116,8 +119,8 @@ fn build_app(book: &SkillBook) -> App {
     {
         let mut regs = app.world_mut().resource_mut::<ExtRegistries>();
         register_kernel_builtins(&mut regs);
-        let compiled = compile_skill_book_timelines(book, &regs)
-            .expect("test timeline book must compile");
+        let compiled =
+            compile_skill_book_timelines(book, &regs).expect("test timeline book must compile");
         app.world_mut()
             .resource_mut::<TimelineLibrary<String>>()
             .timelines = compiled;

@@ -17,9 +17,13 @@ fn validate_timeline_refs_catches_typo_in_hook_id() {
             hook: Some("on_turn_staart"),
             selector: None,
             presentation: None,
-                payload: None,
+            payload: None,
         }],
-        edges: vec![BeatEdge { from: "cast", to: "impact", gate: None }],
+        edges: vec![BeatEdge {
+            from: "cast",
+            to: "impact",
+            gate: None,
+        }],
     };
 
     let regs = ExtRegistries::default(); // nothing registered

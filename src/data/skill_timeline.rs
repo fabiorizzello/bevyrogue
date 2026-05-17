@@ -132,14 +132,20 @@ fn validate_timeline_structure(
             return Err(SkillTimelineCompileError::new(
                 &skill.id,
                 format!("edge {}->{}", edge.from, edge.to),
-                format!("edge source `{}` is not declared as a top-level beat", edge.from),
+                format!(
+                    "edge source `{}` is not declared as a top-level beat",
+                    edge.from
+                ),
             ));
         }
         if !ids.contains(edge.to.as_str()) {
             return Err(SkillTimelineCompileError::new(
                 &skill.id,
                 format!("edge {}->{}", edge.from, edge.to),
-                format!("edge target `{}` is not declared as a top-level beat", edge.to),
+                format!(
+                    "edge target `{}` is not declared as a top-level beat",
+                    edge.to
+                ),
             ));
         }
     }
@@ -175,6 +181,9 @@ fn compilation_error_from_refs(
     SkillTimelineCompileError::new(
         &skill.id,
         error.site.clone(),
-        format!("[{}] missing `{}` at {}", error.axis, error.missing_id, error.site),
+        format!(
+            "[{}] missing `{}` at {}",
+            error.axis, error.missing_id, error.site
+        ),
     )
 }

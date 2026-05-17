@@ -15,19 +15,18 @@
 //!
 //! Deterministic: no wall-clock, no RNG.
 
+use bevy::prelude::*;
 use bevyrogue::combat::{
     api::{
-        CastId,
+        CastId, Intent,
         clock::Clock,
         registry::ExtRegistries,
         runner::{BeatRunner, StepOutcome},
         skill_ctx::{SkillCtx, SkillCtxMode},
         timeline::{Beat, BeatEdge, BeatEvent, BeatKind, CompiledTimeline, Presentation},
-        Intent,
     },
     types::{DamageTag, UnitId},
 };
-use bevy::prelude::*;
 use std::collections::VecDeque;
 use std::sync::Arc;
 
@@ -80,13 +79,18 @@ fn build_timeline() -> Arc<CompiledTimeline> {
                 payload: None,
             },
         ],
-        edges: vec![BeatEdge { from: "cast", to: "impact", gate: None }],
+        edges: vec![BeatEdge {
+            from: "cast",
+            to: "impact",
+            gate: None,
+        }],
     })
 }
 
 fn build_regs() -> ExtRegistries {
     let mut regs = ExtRegistries::default();
-    regs.hooks.register("parity/emit_damage", emit_damage_intent);
+    regs.hooks
+        .register("parity/emit_damage", emit_damage_intent);
     regs
 }
 
@@ -99,8 +103,7 @@ fn headless_auto_eq_windowed_end_of_cast_intent_stream() {
     // ── Run #1: HeadlessAuto via run_to_completion ────────────────────────────
     let mut world_headless = World::new();
     let mut pending_headless: VecDeque<Intent> = VecDeque::new();
-    let mut runner_headless =
-        BeatRunner::new(Arc::clone(&timeline), cast_id, CASTER, TARGET);
+    let mut runner_headless = BeatRunner::new(Arc::clone(&timeline), cast_id, CASTER, TARGET);
     // Default clock is HeadlessAuto — no with_clock needed.
     let headless_outcome = runner_headless.run_to_completion(
         &mut world_headless,
@@ -123,8 +126,7 @@ fn headless_auto_eq_windowed_end_of_cast_intent_stream() {
     let mut world_windowed = World::new();
     let mut pending_windowed: VecDeque<Intent> = VecDeque::new();
     let mut runner_windowed =
-        BeatRunner::new(Arc::clone(&timeline), cast_id, CASTER, TARGET)
-            .with_clock(Clock::Windowed);
+        BeatRunner::new(Arc::clone(&timeline), cast_id, CASTER, TARGET).with_clock(Clock::Windowed);
 
     let mut awaiting_cue_count: u32 = 0;
     let mut last_awaiting_cue_beat: Option<&'static str> = None;
@@ -192,11 +194,9 @@ fn headless_auto_eq_windowed_end_of_cast_intent_stream() {
         windowed_normalized,
     );
     assert_eq!(
-        headless_normalized,
-        windowed_normalized,
+        headless_normalized, windowed_normalized,
         "HeadlessAuto and Windowed must produce identical Intent streams (I3/D026); \
          headless={:?}, windowed={:?}",
-        headless_normalized,
-        windowed_normalized,
+        headless_normalized, windowed_normalized,
     );
 }

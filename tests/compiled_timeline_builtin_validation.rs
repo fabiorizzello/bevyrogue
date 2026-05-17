@@ -1,15 +1,21 @@
 use bevy::prelude::App;
 use bevyrogue::combat::{
     api::{
-        Beat, BeatEdge, BeatKind, BeatPayload, CompiledTimeline, ExtRegistries,
-        Presentation, SelectorCtx, SkillCtx, SkillCtxMode, validate_timeline_refs,
+        Beat, BeatEdge, BeatKind, BeatPayload, CompiledTimeline, ExtRegistries, Presentation,
+        SelectorCtx, SkillCtx, SkillCtxMode, validate_timeline_refs,
+    },
+    api::{
+        builtins::register_kernel_builtins,
+        intent::{CastId, Intent},
     },
     plugin::CombatPlugin,
     types::{DamageTag, UnitId},
-    api::{intent::{CastId, Intent}, builtins::register_kernel_builtins},
 };
-use std::{collections::{HashSet, VecDeque}, num::NonZeroU32};
 use bevyrogue::data::skills_ron::TargetShape;
+use std::{
+    collections::{HashSet, VecDeque},
+    num::NonZeroU32,
+};
 
 fn owned_builtin_timeline(
     hook_id: &str,
@@ -87,7 +93,10 @@ fn builtins_hook_selector_and_predicates_work_through_registry() {
     let world = bevy::prelude::World::new();
     let cast_hit_set = HashSet::new();
 
-    let selector = regs.selectors.get("core/primary").expect("builtin selector");
+    let selector = regs
+        .selectors
+        .get("core/primary")
+        .expect("builtin selector");
     let selected = selector(&SelectorCtx {
         caster: UnitId(11),
         primary_target: UnitId(22),
@@ -97,8 +106,14 @@ fn builtins_hook_selector_and_predicates_work_through_registry() {
     });
     assert_eq!(selected, vec![UnitId(22)]);
 
-    let always = regs.predicates.get("core/always").expect("builtin predicate");
-    let never = regs.predicates.get("core/never").expect("builtin predicate");
+    let always = regs
+        .predicates
+        .get("core/always")
+        .expect("builtin predicate");
+    let never = regs
+        .predicates
+        .get("core/never")
+        .expect("builtin predicate");
     let evt = bevyrogue::combat::api::BeatEvent {
         cast_id: CastId(NonZeroU32::new(8).unwrap()),
         beat_id: "impact",
@@ -131,7 +146,12 @@ fn builtins_hook_selector_and_predicates_work_through_registry() {
     hook(&evt, &mut ctx);
 
     match pending.pop_front().expect("hook should enqueue an intent") {
-        Intent::DealDamage { source, target, amount, .. } => {
+        Intent::DealDamage {
+            source,
+            target,
+            amount,
+            ..
+        } => {
             assert_eq!(source, UnitId(1));
             assert_eq!(target, UnitId(33));
             assert_eq!(amount, 19);
@@ -173,7 +193,9 @@ fn builtin_extended_verbs_translate_to_expected_intents() {
     );
     regs.hooks.get("core/advance_turn").unwrap()(&evt, &mut ctx);
     match pending.pop_front().expect("advance hook should enqueue") {
-        Intent::AdvanceTurn { target, amount_pct, .. } => {
+        Intent::AdvanceTurn {
+            target, amount_pct, ..
+        } => {
             assert_eq!(target, primary_target);
             assert_eq!(amount_pct, 42);
         }
@@ -194,8 +216,13 @@ fn builtin_extended_verbs_translate_to_expected_intents() {
         Some(&BeatPayload::SelfAdvance { amount_pct: 20 }),
     );
     regs.hooks.get("core/self_advance").unwrap()(&evt, &mut ctx);
-    match pending.pop_front().expect("self_advance hook should enqueue") {
-        Intent::AdvanceTurn { target, amount_pct, .. } => {
+    match pending
+        .pop_front()
+        .expect("self_advance hook should enqueue")
+    {
+        Intent::AdvanceTurn {
+            target, amount_pct, ..
+        } => {
             assert_eq!(target, caster);
             assert_eq!(amount_pct, 20);
         }
@@ -216,7 +243,10 @@ fn builtin_extended_verbs_translate_to_expected_intents() {
         Some(&BeatPayload::GrantEnergy { amount: 6 }),
     );
     regs.hooks.get("core/grant_energy").unwrap()(&evt, &mut ctx);
-    match pending.pop_front().expect("grant_energy hook should enqueue") {
+    match pending
+        .pop_front()
+        .expect("grant_energy hook should enqueue")
+    {
         Intent::AddEnergy { target, amount, .. } => {
             assert_eq!(target, caster);
             assert_eq!(amount, 6);
@@ -242,7 +272,12 @@ fn builtin_extended_verbs_translate_to_expected_intents() {
     );
     regs.hooks.get("core/revive").unwrap()(&evt, &mut ctx);
     match pending.pop_front().expect("revive hook should enqueue") {
-        Intent::Revive { source, target, pct, .. } => {
+        Intent::Revive {
+            source,
+            target,
+            pct,
+            ..
+        } => {
             assert_eq!(source, caster);
             assert_eq!(target, primary_target);
             assert_eq!(pct, 25);
@@ -264,7 +299,10 @@ fn builtin_extended_verbs_translate_to_expected_intents() {
         Some(&BeatPayload::GrantFreeSkill { count: 3 }),
     );
     regs.hooks.get("core/grant_free_skill").unwrap()(&evt, &mut ctx);
-    match pending.pop_front().expect("grant_free_skill hook should enqueue") {
+    match pending
+        .pop_front()
+        .expect("grant_free_skill hook should enqueue")
+    {
         Intent::GrantFreeSkill { source, count, .. } => {
             assert_eq!(source, caster);
             assert_eq!(count, 3);

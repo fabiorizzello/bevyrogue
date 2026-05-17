@@ -42,7 +42,8 @@ impl DrBag {
 /// Pure summation of every active DR instance. Returns `0.0` for an absent bag.
 /// Unclamped: callers are responsible for any policy on damage flooring.
 pub fn sum_dr(bag: Option<&DrBag>) -> f32 {
-    bag.map(|b| b.0.iter().map(|i| i.value).sum()).unwrap_or(0.0)
+    bag.map(|b| b.0.iter().map(|i| i.value).sum())
+        .unwrap_or(0.0)
 }
 
 #[cfg(test)]

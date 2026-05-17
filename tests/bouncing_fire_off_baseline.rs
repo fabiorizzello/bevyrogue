@@ -1,11 +1,13 @@
 use bevy::ecs::message::{MessageCursor, Messages};
 use bevy::prelude::*;
+use bevyrogue::combat::api::timeline::TimelineLibrary;
 use bevyrogue::combat::{
-    api::{register_kernel_builtins, ExtRegistries, SignalBus, SignalTaxonomy},
-    blueprints::{agumon::TalentRanks, register_all_blueprint_exts},
+    api::{ExtRegistries, SignalBus, SignalTaxonomy, register_kernel_builtins},
     av::{ActionValue, ActionValueUpdated, MAX_AV},
+    blueprints::{agumon::TalentRanks, register_all_blueprint_exts},
     events::{CombatEvent, CombatEventKind},
     kernel::CombatKernelTransition,
+    kit::UnitSkills,
     log::ActionLog,
     rng::CombatRng,
     sp::SpPool,
@@ -14,17 +16,13 @@ use bevyrogue::combat::{
     team::Team,
     toughness::Toughness,
     turn_order::{TurnAdvanced, TurnOrder},
-    turn_system::{apply_av_ops_system, resolve_action_system, ActionIntent},
+    turn_system::{ActionIntent, apply_av_ops_system, resolve_action_system},
     types::{Attribute, DamageTag, EvoStage, SkillId, UnitId},
-    unit::Unit,
     ultimate::{UltAccumulationTrigger, UltimateCharge},
-    kit::UnitSkills,
+    unit::Unit,
 };
-use bevyrogue::combat::api::timeline::TimelineLibrary;
 use bevyrogue::data::{
-    skill_timeline::compile_skill_book_timelines,
-    skills_ron::SkillBook,
-    SkillBookHandle,
+    SkillBookHandle, skill_timeline::compile_skill_book_timelines, skills_ron::SkillBook,
 };
 
 const AGUMON_ID: UnitId = UnitId(1);
@@ -44,7 +42,10 @@ fn build_app(book: &SkillBook) -> App {
         .insert_resource(SkillBookHandle(handle))
         .init_resource::<CombatState>()
         .init_resource::<TurnOrder>()
-        .insert_resource(SpPool { current: 99, max: 99 })
+        .insert_resource(SpPool {
+            current: 99,
+            max: 99,
+        })
         .init_resource::<ActionLog>()
         .init_resource::<Time>()
         .insert_resource(CombatRng::from_seed(7))
@@ -65,7 +66,9 @@ fn build_app(book: &SkillBook) -> App {
         register_all_blueprint_exts(&mut regs);
         let compiled = compile_skill_book_timelines(book, &regs)
             .expect("canonical timeline book must compile");
-        app.world_mut().resource_mut::<TimelineLibrary<String>>().timelines = compiled;
+        app.world_mut()
+            .resource_mut::<TimelineLibrary<String>>()
+            .timelines = compiled;
     }
 
     // Required for apply_blueprint_signal to accept this owner/name pair.
@@ -170,8 +173,7 @@ fn baby_flame_off_baseline_emits_single_damage_and_no_bounce() {
         "OFF baseline: expected exactly 1 DamageDealt event (no bounce); dump={dump:?}"
     );
     assert_eq!(
-        damage_events[0].target,
-        ENEMY_A_ID,
+        damage_events[0].target, ENEMY_A_ID,
         "OFF baseline: damage must target the primary enemy"
     );
 

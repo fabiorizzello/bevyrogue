@@ -1,10 +1,10 @@
 use bevy::prelude::*;
 use bevyrogue::combat::{
     api::{
-        timeline::{Beat, BeatEdge, BeatKind, BeatPayload, CompiledTimeline, TimelineLibrary},
         CastIdGen,
+        timeline::{Beat, BeatEdge, BeatKind, BeatPayload, CompiledTimeline, TimelineLibrary},
     },
-    enemy_ai::{pick_enemy_action_with_preview, EnemyTurnContext, TargetInfo},
+    enemy_ai::{EnemyTurnContext, TargetInfo, pick_enemy_action_with_preview},
     events::CombatEvent,
     kit::UnitSkills,
     preview::PreviewDamageSummary,
@@ -13,8 +13,7 @@ use bevyrogue::combat::{
     toughness::Toughness,
     turn_order::{TurnAdvanced, TurnOrder},
     turn_system::{
-        ActionIntent, EnemyTurnRequestQueue, advance_turn_system,
-        resolve_enemy_turn_action_system,
+        ActionIntent, EnemyTurnRequestQueue, advance_turn_system, resolve_enemy_turn_action_system,
     },
     types::{Attribute, DamageTag, EvoStage, SkillId, UnitId},
     ultimate::{UltAccumulationTrigger, UltimateCharge},
@@ -89,9 +88,14 @@ fn build_app() -> App {
         .add_message::<ActionIntent>()
         .add_message::<CombatEvent>()
         .add_message::<bevyrogue::combat::av::ActionValueUpdated>()
-        .add_systems(Update, (advance_turn_system, resolve_enemy_turn_action_system).chain());
+        .add_systems(
+            Update,
+            (advance_turn_system, resolve_enemy_turn_action_system).chain(),
+        );
 
-    app.world_mut().resource_mut::<TimelineLibrary<String>>().timelines = vec![
+    app.world_mut()
+        .resource_mut::<TimelineLibrary<String>>()
+        .timelines = vec![
         timeline("enemy_basic", 12),
         timeline("enemy_skill_fire", 48),
         timeline("enemy_ult_fire", 24),
@@ -100,9 +104,7 @@ fn build_app() -> App {
     app
 }
 
-fn action_cursor(
-    app: &mut App,
-) -> bevy::ecs::message::MessageCursor<ActionIntent> {
+fn action_cursor(app: &mut App) -> bevy::ecs::message::MessageCursor<ActionIntent> {
     app.world_mut()
         .resource_mut::<Messages<ActionIntent>>()
         .get_cursor()
@@ -196,7 +198,9 @@ fn runtime_bridge_uses_preview_scoring_and_emits_one_stable_intent() {
         enemy_skills(),
     ));
 
-    app.world_mut().resource_mut::<TurnOrder>().seed([UnitId(101)]);
+    app.world_mut()
+        .resource_mut::<TurnOrder>()
+        .seed([UnitId(101)]);
     let mut intent_cursor = action_cursor(&mut app);
 
     app.world_mut().write_message(TurnAdvanced::of(UnitId(101)));
@@ -207,7 +211,12 @@ fn runtime_bridge_uses_preview_scoring_and_emits_one_stable_intent() {
         .cloned()
         .collect::<Vec<_>>();
 
-    assert_eq!(intents.len(), 1, "expected exactly one ActionIntent, got: {:?}", intents);
+    assert_eq!(
+        intents.len(),
+        1,
+        "expected exactly one ActionIntent, got: {:?}",
+        intents
+    );
     assert!(
         matches!(
             &intents[0],

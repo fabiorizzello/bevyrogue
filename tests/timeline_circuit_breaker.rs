@@ -68,7 +68,11 @@ fn single_target_selector(sctx: &SelectorCtx<'_>) -> Vec<UnitId> {
 /// Hook: enqueues one `DealDamage` per hop (fixed amount=1, no falloff needed).
 /// The target is `primary_target` via `BeatEvent.beat_targets[0]`.
 fn one_damage_per_hop(ev: &BeatEvent, ctx: &mut SkillCtx<'_>) {
-    let target = ev.beat_targets.first().copied().unwrap_or(ctx.primary_target);
+    let target = ev
+        .beat_targets
+        .first()
+        .copied()
+        .unwrap_or(ctx.primary_target);
     ctx.enqueue(Intent::DealDamage {
         source: ctx.caster,
         target,
@@ -98,8 +102,10 @@ fn loop_never_exit_halts_at_max_hops() {
     let cast_id = app.world_mut().resource_mut::<CastIdGen>().next();
 
     let mut regs = ExtRegistries::default();
-    regs.selectors.register("cb/single_target", single_target_selector);
-    regs.hooks.register("cb/one_damage_per_hop", one_damage_per_hop);
+    regs.selectors
+        .register("cb/single_target", single_target_selector);
+    regs.hooks
+        .register("cb/one_damage_per_hop", one_damage_per_hop);
     regs.predicates.register("cb/never", never);
 
     // Loop timeline: a single Impact body beat with a hook that enqueues 1 DealDamage
@@ -116,14 +122,14 @@ fn loop_never_exit_halts_at_max_hops() {
                     hook: Some("cb/one_damage_per_hop"),
                     selector: Some("cb/single_target"),
                     presentation: None,
-                payload: None,
+                    payload: None,
                 }],
                 exit_when: "cb/never",
             },
             hook: None,
             selector: None,
             presentation: None,
-                payload: None,
+            payload: None,
         }],
         edges: vec![],
     });
@@ -174,7 +180,10 @@ fn loop_never_exit_halts_at_max_hops() {
     // ── World effect via intent_applier ───────────────────────────────────────────
     // Drain pending through the real applier to verify no panic on bounded stream.
 
-    app.world_mut().resource_mut::<IntentQueue>().0.extend(pending);
+    app.world_mut()
+        .resource_mut::<IntentQueue>()
+        .0
+        .extend(pending);
     app.update();
 
     let mut cursor = app

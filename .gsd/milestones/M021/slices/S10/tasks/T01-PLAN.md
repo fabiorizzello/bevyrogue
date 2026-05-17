@@ -4,7 +4,7 @@ estimated_files: 5
 skills_used: []
 ---
 
-# T01: Migrate Patamon Holy Support transport onto the Blueprint owner envelope
+# T01: Patamon Holy Support transport fully on Blueprint owner envelope; shared HolySupport kernel variant no longer emitted by any Patamon signal path
 
 Skills used: bevy, rust-best-practices, verify-before-complete.
 

@@ -75,7 +75,11 @@ mod tests {
         let mut a = CastRng::new(12345);
         let mut b = CastRng::new(12345);
         for _ in 0..20 {
-            assert_eq!(a.next_u64(), b.next_u64(), "same seed must produce same sequence");
+            assert_eq!(
+                a.next_u64(),
+                b.next_u64(),
+                "same seed must produce same sequence"
+            );
         }
     }
 

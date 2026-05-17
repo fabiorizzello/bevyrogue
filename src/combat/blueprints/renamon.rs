@@ -12,7 +12,7 @@ use crate::combat::{
         CombatKernelRegistry, CombatKernelTransition, PrecisionCommitment,
         PrecisionMindGameTransition, PrecisionOutcome, PrecisionReveal, PrecisionWindowKind,
     },
-    precision_mind_game::{apply_precision_mind_game_transition, PrecisionMindGameState},
+    precision_mind_game::{PrecisionMindGameState, apply_precision_mind_game_transition},
     team::Team,
     types::UnitId,
     unit::Unit,
@@ -78,16 +78,16 @@ impl Plugin for RenamonPlugin {
 
 fn decode_precision_blueprint_transition(name: &str) -> Option<PrecisionMindGameTransition> {
     match name {
-        SIGNAL_OPEN_MOMENTUM_WINDOW => {
-            Some(PrecisionMindGameTransition::open_window(PrecisionWindowKind::Momentum))
-        }
-        SIGNAL_COMMIT_PRECISION_PRESS => {
-            Some(PrecisionMindGameTransition::commit(PrecisionCommitment::Press))
-        }
+        SIGNAL_OPEN_MOMENTUM_WINDOW => Some(PrecisionMindGameTransition::open_window(
+            PrecisionWindowKind::Momentum,
+        )),
+        SIGNAL_COMMIT_PRECISION_PRESS => Some(PrecisionMindGameTransition::commit(
+            PrecisionCommitment::Press,
+        )),
         SIGNAL_REVEAL_BAIT => Some(PrecisionMindGameTransition::reveal(PrecisionReveal::Baited)),
-        SIGNAL_RESOLVE_PRECISION_SUCCESS => {
-            Some(PrecisionMindGameTransition::resolve(PrecisionOutcome::Success))
-        }
+        SIGNAL_RESOLVE_PRECISION_SUCCESS => Some(PrecisionMindGameTransition::resolve(
+            PrecisionOutcome::Success,
+        )),
         _ => None,
     }
 }
@@ -189,9 +189,7 @@ fn passive_trigger(evt: &BeatEvent, ctx: &SkillCtx<'_>) -> bool {
         return false;
     };
 
-    let Some((self_unit, self_team)) = units
-        .iter(world)
-        .find(|(unit, _)| unit.id == ctx.caster)
+    let Some((self_unit, self_team)) = units.iter(world).find(|(unit, _)| unit.id == ctx.caster)
     else {
         return false;
     };
@@ -229,8 +227,11 @@ fn passive_proc(evt: &BeatEvent, ctx: &mut SkillCtx<'_>) {
 }
 
 fn register_passive_hooks(app: &mut bevy::prelude::App) {
-    let mut regs = app.world_mut().resource_mut::<crate::combat::api::ExtRegistries>();
+    let mut regs = app
+        .world_mut()
+        .resource_mut::<crate::combat::api::ExtRegistries>();
     regs.predicates
         .register("renamon/kitsune_grace/passive_trigger", passive_trigger);
-    regs.hooks.register("renamon/kitsune_grace/passive_proc", passive_proc);
+    regs.hooks
+        .register("renamon/kitsune_grace/passive_proc", passive_proc);
 }

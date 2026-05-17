@@ -1,16 +1,16 @@
 use bevy::prelude::*;
 use bevyrogue::combat::api::intent::CastId;
-use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
+use bevyrogue::combat::blueprints::agumon::TwinCoreState;
 use bevyrogue::combat::blueprints::patamon::{
     HolySupportRejectReason, HolySupportState, HolySupportStep, HolySupportTransition,
     apply_holy_support_transitions_system,
 };
+use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::kernel::CombatKernelTransition;
 use bevyrogue::combat::log::ActionLog;
 use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
 use bevyrogue::combat::sp::SpPool;
 use bevyrogue::combat::state::CombatState;
-use bevyrogue::combat::blueprints::agumon::TwinCoreState;
 use bevyrogue::combat::types::UnitId;
 
 fn app_with_holy_support() -> App {
@@ -75,7 +75,7 @@ fn holy_support_missing_resource_is_absent_from_validation_snapshot() {
     let snapshot = capture_validation_snapshot(app.world_mut()).expect("snapshot should build");
 
     assert!(snapshot.holy_support.is_none());
-    assert!(format_validation_snapshot(&snapshot).contains("holy_support=none"));
+    assert!(format_validation_snapshot(&snapshot).contains("support=none"));
 }
 
 #[test]
@@ -88,7 +88,7 @@ fn holy_support_transition_system_updates_snapshot_without_affordance_api() {
     let holy_support = snapshot
         .holy_support
         .as_ref()
-        .expect("holy support state should be captured");
+        .expect("holy holy_support state should be captured");
 
     assert_eq!(holy_support.grace, 2);
     assert!(holy_support.martyr_light_marked_this_cycle);
@@ -99,7 +99,7 @@ fn holy_support_transition_system_updates_snapshot_without_affordance_api() {
     );
 
     let formatted = format_validation_snapshot(&snapshot);
-    assert!(formatted.contains("holy_support=grace=2/3"));
+    assert!(formatted.contains("support=grace=2/3"));
     assert!(formatted.contains("martyr_marked=true"));
     assert!(formatted.contains("last=mark-martyr"));
 }
@@ -113,7 +113,7 @@ fn holy_support_invalid_spend_is_visible_as_rejected_snapshot_state() {
     let holy_support = snapshot
         .holy_support
         .as_ref()
-        .expect("holy support state should be captured");
+        .expect("holy holy_support state should be captured");
 
     assert_eq!(holy_support.grace, 0);
     assert_eq!(
@@ -125,6 +125,6 @@ fn holy_support_invalid_spend_is_visible_as_rejected_snapshot_state() {
     );
 
     let formatted = format_validation_snapshot(&snapshot);
-    assert!(formatted.contains("holy_support=grace=0/3"));
+    assert!(formatted.contains("support=grace=0/3"));
     assert!(formatted.contains("last=rejected(spend(1);reason=GraceUnderflow)"));
 }

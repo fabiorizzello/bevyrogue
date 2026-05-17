@@ -3,8 +3,8 @@ use bevyrogue::combat::{
     action_query::{
         ActionQueryKind, CombatQuerySnapshot, UnitQuerySnapshot, query_action_affordance,
     },
-    events::{CombatEvent, CombatEventKind},
     blueprints::patamon::{HolySupportState, HolySupportTransition},
+    events::{CombatEvent, CombatEventKind},
     kernel::{CombatBeatId, CombatKernelTransition, register_combat_kernel_runtime},
     kit::UnitSkills,
     log::ActionLog,
@@ -23,7 +23,7 @@ use bevyrogue::combat::{
 use bevyrogue::data::{
     SkillBookHandle,
     skills_ron::{
-        Effect, CustomSignalPayload, SelfTargetRule, SkillBook, SkillCustomSignal, SkillDef,
+        CustomSignalPayload, Effect, SelfTargetRule, SkillBook, SkillCustomSignal, SkillDef,
         SkillImplementation, SkillTargeting, TargetLife, TargetShape, TargetSide,
     },
 };
@@ -378,7 +378,7 @@ fn presentation_metadata_does_not_change_action_query_or_resolved_action() {
             grant_free_skill_count: 0,
             status_to_apply: None,
             advance_pct: 0,
-        delay_pct: 0,
+            delay_pct: 0,
             energy_grant: 0,
             self_advance_pct: 0,
             target_shape: TargetShape::Single,
@@ -492,7 +492,7 @@ fn runtime_events_and_snapshots_ignore_misleading_presentation_metadata() {
         "snapshot leak: presentation metadata changed validation snapshot output"
     );
     assert!(
-        dramatic_snapshot.contains("holy_support=grace=0/3"),
+        dramatic_snapshot.contains("support=grace=0/3"),
         "snapshot drift: HolySupport grace should remain zero for metadata-only skill: {dramatic_snapshot}"
     );
     assert!(

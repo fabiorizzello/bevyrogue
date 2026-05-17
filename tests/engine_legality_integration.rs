@@ -95,7 +95,6 @@ fn revive_skill(id: &str) -> SkillDef {
     }
 }
 
-
 fn unit_skills(skill_id: &str) -> UnitSkills {
     let skill_id = SkillId(skill_id.into());
     UnitSkills {

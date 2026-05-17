@@ -9,8 +9,10 @@ use std::sync::Arc;
 use bevy::prelude::*;
 
 use crate::combat::{
-    api::{Beat, BeatEvent, BeatKind, BlueprintState, CompiledTimeline, EventFilter, Intent,
-        PassiveListeners, PassiveRunner, SignalPayload, SignalTaxonomy, SkillCtx},
+    api::{
+        Beat, BeatEvent, BeatKind, BlueprintState, CompiledTimeline, EventFilter, Intent,
+        PassiveListeners, PassiveRunner, SignalPayload, SignalTaxonomy, SkillCtx,
+    },
     kernel::CombatKernelRegistry,
     team::Team,
     types::UnitId,
@@ -27,9 +29,8 @@ pub(crate) const SIGNAL_CONSUME_MARTYR_LIGHT: &str = "consume_martyr_light";
 pub(crate) const SIGNAL_CYCLE_RESET: &str = "cycle_reset";
 
 pub use identity::{
-    GRACE_CAP, TAG_GRACE, TAG_MARTYR_LIGHT,
-    HolySupportDesignTag, HolySupportHook, HolySupportRejectReason, HolySupportSnapshot,
-    HolySupportState, HolySupportStep, HolySupportTransition,
+    GRACE_CAP, HolySupportDesignTag, HolySupportHook, HolySupportRejectReason, HolySupportSnapshot,
+    HolySupportState, HolySupportStep, HolySupportTransition, TAG_GRACE, TAG_MARTYR_LIGHT,
     apply_holy_support_transitions_system, classify_holy_support_tag,
     holy_support_added_tag_transition, holy_support_design_tag, holy_support_design_tag_name,
 };
@@ -129,9 +130,7 @@ fn passive_trigger(evt: &BeatEvent, ctx: &SkillCtx<'_>) -> bool {
         return false;
     };
 
-    let Some((self_unit, self_team)) = units
-        .iter(world)
-        .find(|(unit, _)| unit.id == ctx.caster)
+    let Some((self_unit, self_team)) = units.iter(world).find(|(unit, _)| unit.id == ctx.caster)
     else {
         return false;
     };
@@ -169,8 +168,11 @@ fn passive_proc(evt: &BeatEvent, ctx: &mut SkillCtx<'_>) {
 }
 
 fn register_passive_hooks(app: &mut App) {
-    let mut regs = app.world_mut().resource_mut::<crate::combat::api::ExtRegistries>();
+    let mut regs = app
+        .world_mut()
+        .resource_mut::<crate::combat::api::ExtRegistries>();
     regs.predicates
         .register("patamon/holy_support/passive_trigger", passive_trigger);
-    regs.hooks.register("patamon/holy_support/passive_proc", passive_proc);
+    regs.hooks
+        .register("patamon/holy_support/passive_proc", passive_proc);
 }

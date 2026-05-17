@@ -4,10 +4,10 @@ use std::sync::Arc;
 use bevy::prelude::*;
 use bevyrogue::combat::{
     api::{
-        register_kernel_builtins,
-        timeline::{Beat, BeatEdge, BeatKind, BeatPayload, CompiledTimeline, TimelineLibrary},
         CastIdGen, ExtRegistries, Intent, IntentQueue, SkillCtxMode, StepOutcome,
+        register_kernel_builtins,
         runner::BeatRunner,
+        timeline::{Beat, BeatEdge, BeatKind, BeatPayload, CompiledTimeline, TimelineLibrary},
     },
     preview::query_skill_preview,
     team::Team,
@@ -17,7 +17,10 @@ use bevyrogue::combat::{
 use bevyrogue::data::{
     SkillBookHandle,
     skill_timeline::SkillTimeline,
-    skills_ron::{SelfTargetRule, SkillBook, SkillDef, SkillImplementation, SkillTargeting, TargetLife, TargetShape, TargetSide},
+    skills_ron::{
+        SelfTargetRule, SkillBook, SkillDef, SkillImplementation, SkillTargeting, TargetLife,
+        TargetShape, TargetSide,
+    },
 };
 
 const CASTER_ID: UnitId = UnitId(11);
@@ -159,8 +162,17 @@ fn normalize(pending: &VecDeque<Intent>) -> Vec<String> {
     pending
         .iter()
         .map(|intent| match intent {
-            Intent::DealDamage { source, target, amount, tag, .. } => {
-                format!("DealDamage(src={:?},tgt={:?},amt={},tag={:?})", source, target, amount, tag)
+            Intent::DealDamage {
+                source,
+                target,
+                amount,
+                tag,
+                ..
+            } => {
+                format!(
+                    "DealDamage(src={:?},tgt={:?},amt={},tag={:?})",
+                    source, target, amount, tag
+                )
             }
             other => format!("{other:?}"),
         })
@@ -180,19 +192,21 @@ fn query_skill_preview_matches_execute_stream_and_leaves_world_unchanged() {
     let mut app = build_app();
     let cast_id = app.world_mut().resource_mut::<CastIdGen>().next();
     let target_entity = entity_for_unit(app.world_mut(), TARGET_ID);
-    let before_hp = app.world().get::<Unit>(target_entity).expect("target unit").hp_current;
+    let before_hp = app
+        .world()
+        .get::<Unit>(target_entity)
+        .expect("target unit")
+        .hp_current;
     let before_queue_len = app.world().resource::<IntentQueue>().0.len();
 
-    let preview_pending = query_skill_preview(
-        app.world_mut(),
-        &skill_id(),
-        cast_id,
-        CASTER_ID,
-        TARGET_ID,
-    );
+    let preview_pending =
+        query_skill_preview(app.world_mut(), &skill_id(), cast_id, CASTER_ID, TARGET_ID);
 
     assert_eq!(
-        app.world().get::<Unit>(target_entity).expect("target unit").hp_current,
+        app.world()
+            .get::<Unit>(target_entity)
+            .expect("target unit")
+            .hp_current,
         before_hp,
         "preview must not mutate target HP"
     );
@@ -216,7 +230,11 @@ fn query_skill_preview_matches_execute_stream_and_leaves_world_unchanged() {
         &mut execute_pending,
         32,
     );
-    assert_eq!(outcome, StepOutcome::Done, "execute-mode timeline must complete");
+    assert_eq!(
+        outcome,
+        StepOutcome::Done,
+        "execute-mode timeline must complete"
+    );
 
     let preview_shape = normalize(&preview_pending);
     let execute_shape = normalize(&execute_pending);
@@ -228,7 +246,10 @@ fn query_skill_preview_matches_execute_stream_and_leaves_world_unchanged() {
         preview_shape,
         vec![format!(
             "DealDamage(src={:?},tgt={:?},amt={},tag={:?})",
-            CASTER_ID, TARGET_ID, DAMAGE, DamageTag::Fire
+            CASTER_ID,
+            TARGET_ID,
+            DAMAGE,
+            DamageTag::Fire
         )],
         "preview stream must contain the authored damage intent"
     );

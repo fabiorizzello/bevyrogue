@@ -2,6 +2,7 @@ use bevy::ecs::message::{MessageCursor, Messages};
 use bevy::prelude::*;
 
 use bevyrogue::combat::api::intent::CastId;
+use bevyrogue::combat::blueprints::renamon::dispatch as renamon_dispatch;
 use bevyrogue::combat::blueprints::{self, agumon::TwinCoreState, patamon::HolySupportState};
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::kernel::register_canonical_passive_runners;
@@ -9,7 +10,6 @@ use bevyrogue::combat::plugin::CombatPlugin;
 use bevyrogue::combat::team::Team;
 use bevyrogue::combat::types::{Attribute, EvoStage, UnitId};
 use bevyrogue::combat::unit::Unit;
-use bevyrogue::combat::blueprints::renamon::dispatch as renamon_dispatch;
 
 const AGUMON_ID: UnitId = UnitId(1);
 const GABUMON_ID: UnitId = UnitId(2);
@@ -83,40 +83,88 @@ fn canonical_passive_bootstrap_routes_ally_ult_to_four_blueprint_reactions() {
         .resource_mut::<bevyrogue::combat::api::SignalBus>()
         .drain()
         .collect();
-    assert!(drained.is_empty(), "SignalBus should be empty after passive dispatch, got: {:?}", drained);
+    assert!(
+        drained.is_empty(),
+        "SignalBus should be empty after passive dispatch, got: {:?}",
+        drained
+    );
 
     let events = read_events(&mut app);
-    let blueprint_hits: Vec<_> = events
-        .iter()
-        .filter_map(|event| match &event.kind {
-            CombatEventKind::OnKernelTransition {
-                transition: bevyrogue::combat::kernel::CombatKernelTransition::Blueprint {
-                    owner,
-                    name,
-                    ..
-                },
-            } => Some((owner.as_str(), name.as_str())),
-            _ => None,
-        })
-        .collect();
+    let blueprint_hits: Vec<_> =
+        events
+            .iter()
+            .filter_map(|event| match &event.kind {
+                CombatEventKind::OnKernelTransition {
+                    transition:
+                        bevyrogue::combat::kernel::CombatKernelTransition::Blueprint {
+                            owner, name, ..
+                        },
+                } => Some((owner.as_str(), name.as_str())),
+                _ => None,
+            })
+            .collect();
 
-    assert!(blueprint_hits.contains(&AGUMON_SIGNAL), "missing agumon passive reaction: {blueprint_hits:?}");
-    assert!(blueprint_hits.contains(&GABUMON_SIGNAL), "missing gabumon passive reaction: {blueprint_hits:?}");
-    assert!(blueprint_hits.contains(&PATAMON_SIGNAL), "missing patamon passive reaction: {blueprint_hits:?}");
-    assert!(blueprint_hits.contains(&RENAMON_SIGNAL), "missing renamon passive reaction: {blueprint_hits:?}");
-    assert_eq!(blueprint_hits.len(), 4, "expected exactly four passive blueprint reactions, got: {blueprint_hits:?}");
+    assert!(
+        blueprint_hits.contains(&AGUMON_SIGNAL),
+        "missing agumon passive reaction: {blueprint_hits:?}"
+    );
+    assert!(
+        blueprint_hits.contains(&GABUMON_SIGNAL),
+        "missing gabumon passive reaction: {blueprint_hits:?}"
+    );
+    assert!(
+        blueprint_hits.contains(&PATAMON_SIGNAL),
+        "missing patamon passive reaction: {blueprint_hits:?}"
+    );
+    assert!(
+        blueprint_hits.contains(&RENAMON_SIGNAL),
+        "missing renamon passive reaction: {blueprint_hits:?}"
+    );
+    assert_eq!(
+        blueprint_hits.len(),
+        4,
+        "expected exactly four passive blueprint reactions, got: {blueprint_hits:?}"
+    );
 
     let twin = app.world().resource::<TwinCoreState>();
-    assert_eq!(twin.cross_resonance, 0, "passive blueprint routing should stay on the signal bus and not bypass TwinCoreHook");
+    assert_eq!(
+        twin.cross_resonance, 0,
+        "passive blueprint routing should stay on the signal bus and not bypass TwinCoreHook"
+    );
 
     let holy = app.world().resource::<HolySupportState>();
-    assert_eq!(holy.grace, 0, "passive blueprint routing should stay on the signal bus and not bypass HolySupportHook");
+    assert_eq!(
+        holy.grace, 0,
+        "passive blueprint routing should stay on the signal bus and not bypass HolySupportHook"
+    );
 
-    let state = app.world().resource::<bevyrogue::combat::api::BlueprintState>();
-    assert_eq!(state.map.get(&(AGUMON_ID, "agumon/twin_core/triggered".to_string())), Some(&1));
-    assert_eq!(state.map.get(&(GABUMON_ID, "gabumon/twin_core/triggered".to_string())), Some(&1));
-    assert_eq!(state.map.get(&(PATAMON_ID, "patamon/holy_support/triggered".to_string())), Some(&1));
-    assert_eq!(state.map.get(&(RENAMON_ID, "renamon/kitsune_grace/triggered".to_string())), Some(&1));
+    let state = app
+        .world()
+        .resource::<bevyrogue::combat::api::BlueprintState>();
+    assert_eq!(
+        state
+            .map
+            .get(&(AGUMON_ID, "agumon/twin_core/triggered".to_string())),
+        Some(&1)
+    );
+    assert_eq!(
+        state
+            .map
+            .get(&(GABUMON_ID, "gabumon/twin_core/triggered".to_string())),
+        Some(&1)
+    );
+    assert_eq!(
+        state
+            .map
+            .get(&(PATAMON_ID, "patamon/holy_support/triggered".to_string())),
+        Some(&1)
+    );
+    assert_eq!(
+        state
+            .map
+            .get(&(RENAMON_ID, "renamon/kitsune_grace/triggered".to_string())),
+        Some(&1)
+    );
 }
 
 #[test]
@@ -138,10 +186,20 @@ fn kitsune_grace_ignores_self_ult() {
             } if owner == "renamon" && name == "kitsune_grace"
         )
     });
-    assert!(kitsune_event.is_none(), "self ult should not emit kitsune_grace blueprint reaction, got: {:?}", events);
+    assert!(
+        kitsune_event.is_none(),
+        "self ult should not emit kitsune_grace blueprint reaction, got: {:?}",
+        events
+    );
 
-    let state = app.world().resource::<bevyrogue::combat::api::BlueprintState>();
-    assert!(!state.map.contains_key(&(RENAMON_ID, "renamon/kitsune_grace/triggered".to_string())));
+    let state = app
+        .world()
+        .resource::<bevyrogue::combat::api::BlueprintState>();
+    assert!(
+        !state
+            .map
+            .contains_key(&(RENAMON_ID, "renamon/kitsune_grace/triggered".to_string()))
+    );
 }
 
 #[test]
@@ -163,8 +221,18 @@ fn kitsune_grace_ignores_enemy_ult() {
             } if owner == "renamon" && name == "kitsune_grace"
         )
     });
-    assert!(kitsune_event.is_none(), "enemy ult should not emit kitsune_grace blueprint reaction, got: {:?}", events);
+    assert!(
+        kitsune_event.is_none(),
+        "enemy ult should not emit kitsune_grace blueprint reaction, got: {:?}",
+        events
+    );
 
-    let state = app.world().resource::<bevyrogue::combat::api::BlueprintState>();
-    assert!(!state.map.contains_key(&(RENAMON_ID, "renamon/kitsune_grace/triggered".to_string())));
+    let state = app
+        .world()
+        .resource::<bevyrogue::combat::api::BlueprintState>();
+    assert!(
+        !state
+            .map
+            .contains_key(&(RENAMON_ID, "renamon/kitsune_grace/triggered".to_string()))
+    );
 }

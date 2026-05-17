@@ -1,8 +1,9 @@
 use bevy::prelude::*;
 
-use bevyrogue::combat::api::{intent::CastId, SignalPayload};
+use bevyrogue::combat::api::{SignalPayload, intent::CastId};
 use bevyrogue::combat::battery_loop::{
-    BATTERY_ENERGY_GRANT, BatteryLoopState, apply_battery_loop_transition,
+    BATTERY_ENERGY_GRANT, BatteryLoopBlockedReason, BatteryLoopChargeKind, BatteryLoopSignal,
+    BatteryLoopState, BatteryLoopStep, BatteryLoopTransition, apply_battery_loop_transition,
     apply_battery_loop_transitions_system,
 };
 use bevyrogue::combat::blueprints::tentomon::{
@@ -10,9 +11,8 @@ use bevyrogue::combat::blueprints::tentomon::{
 };
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::kernel::{
-    BatteryLoopBlockedReason, BatteryLoopChargeKind, BatteryLoopSignal, BatteryLoopStep,
-    BatteryLoopTransition, CombatKernelHook, CombatKernelTransition, TacticalCycleStep,
-    TacticalCycleTransition, register_combat_kernel_runtime,
+    CombatKernelHook, CombatKernelTransition, TacticalCycleStep, TacticalCycleTransition,
+    register_combat_kernel_runtime,
 };
 use bevyrogue::combat::observability::{BatteryLoopSnapshot, format_battery_loop_snapshot};
 use bevyrogue::combat::types::UnitId;
@@ -45,7 +45,7 @@ fn emit_kernel_transition(app: &mut App, transition: CombatKernelTransition) {
 }
 
 #[test]
-fn runtime_registration_applies_battery_transition_once() {
+fn runtime_registration_applies_battery_loop_transition_once() {
     let mut app = App::new();
     app.add_message::<CombatEvent>();
     register_combat_kernel_runtime(&mut app);
@@ -221,10 +221,7 @@ fn tactical_cycle_reset_is_visible_after_message_flush() {
         assert!(state.threshold_grant_emitted_this_cycle);
     }
 
-    emit_kernel_transition(
-        &mut app,
-        tentomon_blueprint_transition(SIG_CYCLE_RESET, 0),
-    );
+    emit_kernel_transition(&mut app, tentomon_blueprint_transition(SIG_CYCLE_RESET, 0));
 
     let state = app.world().resource::<BatteryLoopState>();
     assert_eq!(state.static_charge, 0);

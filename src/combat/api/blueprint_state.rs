@@ -1,6 +1,6 @@
-use std::collections::HashMap;
-use bevy::prelude::Resource;
 use crate::combat::types::UnitId;
+use bevy::prelude::Resource;
+use std::collections::HashMap;
 
 /// Global blueprint state store for counters, stacks, and other per-unit persistent values.
 ///

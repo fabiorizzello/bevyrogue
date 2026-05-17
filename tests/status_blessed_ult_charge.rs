@@ -1,3 +1,4 @@
+use bevyrogue::combat::sp::RoundSpTracker;
 /// Integration tests for §H.1 Blessed +1 Ult charge per action (S05/T03).
 /// Three cases: baseline (no Blessed), Blessed Basic, Blessed Ultimate-cast (Reset → no leak).
 use bevyrogue::combat::{
@@ -11,7 +12,6 @@ use bevyrogue::combat::{
     ultimate::{UltAccumulationTrigger, UltimateCharge},
     unit::{BasicStreak, Unit},
 };
-use bevyrogue::combat::sp::RoundSpTracker;
 use bevyrogue::data::skills_ron::TargetShape;
 
 fn attacker() -> Unit {
@@ -148,7 +148,10 @@ fn run_ult_action(attacker_bag: Option<&StatusBag>) -> i32 {
 #[test]
 fn baseline_no_blessed_basic_action() {
     let delta = run(&basic_resolved(), None);
-    assert_eq!(delta, 25, "baseline delta must equal charge_per_event=25, got {delta}");
+    assert_eq!(
+        delta, 25,
+        "baseline delta must equal charge_per_event=25, got {delta}"
+    );
 }
 
 /// Blessed Basic action → delta = baseline + 1 = 26.
@@ -157,7 +160,10 @@ fn blessed_basic_action_gains_extra_charge() {
     let mut bag = StatusBag::default();
     bag.apply(StatusEffectKind::Blessed, 2);
     let delta = run(&basic_resolved(), Some(&bag));
-    assert_eq!(delta, 26, "Blessed Basic must add 1 extra charge (25+1=26), got {delta}");
+    assert_eq!(
+        delta, 26,
+        "Blessed Basic must add 1 extra charge (25+1=26), got {delta}"
+    );
 }
 
 /// Blessed Ultimate-cast (Reset branch) → meter resets to 0, Blessed +1 does NOT leak.
@@ -166,5 +172,8 @@ fn blessed_ult_cast_no_charge_leak() {
     let mut bag = StatusBag::default();
     bag.apply(StatusEffectKind::Blessed, 2);
     let current = run_ult_action(Some(&bag));
-    assert_eq!(current, 0, "Ult Reset must zero meter; Blessed must not leak +1, got {current}");
+    assert_eq!(
+        current, 0,
+        "Ult Reset must zero meter; Blessed must not leak +1, got {current}"
+    );
 }

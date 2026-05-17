@@ -91,9 +91,11 @@ fn patamon_roster_references_the_seeded_blueprint_skill() {
 }
 
 #[test]
-fn holy_support_metadata_remains_optional_for_backward_compatibility() {
+fn blueprint_metadata_remains_optional_for_backward_compatibility() {
     let roster = canonical_roster();
     let agumon = roster.0.iter().find(|u| u.name == "Agumon").unwrap();
-    assert_eq!(agumon.holy_support.line, None);
-    assert_eq!(agumon.holy_support.role, None);
+    assert!(
+        agumon.blueprint_metadata.0.is_empty(),
+        "generic blueprint metadata should remain absent when not declared"
+    );
 }

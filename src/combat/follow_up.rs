@@ -2,6 +2,7 @@ use bevy::prelude::*;
 
 use crate::combat::{
     StatusBag,
+    buffs::DrBag,
     energy::{Energy, RoundEnergyTracker},
     events::{ActionIntentKind, CombatEvent, CombatEventKind},
     kernel::{CombatBeatId, CombatKernelRegistry},
@@ -9,7 +10,6 @@ use crate::combat::{
         FollowUpConfig, FollowUpTrigger, FormIdentityConfig, FormIdentityKit, FormIdentityTrigger,
         UnitSkills,
     },
-    buffs::DrBag,
     stun::Stunned,
     team::Team,
     turn_system::{ActionIntent, emit_combat_beat, emit_combat_event, step_app, step_declaration},
@@ -605,7 +605,8 @@ pub fn resolve_follow_up_action_system(
         );
 
         if intent.origin_kind == FollowUpOriginKind::FormIdentity {
-            for (_, _, unit, _, _, _, _, _, _, _, _, _, mut round_flags, _, _) in actors.iter_mut() {
+            for (_, _, unit, _, _, _, _, _, _, _, _, _, mut round_flags, _, _) in actors.iter_mut()
+            {
                 if unit.id == intent.attacker {
                     if let Some(ref mut flags) = round_flags {
                         flags.form_identity_used = true;
@@ -627,7 +628,7 @@ mod tests {
 
     use crate::combat::api::intent::CastId;
     use crate::combat::api::timeline::{Beat, BeatEdge, BeatKind, BeatPayload, TimelineLibrary};
-    use crate::combat::api::{register_kernel_builtins, ExtRegistries, SignalBus, SignalTaxonomy};
+    use crate::combat::api::{ExtRegistries, SignalBus, SignalTaxonomy, register_kernel_builtins};
     use crate::combat::rng::CombatRng;
     use crate::combat::{
         events::CombatEventKind,
@@ -641,15 +642,15 @@ mod tests {
         types::{Attribute, DamageTag, EvoStage},
         ultimate::{UltAccumulationTrigger, UltimateCharge},
     };
+    use crate::data::skill_timeline::SkillTimeline;
     use crate::data::{
-        skill_timeline::compile_skill_book_timelines,
         SkillBookHandle,
+        skill_timeline::compile_skill_book_timelines,
         skills_ron::{
-            Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
-            SkillTargeting, TargetLife, TargetShape, TargetSide,
+            Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation, SkillTargeting,
+            TargetLife, TargetShape, TargetSide,
         },
     };
-    use crate::data::skill_timeline::SkillTimeline;
 
     fn unit(id: u32, attribute: Attribute, hp_max: i32, hp_current: i32) -> Unit {
         Unit {
@@ -691,13 +692,50 @@ mod tests {
             timeline: Some(SkillTimeline {
                 entry: "cast".into(),
                 beats: vec![
-                    Beat { id: "cast".into(), kind: BeatKind::Cast, hook: None, selector: None, presentation: None, payload: None },
-                    Beat { id: "impact_damage".into(), kind: BeatKind::Impact, hook: Some("core/deal_damage".into()), selector: Some("core/primary".into()), presentation: None, payload: Some(BeatPayload::DealDamage { amount: damage, tag: damage_tag, target: TargetShape::Single }) },
-                    Beat { id: "impact_break".into(), kind: BeatKind::Impact, hook: Some("core/apply_effect".into()), selector: Some("core/primary".into()), presentation: None, payload: Some(BeatPayload::BreakToughness { amount: toughness_damage, tag: damage_tag, target: TargetShape::Single }) },
+                    Beat {
+                        id: "cast".into(),
+                        kind: BeatKind::Cast,
+                        hook: None,
+                        selector: None,
+                        presentation: None,
+                        payload: None,
+                    },
+                    Beat {
+                        id: "impact_damage".into(),
+                        kind: BeatKind::Impact,
+                        hook: Some("core/deal_damage".into()),
+                        selector: Some("core/primary".into()),
+                        presentation: None,
+                        payload: Some(BeatPayload::DealDamage {
+                            amount: damage,
+                            tag: damage_tag,
+                            target: TargetShape::Single,
+                        }),
+                    },
+                    Beat {
+                        id: "impact_break".into(),
+                        kind: BeatKind::Impact,
+                        hook: Some("core/apply_effect".into()),
+                        selector: Some("core/primary".into()),
+                        presentation: None,
+                        payload: Some(BeatPayload::BreakToughness {
+                            amount: toughness_damage,
+                            tag: damage_tag,
+                            target: TargetShape::Single,
+                        }),
+                    },
                 ],
                 edges: vec![
-                    BeatEdge { from: "cast".into(), to: "impact_damage".into(), gate: Some("core/always".into()) },
-                    BeatEdge { from: "impact_damage".into(), to: "impact_break".into(), gate: Some("core/always".into()) },
+                    BeatEdge {
+                        from: "cast".into(),
+                        to: "impact_damage".into(),
+                        gate: Some("core/always".into()),
+                    },
+                    BeatEdge {
+                        from: "impact_damage".into(),
+                        to: "impact_break".into(),
+                        gate: Some("core/always".into()),
+                    },
                 ],
             }),
         }

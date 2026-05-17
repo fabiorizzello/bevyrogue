@@ -45,13 +45,13 @@
 - [x] **S09: S09** `risk:medium` `depends:[]`
   > After this: Predator Loop write in JSONL; Battery Loop deterministico.
 
-- [ ] **S10: S10** `risk:medium` `depends:[]`
+- [x] **S10: S10** `risk:medium` `depends:[]`
   > After this: Kernel digimon-free verificato grep; smoke UI 2 encounter.
 
-- [ ] **S11: UI and AI consumers via SkillCtx Preview** `risk:low` `depends:[S06,S07]`
+- [x] **S11: S11** `risk:low` `depends:[]`
   > After this: UI preview damage via stream; AI score ottimale via stream.
 
-- [ ] **S12: RosterEntry blueprint-keyed + ValidationSnapshot from registry** `risk:low` `depends:[S10]`
+- [ ] **S12: S12** `risk:low` `depends:[]`
   > After this: Test 'add new digimon' modifica solo le 2 dir; suite verde.
 
 ## Boundary Map

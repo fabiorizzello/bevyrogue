@@ -1,4 +1,5 @@
 use bevy::{ecs::message::MessageCursor, prelude::*};
+use bevyrogue::combat::api::SignalPayload;
 use bevyrogue::combat::{
     events::{ActionIntentKind, CombatEvent, CombatEventKind},
     kernel::{CombatBeatId, CombatKernelTransition, register_combat_kernel_runtime},
@@ -14,12 +15,11 @@ use bevyrogue::combat::{
     ultimate::{UltAccumulationTrigger, UltimateCharge},
     unit::Unit,
 };
-use bevyrogue::combat::api::SignalPayload;
 use bevyrogue::data::{
     SkillBookHandle,
     skills_ron::{
-        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
-        SkillTargeting, TargetLife, TargetShape, TargetSide,
+        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation, SkillTargeting,
+        TargetLife, TargetShape, TargetSide,
     },
 };
 
@@ -79,7 +79,7 @@ fn s09_event_stream_observes_all_variants() {
                 Effect::Damage {
                     amount: 10,
                     target: TargetShape::Single,
-                per_hop: Default::default(),
+                    per_hop: Default::default(),
                 },
                 Effect::ToughnessHit(5),
             ],
@@ -131,7 +131,7 @@ fn s09_event_stream_observes_all_variants() {
                 Effect::Damage {
                     amount: 10,
                     target: TargetShape::Single,
-                per_hop: Default::default(),
+                    per_hop: Default::default(),
                 },
                 Effect::ToughnessHit(0),
             ],
@@ -252,7 +252,11 @@ fn s09_event_stream_observes_all_variants() {
             .iter()
             .any(|k| matches!(k, CombatEventKind::OnBreak { .. }))
     );
-    assert!(kinds.iter().any(|k| matches!(k, CombatEventKind::UnitDied { .. })));
+    assert!(
+        kinds
+            .iter()
+            .any(|k| matches!(k, CombatEventKind::UnitDied { .. }))
+    );
     assert!(
         kinds
             .iter()
@@ -278,8 +282,6 @@ fn s09_event_stream_observes_all_variants() {
             | CombatEventKind::OnActionPreApp
             | CombatEventKind::OnCombatBeat { .. }
             | CombatEventKind::OnKernelTransition { .. }
-            | CombatEventKind::BatteryLoopResolved { .. }
-            | CombatEventKind::PredatorLoopResolved { .. }
             | CombatEventKind::OnActionApplied
             | CombatEventKind::OnActionResolved
             | CombatEventKind::OnStatusApplied { .. }
@@ -334,6 +336,6 @@ fn s09_event_stream_observes_all_variants() {
         assert!(serialized.contains(owner), "{serialized}");
         assert!(serialized.contains("Blueprint"), "{serialized}");
     }
-    // Suppress unused-import warning until T02 emits these variants.
+    // Keep the coarse intent enum exercised so serde coverage stays anchored on the shared bus.
     let _ = ActionIntentKind::Basic;
 }

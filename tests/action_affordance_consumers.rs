@@ -138,7 +138,6 @@ fn revive_skill(id: &str, sp_cost: i32) -> SkillDef {
 }
 
 fn deferred_skill(id: &str) -> SkillDef {
-
     SkillDef {
         id: SkillId(id.into()),
         name: "Deferred Skill".into(),
@@ -165,7 +164,6 @@ fn deferred_skill(id: &str) -> SkillDef {
         timeline: None,
     }
 }
-
 
 fn snapshot_from_fixtures(
     fixtures: &[Fixture],

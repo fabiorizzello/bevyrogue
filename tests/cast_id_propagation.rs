@@ -4,12 +4,13 @@
 //! - Events from different casts receive distinct non-ROOT cast_ids.
 
 use bevy::{ecs::message::MessageCursor, prelude::*};
+use bevyrogue::combat::blueprints::register_all_blueprint_exts;
 use bevyrogue::combat::{
     api::{
+        ExtRegistries, SignalBus, SignalTaxonomy,
         intent::{CastId, CastIdGen},
         register_kernel_builtins,
         timeline::TimelineLibrary,
-        ExtRegistries, SignalBus, SignalTaxonomy,
     },
     events::{CombatEvent, CombatEventKind},
     log::ActionLog,
@@ -22,8 +23,9 @@ use bevyrogue::combat::{
     ultimate::{UltAccumulationTrigger, UltimateCharge},
     unit::Unit,
 };
-use bevyrogue::combat::blueprints::register_all_blueprint_exts;
-use bevyrogue::data::{skill_timeline::compile_skill_book_timelines, SkillBookHandle, skills_ron::SkillBook};
+use bevyrogue::data::{
+    SkillBookHandle, skill_timeline::compile_skill_book_timelines, skills_ron::SkillBook,
+};
 
 fn load_skill_book() -> SkillBook {
     ron::from_str(include_str!("../assets/data/skills.ron")).expect("parse skills.ron")
@@ -39,7 +41,10 @@ fn build_app() -> App {
         .insert_resource(SkillBookHandle(handle))
         .init_resource::<CombatState>()
         .init_resource::<TurnOrder>()
-        .insert_resource(SpPool { current: 99, max: 99 })
+        .insert_resource(SpPool {
+            current: 99,
+            max: 99,
+        })
         .insert_resource(ActionLog::default())
         .init_resource::<Time>()
         .init_resource::<CastIdGen>()
@@ -181,12 +186,9 @@ fn cast_events_share_nonroot_cast_id() {
     let first_cast_id = cast_events[0].cast_id;
     for ev in &cast_events {
         assert_eq!(
-            ev.cast_id,
-            first_cast_id,
+            ev.cast_id, first_cast_id,
             "in-cast event {:?} has cast_id {:?}, expected {:?}",
-            ev.kind,
-            ev.cast_id,
-            first_cast_id
+            ev.kind, ev.cast_id, first_cast_id
         );
     }
 }
@@ -294,8 +296,7 @@ fn sequential_casts_have_distinct_cast_ids() {
     assert_ne!(cast_id_1, CastId::ROOT, "first cast id should be non-ROOT");
     assert_ne!(cast_id_2, CastId::ROOT, "second cast id should be non-ROOT");
     assert_ne!(
-        cast_id_1,
-        cast_id_2,
+        cast_id_1, cast_id_2,
         "sequential casts should have distinct cast_ids"
     );
 }

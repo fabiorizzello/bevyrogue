@@ -3,20 +3,23 @@
 use bevy::prelude::*;
 use bevyrogue::combat::{
     api::{CastIdGen, ExtRegistries, register_kernel_builtins},
+    kit::UnitSkills,
     preview::{query_skill_preview, summarize_preview_damage},
     sp::SpPool,
     state::CombatState,
     team::Team,
     turn_order::TurnOrder,
     types::{Attribute, DamageTag, EvoStage, SkillId, UnitId},
+    ultimate::{UltAccumulationTrigger, UltimateCharge},
     unit::Unit,
-    kit::UnitSkills,
-    ultimate::{UltimateCharge, UltAccumulationTrigger},
 };
 use bevyrogue::data::{
     SkillBookHandle,
     skill_timeline::SkillTimeline,
-    skills_ron::{SelfTargetRule, SkillBook, SkillDef, SkillImplementation, SkillTargeting, TargetLife, TargetShape, TargetSide},
+    skills_ron::{
+        SelfTargetRule, SkillBook, SkillDef, SkillImplementation, SkillTargeting, TargetLife,
+        TargetShape, TargetSide,
+    },
 };
 use bevyrogue::ui::combat_panel::{
     PendingAction, PendingKind, PreviewDamageCache, refresh_preview_damage_cache,
@@ -187,7 +190,10 @@ fn windowed_preview_cache_tracks_shared_preview_summary_and_stays_put_without_pr
 
     let cached = app.world().resource::<PreviewDamageCache>().clone();
     assert_eq!(cached.actor_id, Some(CASTER_ID));
-    assert_eq!(cached.pending_kind, Some(PendingKind::Skill(preview_skill_id())));
+    assert_eq!(
+        cached.pending_kind,
+        Some(PendingKind::Skill(preview_skill_id()))
+    );
     assert_eq!(cached.target_id, Some(TARGET_ID));
     let summary = cached.summary.expect("preview summary");
     assert_eq!(summary.total_damage, 24);

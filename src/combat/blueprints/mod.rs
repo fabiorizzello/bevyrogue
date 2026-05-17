@@ -46,10 +46,7 @@ impl fmt::Display for CustomSignalDispatchError {
                 signal,
                 detail,
             } => {
-                write!(
-                    f,
-                    "malformed payload for {owner}::{signal}: {detail}"
-                )
+                write!(f, "malformed payload for {owner}::{signal}: {detail}")
             }
         }
     }

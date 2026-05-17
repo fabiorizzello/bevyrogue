@@ -23,8 +23,8 @@ use bevyrogue::combat::{
 use bevyrogue::data::{
     SkillBookHandle,
     skills_ron::{
-        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
-        SkillTargeting, TargetLife, TargetShape, TargetSide,
+        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation, SkillTargeting,
+        TargetLife, TargetShape, TargetSide,
     },
     units_ron::{UnitDef, UnitRoster},
 };
@@ -56,7 +56,7 @@ fn skill_book_with_shock_fixture() -> SkillBook {
             Effect::Damage {
                 amount: 15,
                 target: TargetShape::Single,
-            per_hop: Default::default(),
+                per_hop: Default::default(),
             },
             Effect::ToughnessHit(8),
             Effect::ApplyStatus {
@@ -91,13 +91,13 @@ fn sp_fixture_skill_book() -> SkillBook {
             legacy_ops: vec![Effect::Damage {
                 amount: 8,
                 target: TargetShape::Single,
-            per_hop: Default::default(),
+                per_hop: Default::default(),
             }],
 
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
-        timeline: None,
+            timeline: None,
         },
         SkillDef {
             id: SkillId("ally_skill_3".into()),
@@ -115,13 +115,13 @@ fn sp_fixture_skill_book() -> SkillBook {
             legacy_ops: vec![Effect::Damage {
                 amount: 16,
                 target: TargetShape::Single,
-            per_hop: Default::default(),
+                per_hop: Default::default(),
             }],
 
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
-        timeline: None,
+            timeline: None,
         },
         SkillDef {
             id: SkillId("ally_skill_4".into()),
@@ -139,13 +139,13 @@ fn sp_fixture_skill_book() -> SkillBook {
             legacy_ops: vec![Effect::Damage {
                 amount: 18,
                 target: TargetShape::Single,
-            per_hop: Default::default(),
+                per_hop: Default::default(),
             }],
 
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
-        timeline: None,
+            timeline: None,
         },
         SkillDef {
             id: SkillId("holy_revive".into()),
@@ -165,7 +165,7 @@ fn sp_fixture_skill_book() -> SkillBook {
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
-        timeline: None,
+            timeline: None,
         },
         SkillDef {
             id: SkillId("enemy_smash".into()),
@@ -183,13 +183,13 @@ fn sp_fixture_skill_book() -> SkillBook {
             legacy_ops: vec![Effect::Damage {
                 amount: 9999,
                 target: TargetShape::Single,
-            per_hop: Default::default(),
+                per_hop: Default::default(),
             }],
 
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
-        timeline: None,
+            timeline: None,
         },
     ])
 }
@@ -454,8 +454,14 @@ fn trace_kind_json(kind: &CombatEventKind) -> String {
         CombatEventKind::OnBreak { damage_tag } => {
             format!("{{\"kind\":\"OnBreak\",\"element\":\"{:?}\"}}", damage_tag)
         }
-        CombatEventKind::UnitDied { status_remaining, heated_remaining } => {
-            format!("{{\"kind\":\"UnitDied\",\"status_remaining\":{:?},\"heated_remaining\":{}}}", status_remaining, heated_remaining)
+        CombatEventKind::UnitDied {
+            status_remaining,
+            heated_remaining,
+        } => {
+            format!(
+                "{{\"kind\":\"UnitDied\",\"status_remaining\":{:?},\"heated_remaining\":{}}}",
+                status_remaining, heated_remaining
+            )
         }
         CombatEventKind::OnRevive { hp_after } => {
             format!("{{\"kind\":\"OnRevive\",\"hp_after\":{}}}", hp_after)

@@ -234,7 +234,9 @@ fn ultimate_used_emitted_once_on_ult_cast() {
         Toughness::new(200, vec![]),
     ));
 
-    app.world_mut().resource_mut::<TurnOrder>().seed([attacker_id, defender_id]);
+    app.world_mut()
+        .resource_mut::<TurnOrder>()
+        .seed([attacker_id, defender_id]);
 
     let mut cursor = message_cursor::<CombatEvent>(&mut app);
     app.world_mut().write_message(ActionIntent::Ultimate {
@@ -282,7 +284,9 @@ fn no_ultimate_used_on_basic_attack() {
         Toughness::new(200, vec![]),
     ));
 
-    app.world_mut().resource_mut::<TurnOrder>().seed([attacker_id, defender_id]);
+    app.world_mut()
+        .resource_mut::<TurnOrder>()
+        .seed([attacker_id, defender_id]);
 
     let mut cursor = message_cursor::<CombatEvent>(&mut app);
     app.world_mut().write_message(ActionIntent::Basic {
@@ -325,7 +329,9 @@ fn no_ultimate_used_on_skill_cast() {
         Toughness::new(200, vec![]),
     ));
 
-    app.world_mut().resource_mut::<TurnOrder>().seed([attacker_id, defender_id]);
+    app.world_mut()
+        .resource_mut::<TurnOrder>()
+        .seed([attacker_id, defender_id]);
 
     let mut cursor = message_cursor::<CombatEvent>(&mut app);
     app.world_mut().write_message(ActionIntent::Skill {

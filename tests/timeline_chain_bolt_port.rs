@@ -103,7 +103,7 @@ fn chain_bolt_hits_3_targets_with_falloff() {
     let caster_id = UnitId(1);
     let e_low = UnitId(12); // hp_current=60/100, lowest pct → hit first
     let e_mid = UnitId(11); // hp_current=80/100                → hit second
-    let e_hi = UnitId(10);  // hp_current=100/100               → hit third
+    let e_hi = UnitId(10); // hp_current=100/100               → hit third
 
     spawn_unit(&mut app, caster_id, Team::Ally, 500, 500);
     spawn_unit(&mut app, e_low, Team::Enemy, 60, 100);
@@ -113,10 +113,14 @@ fn chain_bolt_hits_3_targets_with_falloff() {
     let cast_id = app.world_mut().resource_mut::<CastIdGen>().next();
 
     let mut regs = ExtRegistries::default();
-    regs.selectors
-        .register("chain/lowest_hp_pct_alive_norepeat", lowest_hp_pct_alive_norepeat);
-    regs.predicates
-        .register("chain/pool_exhausted_or_max_hops", pool_exhausted_or_max_hops);
+    regs.selectors.register(
+        "chain/lowest_hp_pct_alive_norepeat",
+        lowest_hp_pct_alive_norepeat,
+    );
+    regs.predicates.register(
+        "chain/pool_exhausted_or_max_hops",
+        pool_exhausted_or_max_hops,
+    );
     regs.hooks.register("chain/bolt_hop", chain_bolt_hop);
 
     let timeline = Arc::new(CompiledTimeline {
@@ -131,14 +135,14 @@ fn chain_bolt_hits_3_targets_with_falloff() {
                     hook: Some("chain/bolt_hop"),
                     selector: Some("chain/lowest_hp_pct_alive_norepeat"),
                     presentation: None,
-                payload: None,
+                    payload: None,
                 }],
                 exit_when: "chain/pool_exhausted_or_max_hops",
             },
             hook: None,
             selector: None,
             presentation: None,
-                payload: None,
+            payload: None,
         }],
         edges: vec![],
     });
@@ -153,7 +157,11 @@ fn chain_bolt_hits_3_targets_with_falloff() {
         &mut pending,
         64,
     );
-    assert_eq!(outcome, StepOutcome::Done, "timeline should finish normally");
+    assert_eq!(
+        outcome,
+        StepOutcome::Done,
+        "timeline should finish normally"
+    );
 
     // ── Intent-level assertions (before intent_applier runs) ─────────────────────
 
@@ -180,7 +188,11 @@ fn chain_bolt_hits_3_targets_with_falloff() {
     // No target hit twice.
     let unique_targets: std::collections::HashSet<UnitId> =
         dmg_intents.iter().map(|(t, _)| *t).collect();
-    assert_eq!(unique_targets.len(), 3, "each target must be hit exactly once (NoRepeat)");
+    assert_eq!(
+        unique_targets.len(),
+        3,
+        "each target must be hit exactly once (NoRepeat)"
+    );
 
     // Damage ladder: base=100, ×0.8 per hop (integer floor).
     assert_eq!(dmg_intents[0].1, 100, "hop 0 damage should be 100");
@@ -189,7 +201,10 @@ fn chain_bolt_hits_3_targets_with_falloff() {
 
     // ── Event-level assertions (after intent_applier drains the queue) ──────────
 
-    app.world_mut().resource_mut::<IntentQueue>().0.extend(pending);
+    app.world_mut()
+        .resource_mut::<IntentQueue>()
+        .0
+        .extend(pending);
     app.update();
 
     let mut cursor = app
@@ -231,11 +246,14 @@ fn chain_bolt_respects_bounded_hops_without_extra_iterations() {
     let cast_id = app.world_mut().resource_mut::<CastIdGen>().next();
 
     let mut regs = ExtRegistries::default();
-    regs.selectors
-        .register("chain/lowest_hp_pct_alive_norepeat", lowest_hp_pct_alive_norepeat);
-    regs.predicates.register("chain/stop_after_two", |evt, ctx| {
-        evt.hop_index >= 2 || ctx.cast_hit_set.len() >= 2
-    });
+    regs.selectors.register(
+        "chain/lowest_hp_pct_alive_norepeat",
+        lowest_hp_pct_alive_norepeat,
+    );
+    regs.predicates
+        .register("chain/stop_after_two", |evt, ctx| {
+            evt.hop_index >= 2 || ctx.cast_hit_set.len() >= 2
+        });
     regs.hooks.register("chain/bolt_hop", chain_bolt_hop);
 
     let timeline = Arc::new(CompiledTimeline {
@@ -272,7 +290,11 @@ fn chain_bolt_respects_bounded_hops_without_extra_iterations() {
         &mut pending,
         64,
     );
-    assert_eq!(outcome, StepOutcome::Done, "bounded timeline should finish normally");
+    assert_eq!(
+        outcome,
+        StepOutcome::Done,
+        "bounded timeline should finish normally"
+    );
 
     let dmg_intents: Vec<(UnitId, i32)> = pending
         .iter()
@@ -282,8 +304,11 @@ fn chain_bolt_respects_bounded_hops_without_extra_iterations() {
         })
         .collect();
 
-    assert_eq!(dmg_intents.len(), 2, "bounded loop should stop after two hops");
+    assert_eq!(
+        dmg_intents.len(),
+        2,
+        "bounded loop should stop after two hops"
+    );
     assert_eq!(dmg_intents[0].0, e_low);
     assert_eq!(dmg_intents[1].0, e_mid);
 }
-

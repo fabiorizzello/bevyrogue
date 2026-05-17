@@ -2,13 +2,9 @@ use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::api::SignalPayload;
 use bevyrogue::combat::api::intent::CastId;
 use bevyrogue::combat::blueprints;
-use bevyrogue::combat::blueprints::dorumon::{
-    PredatorLoopState, PredatorLoopTransition,
-};
+use bevyrogue::combat::blueprints::dorumon::{PredatorLoopState, PredatorLoopTransition};
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
-use bevyrogue::combat::kernel::{
-    CombatKernelTransition, register_combat_kernel_runtime,
-};
+use bevyrogue::combat::kernel::{CombatKernelTransition, register_combat_kernel_runtime};
 use bevyrogue::combat::log::ActionLog;
 use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
 use bevyrogue::combat::sp::SpPool;
@@ -50,7 +46,7 @@ fn dorumon_action() -> ResolvedAction {
     ResolvedAction {
         source: UnitId(7),
         target: UnitId(8),
-        skill_id: SkillId("dorumon_predator_runtime_test".into()),
+        skill_id: SkillId("dorumon_predator_loop_runtime_test".into()),
         damage_tag: DamageTag::Dark,
         base_damage: 0,
         toughness_damage: 0,
@@ -113,7 +109,7 @@ fn app_with_dorumon_runtime() -> App {
 }
 
 #[test]
-fn dorumon_runtime_transitions_flow_through_canonical_predator_events() {
+fn dorumon_runtime_transitions_flow_through_canonical_predator_loop_events() {
     let mut app = app_with_dorumon_runtime();
 
     let action = dorumon_action();
@@ -168,10 +164,7 @@ fn dorumon_runtime_transitions_flow_through_canonical_predator_events() {
 
     let snapshot = capture_validation_snapshot(app.world_mut()).expect("snapshot");
     let formatted = format_validation_snapshot(&snapshot);
-    assert!(
-        formatted.contains("predator_loop=exploit_cap=3"),
-        "{formatted}"
-    );
+    assert!(formatted.contains("predator=exploit_cap=3"), "{formatted}");
     assert!(formatted.contains("targets=[8:e2:p2]"), "{formatted}");
     assert!(
         formatted.contains("last=prey-lock(target=Some(UnitId(8));amount=2)"),

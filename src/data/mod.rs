@@ -10,7 +10,7 @@ use crate::combat::api::{ExtRegistries, TimelineLibrary};
 
 use self::party_ron::PartyConfig;
 use self::skill_timeline::compile_skill_book_timelines;
-use self::skills_ron::{validate_skill_book, SkillBook};
+use self::skills_ron::{SkillBook, validate_skill_book};
 use self::units_ron::UnitRoster;
 
 #[derive(Resource)]
@@ -150,7 +150,9 @@ fn sync_skill_book_on_load(
                     }
                     if let BeatKind::Loop { body, .. } = &beat.kind {
                         for inner in body {
-                            if let Some(BeatPayload::BlueprintSignal { owner, name, .. }) = &inner.payload {
+                            if let Some(BeatPayload::BlueprintSignal { owner, name, .. }) =
+                                &inner.payload
+                            {
                                 taxonomy.register(
                                     Box::leak(owner.clone().into_boxed_str()),
                                     Box::leak(name.clone().into_boxed_str()),

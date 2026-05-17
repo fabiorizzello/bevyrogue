@@ -1,6 +1,10 @@
 use bevy::prelude::*;
 
 use bevyrogue::combat::api::intent::CastId;
+use bevyrogue::combat::blueprints::twin_core::{
+    TwinCoreDesignTag, TwinCoreHook, TwinCoreState, apply_twin_core_transitions_system,
+    twin_core_design_tag,
+};
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::kernel::{
     CombatBeatId, CombatKernelRegistry, CombatKernelTransition, CombatTagChangeKind,
@@ -11,10 +15,6 @@ use bevyrogue::combat::observability::{capture_validation_snapshot, format_valid
 use bevyrogue::combat::sp::SpPool;
 use bevyrogue::combat::state::CombatState;
 use bevyrogue::combat::toughness::Toughness;
-use bevyrogue::combat::blueprints::twin_core::{
-    TwinCoreDesignTag, TwinCoreHook, TwinCoreState, apply_twin_core_transitions_system,
-    twin_core_design_tag,
-};
 use bevyrogue::combat::types::{SkillId, UnitId};
 use bevyrogue::combat::ultimate::UltimateCharge;
 use bevyrogue::combat::unit::Unit;
@@ -43,7 +43,6 @@ fn skill_def<'a>(book: &'a SkillBook, id: &str) -> &'a SkillDef {
         .find(|skill| skill.id == SkillId(id.into()))
         .unwrap_or_else(|| panic!("missing canonical skill {id}"))
 }
-
 
 fn runtime_unit(def: &UnitDef) -> Unit {
     Unit {
@@ -242,8 +241,9 @@ fn skill_resolution_emits_twin_core_signals_through_blueprints() {
         follow_up: None,
     };
 
-    let resolved = bevyrogue::combat::resolution::resolve_action(&intent, &agumon_kit, Some(&skills))
-        .expect("should resolve baby_flame");
+    let resolved =
+        bevyrogue::combat::resolution::resolve_action(&intent, &agumon_kit, Some(&skills))
+            .expect("should resolve baby_flame");
 
     assert_eq!(resolved.skill_id, SkillId("baby_flame".into()));
     assert!(!resolved.custom_signals.is_empty());
@@ -256,8 +256,16 @@ fn skill_resolution_emits_twin_core_signals_through_blueprints() {
 
     match &transitions[0] {
         bevyrogue::combat::kernel::CombatKernelTransition::Tag(tag) => {
-            assert_eq!(tag.before.id, bevyrogue::combat::blueprints::twin_core::twin_core_design_tag(bevyrogue::combat::blueprints::twin_core::TwinCoreDesignTag::Heated));
-            assert_eq!(tag.kind, bevyrogue::combat::kernel::CombatTagChangeKind::Added);
+            assert_eq!(
+                tag.before.id,
+                bevyrogue::combat::blueprints::twin_core::twin_core_design_tag(
+                    bevyrogue::combat::blueprints::twin_core::TwinCoreDesignTag::Heated
+                )
+            );
+            assert_eq!(
+                tag.kind,
+                bevyrogue::combat::kernel::CombatTagChangeKind::Added
+            );
         }
         _ => panic!("Expected Tag transition"),
     }

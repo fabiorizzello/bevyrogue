@@ -22,8 +22,8 @@ use bevyrogue::combat::{
 use bevyrogue::data::{
     SkillBookHandle,
     skills_ron::{
-        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
-        SkillTargeting, TargetLife, TargetShape, TargetSide,
+        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation, SkillTargeting,
+        TargetLife, TargetShape, TargetSide,
     },
 };
 
@@ -69,7 +69,7 @@ fn build_app() -> App {
             legacy_ops: vec![Effect::Damage {
                 amount: 8,
                 target: TargetShape::Single,
-            per_hop: Default::default(),
+                per_hop: Default::default(),
             }],
 
             custom_signals: vec![],
@@ -93,7 +93,7 @@ fn build_app() -> App {
             legacy_ops: vec![Effect::Damage {
                 amount: 16,
                 target: TargetShape::Single,
-            per_hop: Default::default(),
+                per_hop: Default::default(),
             }],
 
             custom_signals: vec![],
@@ -117,7 +117,7 @@ fn build_app() -> App {
             legacy_ops: vec![Effect::Damage {
                 amount: 18,
                 target: TargetShape::Single,
-            per_hop: Default::default(),
+                per_hop: Default::default(),
             }],
 
             custom_signals: vec![],
@@ -161,7 +161,7 @@ fn build_app() -> App {
             legacy_ops: vec![Effect::Damage {
                 amount: 9999,
                 target: TargetShape::Single,
-            per_hop: Default::default(),
+                per_hop: Default::default(),
             }],
 
             custom_signals: vec![],

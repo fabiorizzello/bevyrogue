@@ -7,7 +7,7 @@ use crate::combat::{
         signal::SignalPayload,
         timeline::{BeatEvent, BeatPayload, SelectorCtx},
     },
-    resolution::{resolve_targets, TargetEntry, TargetableSnapshot},
+    resolution::{TargetEntry, TargetableSnapshot, resolve_targets},
     status_effect::StatusEffectKind,
     team::Team,
     types::{DamageTag, UnitId},
@@ -26,11 +26,13 @@ pub fn register_kernel_builtins(regs: &mut ExtRegistries) {
     regs.hooks.register("core/delay_turn", delay_turn);
     regs.hooks.register("core/advance_turn", advance_turn);
     regs.hooks.register("core/revive", revive);
-    regs.hooks.register("core/grant_free_skill", grant_free_skill);
+    regs.hooks
+        .register("core/grant_free_skill", grant_free_skill);
     regs.hooks.register("core/grant_energy", grant_energy);
     regs.hooks.register("core/self_advance", self_advance);
     regs.hooks.register("core/apply_effect", apply_effect);
-    regs.selectors.register("core/primary", select_primary_target);
+    regs.selectors
+        .register("core/primary", select_primary_target);
     regs.selectors.register("core/caster", select_caster_target);
     regs.predicates.register("core/always", always_true);
     regs.predicates.register("core/never", always_false);
@@ -53,7 +55,12 @@ fn always_false(_: &BeatEvent, _: &crate::combat::api::SkillCtx<'_>) -> bool {
 }
 
 fn deal_damage(evt: &BeatEvent, ctx: &mut crate::combat::api::SkillCtx<'_>) {
-    let Some(BeatPayload::DealDamage { amount, tag, target }) = ctx.beat_payload() else {
+    let Some(BeatPayload::DealDamage {
+        amount,
+        tag,
+        target,
+    }) = ctx.beat_payload()
+    else {
         panic!(
             "core/deal_damage requires BeatPayload::DealDamage at beat `{}`",
             evt.beat_id
@@ -72,7 +79,12 @@ fn deal_damage(evt: &BeatEvent, ctx: &mut crate::combat::api::SkillCtx<'_>) {
 }
 
 fn break_toughness(evt: &BeatEvent, ctx: &mut crate::combat::api::SkillCtx<'_>) {
-    let Some(BeatPayload::BreakToughness { amount, tag, target }) = ctx.beat_payload() else {
+    let Some(BeatPayload::BreakToughness {
+        amount,
+        tag,
+        target,
+    }) = ctx.beat_payload()
+    else {
         panic!(
             "core/break_toughness requires BeatPayload::BreakToughness at beat `{}`",
             evt.beat_id
@@ -91,7 +103,12 @@ fn break_toughness(evt: &BeatEvent, ctx: &mut crate::combat::api::SkillCtx<'_>) 
 }
 
 fn apply_status(evt: &BeatEvent, ctx: &mut crate::combat::api::SkillCtx<'_>) {
-    let Some(BeatPayload::ApplyStatus { kind, duration, target }) = ctx.beat_payload() else {
+    let Some(BeatPayload::ApplyStatus {
+        kind,
+        duration,
+        target,
+    }) = ctx.beat_payload()
+    else {
         panic!(
             "core/apply_status requires BeatPayload::ApplyStatus at beat `{}`",
             evt.beat_id
@@ -228,7 +245,11 @@ fn apply_effect(evt: &BeatEvent, ctx: &mut crate::combat::api::SkillCtx<'_>) {
         Some(BeatPayload::GrantFreeSkill { .. }) => grant_free_skill(evt, ctx),
         Some(BeatPayload::GrantEnergy { .. }) => grant_energy(evt, ctx),
         Some(BeatPayload::SelfAdvance { .. }) => self_advance(evt, ctx),
-        Some(BeatPayload::ApplyBuff { kind, duration, target }) => {
+        Some(BeatPayload::ApplyBuff {
+            kind,
+            duration,
+            target,
+        }) => {
             let cast_id = ctx.cast_id;
             enqueue_targets(evt, ctx, *target, move |target_id| Intent::ApplyBuff {
                 target: target_id,
@@ -237,7 +258,11 @@ fn apply_effect(evt: &BeatEvent, ctx: &mut crate::combat::api::SkillCtx<'_>) {
                 cast_id,
             });
         }
-        Some(BeatPayload::BlueprintSignal { owner, name, payload }) => {
+        Some(BeatPayload::BlueprintSignal {
+            owner,
+            name,
+            payload,
+        }) => {
             let owner: &'static str = Box::leak(owner.clone().into_boxed_str());
             let name: &'static str = Box::leak(name.clone().into_boxed_str());
             ctx.enqueue(Intent::BlueprintSignal {
@@ -257,8 +282,12 @@ fn apply_effect(evt: &BeatEvent, ctx: &mut crate::combat::api::SkillCtx<'_>) {
     }
 }
 
-fn enqueue_targets<F>(evt: &BeatEvent, ctx: &mut crate::combat::api::SkillCtx<'_>, target: TargetShape, mut build: F)
-where
+fn enqueue_targets<F>(
+    evt: &BeatEvent,
+    ctx: &mut crate::combat::api::SkillCtx<'_>,
+    target: TargetShape,
+    mut build: F,
+) where
     F: FnMut(UnitId) -> Intent,
 {
     let targets = if !evt.beat_targets.is_empty() {
@@ -373,7 +402,10 @@ mod tests {
     fn deal_damage_builtin_uses_payload_and_targets() {
         let mut regs = ExtRegistries::default();
         register_kernel_builtins(&mut regs);
-        let hook = regs.hooks.get("core/deal_damage").expect("builtin hook registered");
+        let hook = regs
+            .hooks
+            .get("core/deal_damage")
+            .expect("builtin hook registered");
 
         let world = World::new();
         let mut cast_hit_set = HashSet::new();
@@ -404,7 +436,12 @@ mod tests {
         hook(&evt, &mut ctx);
 
         match pending.pop_front().expect("hook should enqueue one intent") {
-            Intent::DealDamage { source, target, amount, .. } => {
+            Intent::DealDamage {
+                source,
+                target,
+                amount,
+                ..
+            } => {
                 assert_eq!(source, UnitId(1));
                 assert_eq!(target, UnitId(9));
                 assert_eq!(amount, 17);
@@ -447,7 +484,12 @@ mod tests {
         );
         regs.hooks.get("core/revive").unwrap()(&evt, &mut ctx);
         match pending.pop_front().unwrap() {
-            Intent::Revive { source, target: revived_target, pct, .. } => {
+            Intent::Revive {
+                source,
+                target: revived_target,
+                pct,
+                ..
+            } => {
                 assert_eq!(source, caster);
                 assert_eq!(revived_target, revive_target);
                 assert_eq!(pct, 25);
@@ -492,7 +534,9 @@ mod tests {
         );
         regs.hooks.get("core/self_advance").unwrap()(&evt, &mut ctx);
         match pending.pop_front().unwrap() {
-            Intent::AdvanceTurn { target, amount_pct, .. } => {
+            Intent::AdvanceTurn {
+                target, amount_pct, ..
+            } => {
                 assert_eq!(target, caster);
                 assert_eq!(amount_pct, 20);
             }
@@ -526,7 +570,10 @@ mod tests {
     fn apply_effect_builtin_enqueues_blueprint_signal() {
         let mut regs = ExtRegistries::default();
         register_kernel_builtins(&mut regs);
-        let hook = regs.hooks.get("core/apply_effect").expect("builtin hook registered");
+        let hook = regs
+            .hooks
+            .get("core/apply_effect")
+            .expect("builtin hook registered");
 
         let world = World::new();
         let mut cast_hit_set = HashSet::new();

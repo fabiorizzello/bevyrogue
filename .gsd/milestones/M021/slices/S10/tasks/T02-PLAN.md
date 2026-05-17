@@ -4,7 +4,7 @@ estimated_files: 5
 skills_used: []
 ---
 
-# T02: Move Renamon precision runtime ownership behind the blueprint envelope
+# T02: Removed CombatKernelTransition::PrecisionMindGame variant and dead shared registration; Renamon precision runtime fully owned by RenamonPlugin via Blueprint path
 
 Skills used: bevy, rust-best-practices, verify-before-complete.
 

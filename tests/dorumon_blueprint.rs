@@ -62,7 +62,10 @@ fn dorumon_build_exploit_maps_to_blueprint_transition() {
 
     assert_eq!(
         transitions,
-        vec![dorumon_blueprint_transition("build_exploit", SignalPayload::Amount(2))]
+        vec![dorumon_blueprint_transition(
+            "build_exploit",
+            SignalPayload::Amount(2)
+        )]
     );
 }
 
@@ -73,7 +76,10 @@ fn dorumon_apply_prey_lock_uses_blueprint_owner_envelope() {
 
     assert_eq!(
         transitions,
-        vec![dorumon_blueprint_transition("apply_prey_lock", SignalPayload::Amount(0))]
+        vec![dorumon_blueprint_transition(
+            "apply_prey_lock",
+            SignalPayload::Amount(0)
+        )]
     );
 }
 
@@ -102,7 +108,10 @@ fn dorumon_enter_berserk_maps_to_blueprint_transition() {
 
     assert_eq!(
         transitions,
-        vec![dorumon_blueprint_transition("enter_berserk", SignalPayload::Amount(0))]
+        vec![dorumon_blueprint_transition(
+            "enter_berserk",
+            SignalPayload::Amount(0)
+        )]
     );
 }
 

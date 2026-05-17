@@ -7,9 +7,6 @@ use crate::combat::{
     types::{DamageTag, SkillId, UnitId},
 };
 
-// Re-export combat transition payloads used in CombatEventKind variants so callers can import from events.
-pub use crate::combat::battery_loop::BatteryLoopTransition;
-pub use crate::combat::blueprints::dorumon::PredatorLoopTransition;
 pub use crate::combat::kernel::{CombatBeatId, CombatKernelTransition};
 
 /// Coarse intent classification carried by `OnActionDeclared`.
@@ -130,16 +127,6 @@ pub enum CombatEventKind {
     /// Typed kernel transition for Tactical Cycle / Strain / Flow / Fatigue / tags.
     OnKernelTransition {
         transition: CombatKernelTransition,
-    },
-    /// Typed BatteryLoop outcome after the raw kernel transition has been resolved against
-    /// the current combat state and energy targets.
-    BatteryLoopResolved {
-        transition: BatteryLoopTransition,
-    },
-    /// Typed PredatorLoop outcome after the raw kernel transition has been resolved against
-    /// the current combat state and prey-lock targets.
-    PredatorLoopResolved {
-        transition: PredatorLoopTransition,
     },
     /// Emitted immediately after effects are applied (damage/status committed to world).
     OnActionApplied,

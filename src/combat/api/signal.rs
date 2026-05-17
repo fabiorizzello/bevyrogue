@@ -3,11 +3,7 @@ use std::collections::{HashSet, VecDeque};
 use bevy::prelude::Resource;
 use serde::{Deserialize, Serialize};
 
-use crate::combat::{
-    api::CastId,
-    events::CombatEvent,
-    types::UnitId,
-};
+use crate::combat::{api::CastId, events::CombatEvent, types::UnitId};
 
 /// Typed signal payload for blueprint-specific reactive logic.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -96,7 +92,7 @@ impl SignalTaxonomy {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::combat::events::{CombatEvent, CombatEventKind, ActionIntentKind};
+    use crate::combat::events::{ActionIntentKind, CombatEvent, CombatEventKind};
 
     #[test]
     fn test_push_drain_order() {

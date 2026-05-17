@@ -9,21 +9,21 @@ use crate::combat::{
         intent::{CastId, Intent},
         signal::{Signal, SignalBus, SignalPayload, SignalTaxonomy},
     },
+    buffs::DrBag,
     damage::{AttackContext, calculate_damage, triangle_modifiers},
     energy::{Energy, EnergyGainSource, RoundEnergyTracker},
     events::{CombatEvent, CombatEventKind, CombatKernelTransition},
+    kit::UnitSkills,
+    log::{ActionLog, LogEntry},
     modifiers::{DamageModifierLedger, ModifierChain, ModifierLayer},
-    round_flags::RoundFlags,
-    buffs::DrBag,
     rng::CombatRng,
+    round_flags::RoundFlags,
     status_effect::{StatusBag, StatusEffectKind, classify_buff_kind},
     stun::Stunned,
     team::Team,
     toughness::{DamageKind, Toughness, can_apply_toughness_damage, classify},
     types::{DamageTag, UnitId},
     unit::{Ko, SlotIndex, Unit},
-    kit::UnitSkills,
-    log::{ActionLog, LogEntry},
 };
 
 /// Pending `Intent` queue drained each frame by `intent_applier`.
@@ -84,7 +84,16 @@ pub fn intent_applier(world: &mut World) {
                 duration_turns,
                 cast_id,
             } => {
-                apply_status(world, source, target, kind, duration_turns, cast_id, true, true);
+                apply_status(
+                    world,
+                    source,
+                    target,
+                    kind,
+                    duration_turns,
+                    cast_id,
+                    true,
+                    true,
+                );
             }
             Intent::ApplyBuff {
                 target,
@@ -236,30 +245,40 @@ fn emit_event(
         }
     }
 
-    world.resource_mut::<Messages<CombatEvent>>().write(CombatEvent {
-        kind,
-        source,
-        target,
-        follow_up_depth,
-        cast_id,
-    });
+    world
+        .resource_mut::<Messages<CombatEvent>>()
+        .write(CombatEvent {
+            kind,
+            source,
+            target,
+            follow_up_depth,
+            cast_id,
+        });
 }
 
 fn find_unit_snapshot(world: &mut World, id: UnitId) -> Option<UnitSnapshot> {
-    let mut q = world.query::<(Entity, &Unit, &Team, Option<&Toughness>, Option<&StatusBag>, Option<&DrBag>)>();
-    q.iter(world).find_map(|(entity, unit, team, toughness, status, dr)| {
-        (unit.id == id).then(|| UnitSnapshot {
-            entity,
-            id,
-            unit: unit.clone(),
-            team: *team,
-            weaknesses: toughness
-                .map(|tg| tg.weaknesses.clone())
-                .unwrap_or_default(),
-            status: status.cloned(),
-            dr: dr.cloned(),
+    let mut q = world.query::<(
+        Entity,
+        &Unit,
+        &Team,
+        Option<&Toughness>,
+        Option<&StatusBag>,
+        Option<&DrBag>,
+    )>();
+    q.iter(world)
+        .find_map(|(entity, unit, team, toughness, status, dr)| {
+            (unit.id == id).then(|| UnitSnapshot {
+                entity,
+                id,
+                unit: unit.clone(),
+                team: *team,
+                weaknesses: toughness
+                    .map(|tg| tg.weaknesses.clone())
+                    .unwrap_or_default(),
+                status: status.cloned(),
+                dr: dr.cloned(),
+            })
         })
-    })
 }
 
 fn find_unit_entity(world: &mut World, id: UnitId) -> Option<(Entity, Unit)> {
@@ -272,14 +291,17 @@ fn allied_basic_skill_ids(
     world: &World,
     source: UnitId,
 ) -> Option<Vec<(UnitId, crate::combat::types::SkillId)>> {
-    let mut q = world.try_query::<(&Unit, &Team, Option<&Ko>, Option<&SlotIndex>, &UnitSkills)>()?;
+    let mut q =
+        world.try_query::<(&Unit, &Team, Option<&Ko>, Option<&SlotIndex>, &UnitSkills)>()?;
     let caster_team = q
         .iter(world)
         .find_map(|(unit, team, _, _, _)| (unit.id == source).then_some(*team))?;
 
     let mut allies: Vec<(u8, UnitId, crate::combat::types::SkillId)> = q
         .iter(world)
-        .filter(|(unit, team, ko, _, _)| **team == caster_team && ko.is_none() && unit.hp_current > 0)
+        .filter(|(unit, team, ko, _, _)| {
+            **team == caster_team && ko.is_none() && unit.hp_current > 0
+        })
         .map(|(unit, _, _, slot, skills)| {
             (
                 slot.map(|s| s.0).unwrap_or(u8::MAX),
@@ -290,7 +312,12 @@ fn allied_basic_skill_ids(
         .collect();
 
     allies.sort_by_key(|(slot, _, _)| *slot);
-    Some(allies.into_iter().map(|(_, id, skill_id)| (id, skill_id)).collect())
+    Some(
+        allies
+            .into_iter()
+            .map(|(_, id, skill_id)| (id, skill_id))
+            .collect(),
+    )
 }
 
 fn apply_deal_damage(
@@ -303,16 +330,21 @@ fn apply_deal_damage(
 ) {
     // Snapshot all units to avoid aliased world borrows during calculation.
     let snapshot: Vec<UnitSnapshot> = {
-        let mut q = world.query::<(Entity, &Unit, &Team, Option<&Toughness>, Option<&StatusBag>, Option<&DrBag>)>();
+        let mut q = world.query::<(
+            Entity,
+            &Unit,
+            &Team,
+            Option<&Toughness>,
+            Option<&StatusBag>,
+            Option<&DrBag>,
+        )>();
         q.iter(world)
             .map(|(e, u, team, t, status, dr)| UnitSnapshot {
                 entity: e,
                 id: u.id,
                 unit: u.clone(),
                 team: *team,
-                weaknesses: t
-                    .map(|tg| tg.weaknesses.clone())
-                    .unwrap_or_default(),
+                weaknesses: t.map(|tg| tg.weaknesses.clone()).unwrap_or_default(),
                 status: status.cloned(),
                 dr: dr.cloned(),
             })
@@ -365,18 +397,22 @@ fn apply_deal_damage(
         && world.contains_resource::<crate::combat::battery_loop::BatteryLoopState>()
         && world.contains_resource::<CombatRng>()
     {
-        world.resource_scope(|world, mut state: Mut<crate::combat::battery_loop::BatteryLoopState>| {
-            if state.block_reaction_ready() && state.last_block_reaction_cast_id != Some(cast_id) {
-                state.last_block_reaction_cast_id = Some(cast_id);
-                world.resource_scope(|_world, mut rng: Mut<CombatRng>| {
-                    if rng.roll_pct(30) {
-                        modifier_chain.push(ModifierLayer::Passive, 50);
-                        tentomon_block_triggered = true;
-                        let _ = state.proc_block_reaction();
-                    }
-                });
-            }
-        });
+        world.resource_scope(
+            |world, mut state: Mut<crate::combat::battery_loop::BatteryLoopState>| {
+                if state.block_reaction_ready()
+                    && state.last_block_reaction_cast_id != Some(cast_id)
+                {
+                    state.last_block_reaction_cast_id = Some(cast_id);
+                    world.resource_scope(|_world, mut rng: Mut<CombatRng>| {
+                        if rng.roll_pct(30) {
+                            modifier_chain.push(ModifierLayer::Passive, 50);
+                            tentomon_block_triggered = true;
+                            let _ = state.proc_block_reaction();
+                        }
+                    });
+                }
+            },
+        );
     }
 
     let modifier_trace = modifier_chain.apply_to(base_damage);
@@ -419,7 +455,9 @@ fn apply_deal_damage(
         cast_id,
     );
 
-    if let Some(mitigated_pct) = block_reaction_mitigated_pct.or_else(|| tentomon_block_triggered.then_some(50)) {
+    if let Some(mitigated_pct) =
+        block_reaction_mitigated_pct.or_else(|| tentomon_block_triggered.then_some(50))
+    {
         emit_event(
             world,
             CombatEventKind::BlockReactionTriggered { mitigated_pct },
@@ -456,18 +494,30 @@ fn apply_break_toughness(
     cast_id: CastId,
 ) {
     let Some(source_snapshot) = find_unit_snapshot(world, source) else {
-        log::warn!("intent_applier BreakToughness: source {:?} not found", source);
+        log::warn!(
+            "intent_applier BreakToughness: source {:?} not found",
+            source
+        );
         return;
     };
     let Some(target_snapshot) = find_unit_snapshot(world, target) else {
-        log::warn!("intent_applier BreakToughness: target {:?} not found", target);
+        log::warn!(
+            "intent_applier BreakToughness: target {:?} not found",
+            target
+        );
         return;
     };
 
     let mut break_entity = None;
     let mut broke = false;
     {
-        let mut q = world.query::<(Entity, &Unit, &Team, Option<&mut Toughness>, Option<&mut RoundFlags>)>();
+        let mut q = world.query::<(
+            Entity,
+            &Unit,
+            &Team,
+            Option<&mut Toughness>,
+            Option<&mut RoundFlags>,
+        )>();
         for (entity, unit, team, mut toughness, mut flags) in q.iter_mut(world) {
             if unit.id != target_snapshot.id {
                 continue;
@@ -494,7 +544,13 @@ fn apply_break_toughness(
         if let Some(entity) = break_entity {
             world.entity_mut(entity).insert(Stunned { turns_left: 1 });
         }
-        emit_event(world, CombatEventKind::OnBreak { damage_tag: tag }, source, target, cast_id);
+        emit_event(
+            world,
+            CombatEventKind::OnBreak { damage_tag: tag },
+            source,
+            target,
+            cast_id,
+        );
         let _ = source_snapshot;
         let _ = target_snapshot;
     }
@@ -524,11 +580,15 @@ fn apply_status(
     }
 
     if check_accuracy {
-        let tri = triangle_modifiers(source_snapshot.unit.attribute, target_snapshot.unit.attribute);
+        let tri = triangle_modifiers(
+            source_snapshot.unit.attribute,
+            target_snapshot.unit.attribute,
+        );
         let threshold = (tri.status_acc_modifier * 100.0) as i32;
-        let passes = world
-            .get_resource_mut::<CombatRng>()
-            .map_or_else(|| CombatRng::default().roll_pct(threshold), |mut rng| rng.roll_pct(threshold));
+        let passes = world.get_resource_mut::<CombatRng>().map_or_else(
+            || CombatRng::default().roll_pct(threshold),
+            |mut rng| rng.roll_pct(threshold),
+        );
         if !passes {
             emit_event(
                 world,
@@ -552,7 +612,9 @@ fn apply_status(
             }
             is_first_slowed_apply = emit_slowed_delay
                 && matches!(kind, StatusEffectKind::Slowed)
-                && bag.as_deref().map_or(true, |b| !b.has(&StatusEffectKind::Slowed));
+                && bag
+                    .as_deref()
+                    .map_or(true, |b| !b.has(&StatusEffectKind::Slowed));
             if let Some(ref mut bag) = bag {
                 bag.apply(kind.clone(), duration_turns);
             } else {
@@ -566,7 +628,10 @@ fn apply_status(
     }
 
     let Some(entity) = target_entity else {
-        log::warn!("intent_applier ApplyStatus: target entity {:?} not found", target);
+        log::warn!(
+            "intent_applier ApplyStatus: target entity {:?} not found",
+            target
+        );
         return;
     };
 
@@ -667,16 +732,20 @@ fn apply_add_energy(world: &mut World, target: UnitId, amount: i32, cast_id: Cas
         return;
     };
 
-    let granted_by_round_cap = if let Some(mut tracker) = world.get_mut::<RoundEnergyTracker>(entity) {
-        tracker.try_gain(EnergyGainSource::SecondaryAction, amount)
-    } else {
-        amount
-    };
+    let granted_by_round_cap =
+        if let Some(mut tracker) = world.get_mut::<RoundEnergyTracker>(entity) {
+            tracker.try_gain(EnergyGainSource::SecondaryAction, amount)
+        } else {
+            amount
+        };
 
     let gained = if let Some(mut energy) = world.get_mut::<Energy>(entity) {
         energy.gain_capped(granted_by_round_cap)
     } else {
-        log::warn!("intent_applier AddEnergy: target {:?} missing Energy component", target);
+        log::warn!(
+            "intent_applier AddEnergy: target {:?} missing Energy component",
+            target
+        );
         return;
     };
 
@@ -738,18 +807,23 @@ fn apply_grant_free_skill(world: &mut World, source: UnitId, count: usize, cast_
     }
 
     let Some(ally_basics) = allied_basic_skill_ids(world, source) else {
-        log::warn!("intent_applier GrantFreeSkill: source {:?} not found", source);
+        log::warn!(
+            "intent_applier GrantFreeSkill: source {:?} not found",
+            source
+        );
         return;
     };
 
     for (ally_id, skill_id) in ally_basics.into_iter().take(count) {
-        world.resource_mut::<Messages<CombatEvent>>().write(CombatEvent {
-            kind: CombatEventKind::OnSkillCast { skill_id },
-            source: ally_id,
-            target: ally_id,
-            follow_up_depth: 0,
-            cast_id,
-        });
+        world
+            .resource_mut::<Messages<CombatEvent>>()
+            .write(CombatEvent {
+                kind: CombatEventKind::OnSkillCast { skill_id },
+                source: ally_id,
+                target: ally_id,
+                follow_up_depth: 0,
+                cast_id,
+            });
     }
 }
 
@@ -779,19 +853,21 @@ fn apply_blueprint_signal(
         cast_id,
     });
 
-    world.resource_mut::<Messages<CombatEvent>>().write(CombatEvent {
-        kind: CombatEventKind::OnKernelTransition {
-            transition: CombatKernelTransition::Blueprint {
-                owner: owner.to_string(),
-                name: name.to_string(),
-                payload,
+    world
+        .resource_mut::<Messages<CombatEvent>>()
+        .write(CombatEvent {
+            kind: CombatEventKind::OnKernelTransition {
+                transition: CombatKernelTransition::Blueprint {
+                    owner: owner.to_string(),
+                    name: name.to_string(),
+                    payload,
+                },
             },
-        },
-        source,
-        target: source,
-        follow_up_depth: 0,
-        cast_id,
-    });
+            source,
+            target: source,
+            follow_up_depth: 0,
+            cast_id,
+        });
 }
 
 fn apply_set_blueprint_state(

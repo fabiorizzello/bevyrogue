@@ -1,3 +1,4 @@
+use bevy::ecs::message::Messages;
 /// Integration test for §H.2 Slowed semantics (S04/T02): first-apply pushes gauge −30%,
 /// re-apply does NOT re-push (refresh_max_dur path only).
 ///
@@ -10,7 +11,6 @@
 ///   2. Defender AV reduced to 2000 (5000 − 3000, where 3000 = 30% of MAX_AV=10000, full hit).
 ///   3. Zero DelayTurn events after second apply (refresh_max_dur only).
 use bevy::prelude::*;
-use bevy::ecs::message::Messages;
 use bevyrogue::combat::{
     StatusBag, StatusEffectKind,
     av::{ActionValue, ActionValueUpdated, MAX_AV},
@@ -67,7 +67,10 @@ fn setup_app() -> (App, Entity, Entity) {
         .insert_resource(SkillBookHandle(handle))
         .init_resource::<CombatState>()
         .init_resource::<TurnOrder>()
-        .insert_resource(SpPool { current: 100, max: 100 })
+        .insert_resource(SpPool {
+            current: 100,
+            max: 100,
+        })
         .init_resource::<ActionLog>()
         .init_resource::<Time>()
         .insert_resource(CombatRng::from_seed(0))
@@ -75,10 +78,7 @@ fn setup_app() -> (App, Entity, Entity) {
         .add_message::<TurnAdvanced>()
         .add_message::<CombatEvent>()
         .add_message::<ActionValueUpdated>()
-        .add_systems(
-            Update,
-            (resolve_action_system, apply_av_ops_system).chain(),
-        );
+        .add_systems(Update, (resolve_action_system, apply_av_ops_system).chain());
 
     let attacker = app
         .world_mut()
@@ -190,9 +190,9 @@ fn slowed_first_apply_delays_gauge_reapply_does_not() {
     let status_applied_pos = events1.iter().position(|e| {
         matches!(&e.kind, CombatEventKind::OnStatusApplied { kind } if *kind == StatusEffectKind::Slowed)
     });
-    let turn_advance_pos = events1.iter().position(|e| {
-        matches!(&e.kind, CombatEventKind::DelayTurn { amount_pct: 30, .. })
-    });
+    let turn_advance_pos = events1
+        .iter()
+        .position(|e| matches!(&e.kind, CombatEventKind::DelayTurn { amount_pct: 30, .. }));
     assert!(
         status_applied_pos < turn_advance_pos,
         "OnStatusApplied must precede DelayTurn in event log"

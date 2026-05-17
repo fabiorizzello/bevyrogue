@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::combat::{
-    api::{applier::intent_applier, intent::CastId, SignalPayload},
+    api::{SignalPayload, applier::intent_applier, intent::CastId},
     events::{CombatEvent, CombatEventKind},
     kernel::CombatKernelTransition,
     modifiers::{DamageModifierLedger, ModifierLayer},
@@ -57,15 +57,24 @@ pub fn dispatch(
     match signal.signal() {
         SIG_BUILD_STATIC_CHARGE => {
             let amount = amount_payload(signal, OWNER, SIG_BUILD_STATIC_CHARGE)?;
-            Ok(vec![blueprint_transition(SIG_BUILD_STATIC_CHARGE, amount as i64)])
+            Ok(vec![blueprint_transition(
+                SIG_BUILD_STATIC_CHARGE,
+                amount as i64,
+            )])
         }
         SIG_BUILD_CIRCUIT_CHARGE => {
             let amount = amount_payload(signal, OWNER, SIG_BUILD_CIRCUIT_CHARGE)?;
-            Ok(vec![blueprint_transition(SIG_BUILD_CIRCUIT_CHARGE, amount as i64)])
+            Ok(vec![blueprint_transition(
+                SIG_BUILD_CIRCUIT_CHARGE,
+                amount as i64,
+            )])
         }
         SIG_SPEND_CIRCUIT_CHARGE => {
             let amount = amount_payload(signal, OWNER, SIG_SPEND_CIRCUIT_CHARGE)?;
-            Ok(vec![blueprint_transition(SIG_SPEND_CIRCUIT_CHARGE, amount as i64)])
+            Ok(vec![blueprint_transition(
+                SIG_SPEND_CIRCUIT_CHARGE,
+                amount as i64,
+            )])
         }
         other => Err(CustomSignalDispatchError::UnknownSignal {
             owner: OWNER.to_string(),
@@ -145,9 +154,9 @@ fn apply_tentomon_block_reaction_system(
             continue;
         };
 
-        let target_is_tentomon = units.iter().any(|unit| {
-            unit.id == event.target && unit.name == "Tentomon"
-        });
+        let target_is_tentomon = units
+            .iter()
+            .any(|unit| unit.id == event.target && unit.name == "Tentomon");
 
         let _ = resolve_block_reaction_for_event(
             event.target,

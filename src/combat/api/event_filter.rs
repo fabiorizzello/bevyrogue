@@ -1,9 +1,6 @@
 use std::sync::Arc;
 
-use crate::combat::{
-    events::CombatEvent,
-    api::signal::Signal,
-};
+use crate::combat::{api::signal::Signal, events::CombatEvent};
 
 /// Typed runtime filter for passive listeners.
 ///
@@ -67,7 +64,9 @@ impl EventFilter {
                     ..
                 } if signal_owner == owner && signal_name == name
             ),
-            Self::CombatEvent(predicate) => matches!(signal, Signal::CombatEvent(event) if predicate(event)),
+            Self::CombatEvent(predicate) => {
+                matches!(signal, Signal::CombatEvent(event) if predicate(event))
+            }
             Self::Custom(predicate) => predicate(signal),
         }
     }
@@ -93,7 +92,11 @@ impl std::fmt::Debug for EventFilter {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::combat::{api::{CastId, SignalPayload}, events::{CombatEventKind}, types::UnitId};
+    use crate::combat::{
+        api::{CastId, SignalPayload},
+        events::CombatEventKind,
+        types::UnitId,
+    };
 
     #[test]
     fn composite_filters_match_as_expected() {
@@ -113,7 +116,9 @@ mod tests {
 
         let filter = EventFilter::all([
             EventFilter::any([
-                EventFilter::combat(|event| matches!(&event.kind, CombatEventKind::UltimateUsed { .. })),
+                EventFilter::combat(|event| {
+                    matches!(&event.kind, CombatEventKind::UltimateUsed { .. })
+                }),
                 EventFilter::blueprint("kernel", "ult_used"),
             ]),
             EventFilter::not(EventFilter::blueprint("kernel", "ult_used")),

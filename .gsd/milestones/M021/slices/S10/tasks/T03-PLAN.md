@@ -4,7 +4,7 @@ estimated_files: 9
 skills_used: []
 ---
 
-# T03: Remove digimon-named runtime and event seams from shared combat modules
+# T03: Collapsed shared combat event/kernel surfaces to generic blueprint seams and updated owner-module routing, but Dorumon runtime verification still needs one follow-up pass
 
 Skills used: bevy, rust-best-practices, verify-before-complete.
 

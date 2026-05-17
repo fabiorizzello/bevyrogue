@@ -150,7 +150,12 @@ fn perhop_length_guard_emits_diagnostic_and_clamps_loop() {
         .iter()
         .filter(|e| matches!(e.kind, CombatEventKind::OnActionFailed { .. }))
         .collect();
-    assert_eq!(failed.len(), 1, "expected exactly 1 OnActionFailed, got {}", failed.len());
+    assert_eq!(
+        failed.len(),
+        1,
+        "expected exactly 1 OnActionFailed, got {}",
+        failed.len()
+    );
     match &failed[0].kind {
         CombatEventKind::OnActionFailed { reason } => {
             assert!(

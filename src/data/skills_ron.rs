@@ -272,7 +272,8 @@ pub struct SkillDef {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SkillBookValidationCategory {
-    #[allow(dead_code)] // kept for: structural-error category (vocabulary anchor; only Semantic constructed today)
+    #[allow(dead_code)]
+    // kept for: structural-error category (vocabulary anchor; only Semantic constructed today)
     Structural,
     Semantic,
 }
@@ -387,7 +388,9 @@ fn validate_skill_def(skill: &SkillDef) -> Result<(), SkillBookValidationError> 
 
     if has_damage {
         for (target, per_hop) in skill.legacy_ops.iter().filter_map(|effect| match effect {
-            Effect::Damage { target, per_hop, .. } => Some((*target, per_hop)),
+            Effect::Damage {
+                target, per_hop, ..
+            } => Some((*target, per_hop)),
             _ => None,
         }) {
             if target != skill.targeting.shape {
@@ -522,9 +525,7 @@ fn validate_skill_def(skill: &SkillDef) -> Result<(), SkillBookValidationError> 
     for effect in &skill.legacy_ops {
         if let Effect::Heal { target, .. } = effect {
             match target {
-                TargetShape::Bounce { .. }
-                | TargetShape::AllEnemies
-                | TargetShape::Blast => {
+                TargetShape::Bounce { .. } | TargetShape::AllEnemies | TargetShape::Blast => {
                     return Err(validation_error(
                         skill,
                         SkillBookValidationCategory::Semantic,
@@ -543,9 +544,7 @@ fn validate_skill_def(skill: &SkillDef) -> Result<(), SkillBookValidationError> 
     for effect in &skill.legacy_ops {
         if let Effect::Cleanse { target, .. } = effect {
             match target {
-                TargetShape::Bounce { .. }
-                | TargetShape::AllEnemies
-                | TargetShape::Blast => {
+                TargetShape::Bounce { .. } | TargetShape::AllEnemies | TargetShape::Blast => {
                     return Err(validation_error(
                         skill,
                         SkillBookValidationCategory::Semantic,
@@ -561,8 +560,14 @@ fn validate_skill_def(skill: &SkillDef) -> Result<(), SkillBookValidationError> 
         }
     }
 
-    let has_heal = skill.legacy_ops.iter().any(|e| matches!(e, Effect::Heal { .. }));
-    let has_cleanse = skill.legacy_ops.iter().any(|e| matches!(e, Effect::Cleanse { .. }));
+    let has_heal = skill
+        .legacy_ops
+        .iter()
+        .any(|e| matches!(e, Effect::Heal { .. }));
+    let has_cleanse = skill
+        .legacy_ops
+        .iter()
+        .any(|e| matches!(e, Effect::Cleanse { .. }));
     if has_heal && has_cleanse {
         return Err(validation_error(
             skill,
@@ -622,7 +627,7 @@ mod tests {
             ],
             ..Default::default()
         }
-}
+    }
 
     fn canonical_skill_book() -> SkillBook {
         ron::from_str(include_str!("../../assets/data/skills.ron")).expect("parse skills.ron")
@@ -649,7 +654,8 @@ mod tests {
             s.contains("amount:18") && s.contains("target:Single"),
             "unexpected serialized form: {s}"
         );
-        let back: Effect = ron::from_str("Damage(amount: 18, target: Single)").expect("parse with default per_hop");
+        let back: Effect = ron::from_str("Damage(amount: 18, target: Single)")
+            .expect("parse with default per_hop");
         assert_eq!(back, effect);
     }
 

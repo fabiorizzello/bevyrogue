@@ -37,12 +37,7 @@ fn resolve_skill(book: &SkillBook, skill_id: &str) -> bevyrogue::combat::state::
     resolve_action(&intent, &kit, Some(book)).expect("skill resolves")
 }
 
-fn blueprint_skill(
-    id: &str,
-    owner: &str,
-    signal: &str,
-    payload: CustomSignalPayload,
-) -> SkillDef {
+fn blueprint_skill(id: &str, owner: &str, signal: &str, payload: CustomSignalPayload) -> SkillDef {
     SkillDef {
         id: SkillId(id.into()),
         name: id.to_owned(),
@@ -59,7 +54,7 @@ fn blueprint_skill(
         legacy_ops: vec![Effect::Damage {
             amount: 1,
             target: TargetShape::Single,
-        per_hop: Default::default(),
+            per_hop: Default::default(),
         }],
         custom_signals: vec![SkillCustomSignal::blueprint(owner, signal, payload)],
         ..Default::default()
@@ -149,8 +144,8 @@ fn registry_rejects_unknown_blueprint_owner() {
     let book = SkillBook(vec![skill.clone()]);
     let resolved = resolve_skill(&book, &skill.id.0);
 
-    let error = blueprints::transitions_for_action_checked(&resolved)
-        .expect_err("unknown owner rejected");
+    let error =
+        blueprints::transitions_for_action_checked(&resolved).expect_err("unknown owner rejected");
 
     assert!(matches!(
         error,

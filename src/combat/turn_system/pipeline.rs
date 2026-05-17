@@ -6,9 +6,9 @@
 
 use bevy::prelude::*;
 
-use crate::combat::api::intent::CastId;
-use crate::combat::api::{runner::{BeatRunner, StepOutcome}};
 use crate::combat::api::applier::{IntentExecutionMeta, IntentQueue};
+use crate::combat::api::intent::CastId;
+use crate::combat::api::runner::{BeatRunner, StepOutcome};
 
 use crate::combat::damage::triangle_modifiers;
 use crate::combat::energy::{Energy, EnergyGainSource, RoundEnergyTracker};
@@ -16,11 +16,11 @@ use crate::combat::events::{CombatEvent, CombatEventKind};
 use crate::combat::floating::FloatingDamage;
 use crate::combat::kernel::{CombatBeatId, CombatKernelRegistry};
 use crate::combat::log::{ActionLog, LogEntry};
+use crate::combat::resolution::{TargetEntry, TargetableSnapshot};
 use crate::combat::resolution::{
-    apply_cleanse_only, apply_damage_only, apply_legacy_ops, apply_heal_only, compute_hop_damage,
+    apply_cleanse_only, apply_damage_only, apply_heal_only, apply_legacy_ops, compute_hop_damage,
     resolve_action, resolve_targets, select_bounce_hop, target_shape_rejection_reason,
 };
-use crate::combat::resolution::{TargetEntry, TargetableSnapshot};
 use crate::combat::rng::CombatRng;
 use crate::combat::sp::{RoundSpTracker, SpPool};
 use crate::combat::state::{CombatPhase, CombatState, InFlightAction, UltEffect};
@@ -157,21 +157,35 @@ fn intern_timeline_id(value: &str) -> &'static str {
 fn intern_compiled_timeline(
     timeline: &crate::combat::api::timeline::CompiledTimeline<String>,
 ) -> crate::combat::api::timeline::CompiledTimeline<&'static str> {
-    use crate::combat::api::timeline::{Beat, BeatEdge, BeatKind, BeatPayload, CompiledTimeline, Presentation};
+    use crate::combat::api::timeline::{
+        Beat, BeatEdge, BeatKind, BeatPayload, CompiledTimeline, Presentation,
+    };
 
     fn intern_payload(payload: &BeatPayload) -> BeatPayload {
         match payload {
-            BeatPayload::DealDamage { amount, tag, target } => BeatPayload::DealDamage {
+            BeatPayload::DealDamage {
+                amount,
+                tag,
+                target,
+            } => BeatPayload::DealDamage {
                 amount: *amount,
                 tag: *tag,
                 target: target.clone(),
             },
-            BeatPayload::BreakToughness { amount, tag, target } => BeatPayload::BreakToughness {
+            BeatPayload::BreakToughness {
+                amount,
+                tag,
+                target,
+            } => BeatPayload::BreakToughness {
                 amount: *amount,
                 tag: *tag,
                 target: target.clone(),
             },
-            BeatPayload::ApplyStatus { kind, duration, target } => BeatPayload::ApplyStatus {
+            BeatPayload::ApplyStatus {
+                kind,
+                duration,
+                target,
+            } => BeatPayload::ApplyStatus {
                 kind: kind.clone(),
                 duration: *duration,
                 target: target.clone(),
@@ -184,7 +198,11 @@ fn intern_compiled_timeline(
                 amount_pct: *amount_pct,
                 target: target.clone(),
             },
-            BeatPayload::ApplyBuff { kind, duration, target } => BeatPayload::ApplyBuff {
+            BeatPayload::ApplyBuff {
+                kind,
+                duration,
+                target,
+            } => BeatPayload::ApplyBuff {
                 kind: kind.clone(),
                 duration: *duration,
                 target: target.clone(),
@@ -198,7 +216,11 @@ fn intern_compiled_timeline(
             BeatPayload::SelfAdvance { amount_pct } => BeatPayload::SelfAdvance {
                 amount_pct: *amount_pct,
             },
-            BeatPayload::BlueprintSignal { owner, name, payload } => BeatPayload::BlueprintSignal {
+            BeatPayload::BlueprintSignal {
+                owner,
+                name,
+                payload,
+            } => BeatPayload::BlueprintSignal {
                 owner: owner.clone(),
                 name: name.clone(),
                 payload: payload.clone(),
@@ -309,13 +331,18 @@ pub(crate) fn run_timeline_backed_action(
                 follow_up_depth: inflight.follow_up_depth,
                 cast_id,
             });
-            world.resource_mut::<crate::combat::state::CombatState>().phase = CombatPhase::WaitingAction;
+            world
+                .resource_mut::<crate::combat::state::CombatState>()
+                .phase = CombatPhase::WaitingAction;
             return;
         }
     }
 
     if matches!(inflight.action.ult_effect, UltEffect::Reset) {
-        let mut q = world.query::<(&crate::combat::unit::Unit, &crate::combat::ultimate::UltimateCharge)>();
+        let mut q = world.query::<(
+            &crate::combat::unit::Unit,
+            &crate::combat::ultimate::UltimateCharge,
+        )>();
         let ult_ready = q
             .iter(world)
             .find_map(|(unit, ult)| (unit.id == attacker_id).then_some(ult.ready()))
@@ -345,13 +372,20 @@ pub(crate) fn run_timeline_backed_action(
                 follow_up_depth: inflight.follow_up_depth,
                 cast_id,
             });
-            world.resource_mut::<crate::combat::state::CombatState>().phase = CombatPhase::WaitingAction;
+            world
+                .resource_mut::<crate::combat::state::CombatState>()
+                .phase = CombatPhase::WaitingAction;
             return;
         }
     }
 
     let mut pending = std::collections::VecDeque::new();
-    let mut runner = BeatRunner::new(timeline, cast_id, inflight.action.source, inflight.action.target);
+    let mut runner = BeatRunner::new(
+        timeline,
+        cast_id,
+        inflight.action.source,
+        inflight.action.target,
+    );
     let outcome = unsafe {
         runner.run_to_completion(
             world,
@@ -364,14 +398,18 @@ pub(crate) fn run_timeline_backed_action(
 
     if outcome != StepOutcome::Done {
         let reason = format!("timeline execution halted: {outcome:?}");
-        world.resource_mut::<bevy::ecs::message::Messages<CombatEvent>>().write(CombatEvent {
-            kind: CombatEventKind::OnActionFailed { reason },
-            source: inflight.action.source,
-            target: inflight.action.target,
-            follow_up_depth: inflight.follow_up_depth,
-            cast_id,
-        });
-        world.resource_mut::<crate::combat::state::CombatState>().phase = CombatPhase::WaitingAction;
+        world
+            .resource_mut::<bevy::ecs::message::Messages<CombatEvent>>()
+            .write(CombatEvent {
+                kind: CombatEventKind::OnActionFailed { reason },
+                source: inflight.action.source,
+                target: inflight.action.target,
+                follow_up_depth: inflight.follow_up_depth,
+                cast_id,
+            });
+        world
+            .resource_mut::<crate::combat::state::CombatState>()
+            .phase = CombatPhase::WaitingAction;
         return;
     }
 
@@ -383,16 +421,18 @@ pub(crate) fn run_timeline_backed_action(
     let fallback_signal_pairs: Vec<(String, String)> = world
         .get_resource::<bevy::prelude::Assets<crate::data::skills_ron::SkillBook>>()
         .and_then(|assets| {
-            world.get_resource::<crate::data::SkillBookHandle>()
+            world
+                .get_resource::<crate::data::SkillBookHandle>()
                 .and_then(|handle| assets.get(&handle.0))
         })
         .map(|book| {
             book.0
                 .iter()
                 .flat_map(|skill| {
-                    skill.custom_signals.iter().map(|custom| {
-                        (custom.owner.clone(), custom.signal.clone())
-                    })
+                    skill
+                        .custom_signals
+                        .iter()
+                        .map(|custom| (custom.owner.clone(), custom.signal.clone()))
                 })
                 .collect()
         })
@@ -421,11 +461,16 @@ pub(crate) fn run_timeline_backed_action(
     let ult_effect = inflight.action.ult_effect;
 
     if matches!(ult_effect, UltEffect::Reset) || matches!(ult_effect, UltEffect::GainFromBasic) {
-        let mut q = world.query::<(&crate::combat::unit::Unit, &mut crate::combat::ultimate::UltimateCharge)>();
+        let mut q = world.query::<(
+            &crate::combat::unit::Unit,
+            &mut crate::combat::ultimate::UltimateCharge,
+        )>();
         for (unit, mut ult) in q.iter_mut(world) {
             if unit.id == attacker_id {
                 match ult_effect {
-                    UltEffect::Reset => { ult.current = 0; }
+                    UltEffect::Reset => {
+                        ult.current = 0;
+                    }
                     UltEffect::GainFromBasic => {
                         let cpe = ult.charge_per_event;
                         ult.try_add(cpe);
@@ -454,7 +499,9 @@ pub(crate) fn run_timeline_backed_action(
     });
     if matches!(ult_effect, UltEffect::Reset) {
         event_writer.write(CombatEvent {
-            kind: CombatEventKind::UltimateUsed { unit_id: attacker_id },
+            kind: CombatEventKind::UltimateUsed {
+                unit_id: attacker_id,
+            },
             source: attacker_id,
             target: inflight.action.target,
             follow_up_depth: inflight.follow_up_depth,
@@ -476,7 +523,9 @@ pub(crate) fn run_timeline_backed_action(
         cast_id,
     });
 
-    world.resource_mut::<crate::combat::state::CombatState>().phase = CombatPhase::WaitingAction;
+    world
+        .resource_mut::<crate::combat::state::CombatState>()
+        .phase = CombatPhase::WaitingAction;
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -503,10 +552,18 @@ pub(crate) fn step_app(
     let target_id = inflight.action.target;
 
     let attacker_entity = actors.iter().find_map(|(entity, _, unit, ..)| {
-        if unit.id == attacker_id { Some(entity) } else { None }
+        if unit.id == attacker_id {
+            Some(entity)
+        } else {
+            None
+        }
     });
     let target_entity = actors.iter().find_map(|(entity, _, unit, ..)| {
-        if unit.id == target_id { Some(entity) } else { None }
+        if unit.id == target_id {
+            Some(entity)
+        } else {
+            None
+        }
     });
     let (Some(attacker_entity), Some(target_entity)) = (attacker_entity, target_entity) else {
         return;
@@ -544,8 +601,11 @@ pub(crate) fn step_app(
             TargetableSnapshot { entries }
         };
 
-        let target_ids =
-            resolve_targets(&inflight.action.target_shape, inflight.action.target, &snapshot);
+        let target_ids = resolve_targets(
+            &inflight.action.target_shape,
+            inflight.action.target,
+            &snapshot,
+        );
 
         if target_ids.is_empty() {
             set_phase(state, CombatPhase::WaitingAction);
@@ -723,8 +783,7 @@ pub(crate) fn step_app(
                 continue;
             }
 
-            let Ok([att_row, mut def_row]) =
-                actors.get_many_mut([attacker_entity, def_entity])
+            let Ok([att_row, mut def_row]) = actors.get_many_mut([attacker_entity, def_entity])
             else {
                 continue;
             };
@@ -751,8 +810,10 @@ pub(crate) fn step_app(
 
             let hp_before = def_unit_val.hp_current;
             let low_hp_threshold = def_unit_val.hp_max * 3 / 10;
-            let defender_break_sealed =
-                def_flags_val.as_ref().map(|f| f.break_sealed).unwrap_or(false);
+            let defender_break_sealed = def_flags_val
+                .as_ref()
+                .map(|f| f.break_sealed)
+                .unwrap_or(false);
 
             let (outcome, core_events) = apply_damage_only(
                 &inflight.action,
@@ -768,12 +829,12 @@ pub(crate) fn step_app(
             );
 
             for kind in core_events {
-                let hit_taken_amount =
-                    if let CombatEventKind::OnDamageDealt { amount, .. } = &kind {
-                        Some(*amount)
-                    } else {
-                        None
-                    };
+                let hit_taken_amount = if let CombatEventKind::OnDamageDealt { amount, .. } = &kind
+                {
+                    Some(*amount)
+                } else {
+                    None
+                };
 
                 match &kind {
                     CombatEventKind::OnDamageDealt {
@@ -795,7 +856,9 @@ pub(crate) fn step_app(
                         });
                     }
                     CombatEventKind::OnBreak { damage_tag } => {
-                        commands.entity(def_entity).insert(Stunned { turns_left: 1 });
+                        commands
+                            .entity(def_entity)
+                            .insert(Stunned { turns_left: 1 });
                         log.push(LogEntry::Break {
                             target: def_id,
                             damage_tag: *damage_tag,
@@ -996,7 +1059,9 @@ pub(crate) fn step_app(
         if matches!(inflight.action.ult_effect, UltEffect::Reset) {
             emit_combat_event(
                 event_writer,
-                CombatEventKind::UltimateUsed { unit_id: attacker_id },
+                CombatEventKind::UltimateUsed {
+                    unit_id: attacker_id,
+                },
                 attacker_id,
                 attacker_id,
                 inflight.follow_up_depth,
@@ -1039,7 +1104,12 @@ pub(crate) fn step_app(
     // === END MULTI-TARGET PATH ===
 
     // === BOUNCE PATH ===
-    if let TargetShape::Bounce { hops, selector, repeat } = inflight.action.target_shape {
+    if let TargetShape::Bounce {
+        hops,
+        selector,
+        repeat,
+    } = inflight.action.target_shape
+    {
         // Phase 0: build entity→id map (read-only pass released before mut borrows).
         let actor_pairs: Vec<(Entity, UnitId)> = actors
             .iter()
@@ -1177,7 +1247,11 @@ pub(crate) fn step_app(
         let enemy_team = actors
             .iter()
             .find_map(|(_, team, unit, ..)| {
-                if unit.id == target_id { Some(*team) } else { None }
+                if unit.id == target_id {
+                    Some(*team)
+                } else {
+                    None
+                }
             })
             .unwrap_or(crate::combat::team::Team::Enemy);
 
@@ -1295,8 +1369,10 @@ pub(crate) fn step_app(
 
             let hp_before = def_unit_val.hp_current;
             let low_hp_threshold = def_unit_val.hp_max * 3 / 10;
-            let defender_break_sealed =
-                def_flags_val.as_ref().map(|f| f.break_sealed).unwrap_or(false);
+            let defender_break_sealed = def_flags_val
+                .as_ref()
+                .map(|f| f.break_sealed)
+                .unwrap_or(false);
 
             let (outcome, core_events) = apply_damage_only(
                 &hop_action,
@@ -1312,12 +1388,12 @@ pub(crate) fn step_app(
             );
 
             for kind in core_events {
-                let hit_taken_amount =
-                    if let CombatEventKind::OnDamageDealt { amount, .. } = &kind {
-                        Some(*amount)
-                    } else {
-                        None
-                    };
+                let hit_taken_amount = if let CombatEventKind::OnDamageDealt { amount, .. } = &kind
+                {
+                    Some(*amount)
+                } else {
+                    None
+                };
 
                 match &kind {
                     CombatEventKind::OnDamageDealt {
@@ -1339,7 +1415,9 @@ pub(crate) fn step_app(
                         });
                     }
                     CombatEventKind::OnBreak { damage_tag } => {
-                        commands.entity(def_entity).insert(Stunned { turns_left: 1 });
+                        commands
+                            .entity(def_entity)
+                            .insert(Stunned { turns_left: 1 });
                         log.push(LogEntry::Break {
                             target: def_id,
                             damage_tag: *damage_tag,
@@ -1539,7 +1617,9 @@ pub(crate) fn step_app(
         if matches!(inflight.action.ult_effect, UltEffect::Reset) {
             emit_combat_event(
                 event_writer,
-                CombatEventKind::UltimateUsed { unit_id: attacker_id },
+                CombatEventKind::UltimateUsed {
+                    unit_id: attacker_id,
+                },
                 attacker_id,
                 attacker_id,
                 inflight.follow_up_depth,
@@ -1838,7 +1918,9 @@ pub(crate) fn step_app(
         if matches!(inflight.action.ult_effect, UltEffect::Reset) {
             emit_combat_event(
                 event_writer,
-                CombatEventKind::UltimateUsed { unit_id: attacker_id },
+                CombatEventKind::UltimateUsed {
+                    unit_id: attacker_id,
+                },
                 attacker_id,
                 attacker_id,
                 inflight.follow_up_depth,
@@ -2264,8 +2346,7 @@ pub(crate) fn step_app(
         }
         if inflight.action.cleanse_count.is_some() && !outcome.ko {
             let cleanse_events = if let Some(ref mut bag) = defender_bag {
-                let (_co, evs) =
-                    apply_cleanse_only(&inflight.action, &mut **bag, true);
+                let (_co, evs) = apply_cleanse_only(&inflight.action, &mut **bag, true);
                 evs
             } else {
                 vec![CombatEventKind::OnCleansed { kinds: vec![] }]
@@ -2302,7 +2383,9 @@ pub(crate) fn step_app(
     if matches!(inflight.action.ult_effect, UltEffect::Reset) {
         emit_combat_event(
             event_writer,
-            CombatEventKind::UltimateUsed { unit_id: attacker_id },
+            CombatEventKind::UltimateUsed {
+                unit_id: attacker_id,
+            },
             attacker_id,
             attacker_id,
             inflight.follow_up_depth,
@@ -2339,7 +2422,7 @@ pub(crate) fn step_app(
     }
 
     if outcome.succeeded {
-            dispatch_blueprint_transitions(inflight, log, event_writer, registry, cast_id);
+        dispatch_blueprint_transitions(inflight, log, event_writer, registry, cast_id);
     }
 
     set_phase(state, CombatPhase::WaitingAction);

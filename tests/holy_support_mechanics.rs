@@ -1,22 +1,20 @@
 use bevy::prelude::*;
 
 use bevyrogue::combat::api::intent::CastId;
-use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
+use bevyrogue::combat::blueprints::agumon::TwinCoreState;
 use bevyrogue::combat::blueprints::patamon::{
     GRACE_CAP, HolySupportDesignTag, HolySupportHook, HolySupportRejectReason, HolySupportState,
-    HolySupportStep, HolySupportTransition,
-    classify_holy_support_tag, holy_support_design_tag,
+    HolySupportStep, HolySupportTransition, classify_holy_support_tag, holy_support_design_tag,
 };
+use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::kernel::{
-    CombatKernelRegistry, CombatKernelTransition, CombatTagChangeKind,
-    CombatTagState, CombatTagTransition, TacticalCyclePhase, TacticalCycleStep,
-    TacticalCycleTransition,
+    CombatKernelRegistry, CombatKernelTransition, CombatTagChangeKind, CombatTagState,
+    CombatTagTransition, TacticalCyclePhase, TacticalCycleStep, TacticalCycleTransition,
 };
 use bevyrogue::combat::log::ActionLog;
 use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
 use bevyrogue::combat::sp::SpPool;
 use bevyrogue::combat::state::CombatState;
-use bevyrogue::combat::blueprints::agumon::TwinCoreState;
 use bevyrogue::combat::types::UnitId;
 
 fn app_with_holy_support() -> App {
@@ -273,7 +271,7 @@ fn validation_snapshot_includes_holy_support_fields() {
     assert!(snapshot.holy_support.is_some());
 
     let formatted = format_validation_snapshot(&snapshot);
-    assert!(formatted.contains("holy_support=grace=2/3"));
+    assert!(formatted.contains("support=grace=2/3"));
     assert!(formatted.contains("martyr_marked=true"));
     assert!(formatted.contains("last=build(2)"));
 }

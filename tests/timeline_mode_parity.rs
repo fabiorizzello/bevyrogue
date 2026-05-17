@@ -181,7 +181,8 @@ fn build_regs() -> ExtRegistries {
     regs.hooks.register("parity/entry_hook", entry_hook);
     regs.hooks.register("parity/finisher_hook", finisher_hook);
     regs.hooks.register("parity/normal_hook", normal_hook);
-    regs.predicates.register("parity/target_is_low_hp", target_is_low_hp);
+    regs.predicates
+        .register("parity/target_is_low_hp", target_is_low_hp);
     regs
 }
 
@@ -195,8 +196,17 @@ fn build_regs() -> ExtRegistries {
 fn normalize(p: &VecDeque<Intent>) -> Vec<String> {
     p.iter()
         .map(|i| match i {
-            Intent::DealDamage { source, target, amount, tag, .. } => {
-                format!("DealDamage(src={:?},tgt={:?},amt={},tag={:?})", source, target, amount, tag)
+            Intent::DealDamage {
+                source,
+                target,
+                amount,
+                tag,
+                ..
+            } => {
+                format!(
+                    "DealDamage(src={:?},tgt={:?},amt={},tag={:?})",
+                    source, target, amount, tag
+                )
             }
             other => format!("{:?}", other),
         })
@@ -215,8 +225,7 @@ fn run_mode(
 ) -> VecDeque<Intent> {
     let mut pending = VecDeque::new();
     let mut runner = BeatRunner::new(timeline, cast_id, CASTER_ID, TARGET_ID);
-    let outcome =
-        runner.run_to_completion(world, regs, mode, &mut pending, 64);
+    let outcome = runner.run_to_completion(world, regs, mode, &mut pending, 64);
     assert_eq!(
         outcome,
         StepOutcome::Done,
@@ -290,10 +299,7 @@ fn mode_parity_execute_dryrun_preview_match_on_finisher_branch() {
     let exec_amounts = norm_amounts(&pending_exec);
 
     // Stream must be non-empty and contain the finisher amount (not normal amount).
-    assert!(
-        !exec_amounts.is_empty(),
-        "intent stream must be non-empty"
-    );
+    assert!(!exec_amounts.is_empty(), "intent stream must be non-empty");
     assert!(
         exec_amounts.contains(&FINISHER_DAMAGE),
         "finisher branch must be taken (hp=10 < threshold={}); got: {:?}",
@@ -382,10 +388,7 @@ fn mode_parity_execute_dryrun_preview_match_on_normal_branch() {
     }
     let exec_amounts = norm_amounts(&pending_exec);
 
-    assert!(
-        !exec_amounts.is_empty(),
-        "intent stream must be non-empty"
-    );
+    assert!(!exec_amounts.is_empty(), "intent stream must be non-empty");
     assert!(
         exec_amounts.contains(&NORMAL_DAMAGE),
         "normal branch must be taken (hp=100 >= threshold={}); got: {:?}",

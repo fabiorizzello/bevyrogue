@@ -1,8 +1,8 @@
 use bevy::{ecs::message::MessageCursor, prelude::*};
+use bevyrogue::combat::api::SignalPayload;
+use bevyrogue::combat::blueprints::patamon::{HolySupportState, HolySupportTransition};
 use bevyrogue::combat::blueprints::{self, CustomSignalDispatchError};
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
-use bevyrogue::combat::blueprints::patamon::{HolySupportState, HolySupportTransition};
-use bevyrogue::combat::api::SignalPayload;
 use bevyrogue::combat::kernel::{CombatKernelTransition, register_combat_kernel_runtime};
 use bevyrogue::combat::kit::UnitSkills;
 use bevyrogue::combat::log::ActionLog;
@@ -170,7 +170,7 @@ fn custom_signal_rejects_unknown_patamon_variant() {
             grant_free_skill_count: 0,
             status_to_apply: None,
             advance_pct: 0,
-        delay_pct: 0,
+            delay_pct: 0,
             energy_grant: 0,
             self_advance_pct: 0,
             target_shape: TargetShape::Single,
@@ -318,7 +318,12 @@ fn patamon_ultimate_dispatches_blueprint_transition_into_holy_support_state_and_
         .iter()
         .filter_map(|event| match &event.kind {
             CombatEventKind::OnKernelTransition {
-                transition: CombatKernelTransition::Blueprint { owner, name, payload },
+                transition:
+                    CombatKernelTransition::Blueprint {
+                        owner,
+                        name,
+                        payload,
+                    },
             } if owner == "patamon" => Some((name.as_str(), payload)),
             _ => None,
         })
@@ -337,6 +342,6 @@ fn patamon_ultimate_dispatches_blueprint_transition_into_holy_support_state_and_
 
     let snapshot = capture_validation_snapshot(app.world_mut()).expect("snapshot");
     let formatted = format_validation_snapshot(&snapshot);
-    assert!(formatted.contains("holy_support=grace=1/3"));
+    assert!(formatted.contains("support=grace=1/3"));
     assert!(formatted.contains("last=build(1)"));
 }

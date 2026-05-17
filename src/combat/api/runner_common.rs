@@ -38,12 +38,16 @@ pub(crate) fn fire_beat(beat: &Beat, hop_index: u32, params: RunnerParams) -> Ve
     // Selector — only Impact beats resolve targets.
     let beat_targets = if matches!(beat.kind, BeatKind::Impact) {
         if let Some(sel_id) = beat.selector.as_ref() {
-            let sel = *params.regs.selectors.get(sel_id.as_ref()).unwrap_or_else(|| {
-                panic!(
-                    "selector `{sel_id}` not registered \
+            let sel = *params
+                .regs
+                .selectors
+                .get(sel_id.as_ref())
+                .unwrap_or_else(|| {
+                    panic!(
+                        "selector `{sel_id}` not registered \
                      (validate_timeline_refs catches this at App::finish)"
-                )
-            });
+                    )
+                });
             let sctx = SelectorCtx {
                 caster: params.caster,
                 primary_target: params.primary_target,
@@ -104,9 +108,11 @@ pub(crate) fn fire_beat(beat: &Beat, hop_index: u32, params: RunnerParams) -> Ve
 ///
 /// Any intents the predicate erroneously enqueues are discarded (dummy queue).
 pub(crate) fn eval_predicate(pred_id: &str, evt: &BeatEvent, params: &mut RunnerParams) -> bool {
-    let f = *params.regs.predicates.get(pred_id).unwrap_or_else(|| {
-        panic!("predicate `{pred_id}` not registered")
-    });
+    let f = *params
+        .regs
+        .predicates
+        .get(pred_id)
+        .unwrap_or_else(|| panic!("predicate `{pred_id}` not registered"));
     let mut dummy: VecDeque<Intent> = VecDeque::new();
     let ctx = SkillCtx::new(
         params.caster,

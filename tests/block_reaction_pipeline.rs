@@ -1,6 +1,9 @@
 use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::{
-    api::{CastId, Intent, applier::{intent_applier, IntentQueue}},
+    api::{
+        CastId, Intent,
+        applier::{IntentQueue, intent_applier},
+    },
     buffs::DrBag,
     events::{CombatEvent, CombatEventKind},
     modifiers::{DamageModifierLedger, ModifierLayer},
@@ -101,13 +104,33 @@ fn block_reaction_applies_before_dr_and_replays_deterministically() {
     let seed = 0xCAFE_BABE;
 
     let (baseline_hp, baseline_events) = run_case(seed, false);
-    assert_eq!(baseline_hp, 430, "expected 70 damage with 30% DR and no armed modifier");
-    assert!(baseline_events.iter().any(|ev| matches!(ev.kind, CombatEventKind::IncomingDamage { raw_amount: 100, damage_tag: DamageTag::Physical })));
-    assert!(baseline_events.iter().any(|ev| matches!(ev.kind, CombatEventKind::OnDamageDealt { amount: 70, .. })));
-    assert!(baseline_events.iter().all(|ev| !matches!(ev.kind, CombatEventKind::BlockReactionTriggered { .. })));
+    assert_eq!(
+        baseline_hp, 430,
+        "expected 70 damage with 30% DR and no armed modifier"
+    );
+    assert!(baseline_events.iter().any(|ev| matches!(
+        ev.kind,
+        CombatEventKind::IncomingDamage {
+            raw_amount: 100,
+            damage_tag: DamageTag::Physical
+        }
+    )));
+    assert!(
+        baseline_events
+            .iter()
+            .any(|ev| matches!(ev.kind, CombatEventKind::OnDamageDealt { amount: 70, .. }))
+    );
+    assert!(
+        baseline_events
+            .iter()
+            .all(|ev| !matches!(ev.kind, CombatEventKind::BlockReactionTriggered { .. }))
+    );
 
     let (armed_hp, armed_events) = run_case(seed, true);
-    assert_eq!(armed_hp, 465, "expected 35 damage when 50% block reaction applies before 30% DR");
+    assert_eq!(
+        armed_hp, 465,
+        "expected 35 damage when 50% block reaction applies before 30% DR"
+    );
 
     let kinds: Vec<&'static str> = armed_events
         .iter()
@@ -121,7 +144,9 @@ fn block_reaction_applies_before_dr_and_replays_deterministically() {
         })
         .collect();
     assert!(
-        kinds.windows(3).any(|window| window == ["IncomingDamage", "OnDamageDealt", "BlockReactionTriggered"]),
+        kinds
+            .windows(3)
+            .any(|window| window == ["IncomingDamage", "OnDamageDealt", "BlockReactionTriggered"]),
         "expected IncomingDamage -> OnDamageDealt -> BlockReactionTriggered ordering, got {kinds:?}"
     );
     assert_eq!(
@@ -134,6 +159,12 @@ fn block_reaction_applies_before_dr_and_replays_deterministically() {
     );
 
     let (armed_hp_replay, armed_events_replay) = run_case(seed, true);
-    assert_eq!(armed_hp_replay, armed_hp, "fixed seed should replay the same HP result");
-    assert_eq!(armed_events_replay, armed_events, "fixed seed should replay the same event stream");
+    assert_eq!(
+        armed_hp_replay, armed_hp,
+        "fixed seed should replay the same HP result"
+    );
+    assert_eq!(
+        armed_events_replay, armed_events,
+        "fixed seed should replay the same event stream"
+    );
 }

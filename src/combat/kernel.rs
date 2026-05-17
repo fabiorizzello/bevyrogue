@@ -1,12 +1,7 @@
 use bevy::prelude::{App, Resource, Update};
 use serde::{Deserialize, Serialize};
 
-use crate::combat::types::UnitId;
-
 // CombatKernelRegistry must be Resource so it can be accessed via Bevy ECS Res<>.
-pub use crate::combat::battery_loop::{BatteryLoopBlockedReason, BatteryLoopChargeKind, BatteryLoopSignal, BatteryLoopStep, BatteryLoopTransition};
-pub use crate::combat::blueprints::dorumon::identity::{PredatorLoopBlockedReason, PredatorLoopCapKind, PredatorLoopSignal, PredatorLoopStep, PredatorLoopTransition};
-
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum TacticalCyclePhase {
@@ -432,7 +427,6 @@ impl CombatBeatId {
     }
 }
 
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PrecisionWindowKind {
     Momentum,
@@ -548,9 +542,7 @@ pub enum CombatKernelTransition {
     Fatigue(FatigueTransition),
     Tag(CombatTagTransition),
     Beat(CombatBeatId),
-    BatteryLoop(BatteryLoopTransition),
     HolySupport(HolySupportTransition),
-    PredatorLoop(PredatorLoopTransition),
     Blueprint {
         owner: String,
         name: String,

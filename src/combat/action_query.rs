@@ -484,7 +484,10 @@ fn target_status_for_unit(
 
     if !matches!(
         skill_def.targeting.shape,
-        TargetShape::Single | TargetShape::Blast | TargetShape::AllEnemies | TargetShape::Bounce { .. }
+        TargetShape::Single
+            | TargetShape::Blast
+            | TargetShape::AllEnemies
+            | TargetShape::Bounce { .. }
     ) {
         return TargetStatus::Deferred {
             reason: LegalityReasonCode::UnimplementedTargetShape,

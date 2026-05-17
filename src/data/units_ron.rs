@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
 // `EnemyCounterplayKind` is re-consumed by integration tests through
 // `bevyrogue::data::units_ron::EnemyCounterplayKind`; the lib alone treats it as unused.
@@ -34,41 +35,12 @@ pub enum TwinCorePersonalLabel {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
-pub struct TwinCoreRosterMetadata {
-    #[serde(default)]
-    pub line: Option<TwinCoreLine>,
-    #[serde(default)]
-    pub role: Option<TwinCoreRole>,
-    #[serde(default)]
-    pub personal_resource_label: Option<TwinCorePersonalLabel>,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum HolySupportLine {
-    Hope,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum HolySupportRole {
-    GraceAccumulator,
-    MartyrSpender,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum HolySupportPersonalLabel {
-    Grace,
-    MartyrLight,
-}
+#[serde(transparent)]
+pub struct BlueprintRosterPayload(pub BTreeMap<String, String>);
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
-pub struct HolySupportRosterMetadata {
-    #[serde(default)]
-    pub line: Option<HolySupportLine>,
-    #[serde(default)]
-    pub role: Option<HolySupportRole>,
-    #[serde(default)]
-    pub personal_resource_label: Option<HolySupportPersonalLabel>,
-}
+#[serde(transparent)]
+pub struct BlueprintRoster(pub BTreeMap<String, BlueprintRosterPayload>);
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct UnitDef {
@@ -92,12 +64,9 @@ pub struct UnitDef {
     /// Once-per-round conditional bonus; absent in RON for units without form identity.
     #[serde(default)]
     pub form_identity: Option<FormIdentityConfig>,
-    /// Declarative Twin Core roster metadata used by contract tests and kernel-adjacent hooks.
+    /// Owner-keyed blueprint roster metadata used by contract tests and kernel-adjacent hooks.
     #[serde(default)]
-    pub twin_core: TwinCoreRosterMetadata,
-    /// Declarative Holy support roster metadata used by contract tests and kernel-adjacent hooks.
-    #[serde(default)]
-    pub holy_support: HolySupportRosterMetadata,
+    pub blueprint_metadata: BlueprintRoster,
     pub resists: Vec<DamageTag>,
     pub toughness_max: i32,
     pub weaknesses: Vec<DamageTag>,
@@ -130,7 +99,7 @@ mod tests {
     use crate::combat::kit::FollowUpTrigger;
     use crate::combat::types::DamageTag;
     use crate::data::skills_ron::{LegalityReasonCode, SkillBook};
-    use std::collections::HashSet;
+    use std::collections::{BTreeMap, HashSet};
 
     fn canonical_roster() -> UnitRoster {
         ron::from_str(include_str!("../../assets/data/units.ron")).expect("parse units.ron")
@@ -192,8 +161,7 @@ mod tests {
                 },
             }),
             form_identity: None,
-            twin_core: TwinCoreRosterMetadata::default(),
-            holy_support: HolySupportRosterMetadata::default(),
+            blueprint_metadata: BlueprintRoster::default(),
             resists: vec![],
             toughness_max: 50,
             weaknesses: vec![DamageTag::Ice],
@@ -255,6 +223,117 @@ mod tests {
             unit.charged_attack.is_none(),
             "charged_attack should default to None"
         );
+    }
+
+    #[test]
+    fn missing_blueprint_metadata_defaults_to_empty() {
+        let roster = ron::from_str::<UnitRoster>(
+            r#"[
+            (
+                id: UnitId(9),
+                name: "Fallbackmon",
+                role_tags: ["test"],
+                signature_traits: ["test"],
+                hp_max: 100,
+                attribute: Vaccine,
+                team: Ally,
+                basic_damage_tag: Fire,
+                basic_skill: SkillId("baby_flame"),
+                skill_ids: [SkillId("baby_flame")],
+                ultimate_skill: SkillId("agumon_ult"),
+                follow_up: None,
+                resists: [],
+                toughness_max: 50,
+                weaknesses: [Ice],
+                ultimate_trigger: 100,
+                ultimate_cap: 150,
+                ultimate_accumulation_trigger: OnBasicAttack,
+                ultimate_charge_per_event: 25,
+                speed: 100,
+                evo_stage: Child,
+                evo_line: EvoLineId("test"),
+                evolves_to: [],
+            ),
+        ]"#,
+        )
+        .expect("parse roster without blueprint metadata");
+
+        let unit = &roster.0[0];
+        assert!(
+            unit.blueprint_metadata.0.is_empty(),
+            "blueprint_metadata should default to empty"
+        );
+    }
+
+    #[test]
+    fn blueprint_metadata_round_trips_in_owner_sorted_order() {
+        let mut blueprint_metadata = BlueprintRoster::default();
+        blueprint_metadata.0.insert(
+            "twin_core".into(),
+            BlueprintRosterPayload(BTreeMap::from([
+                ("role".into(), "spender".into()),
+                ("line".into(), "ice".into()),
+            ])),
+        );
+        blueprint_metadata.0.insert(
+            "holy_support".into(),
+            BlueprintRosterPayload(BTreeMap::from([
+                ("role".into(), "accumulator".into()),
+                ("line".into(), "hope".into()),
+            ])),
+        );
+
+        let def = UnitDef {
+            id: UnitId(1),
+            name: "Agumon".into(),
+            role_tags: vec!["vanguard".into(), "breaker".into()],
+            signature_traits: vec!["courage".into(), "fire".into()],
+            hp_max: 100,
+            attribute: Attribute::Vaccine,
+            team: Team::Ally,
+            basic_damage_tag: DamageTag::Fire,
+            basic_skill: SkillId("baby_flame".into()),
+            skill_ids: vec![SkillId("baby_flame".into())],
+            ultimate_skill: SkillId("agumon_ult".into()),
+            follow_up: Some(FollowUpConfig {
+                trigger: FollowUpTrigger::OnEnemyBreak,
+                action: SkillId("agumon_follow_up".into()),
+            }),
+            enemy_traits: vec![EnemyTraitDeclaration {
+                kind: EnemyCounterplayKind::TempoAnchor,
+                status: EnemyCounterplayStatus::Implemented,
+            }],
+            charged_attack: Some(ChargedAttackDeclaration {
+                skill_id: SkillId("agumon_charged".into()),
+                lead_turns: 2,
+                status: EnemyCounterplayStatus::Deferred {
+                    reason: LegalityReasonCode::ChargedTelegraphDeferred,
+                },
+            }),
+            form_identity: None,
+            blueprint_metadata,
+            resists: vec![],
+            toughness_max: 50,
+            weaknesses: vec![DamageTag::Ice],
+            ultimate_trigger: 100,
+            ultimate_cap: 150,
+            ultimate_accumulation_trigger: UltAccumulationTrigger::OnBasicAttack,
+            ultimate_charge_per_event: 25,
+            speed: 100,
+            evo_stage: EvoStage::Child,
+            evo_line: EvoLineId("agumon_line".into()),
+            evolves_to: vec![UnitId(12)],
+            tempo_resistant: false,
+            toughness_category: ToughnessCategory::Standard,
+        };
+
+        let s = ron::to_string(&def).expect("serialize");
+        assert!(
+            s.find("holy_support").unwrap() < s.find("twin_core").unwrap(),
+            "owner keys should serialize deterministically in sorted order: {s}"
+        );
+        let back: UnitDef = ron::from_str(&s).expect("deserialize");
+        assert_eq!(def, back);
     }
 
     #[test]

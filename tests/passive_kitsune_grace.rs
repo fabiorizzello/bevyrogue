@@ -1,12 +1,11 @@
 use bevy::{ecs::message::MessageCursor, ecs::system::RunSystemOnce, prelude::*};
 use bevyrogue::combat::{
     api::{
+        BlueprintState, CastId, CastIdGen, EventFilter, ExtRegistries, Intent, IntentQueue,
+        PassiveListeners, PassiveRunner, SignalBus, SignalPayload, SignalTaxonomy, SkillCtx,
         applier::intent_applier,
-        CastId, CastIdGen, EventFilter, Intent, SignalBus, SignalPayload, SignalTaxonomy,
-        BlueprintState, ExtRegistries, IntentQueue, PassiveListeners, PassiveRunner,
-        SkillCtx,
         combat_event_to_signal_system, passive_dispatch_system,
-        timeline::{Beat, BeatKind, CompiledTimeline, BeatEvent},
+        timeline::{Beat, BeatEvent, BeatKind, CompiledTimeline},
     },
     events::{CombatEvent, CombatEventKind, CombatKernelTransition},
     team::Team,
@@ -69,9 +68,7 @@ fn kitsune_grace_trigger(evt: &BeatEvent, ctx: &SkillCtx<'_>) -> bool {
         return false;
     };
 
-    let Some((self_unit, self_team)) = units
-        .iter(world)
-        .find(|(unit, _)| unit.id == ctx.caster)
+    let Some((self_unit, self_team)) = units.iter(world).find(|(unit, _)| unit.id == ctx.caster)
     else {
         return false;
     };
@@ -159,8 +156,10 @@ fn build_kitsune_grace_timeline() -> Arc<CompiledTimeline> {
 
 fn register_kitsune_grace(app: &mut App) {
     let mut regs = app.world_mut().resource_mut::<ExtRegistries>();
-    regs.predicates.register("kitsune_grace/trigger", kitsune_grace_trigger);
-    regs.hooks.register("kitsune_grace/proc", kitsune_grace_proc);
+    regs.predicates
+        .register("kitsune_grace/trigger", kitsune_grace_trigger);
+    regs.hooks
+        .register("kitsune_grace/proc", kitsune_grace_proc);
 
     app.world_mut()
         .resource_mut::<SignalTaxonomy>()
@@ -208,12 +207,22 @@ fn kitsune_grace_triggers_for_ally_ult_and_writes_blueprint_state() {
     write_ult_used(&mut app, PATAMON_ID);
     app.update();
 
-    let drained: Vec<_> = app.world_mut().resource_mut::<SignalBus>().drain().collect();
-    assert!(drained.is_empty(), "SignalBus should be fully drained after update, got: {:?}", drained);
+    let drained: Vec<_> = app
+        .world_mut()
+        .resource_mut::<SignalBus>()
+        .drain()
+        .collect();
+    assert!(
+        drained.is_empty(),
+        "SignalBus should be fully drained after update, got: {:?}",
+        drained
+    );
 
     let state = app.world().resource::<BlueprintState>();
     assert_eq!(
-        state.map.get(&(RENAMON_ID, KITSUNE_TRIGGER_KEY.to_string())),
+        state
+            .map
+            .get(&(RENAMON_ID, KITSUNE_TRIGGER_KEY.to_string())),
         Some(&1),
         "kitsune_grace sentinel should be written for ally ult trigger"
     );
@@ -227,7 +236,11 @@ fn kitsune_grace_triggers_for_ally_ult_and_writes_blueprint_state() {
             } if owner == "renamon" && name == "kitsune_grace"
         )
     });
-    assert!(kitsune_event.is_some(), "Expected kitsune_grace Blueprint transition, got: {:?}", events);
+    assert!(
+        kitsune_event.is_some(),
+        "Expected kitsune_grace Blueprint transition, got: {:?}",
+        events
+    );
 }
 
 #[test]
@@ -243,7 +256,9 @@ fn kitsune_grace_ignores_self_ult() {
 
     let state = app.world().resource::<BlueprintState>();
     assert!(
-        !state.map.contains_key(&(RENAMON_ID, KITSUNE_TRIGGER_KEY.to_string())),
+        !state
+            .map
+            .contains_key(&(RENAMON_ID, KITSUNE_TRIGGER_KEY.to_string())),
         "self ult should not trigger kitsune_grace"
     );
 
@@ -256,7 +271,11 @@ fn kitsune_grace_ignores_self_ult() {
             } if owner == "renamon" && name == "kitsune_grace"
         )
     });
-    assert!(kitsune_event.is_none(), "self ult should not emit kitsune_grace Blueprint transition, got: {:?}", events);
+    assert!(
+        kitsune_event.is_none(),
+        "self ult should not emit kitsune_grace Blueprint transition, got: {:?}",
+        events
+    );
 }
 
 #[test]
@@ -272,7 +291,9 @@ fn kitsune_grace_ignores_enemy_ult() {
 
     let state = app.world().resource::<BlueprintState>();
     assert!(
-        !state.map.contains_key(&(RENAMON_ID, KITSUNE_TRIGGER_KEY.to_string())),
+        !state
+            .map
+            .contains_key(&(RENAMON_ID, KITSUNE_TRIGGER_KEY.to_string())),
         "enemy ult should not trigger kitsune_grace"
     );
 
@@ -285,7 +306,11 @@ fn kitsune_grace_ignores_enemy_ult() {
             } if owner == "renamon" && name == "kitsune_grace"
         )
     });
-    assert!(kitsune_event.is_none(), "enemy ult should not emit kitsune_grace Blueprint transition, got: {:?}", events);
+    assert!(
+        kitsune_event.is_none(),
+        "enemy ult should not emit kitsune_grace Blueprint transition, got: {:?}",
+        events
+    );
 }
 
 #[test]
@@ -313,21 +338,28 @@ fn kitsune_grace_blueprint_event_round_trips_jsonl() {
         .expect("expected kitsune_grace blueprint event in positive case");
 
     let json = serde_json::to_string(&ev).expect("combat event should serialize to JSONL");
-    let round_tripped: CombatEvent = serde_json::from_str(&json).expect("combat event should deserialize from JSONL");
-    assert_eq!(ev, round_tripped, "CombatEvent::OnKernelTransition::Blueprint must round-trip through serde_json");
+    let round_tripped: CombatEvent =
+        serde_json::from_str(&json).expect("combat event should deserialize from JSONL");
+    assert_eq!(
+        ev, round_tripped,
+        "CombatEvent::OnKernelTransition::Blueprint must round-trip through serde_json"
+    );
 }
 
 #[test]
 #[should_panic(expected = "unregistered signal")]
 fn unregistered_blueprint_signal_panics_in_debug() {
     let mut app = setup_app();
-    app.world_mut().resource_mut::<IntentQueue>().0.push_back(Intent::BlueprintSignal {
-        source: RENAMON_ID,
-        owner: "renamon",
-        name: "missing_signal",
-        payload: SignalPayload::Empty,
-        cast_id: CastId::ROOT,
-    });
+    app.world_mut()
+        .resource_mut::<IntentQueue>()
+        .0
+        .push_back(Intent::BlueprintSignal {
+            source: RENAMON_ID,
+            owner: "renamon",
+            name: "missing_signal",
+            payload: SignalPayload::Empty,
+            cast_id: CastId::ROOT,
+        });
 
     app.world_mut().run_system_once(intent_applier);
 }
