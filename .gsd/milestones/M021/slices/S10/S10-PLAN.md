@@ -60,7 +60,7 @@ After S10, combat shared runtime surfaces are digimon-free and all remaining per
 
 ## Tasks
 
-- [ ] **T01: Migrate Patamon Holy Support transport onto the Blueprint owner envelope** `est:1.5h`
+- [x] **T01: Migrate Patamon Holy Support transport onto the Blueprint owner envelope** `est:1.5h`
   Skills used: bevy, rust-best-practices, verify-before-complete.
   - Files: `src/combat/blueprints/patamon/signals.rs`, `src/combat/blueprints/patamon/identity.rs`, `src/combat/blueprints/patamon/mod.rs`, `tests/patamon_blueprint_seam.rs`, `tests/holy_support_resolution.rs`
   - Verify: cargo test --test patamon_blueprint_seam

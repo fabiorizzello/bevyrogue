@@ -1,5 +1,6 @@
+use bevyrogue::combat::api::SignalPayload;
 use bevyrogue::combat::blueprints::{self, CustomSignalDispatchError};
-use bevyrogue::combat::kernel::{CombatKernelTransition, PredatorLoopTransition};
+use bevyrogue::combat::kernel::CombatKernelTransition;
 use bevyrogue::combat::kit::UnitSkills;
 use bevyrogue::combat::resolution::resolve_action;
 use bevyrogue::combat::turn_system::ActionIntent;
@@ -98,33 +99,43 @@ fn registry_routes_dorumon_signals_to_predator_loop_transitions() {
     assert_eq!(
         transitions,
         vec![
-            CombatKernelTransition::PredatorLoop(PredatorLoopTransition::build_exploit(
-                UnitId(7),
-                2,
-            )),
-            CombatKernelTransition::PredatorLoop(PredatorLoopTransition::apply_prey_lock(
-                UnitId(7),
-                2,
-            )),
+            CombatKernelTransition::Blueprint {
+                owner: "dorumon".into(),
+                name: "build_exploit".into(),
+                payload: SignalPayload::Amount(2),
+            },
+            CombatKernelTransition::Blueprint {
+                owner: "dorumon".into(),
+                name: "apply_prey_lock".into(),
+                payload: SignalPayload::Amount(0),
+            },
         ]
     );
 }
 
 #[test]
-fn renamon_precision_signals_route_to_precision_mind_game_transitions() {
+fn renamon_precision_signals_route_to_blueprint_envelopes() {
     let book = canonical_skill_book();
-    
-    // Test open_momentum_window (Diamond Storm)
+
+    // open_momentum_window (Diamond Storm)
     let resolved = resolve_skill(&book, "diamond_storm");
     let transitions = blueprints::transitions_for_action_checked(&resolved).expect("dispatch");
     assert_eq!(transitions.len(), 1);
-    assert!(matches!(transitions[0], CombatKernelTransition::PrecisionMindGame(_)));
+    assert!(matches!(
+        &transitions[0],
+        CombatKernelTransition::Blueprint { owner, name, payload: SignalPayload::Empty }
+            if owner == "renamon" && name == "open_momentum_window"
+    ));
 
-    // Test commit_precision_press (Renamon Ult)
+    // commit_precision_press (Renamon Ult)
     let resolved = resolve_skill(&book, "renamon_ult");
     let transitions = blueprints::transitions_for_action_checked(&resolved).expect("dispatch");
     assert_eq!(transitions.len(), 1);
-    assert!(matches!(transitions[0], CombatKernelTransition::PrecisionMindGame(_)));
+    assert!(matches!(
+        &transitions[0],
+        CombatKernelTransition::Blueprint { owner, name, payload: SignalPayload::Empty }
+            if owner == "renamon" && name == "commit_precision_press"
+    ));
 }
 
 #[test]

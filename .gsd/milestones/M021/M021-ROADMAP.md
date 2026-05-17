@@ -45,7 +45,7 @@
 - [x] **S09: S09** `risk:medium` `depends:[]`
   > After this: Predator Loop write in JSONL; Battery Loop deterministico.
 
-- [ ] **S10: Patamon + Renamon migrated + kernel digimon-free** `risk:medium` `depends:[S09]`
+- [ ] **S10: S10** `risk:medium` `depends:[]`
   > After this: Kernel digimon-free verificato grep; smoke UI 2 encounter.
 
 - [ ] **S11: UI and AI consumers via SkillCtx Preview** `risk:low` `depends:[S06,S07]`

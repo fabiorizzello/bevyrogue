@@ -1,10 +1,18 @@
 use std::sync::Arc;
 
+use bevy::prelude::*;
+
 use crate::combat::{
     api::{
         Beat, BeatEvent, BeatKind, BlueprintState, CompiledTimeline, EventFilter, Intent,
         PassiveListeners, PassiveRunner, SignalPayload, SignalTaxonomy, SkillCtx,
     },
+    events::{CombatEvent, CombatEventKind},
+    kernel::{
+        CombatKernelRegistry, CombatKernelTransition, PrecisionCommitment,
+        PrecisionMindGameTransition, PrecisionOutcome, PrecisionReveal, PrecisionWindowKind,
+    },
+    precision_mind_game::{apply_precision_mind_game_transition, PrecisionMindGameState},
     team::Team,
     types::UnitId,
     unit::Unit,
@@ -14,15 +22,29 @@ use crate::data::skills_ron::SkillCustomSignal;
 use super::CustomSignalDispatchError;
 
 pub const OWNER: &str = "renamon";
+
+const SIGNAL_OPEN_MOMENTUM_WINDOW: &str = "open_momentum_window";
+const SIGNAL_COMMIT_PRECISION_PRESS: &str = "commit_precision_press";
+const SIGNAL_REVEAL_BAIT: &str = "reveal_bait";
+const SIGNAL_RESOLVE_PRECISION_SUCCESS: &str = "resolve_precision_success";
+
 const PASSIVE_SIGNAL_NAME: &str = "kitsune_grace";
 const PASSIVE_TRIGGER_KEY: &str = "renamon/kitsune_grace/triggered";
 const PASSIVE_TIMELINE_ID: &str = "renamon_kitsune_grace_passive";
 const PASSIVE_OWNER: UnitId = UnitId(7);
 
+fn blueprint_transition(name: &str) -> CombatKernelTransition {
+    CombatKernelTransition::Blueprint {
+        owner: OWNER.to_owned(),
+        name: name.to_owned(),
+        payload: SignalPayload::Empty,
+    }
+}
+
 pub fn dispatch(
     signal: &SkillCustomSignal,
     _action: &crate::combat::state::ResolvedAction,
-) -> Result<Vec<crate::combat::kernel::CombatKernelTransition>, CustomSignalDispatchError> {
+) -> Result<Vec<CombatKernelTransition>, CustomSignalDispatchError> {
     if signal.owner() != OWNER {
         return Err(CustomSignalDispatchError::UnknownOwner {
             owner: signal.owner().to_owned(),
@@ -30,30 +52,64 @@ pub fn dispatch(
     }
 
     match signal.signal() {
-        "open_momentum_window" => Ok(vec![crate::combat::kernel::CombatKernelTransition::PrecisionMindGame(
-            crate::combat::kernel::PrecisionMindGameTransition::open_window(
-                crate::combat::kernel::PrecisionWindowKind::Momentum,
-            ),
-        )]),
-        "commit_precision_press" => Ok(vec![crate::combat::kernel::CombatKernelTransition::PrecisionMindGame(
-            crate::combat::kernel::PrecisionMindGameTransition::commit(
-                crate::combat::kernel::PrecisionCommitment::Press,
-            ),
-        )]),
-        "reveal_bait" => Ok(vec![crate::combat::kernel::CombatKernelTransition::PrecisionMindGame(
-            crate::combat::kernel::PrecisionMindGameTransition::reveal(
-                crate::combat::kernel::PrecisionReveal::Baited,
-            ),
-        )]),
-        "resolve_precision_success" => Ok(vec![crate::combat::kernel::CombatKernelTransition::PrecisionMindGame(
-            crate::combat::kernel::PrecisionMindGameTransition::resolve(
-                crate::combat::kernel::PrecisionOutcome::Success,
-            ),
-        )]),
+        SIGNAL_OPEN_MOMENTUM_WINDOW
+        | SIGNAL_COMMIT_PRECISION_PRESS
+        | SIGNAL_REVEAL_BAIT
+        | SIGNAL_RESOLVE_PRECISION_SUCCESS => Ok(vec![blueprint_transition(signal.signal())]),
         other => Err(CustomSignalDispatchError::UnknownSignal {
             owner: OWNER.to_string(),
             signal: other.to_string(),
         }),
+    }
+}
+
+pub struct RenamonPlugin;
+
+impl Plugin for RenamonPlugin {
+    fn build(&self, app: &mut App) {
+        app.init_resource::<PrecisionMindGameState>()
+            .add_systems(Update, apply_renamon_precision_blueprint_system);
+
+        app.world_mut()
+            .resource_mut::<CombatKernelRegistry>()
+            .register(crate::combat::precision_mind_game::PrecisionMindGameHook);
+    }
+}
+
+fn decode_precision_blueprint_transition(name: &str) -> Option<PrecisionMindGameTransition> {
+    match name {
+        SIGNAL_OPEN_MOMENTUM_WINDOW => {
+            Some(PrecisionMindGameTransition::open_window(PrecisionWindowKind::Momentum))
+        }
+        SIGNAL_COMMIT_PRECISION_PRESS => {
+            Some(PrecisionMindGameTransition::commit(PrecisionCommitment::Press))
+        }
+        SIGNAL_REVEAL_BAIT => Some(PrecisionMindGameTransition::reveal(PrecisionReveal::Baited)),
+        SIGNAL_RESOLVE_PRECISION_SUCCESS => {
+            Some(PrecisionMindGameTransition::resolve(PrecisionOutcome::Success))
+        }
+        _ => None,
+    }
+}
+
+fn apply_renamon_precision_blueprint_system(
+    mut events: MessageReader<CombatEvent>,
+    mut state: ResMut<PrecisionMindGameState>,
+) {
+    for event in events.read() {
+        let CombatEventKind::OnKernelTransition { transition } = &event.kind else {
+            continue;
+        };
+        let CombatKernelTransition::Blueprint { owner, name, .. } = transition else {
+            continue;
+        };
+        if owner != OWNER {
+            continue;
+        }
+        let Some(precision_transition) = decode_precision_blueprint_transition(name) else {
+            continue;
+        };
+        apply_precision_mind_game_transition(&mut state, precision_transition);
     }
 }
 

@@ -107,7 +107,7 @@ pub fn apply_precision_mind_game_transitions_system(
     }
 }
 
-fn apply_precision_mind_game_transition(
+pub fn apply_precision_mind_game_transition(
     state: &mut PrecisionMindGameState,
     transition: PrecisionMindGameTransition,
 ) {

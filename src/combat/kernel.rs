@@ -725,19 +725,14 @@ impl CombatKernelRegistry {
 pub fn register_combat_kernel_runtime(app: &mut App) {
     let mut registry = CombatKernelRegistry::new();
     registry.register(crate::combat::battery_loop::BatteryLoopHook);
-    registry.register(crate::combat::precision_mind_game::PrecisionMindGameHook);
 
     app.init_resource::<CombatKernelState>()
         .init_resource::<crate::combat::battery_loop::BatteryLoopState>()
-        .init_resource::<crate::combat::precision_mind_game::PrecisionMindGameState>()
         .init_resource::<crate::combat::modifiers::DamageModifierLedger>()
         .init_resource::<crate::combat::rng::CombatRng>()
         .add_systems(
             Update,
-            (
-                crate::combat::battery_loop::apply_battery_loop_transitions_system,
-                crate::combat::precision_mind_game::apply_precision_mind_game_transitions_system,
-            ),
+            crate::combat::battery_loop::apply_battery_loop_transitions_system,
         )
         .insert_resource(registry);
 
@@ -750,6 +745,7 @@ pub fn register_combat_kernel_runtime(app: &mut App) {
         crate::combat::blueprints::patamon::PatamonPlugin,
         crate::combat::blueprints::dorumon::DorumonPlugin,
         crate::combat::blueprints::tentomon::TentomonPlugin,
+        crate::combat::blueprints::renamon::RenamonPlugin,
     ));
 }
 
