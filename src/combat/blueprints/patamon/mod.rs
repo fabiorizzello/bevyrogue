@@ -9,10 +9,8 @@ use std::sync::Arc;
 use bevy::prelude::*;
 
 use crate::combat::{
-    api::{
-        Beat, BeatEvent, BeatKind, BlueprintState, CompiledTimeline, EventFilter, Intent,
-        PassiveListeners, PassiveRunner, SignalPayload, SignalTaxonomy, SkillCtx,
-    },
+    api::{Beat, BeatEvent, BeatKind, BlueprintState, CompiledTimeline, EventFilter, Intent,
+        PassiveListeners, PassiveRunner, SignalPayload, SignalTaxonomy, SkillCtx},
     kernel::CombatKernelRegistry,
     team::Team,
     types::UnitId,
@@ -21,6 +19,12 @@ use crate::combat::{
 
 pub mod identity;
 pub mod signals;
+
+pub(crate) const SIGNAL_BUILD_HOLY_SUPPORT_GRACE: &str = "build_holy_support_grace";
+pub(crate) const SIGNAL_SPEND_HOLY_SUPPORT_GRACE: &str = "spend_holy_support_grace";
+pub(crate) const SIGNAL_MARK_MARTYR_LIGHT: &str = "mark_martyr_light";
+pub(crate) const SIGNAL_CONSUME_MARTYR_LIGHT: &str = "consume_martyr_light";
+pub(crate) const SIGNAL_CYCLE_RESET: &str = "cycle_reset";
 
 pub use identity::{
     GRACE_CAP, TAG_GRACE, TAG_MARTYR_LIGHT,
@@ -31,7 +35,7 @@ pub use identity::{
 };
 pub use signals::{OWNER, dispatch};
 
-const PASSIVE_SIGNAL_NAME: &str = "build_holy_support_grace";
+const PASSIVE_SIGNAL_NAME: &str = SIGNAL_BUILD_HOLY_SUPPORT_GRACE;
 const PASSIVE_TRIGGER_KEY: &str = "patamon/holy_support/triggered";
 const PASSIVE_TIMELINE_ID: &str = "patamon_holy_support_passive";
 const PASSIVE_OWNER: UnitId = UnitId(9);

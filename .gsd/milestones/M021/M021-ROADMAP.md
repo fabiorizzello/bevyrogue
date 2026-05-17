@@ -42,7 +42,7 @@
 - [x] **S08: S08** `risk:medium` `depends:[]`
   > After this: Twin Core end-to-end; Bouncing Fire OFF≡baseline; no coupling.
 
-- [ ] **S09: S09** `risk:medium` `depends:[]`
+- [x] **S09: S09** `risk:medium` `depends:[]`
   > After this: Predator Loop write in JSONL; Battery Loop deterministico.
 
 - [ ] **S10: Patamon + Renamon migrated + kernel digimon-free** `risk:medium` `depends:[S09]`

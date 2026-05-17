@@ -1,16 +1,19 @@
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
-pub use crate::combat::kernel::{
-    HolySupportRejectReason, HolySupportSignal, HolySupportStep, HolySupportTransition,
-};
-
+use crate::combat::api::SignalPayload;
 use crate::combat::events::{CombatEvent, CombatEventKind};
+pub use crate::combat::kernel::{HolySupportRejectReason, HolySupportStep, HolySupportTransition};
 use crate::combat::kernel::{
     CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition, CombatTagChangeKind,
-    CombatTagId, CombatTagState, CombatTagTransition, TacticalCycleTransition,
+    CombatTagId, CombatTagState, CombatTagTransition, HolySupportSignal, TacticalCycleTransition,
 };
 use crate::combat::types::UnitId;
+
+use super::{
+    SIGNAL_BUILD_HOLY_SUPPORT_GRACE, SIGNAL_CYCLE_RESET, SIGNAL_CONSUME_MARTYR_LIGHT,
+    SIGNAL_MARK_MARTYR_LIGHT, SIGNAL_SPEND_HOLY_SUPPORT_GRACE,
+};
 
 pub const GRACE_CAP: u8 = 3;
 
@@ -39,6 +42,14 @@ pub fn classify_holy_support_tag(tag: &CombatTagId) -> Option<HolySupportDesignT
         TAG_GRACE => Some(HolySupportDesignTag::Grace),
         TAG_MARTYR_LIGHT => Some(HolySupportDesignTag::MartyrLight),
         _ => None,
+    }
+}
+
+fn blueprint_transition(name: &str, payload: SignalPayload) -> CombatKernelTransition {
+    CombatKernelTransition::Blueprint {
+        owner: super::signals::OWNER.to_owned(),
+        name: name.to_owned(),
+        payload,
     }
 }
 
@@ -121,13 +132,15 @@ impl CombatKernelHook for HolySupportHook {
                 if let Some(tag) = classify_holy_support_tag(&tag_transition.after.id) {
                     match tag {
                         HolySupportDesignTag::Grace => {
-                            out.push(CombatKernelTransition::HolySupport(
-                                HolySupportTransition::build_grace(1),
+                            out.push(blueprint_transition(
+                                SIGNAL_BUILD_HOLY_SUPPORT_GRACE,
+                                SignalPayload::Amount(1),
                             ))
                         }
                         HolySupportDesignTag::MartyrLight => {
-                            out.push(CombatKernelTransition::HolySupport(
-                                HolySupportTransition::mark_martyr_light(),
+                            out.push(blueprint_transition(
+                                SIGNAL_MARK_MARTYR_LIGHT,
+                                SignalPayload::Empty,
                             ))
                         }
                     }
@@ -140,13 +153,15 @@ impl CombatKernelHook for HolySupportHook {
                 if let Some(tag) = classify_holy_support_tag(&tag_transition.after.id) {
                     match tag {
                         HolySupportDesignTag::Grace => {
-                            out.push(CombatKernelTransition::HolySupport(
-                                HolySupportTransition::spend_grace(1),
+                            out.push(blueprint_transition(
+                                SIGNAL_SPEND_HOLY_SUPPORT_GRACE,
+                                SignalPayload::Amount(1),
                             ))
                         }
                         HolySupportDesignTag::MartyrLight => {
-                            out.push(CombatKernelTransition::HolySupport(
-                                HolySupportTransition::consume_martyr_light(),
+                            out.push(blueprint_transition(
+                                SIGNAL_CONSUME_MARTYR_LIGHT,
+                                SignalPayload::Empty,
                             ))
                         }
                     }
@@ -156,8 +171,9 @@ impl CombatKernelHook for HolySupportHook {
                 wrapped_cycle: true,
                 ..
             }) => {
-                out.push(CombatKernelTransition::HolySupport(
-                    HolySupportTransition::cycle_reset(),
+                out.push(blueprint_transition(
+                    SIGNAL_CYCLE_RESET,
+                    SignalPayload::Empty,
                 ));
             }
             _ => {}
@@ -174,11 +190,54 @@ pub fn apply_holy_support_transitions_system(
             continue;
         };
 
-        let CombatKernelTransition::HolySupport(holy_transition) = transition else {
-            continue;
-        };
+        match transition {
+            CombatKernelTransition::Blueprint { owner, name, payload }
+                if owner == super::signals::OWNER =>
+            {
+                let Some(holy_transition) = decode_holy_support_blueprint_transition(name, payload)
+                else {
+                    continue;
+                };
 
-        apply_holy_support_transition(&mut state, *holy_transition, event.target);
+                apply_holy_support_transition(&mut state, holy_transition, event.target);
+            }
+            _ => continue,
+        }
+    }
+}
+
+fn decode_holy_support_blueprint_transition(
+    name: &str,
+    payload: &SignalPayload,
+) -> Option<HolySupportTransition> {
+    match name {
+        SIGNAL_BUILD_HOLY_SUPPORT_GRACE => match payload {
+            SignalPayload::Amount(amount) => u8::try_from(*amount)
+                .ok()
+                .filter(|amount| *amount > 0)
+                .map(HolySupportTransition::build_grace),
+            _ => None,
+        },
+        SIGNAL_SPEND_HOLY_SUPPORT_GRACE => match payload {
+            SignalPayload::Amount(amount) => u8::try_from(*amount)
+                .ok()
+                .filter(|amount| *amount > 0)
+                .map(HolySupportTransition::spend_grace),
+            _ => None,
+        },
+        SIGNAL_MARK_MARTYR_LIGHT => match payload {
+            SignalPayload::Empty => Some(HolySupportTransition::mark_martyr_light()),
+            _ => None,
+        },
+        SIGNAL_CONSUME_MARTYR_LIGHT => match payload {
+            SignalPayload::Empty => Some(HolySupportTransition::consume_martyr_light()),
+            _ => None,
+        },
+        SIGNAL_CYCLE_RESET => match payload {
+            SignalPayload::Empty => Some(HolySupportTransition::cycle_reset()),
+            _ => None,
+        },
+        _ => None,
     }
 }
 

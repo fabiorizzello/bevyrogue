@@ -2,6 +2,7 @@ use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::blueprints::{self, CustomSignalDispatchError};
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::blueprints::patamon::{HolySupportState, HolySupportTransition};
+use bevyrogue::combat::api::SignalPayload;
 use bevyrogue::combat::kernel::{CombatKernelTransition, register_combat_kernel_runtime};
 use bevyrogue::combat::kit::UnitSkills;
 use bevyrogue::combat::log::ActionLog;
@@ -292,9 +293,11 @@ fn patamon_signal_maps_to_expected_holy_support_transition() {
 
     assert_eq!(
         transitions,
-        vec![CombatKernelTransition::HolySupport(
-            HolySupportTransition::build_grace(1)
-        )]
+        vec![CombatKernelTransition::Blueprint {
+            owner: "patamon".to_owned(),
+            name: "build_holy_support_grace".to_owned(),
+            payload: SignalPayload::Amount(1),
+        }]
     );
 }
 
@@ -311,18 +314,18 @@ fn patamon_ultimate_dispatches_blueprint_transition_into_holy_support_state_and_
     app.update();
     let events = drain(&mut reader, &app);
 
-    let holy_transitions: Vec<_> = events
+    let patamon_blueprint_transitions: Vec<_> = events
         .iter()
         .filter_map(|event| match &event.kind {
             CombatEventKind::OnKernelTransition {
-                transition: CombatKernelTransition::HolySupport(transition),
-            } => Some(*transition),
+                transition: CombatKernelTransition::Blueprint { owner, name, payload },
+            } if owner == "patamon" => Some((name.as_str(), payload)),
             _ => None,
         })
         .collect();
     assert_eq!(
-        holy_transitions,
-        vec![HolySupportTransition::build_grace(1)]
+        patamon_blueprint_transitions,
+        vec![("build_holy_support_grace", &SignalPayload::Amount(1))]
     );
 
     let state = app.world().resource::<HolySupportState>();

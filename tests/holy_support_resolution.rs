@@ -4,6 +4,7 @@ use bevyrogue::combat::blueprints;
 use bevyrogue::combat::api::intent::CastId;
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::blueprints::patamon::{HolySupportState, HolySupportTransition};
+use bevyrogue::combat::api::SignalPayload;
 use bevyrogue::combat::kernel::{CombatKernelRegistry, CombatKernelTransition};
 use bevyrogue::combat::kit::UnitSkills;
 use bevyrogue::combat::log::ActionLog;
@@ -147,9 +148,11 @@ fn patamon_ult_builds_grace_through_the_blueprint_kernel_path() {
     let transitions = blueprints::transitions_for_action(&resolved);
     assert_eq!(
         transitions,
-        vec![CombatKernelTransition::HolySupport(
-            HolySupportTransition::build_grace(1)
-        )]
+        vec![CombatKernelTransition::Blueprint {
+            owner: "patamon".to_owned(),
+            name: "build_holy_support_grace".to_owned(),
+            payload: SignalPayload::Amount(1),
+        }]
     );
 
     let mut app = app_with_holy_support();
@@ -157,9 +160,11 @@ fn patamon_ult_builds_grace_through_the_blueprint_kernel_path() {
 
     assert_eq!(
         emitted,
-        vec![CombatKernelTransition::HolySupport(
-            HolySupportTransition::build_grace(1)
-        )]
+        vec![CombatKernelTransition::Blueprint {
+            owner: "patamon".to_owned(),
+            name: "build_holy_support_grace".to_owned(),
+            payload: SignalPayload::Amount(1),
+        }]
     );
 
     let state = app.world().resource::<HolySupportState>();
