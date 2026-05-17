@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use super::events::{CombatEvent, CombatEventKind};
 use super::kernel::{
     CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition, PrecisionCommitment,
     PrecisionMindGamePhase, PrecisionMindGameRejectReason, PrecisionMindGameStep,
@@ -82,28 +81,6 @@ impl CombatKernelHook for PrecisionMindGameHook {
     ) {
         // Intentionally no-op for this slice: the mechanic is driven directly by typed
         // precision transitions and later slices can add shared-beat translation if needed.
-    }
-}
-
-pub fn register_precision_mind_game_runtime(app: &mut App) {
-    app.init_resource::<PrecisionMindGameState>()
-        .add_systems(Update, apply_precision_mind_game_transitions_system);
-}
-
-pub fn apply_precision_mind_game_transitions_system(
-    mut events: MessageReader<CombatEvent>,
-    mut state: ResMut<PrecisionMindGameState>,
-) {
-    for event in events.read() {
-        let CombatEventKind::OnKernelTransition { transition } = &event.kind else {
-            continue;
-        };
-
-        let CombatKernelTransition::PrecisionMindGame(precision_transition) = transition else {
-            continue;
-        };
-
-        apply_precision_mind_game_transition(&mut state, *precision_transition);
     }
 }
 

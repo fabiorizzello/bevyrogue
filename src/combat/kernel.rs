@@ -551,7 +551,6 @@ pub enum CombatKernelTransition {
     BatteryLoop(BatteryLoopTransition),
     HolySupport(HolySupportTransition),
     PredatorLoop(PredatorLoopTransition),
-    PrecisionMindGame(PrecisionMindGameTransition),
     Blueprint {
         owner: String,
         name: String,

@@ -66,7 +66,7 @@ After S10, combat shared runtime surfaces are digimon-free and all remaining per
   - Verify: cargo test --test patamon_blueprint_seam
 cargo test --test holy_support_resolution
 
-- [ ] **T02: Move Renamon precision runtime ownership behind the blueprint envelope** `est:2h`
+- [x] **T02: Move Renamon precision runtime ownership behind the blueprint envelope** `est:2h`
   Skills used: bevy, rust-best-practices, verify-before-complete.
   - Files: `src/combat/blueprints/renamon.rs`, `src/combat/kernel.rs`, `tests/digimon_signal_registry.rs`, `tests/compiled_timeline_tohakken.rs`, `tests/renamon_precision_runtime.rs`
   - Verify: cargo test --test digimon_signal_registry
