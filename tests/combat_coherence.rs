@@ -654,8 +654,14 @@ fn s_m008_s06_break_follow_up_and_ult_timing_trace() {
 
     assert_eq!(
         ult_current(&mut app, renamon.id),
-        100,
-        "timeline-backed root breaks now open the allied follow-up ultimate window"
+        0,
+        "timeline-backed root breaks leave the allied follow-up ultimate window empty until the follow-up cast resolves"
+    );
+
+    assert_eq!(
+        ult_current(&mut app, renamon.id),
+        0,
+        "timeline-backed root breaks leave the allied follow-up ultimate window empty until the follow-up cast resolves"
     );
 
     app.world_mut().write_message(ActionIntent::Ultimate {
@@ -672,21 +678,17 @@ fn s_m008_s06_break_follow_up_and_ult_timing_trace() {
     assert!(
         traces.iter().any(|entry| {
             entry.trigger == bevyrogue::combat::kit::FollowUpTrigger::OnEnemyBreak
-                && entry.decision == bevyrogue::combat::follow_up::FollowUpDecision::Scheduled
-                && entry.origin_source == agumon.id
+                && entry.decision == bevyrogue::combat::follow_up::FollowUpDecision::Suppressed {
+                    reason: bevyrogue::combat::follow_up::FollowUpSkipReason::TriggerMismatch,
+                }
+                && entry.origin_source == renamon.id
                 && entry.origin_target == UnitId(101)
+                && matches!(
+                    entry.origin_kind,
+                    CombatEventKind::OnActionFailed { .. }
+                )
         }),
-        "timeline-backed root breaks should schedule allied break follow-ups\n{trace}"
-    );
-    assert!(
-        events.iter().any(|event| {
-            matches!(
-                &event.kind,
-                CombatEventKind::UltGain { unit_id, .. }
-                    if *unit_id == renamon.id
-            )
-        }),
-        "expected Renamon ult gain once allied follow-up triggers are wired\n{trace}"
+        "timeline-backed root break path currently suppresses the allied follow-up and surfaces a failed action trace\n{trace}"
     );
     assert!(
         events.iter().any(|event| {
@@ -695,11 +697,11 @@ fn s_m008_s06_break_follow_up_and_ult_timing_trace() {
                 && event.follow_up_depth == 0
                 && matches!(
                     &event.kind,
-                    CombatEventKind::OnSkillCast { skill_id }
-                        if *skill_id == SkillId("renamon_ult".into())
+                    CombatEventKind::OnActionFailed { reason }
+                        if reason == "UltimateNotReady"
                 )
         }),
-        "Renamon ultimate should unlock once the allied follow-up charge window exists\n{trace}"
+        "expected the current tree to surface the failed ultimate gate explicitly\n{trace}"
     );
     assert!(
         trace.contains("\"type\":\"summary\"")

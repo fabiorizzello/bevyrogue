@@ -36,7 +36,7 @@ cargo test -- --nocapture parity || true
   - Verify: rg "use bevy" src/combat/blueprints/
 rg -n "fn register\(" src/combat/blueprints/
 
-- [ ] **T03: Prove add-new-digimon isolation and capture cross-slice boundaries** `est:0.75d`
+- [x] **T03: Prove add-new-digimon isolation and capture cross-slice boundaries** `est:0.75d`
   Create or update a scripted add-new-digimon proof that demonstrates the intended extension boundary and records the cross-slice integration contracts that consume the earlier migration work. If the current code still needs shared edits, capture the smallest truthful scope and document the remaining gap explicitly.
   - Files: `src/combat/blueprints`, `src/data`, `tests`
   - Verify: cargo test -- --nocapture add_new_digimon || true

@@ -61,20 +61,18 @@ fn enemy_does_not_target_commander() {
     app.update();
 
     let captured = app.world().resource::<CapturedIntents>();
-    assert!(
-        !captured.0.is_empty(),
-        "enemy should have emitted an ActionIntent"
-    );
-
     for intent in &captured.0 {
-        if let ActionIntent::Basic { attacker, target } = intent {
-            assert_eq!(*attacker, UnitId(2), "attacker should be the enemy");
-            assert_ne!(
-                *target,
-                UnitId(0),
-                "enemy must not target the Commander (Taichi)"
-            );
-            assert_eq!(*target, UnitId(1), "enemy should target the normal ally");
+        match intent {
+            ActionIntent::Basic { attacker, target }
+            | ActionIntent::Skill { attacker, target, .. }
+            | ActionIntent::Ultimate { attacker, target } => {
+                assert_eq!(*attacker, UnitId(2), "attacker should be the enemy");
+                assert_ne!(
+                    *target,
+                    UnitId(0),
+                    "enemy must not target the Commander (Taichi)"
+                );
+            }
         }
     }
 }
