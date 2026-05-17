@@ -55,6 +55,10 @@ pub fn register_agumon_ext(regs: &mut crate::combat::api::ExtRegistries) {
     regs.hooks.register("agumon/on_bounce_hop", on_bounce_hop);
 }
 
+pub fn register_validation_ext(regs: &mut crate::combat::api::ExtRegistries) {
+    crate::combat::blueprints::twin_core::register_validation_ext(regs);
+}
+
 pub fn register_passive_runtime(app: &mut App) {
     app.init_resource::<TalentRanks>();
     register_passive_hooks(app);

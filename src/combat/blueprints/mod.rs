@@ -141,6 +141,16 @@ pub fn register_all_blueprint_exts(regs: &mut crate::combat::api::ExtRegistries)
     agumon::register_agumon_ext(regs);
 }
 
+pub fn register_all_blueprint_validation_exts(regs: &mut crate::combat::api::ExtRegistries) {
+    agumon::register_validation_ext(regs);
+    gabumon::register_validation_ext(regs);
+    twin_core::register_validation_ext(regs);
+    patamon::register_validation_ext(regs);
+    dorumon::register_validation_ext(regs);
+    tentomon::register_validation_ext(regs);
+    renamon::register_validation_ext(regs);
+}
+
 pub fn dispatch_custom_signal(
     signal: &SkillCustomSignal,
     action: &ResolvedAction,

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use bevy::prelude::Resource;
+use bevy::prelude::{Resource, World};
 
 use super::skill_ctx::SkillCtx;
 use super::timeline::{BeatEvent, CueCtx, SelectorCtx};
@@ -50,6 +50,10 @@ impl<E: ExtPoint> Registry<E> {
 
     pub fn is_empty(&self) -> bool {
         self.entries.is_empty()
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (&'static str, &E::Fn)> {
+        self.entries.iter().map(|(id, f)| (*id, f))
     }
 }
 
@@ -108,7 +112,49 @@ impl ExtPoint for CueExt {
     type Fn = for<'a> fn(&CueCtx<'a>) -> &'static str;
 }
 
-/// Aggregated resource holding all seven extension registries (D031).
+/// One key/value captured from a validation contributor.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ValidationField {
+    pub key: &'static str,
+    pub value: String,
+}
+
+impl ValidationField {
+    pub fn new(key: &'static str, value: impl Into<String>) -> Self {
+        Self {
+            key,
+            value: value.into(),
+        }
+    }
+}
+
+/// One owner-keyed section captured from a validation contributor.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ValidationSection {
+    pub owner: &'static str,
+    pub fields: Vec<ValidationField>,
+}
+
+impl ValidationSection {
+    pub fn new(owner: &'static str, fields: Vec<ValidationField>) -> Self {
+        Self { owner, fields }
+    }
+
+    pub fn field(&self, key: &str) -> Option<&str> {
+        self.fields
+            .iter()
+            .find(|field| field.key == key)
+            .map(|field| field.value.as_str())
+    }
+}
+
+/// Validation contributor: collect owner-keyed snapshot sections from `World`.
+pub struct ValidationExt;
+impl ExtPoint for ValidationExt {
+    type Fn = for<'a> fn(&'a World) -> Option<ValidationSection>;
+}
+
+/// Aggregated resource holding all extension registries (D031).
 ///
 /// Inserted as a Bevy `Resource` at startup. Built-in fns are registered in S05;
 /// blueprint-specific fns are registered by each `register(reg)` call in S08+.
@@ -121,6 +167,7 @@ pub struct ExtRegistries {
     pub ticks: Registry<TickExt>,
     pub ai_utilities: Registry<AiUtilityExt>,
     pub cues: Registry<CueExt>,
+    pub validation: Registry<ValidationExt>,
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
@@ -166,5 +213,6 @@ mod tests {
         assert!(r.ticks.is_empty());
         assert!(r.ai_utilities.is_empty());
         assert!(r.cues.is_empty());
+        assert!(r.validation.is_empty());
     }
 }

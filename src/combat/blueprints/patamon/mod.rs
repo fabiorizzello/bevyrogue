@@ -8,6 +8,8 @@ use std::sync::Arc;
 
 use bevy::prelude::*;
 
+use crate::combat::api::registry::{ValidationField, ValidationSection};
+use crate::combat::observability::format_holy_support_transition;
 use crate::combat::{
     api::{
         Beat, BeatEvent, BeatKind, BlueprintState, CompiledTimeline, EventFilter, Intent,
@@ -69,6 +71,40 @@ pub fn register_passive_runtime(app: &mut App) {
             PASSIVE_OWNER,
             vec![EventFilter::blueprint("kernel", "ult_used")],
         ));
+}
+
+pub fn register_validation_ext(regs: &mut crate::combat::api::ExtRegistries) {
+    regs.validation
+        .register("support/validation", support_validation_section);
+}
+
+fn support_validation_section(world: &World) -> Option<ValidationSection> {
+    world
+        .get_resource::<identity::HolySupportState>()
+        .map(|state| {
+            ValidationSection::new(
+                "support",
+                vec![
+                    ValidationField::new("grace", state.grace.to_string()),
+                    ValidationField::new("grace_cap", GRACE_CAP.to_string()),
+                    ValidationField::new(
+                        "martyr_marked",
+                        state.martyr_light_marked_this_cycle.to_string(),
+                    ),
+                    ValidationField::new(
+                        "martyr_consumed",
+                        state.martyr_light_consumed_this_cycle.to_string(),
+                    ),
+                    ValidationField::new(
+                        "last",
+                        state
+                            .last_signal
+                            .map(format_holy_support_transition)
+                            .unwrap_or_else(|| "none".to_string()),
+                    ),
+                ],
+            )
+        })
 }
 
 fn build_passive_timeline() -> Arc<CompiledTimeline> {

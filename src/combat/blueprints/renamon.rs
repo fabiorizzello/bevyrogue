@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use bevy::prelude::*;
 
+use crate::combat::api::registry::{ValidationField, ValidationSection};
 use crate::combat::{
     api::{
         Beat, BeatEvent, BeatKind, BlueprintState, CompiledTimeline, EventFilter, Intent,
@@ -9,7 +10,7 @@ use crate::combat::{
     },
     events::{CombatEvent, CombatEventKind},
     kernel::{
-        CombatKernelRegistry, CombatKernelTransition, PrecisionCommitment,
+        CombatKernelRegistry, CombatKernelTransition, PrecisionCommitment, PrecisionMindGamePhase,
         PrecisionMindGameTransition, PrecisionOutcome, PrecisionReveal, PrecisionWindowKind,
     },
     precision_mind_game::{PrecisionMindGameState, apply_precision_mind_game_transition},
@@ -38,6 +39,144 @@ fn blueprint_transition(name: &str) -> CombatKernelTransition {
         owner: OWNER.to_owned(),
         name: name.to_owned(),
         payload: SignalPayload::Empty,
+    }
+}
+
+pub fn register_validation_ext(regs: &mut crate::combat::api::ExtRegistries) {
+    regs.validation
+        .register("mind_game/validation", precision_validation_section);
+}
+
+fn precision_validation_section(world: &World) -> Option<ValidationSection> {
+    let state = world.get_resource::<PrecisionMindGameState>()?;
+    Some(ValidationSection::new(
+        "mind_game",
+        vec![
+            ValidationField::new("phase", format_precision_phase(state.phase)),
+            ValidationField::new("window_index", state.window_index.to_string()),
+            ValidationField::new(
+                "window",
+                state
+                    .current_window
+                    .map(|window| format_precision_window(Some(window)))
+                    .unwrap_or("none"),
+            ),
+            ValidationField::new(
+                "commitment",
+                state
+                    .commitment
+                    .map(|commitment| format_precision_commitment(Some(commitment)))
+                    .unwrap_or("none"),
+            ),
+            ValidationField::new(
+                "reveal",
+                state
+                    .reveal
+                    .map(|reveal| format_precision_reveal(Some(reveal)))
+                    .unwrap_or("none"),
+            ),
+            ValidationField::new(
+                "outcome",
+                state
+                    .outcome
+                    .map(|outcome| format_precision_outcome(Some(outcome)))
+                    .unwrap_or("none"),
+            ),
+            ValidationField::new(
+                "last",
+                state
+                    .last_signal
+                    .map(format_precision_transition)
+                    .unwrap_or_else(|| "none".to_string()),
+            ),
+        ],
+    ))
+}
+
+fn format_precision_transition(transition: PrecisionMindGameTransition) -> String {
+    match transition {
+        PrecisionMindGameTransition::OpenWindow { window } => {
+            format!("open_window({})", format_precision_window(Some(window)))
+        }
+        PrecisionMindGameTransition::Commit { commitment } => {
+            format!("commit({})", format_precision_commitment(Some(commitment)))
+        }
+        PrecisionMindGameTransition::Reveal { reveal } => {
+            format!("reveal({})", format_precision_reveal(Some(reveal)))
+        }
+        PrecisionMindGameTransition::Resolve { outcome } => {
+            format!("resolve({})", format_precision_outcome(Some(outcome)))
+        }
+        PrecisionMindGameTransition::Rejected { attempted, reason } => format!(
+            "rejected({};reason={:?})",
+            format_precision_step(attempted),
+            reason
+        ),
+        PrecisionMindGameTransition::Ignored { attempted } => {
+            format!("ignored({})", format_precision_step(attempted))
+        }
+    }
+}
+
+fn format_precision_step(step: crate::combat::kernel::PrecisionMindGameStep) -> String {
+    match step {
+        crate::combat::kernel::PrecisionMindGameStep::OpenWindow { window } => {
+            format!("open_window({})", format_precision_window(Some(window)))
+        }
+        crate::combat::kernel::PrecisionMindGameStep::Commit { commitment } => {
+            format!("commit({})", format_precision_commitment(Some(commitment)))
+        }
+        crate::combat::kernel::PrecisionMindGameStep::Reveal { reveal } => {
+            format!("reveal({})", format_precision_reveal(Some(reveal)))
+        }
+        crate::combat::kernel::PrecisionMindGameStep::Resolve { outcome } => {
+            format!("resolve({})", format_precision_outcome(Some(outcome)))
+        }
+    }
+}
+
+fn format_precision_phase(phase: PrecisionMindGamePhase) -> &'static str {
+    match phase {
+        PrecisionMindGamePhase::Dormant => "Dormant",
+        PrecisionMindGamePhase::WindowOpen => "WindowOpen",
+        PrecisionMindGamePhase::CommitmentLocked => "CommitmentLocked",
+        PrecisionMindGamePhase::CounterplayRevealed => "CounterplayRevealed",
+        PrecisionMindGamePhase::Resolved => "Resolved",
+    }
+}
+
+fn format_precision_window(window: Option<PrecisionWindowKind>) -> &'static str {
+    match window {
+        Some(PrecisionWindowKind::Momentum) => "Momentum",
+        Some(PrecisionWindowKind::Counterplay) => "Counterplay",
+        None => "none",
+    }
+}
+
+fn format_precision_commitment(commitment: Option<PrecisionCommitment>) -> &'static str {
+    match commitment {
+        Some(PrecisionCommitment::Press) => "Press",
+        Some(PrecisionCommitment::Hold) => "Hold",
+        Some(PrecisionCommitment::Feint) => "Feint",
+        None => "none",
+    }
+}
+
+fn format_precision_reveal(reveal: Option<PrecisionReveal>) -> &'static str {
+    match reveal {
+        Some(PrecisionReveal::Guarded) => "Guarded",
+        Some(PrecisionReveal::Baited) => "Baited",
+        Some(PrecisionReveal::Trapped) => "Trapped",
+        None => "none",
+    }
+}
+
+fn format_precision_outcome(outcome: Option<PrecisionOutcome>) -> &'static str {
+    match outcome {
+        Some(PrecisionOutcome::Success) => "Success",
+        Some(PrecisionOutcome::Countered) => "Countered",
+        Some(PrecisionOutcome::Failed) => "Failed",
+        None => "none",
     }
 }
 

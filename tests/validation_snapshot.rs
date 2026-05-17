@@ -1,9 +1,8 @@
 use bevy::prelude::*;
 use bevyrogue::combat::api::intent::CastId;
 use bevyrogue::combat::{
-    api::SignalPayload,
-    blueprints::dorumon::PredatorLoopState,
-    blueprints::patamon::HolySupportState,
+    api::{ExtRegistries, SignalPayload},
+    blueprints::{self, dorumon::PredatorLoopState, patamon::HolySupportState},
     blueprints::twin_core::{TwinCoreState, TwinCoreTransition},
     events::{CombatEvent, CombatEventKind},
     floating::FloatingDamage,
@@ -38,6 +37,12 @@ fn unit(id: u32, hp_current: i32, hp_max: i32, attribute: Attribute) -> Unit {
         resists: vec![],
         evo_stage: EvoStage::Adult,
     }
+}
+
+fn install_validation_exts(world: &mut World) {
+    world.insert_resource(ExtRegistries::default());
+    let mut regs = world.resource_mut::<ExtRegistries>();
+    blueprints::register_all_blueprint_validation_exts(&mut regs);
 }
 
 #[test]
@@ -78,6 +83,7 @@ fn snapshot_contract_covers_promised_fields_and_shape() {
         shatter_used_this_cycle: true,
         last_signal: Some(TwinCoreTransition::twin_burst(1)),
     });
+    install_validation_exts(&mut world);
 
     world.spawn((
         unit(1, 100, 100, Attribute::Vaccine),
@@ -157,6 +163,7 @@ fn snapshot_defaults_empty_optional_surfaces() {
     order.seed([UnitId(7)]);
     world.insert_resource(order);
     world.insert_resource(TwinCoreState::default());
+    install_validation_exts(&mut world);
     world.spawn((
         unit(7, 42, 70, Attribute::Free),
         Team::Ally,
@@ -283,6 +290,7 @@ fn snapshot_hides_ally_missing_toughness_and_zero_max_enemy_bars() {
     order.seed([UnitId(11), UnitId(12), UnitId(13)]);
     world.insert_resource(order);
     world.insert_resource(TwinCoreState::default());
+    install_validation_exts(&mut world);
 
     world.spawn((
         unit(11, 20, 20, Attribute::Vaccine),

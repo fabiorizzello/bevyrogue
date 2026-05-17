@@ -1,17 +1,17 @@
 use bevy::prelude::*;
 
-use crate::combat::{
-    api::{SignalPayload, applier::intent_applier, intent::CastId},
-    events::{CombatEvent, CombatEventKind},
-    kernel::CombatKernelTransition,
-    modifiers::{DamageModifierLedger, ModifierLayer},
-    rng::CombatRng,
-    types::UnitId,
-    unit::Unit,
-};
+use crate::combat::api::{SignalPayload, applier::intent_applier, intent::CastId};
+use crate::combat::api::registry::{ValidationField, ValidationSection};
+use crate::combat::battery_loop::BatteryLoopState;
+use crate::combat::events::{CombatEvent, CombatEventKind};
+use crate::combat::kernel::CombatKernelTransition;
+use crate::combat::modifiers::{DamageModifierLedger, ModifierLayer};
+use crate::combat::observability::format_battery_loop_transition;
+use crate::combat::rng::CombatRng;
+use crate::combat::types::UnitId;
+use crate::combat::unit::Unit;
 
 use super::{CustomSignalDispatchError, amount_payload};
-use crate::combat::battery_loop::BatteryLoopState;
 
 pub const OWNER: &str = "tentomon";
 pub const SIG_BUILD_STATIC_CHARGE: &str = "build_static_charge";
@@ -81,6 +81,51 @@ pub fn dispatch(
             signal: other.to_string(),
         }),
     }
+}
+
+pub fn register_validation_ext(regs: &mut crate::combat::api::ExtRegistries) {
+    regs.validation
+        .register("battery/validation", battery_validation_section);
+}
+
+fn battery_validation_section(world: &World) -> Option<ValidationSection> {
+    let state = world.get_resource::<BatteryLoopState>()?;
+    Some(ValidationSection::new(
+        "battery",
+        vec![
+            ValidationField::new("static", state.static_charge.to_string()),
+            ValidationField::new("static_cap", state.static_charge_cap.to_string()),
+            ValidationField::new("circuit", state.circuit_charge.to_string()),
+            ValidationField::new("circuit_cap", state.circuit_charge_cap.to_string()),
+            ValidationField::new("threshold", state.static_charge_threshold.to_string()),
+            ValidationField::new(
+                "grant_guard",
+                state.threshold_grant_emitted_this_cycle.to_string(),
+            ),
+            ValidationField::new("block_ready", state.block_reaction_armed.to_string()),
+            ValidationField::new(
+                "last_block_cast",
+                state
+                    .last_block_reaction_cast_id
+                    .map(|cast_id| cast_id.0.get().to_string())
+                    .unwrap_or_else(|| "none".to_string()),
+            ),
+            ValidationField::new(
+                "last",
+                state
+                    .last_transition
+                    .map(format_battery_loop_transition)
+                    .unwrap_or_else(|| "none".to_string()),
+            ),
+            ValidationField::new(
+                "blocked",
+                state
+                    .last_blocked_reason
+                    .map(|reason| format!("{:?}", reason))
+                    .unwrap_or_else(|| "none".to_string()),
+            ),
+        ],
+    ))
 }
 
 /// Run Tentomon's reactive block loop against an incoming-damage combat event.

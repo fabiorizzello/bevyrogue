@@ -10,20 +10,11 @@ use crate::combat::{
         BatteryLoopTransition,
     },
     blueprints::{
-        dorumon::{
-            PredatorLoopSignal, PredatorLoopSnapshot, PredatorLoopState, PredatorLoopStep,
-            PredatorLoopTransition,
-        },
-        patamon::HolySupportSnapshot,
+        dorumon::{PredatorLoopSignal, PredatorLoopStep, PredatorLoopTransition},
         twin_core::{TwinCoreSignal, TwinCoreTransition},
     },
     floating::FloatingDamage,
-    kernel::{
-        PrecisionCommitment, PrecisionMindGamePhase, PrecisionMindGameTransition, PrecisionOutcome,
-        PrecisionReveal, PrecisionWindowKind,
-    },
     log::{ActionLog, LogEntry},
-    precision_mind_game::PrecisionMindGameSnapshot,
     sp::SpPool,
     state::{CombatPhase, CombatState},
     status_effect::{StatusBag, StatusEffectKind},
@@ -34,6 +25,8 @@ use crate::combat::{
     ultimate::UltimateCharge,
     unit::{Ko, Unit},
 };
+pub use crate::combat::api::registry::{ValidationField, ValidationSection};
+use crate::combat::api::ExtRegistries;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ValidationSnapshot {
@@ -45,22 +38,13 @@ pub struct ValidationSnapshot {
     pub action_log_tail: Vec<ValidationLogEntry>,
     pub floating_live: usize,
     pub units: Vec<ValidationUnitSnapshot>,
-    pub twin_core: ValidationTwinCoreSnapshot,
-    pub holy_support: Option<HolySupportSnapshot>,
-    pub predator_loop: Option<PredatorLoopSnapshot>,
-    pub battery_loop: Option<BatteryLoopSnapshot>,
-    pub precision_mind_game: Option<PrecisionMindGameSnapshot>,
+    pub owner_sections: Vec<ValidationSection>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ValidationTwinCoreSnapshot {
-    pub active_thermal_spark_targets: Vec<UnitId>,
-    pub cross_resonance: u8,
-    pub fire_spend_markers: u8,
-    pub ice_spend_markers: u8,
-    pub twin_burst_used_this_cycle: bool,
-    pub shatter_used_this_cycle: bool,
-    pub last_signal: Option<TwinCoreTransition>,
+impl ValidationSnapshot {
+    pub fn section(&self, owner: &str) -> Option<&ValidationSection> {
+        self.owner_sections.iter().find(|section| section.owner == owner)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -308,21 +292,7 @@ pub fn capture_validation_snapshot(
     let mut floating_query = world.query::<&FloatingDamage>();
     let floating_live = floating_query.iter(world).count();
 
-    let twin_core = world
-        .get_resource::<crate::combat::blueprints::agumon::TwinCoreState>()
-        .ok_or(ValidationSnapshotError::MissingResource("TwinCoreState"))?;
-    let holy_support = world
-        .get_resource::<crate::combat::blueprints::patamon::HolySupportState>()
-        .map(HolySupportSnapshot::from);
-    let predator_loop = world
-        .get_resource::<PredatorLoopState>()
-        .map(|state| state.snapshot());
-    let precision_mind_game = world
-        .get_resource::<crate::combat::precision_mind_game::PrecisionMindGameState>()
-        .map(PrecisionMindGameSnapshot::from);
-    let battery_loop = world
-        .get_resource::<BatteryLoopState>()
-        .map(BatteryLoopSnapshot::from);
+    let owner_sections = collect_validation_sections(world);
 
     Ok(ValidationSnapshot {
         phase,
@@ -333,20 +303,25 @@ pub fn capture_validation_snapshot(
         action_log_tail,
         floating_live,
         units,
-        twin_core: ValidationTwinCoreSnapshot {
-            active_thermal_spark_targets: twin_core.active_thermal_spark_targets.clone(),
-            cross_resonance: twin_core.cross_resonance,
-            fire_spend_markers: twin_core.fire_spend_markers,
-            ice_spend_markers: twin_core.ice_spend_markers,
-            twin_burst_used_this_cycle: twin_core.twin_burst_used_this_cycle,
-            shatter_used_this_cycle: twin_core.shatter_used_this_cycle,
-            last_signal: twin_core.last_signal,
-        },
-        holy_support,
-        predator_loop,
-        battery_loop,
-        precision_mind_game,
+        owner_sections,
     })
+}
+
+fn collect_validation_sections(world: &World) -> Vec<ValidationSection> {
+    let Some(regs) = world.get_resource::<ExtRegistries>() else {
+        return Vec::new();
+    };
+
+    let mut sections = regs
+        .validation
+        .iter()
+        .filter_map(|(_, contributor)| (*contributor)(world))
+        .collect::<Vec<_>>();
+    sections.sort_by(|a, b| a.owner.cmp(b.owner));
+    for section in &mut sections {
+        section.fields.sort_by(|a, b| a.key.cmp(b.key));
+    }
+    sections
 }
 
 pub fn format_validation_snapshot(snapshot: &ValidationSnapshot) -> String {
@@ -356,14 +331,13 @@ pub fn format_validation_snapshot(snapshot: &ValidationSnapshot) -> String {
         format_winner(snapshot.winner),
         snapshot.sp_current,
         snapshot.sp_max,
-        format_twin_core_snapshot(&snapshot.twin_core),
-        format_holy_support_snapshot(snapshot.holy_support.as_ref()),
-        format_predator_loop_snapshot(snapshot.predator_loop.as_ref()),
-        format_precision_mind_game_snapshot(snapshot.precision_mind_game.as_ref()),
+        format_twin_core_section(snapshot.section("twin_core")),
+        format_holy_support_section(snapshot.section("support")),
+        format_predator_loop_section(snapshot.section("predator")),
+        format_precision_mind_game_section(snapshot.section("mind_game")),
         snapshot
-            .battery_loop
-            .as_ref()
-            .map(format_battery_loop_snapshot)
+            .section("battery")
+            .map(format_battery_loop_section)
             .unwrap_or_else(|| "none".to_string()),
         format_unit_ids(&snapshot.turn_preview),
         format_action_log_tail(&snapshot.action_log_tail),
@@ -390,7 +364,7 @@ fn format_winner(winner: Option<Team>) -> &'static str {
     }
 }
 
-fn format_unit_ids(ids: &[UnitId]) -> String {
+pub(crate) fn format_unit_ids(ids: &[UnitId]) -> String {
     let joined = ids
         .iter()
         .map(|id| id.0.to_string())
@@ -399,61 +373,146 @@ fn format_unit_ids(ids: &[UnitId]) -> String {
     format!("[{joined}]")
 }
 
-fn format_twin_core_snapshot(snapshot: &ValidationTwinCoreSnapshot) -> String {
+fn format_twin_core_section(section: Option<&ValidationSection>) -> String {
+    match section {
+        Some(section) => format!(
+            "cr={} spark_targets={} fire={} ice={} burst_guard={} shatter_guard={} last={}",
+            validation_field(section, "cr"),
+            validation_field(section, "spark_targets"),
+            validation_field(section, "fire"),
+            validation_field(section, "ice"),
+            validation_field(section, "burst_guard"),
+            validation_field(section, "shatter_guard"),
+            validation_field(section, "last"),
+        ),
+        None => "none".to_string(),
+    }
+}
+
+fn format_holy_support_section(section: Option<&ValidationSection>) -> String {
+    match section {
+        Some(section) => format!(
+            "grace={}/{} martyr_marked={} martyr_consumed={} last={}",
+            validation_field(section, "grace"),
+            validation_field(section, "grace_cap"),
+            validation_field(section, "martyr_marked"),
+            validation_field(section, "martyr_consumed"),
+            validation_field(section, "last"),
+        ),
+        None => "none".to_string(),
+    }
+}
+
+fn format_predator_loop_section(section: Option<&ValidationSection>) -> String {
+    match section {
+        Some(section) => format!(
+            "exploit_cap={} prey_lock_duration={} berserk_threshold={} targets={} last={} blocked={}",
+            validation_field(section, "exploit_cap"),
+            validation_field(section, "prey_lock_duration"),
+            validation_field(section, "berserk_threshold"),
+            validation_field(section, "targets"),
+            validation_field(section, "last"),
+            validation_field(section, "blocked"),
+        ),
+        None => "none".to_string(),
+    }
+}
+
+fn format_precision_mind_game_section(section: Option<&ValidationSection>) -> String {
+    match section {
+        Some(section) => format!(
+            "phase={},window_index={},window={},commitment={},reveal={},outcome={},last={}",
+            validation_field(section, "phase"),
+            validation_field(section, "window_index"),
+            validation_field(section, "window"),
+            validation_field(section, "commitment"),
+            validation_field(section, "reveal"),
+            validation_field(section, "outcome"),
+            validation_field(section, "last"),
+        ),
+        None => "none".to_string(),
+    }
+}
+
+fn format_battery_loop_section(section: &ValidationSection) -> String {
     format!(
-        "cr={} spark_targets={} fire={} ice={} burst_guard={} shatter_guard={} last={}",
-        snapshot.cross_resonance,
-        format_unit_ids(&snapshot.active_thermal_spark_targets),
-        snapshot.fire_spend_markers,
-        snapshot.ice_spend_markers,
-        snapshot.twin_burst_used_this_cycle,
-        snapshot.shatter_used_this_cycle,
-        snapshot
-            .last_signal
-            .map(format_twin_core_transition)
-            .unwrap_or_else(|| "none".to_string()),
+        "static={}/{} circuit={}/{} threshold={} grant_guard={} block_ready={} last_block_cast={} last={} blocked={}",
+        validation_field(section, "static"),
+        validation_field(section, "static_cap"),
+        validation_field(section, "circuit"),
+        validation_field(section, "circuit_cap"),
+        validation_field(section, "threshold"),
+        validation_field(section, "grant_guard"),
+        validation_field(section, "block_ready"),
+        validation_field(section, "last_block_cast"),
+        validation_field(section, "last"),
+        validation_field(section, "blocked"),
     )
 }
 
-fn format_holy_support_snapshot(snapshot: Option<&HolySupportSnapshot>) -> String {
-    match snapshot {
-        Some(snapshot) => format!(
-            "grace={}/{} martyr_marked={} martyr_consumed={} last={}",
-            snapshot.grace,
-            snapshot.grace_cap,
-            snapshot.martyr_light_marked_this_cycle,
-            snapshot.martyr_light_consumed_this_cycle,
-            snapshot
-                .last_signal
-                .map(format_holy_support_transition)
-                .unwrap_or_else(|| "none".to_string()),
-        ),
-        None => "none".to_string(),
+fn validation_field<'a>(section: &'a ValidationSection, key: &str) -> &'a str {
+    section.field(key).unwrap_or("none")
+}
+
+pub(crate) fn format_twin_core_transition(transition: TwinCoreTransition) -> String {
+    let signal = match transition.signal {
+        TwinCoreSignal::BuildCrossResonance => "build",
+        TwinCoreSignal::SpendCrossResonance => "spend",
+        TwinCoreSignal::ThermalSpark => "spark",
+        TwinCoreSignal::TwinBurst => "twin-burst",
+        TwinCoreSignal::Shatter => "shatter",
+        TwinCoreSignal::FireSpendMarker => "fire-spend",
+        TwinCoreSignal::IceSpendMarker => "ice-spend",
+        TwinCoreSignal::CycleReset => "cycle-reset",
+    };
+    format!("{signal}({})", transition.amount)
+}
+
+pub(crate) fn format_holy_support_transition(transition: super::kernel::HolySupportTransition) -> String {
+    let signal = match transition.signal {
+        super::kernel::HolySupportSignal::BuildGrace => "build",
+        super::kernel::HolySupportSignal::SpendGrace => "spend",
+        super::kernel::HolySupportSignal::MarkMartyrLight => "mark-martyr",
+        super::kernel::HolySupportSignal::ConsumeMartyrLight => "consume-martyr",
+        super::kernel::HolySupportSignal::CycleReset => "cycle-reset",
+        super::kernel::HolySupportSignal::Rejected => "rejected",
+        super::kernel::HolySupportSignal::Ignored => "ignored",
+    };
+
+    match transition.signal {
+        super::kernel::HolySupportSignal::BuildGrace
+        | super::kernel::HolySupportSignal::SpendGrace => {
+            format!("{signal}({})", transition.amount)
+        }
+        super::kernel::HolySupportSignal::Rejected | super::kernel::HolySupportSignal::Ignored => {
+            match (transition.attempted, transition.reason) {
+                (Some(attempted), Some(reason)) => {
+                    format!(
+                        "{signal}({};reason={reason:?})",
+                        format_holy_support_step(attempted)
+                    )
+                }
+                (Some(attempted), None) => {
+                    format!("{signal}({})", format_holy_support_step(attempted))
+                }
+                _ => signal.to_string(),
+            }
+        }
+        _ => signal.to_string(),
     }
 }
 
-fn format_predator_loop_snapshot(snapshot: Option<&PredatorLoopSnapshot>) -> String {
-    match snapshot {
-        Some(snapshot) => format!(
-            "exploit_cap={} prey_lock_duration={} berserk_threshold={} targets={} last={} blocked={}",
-            snapshot.exploit_cap,
-            snapshot.prey_lock_duration,
-            snapshot.berserk_strain_threshold,
-            format_predator_targets(&snapshot.targets),
-            snapshot
-                .last_transition
-                .map(format_predator_loop_transition)
-                .unwrap_or_else(|| "none".to_string()),
-            snapshot
-                .last_blocked_reason
-                .map(|reason| format!("{:?}", reason))
-                .unwrap_or_else(|| "none".to_string()),
-        ),
-        None => "none".to_string(),
+fn format_holy_support_step(step: super::kernel::HolySupportStep) -> String {
+    match step {
+        super::kernel::HolySupportStep::BuildGrace { amount } => format!("build({amount})"),
+        super::kernel::HolySupportStep::SpendGrace { amount } => format!("spend({amount})"),
+        super::kernel::HolySupportStep::MarkMartyrLight => "mark-martyr".to_string(),
+        super::kernel::HolySupportStep::ConsumeMartyrLight => "consume-martyr".to_string(),
+        super::kernel::HolySupportStep::CycleReset => "cycle-reset".to_string(),
     }
 }
 
-fn format_predator_targets(
+pub(crate) fn format_predator_targets(
     targets: &[crate::combat::blueprints::dorumon::PredatorTargetSnapshot],
 ) -> String {
     let joined = targets
@@ -478,7 +537,9 @@ fn format_predator_targets(
     format!("[{joined}]")
 }
 
-fn format_predator_loop_transition(transition: PredatorLoopTransition) -> String {
+pub(crate) fn format_predator_loop_transition(
+    transition: PredatorLoopTransition,
+) -> String {
     let signal = match transition.signal {
         PredatorLoopSignal::BuildExploit => "build-exploit",
         PredatorLoopSignal::ApplyPreyLock => "prey-lock",
@@ -535,64 +596,6 @@ fn format_predator_loop_step(step: PredatorLoopStep) -> String {
     }
 }
 
-fn format_holy_support_transition(transition: super::kernel::HolySupportTransition) -> String {
-    let signal = match transition.signal {
-        super::kernel::HolySupportSignal::BuildGrace => "build",
-        super::kernel::HolySupportSignal::SpendGrace => "spend",
-        super::kernel::HolySupportSignal::MarkMartyrLight => "mark-martyr",
-        super::kernel::HolySupportSignal::ConsumeMartyrLight => "consume-martyr",
-        super::kernel::HolySupportSignal::CycleReset => "cycle-reset",
-        super::kernel::HolySupportSignal::Rejected => "rejected",
-        super::kernel::HolySupportSignal::Ignored => "ignored",
-    };
-
-    match transition.signal {
-        super::kernel::HolySupportSignal::BuildGrace
-        | super::kernel::HolySupportSignal::SpendGrace => {
-            format!("{signal}({})", transition.amount)
-        }
-        super::kernel::HolySupportSignal::Rejected | super::kernel::HolySupportSignal::Ignored => {
-            match (transition.attempted, transition.reason) {
-                (Some(attempted), Some(reason)) => {
-                    format!(
-                        "{signal}({};reason={reason:?})",
-                        format_holy_support_step(attempted)
-                    )
-                }
-                (Some(attempted), None) => {
-                    format!("{signal}({})", format_holy_support_step(attempted))
-                }
-                _ => signal.to_string(),
-            }
-        }
-        _ => signal.to_string(),
-    }
-}
-
-fn format_holy_support_step(step: super::kernel::HolySupportStep) -> String {
-    match step {
-        super::kernel::HolySupportStep::BuildGrace { amount } => format!("build({amount})"),
-        super::kernel::HolySupportStep::SpendGrace { amount } => format!("spend({amount})"),
-        super::kernel::HolySupportStep::MarkMartyrLight => "mark-martyr".to_string(),
-        super::kernel::HolySupportStep::ConsumeMartyrLight => "consume-martyr".to_string(),
-        super::kernel::HolySupportStep::CycleReset => "cycle-reset".to_string(),
-    }
-}
-
-fn format_twin_core_transition(transition: TwinCoreTransition) -> String {
-    let signal = match transition.signal {
-        TwinCoreSignal::BuildCrossResonance => "build",
-        TwinCoreSignal::SpendCrossResonance => "spend",
-        TwinCoreSignal::ThermalSpark => "spark",
-        TwinCoreSignal::TwinBurst => "twin-burst",
-        TwinCoreSignal::Shatter => "shatter",
-        TwinCoreSignal::FireSpendMarker => "fire-spend",
-        TwinCoreSignal::IceSpendMarker => "ice-spend",
-        TwinCoreSignal::CycleReset => "cycle-reset",
-    };
-    format!("{signal}({})", transition.amount)
-}
-
 pub fn format_battery_loop_snapshot(snapshot: &BatteryLoopSnapshot) -> String {
     format!(
         "static={}/{} circuit={}/{} threshold={} grant_guard={} block_ready={} last_block_cast={} last={} blocked={}",
@@ -618,7 +621,7 @@ pub fn format_battery_loop_snapshot(snapshot: &BatteryLoopSnapshot) -> String {
     )
 }
 
-fn format_battery_loop_transition(transition: BatteryLoopTransition) -> String {
+pub(crate) fn format_battery_loop_transition(transition: BatteryLoopTransition) -> String {
     match transition.signal {
         BatteryLoopSignal::BuildStaticCharge => {
             format!("build-static({})", transition.amount)
@@ -694,112 +697,6 @@ fn format_battery_loop_blocked_reason(reason: BatteryLoopBlockedReason) -> Strin
         BatteryLoopBlockedReason::NoEligibleAlly => "no-eligible-ally".to_string(),
         BatteryLoopBlockedReason::UnsupportedRequest => "unsupported".to_string(),
         BatteryLoopBlockedReason::MalformedData => "malformed".to_string(),
-    }
-}
-
-fn format_precision_mind_game_snapshot(snapshot: Option<&PrecisionMindGameSnapshot>) -> String {
-    match snapshot {
-        Some(snapshot) => format!(
-            "phase={},window_index={},window={},commitment={},reveal={},outcome={},last={}",
-            format_precision_phase(snapshot.phase),
-            snapshot.window_index,
-            format_precision_window(snapshot.current_window),
-            format_precision_commitment(snapshot.commitment),
-            format_precision_reveal(snapshot.reveal),
-            format_precision_outcome(snapshot.outcome),
-            snapshot
-                .last_signal
-                .map(format_precision_transition)
-                .unwrap_or_else(|| "none".to_string()),
-        ),
-        None => "none".to_string(),
-    }
-}
-
-fn format_precision_phase(phase: PrecisionMindGamePhase) -> &'static str {
-    match phase {
-        PrecisionMindGamePhase::Dormant => "Dormant",
-        PrecisionMindGamePhase::WindowOpen => "WindowOpen",
-        PrecisionMindGamePhase::CommitmentLocked => "CommitmentLocked",
-        PrecisionMindGamePhase::CounterplayRevealed => "CounterplayRevealed",
-        PrecisionMindGamePhase::Resolved => "Resolved",
-    }
-}
-
-fn format_precision_window(window: Option<PrecisionWindowKind>) -> &'static str {
-    match window {
-        Some(PrecisionWindowKind::Momentum) => "Momentum",
-        Some(PrecisionWindowKind::Counterplay) => "Counterplay",
-        None => "none",
-    }
-}
-
-fn format_precision_commitment(commitment: Option<PrecisionCommitment>) -> &'static str {
-    match commitment {
-        Some(PrecisionCommitment::Press) => "Press",
-        Some(PrecisionCommitment::Hold) => "Hold",
-        Some(PrecisionCommitment::Feint) => "Feint",
-        None => "none",
-    }
-}
-
-fn format_precision_reveal(reveal: Option<PrecisionReveal>) -> &'static str {
-    match reveal {
-        Some(PrecisionReveal::Guarded) => "Guarded",
-        Some(PrecisionReveal::Baited) => "Baited",
-        Some(PrecisionReveal::Trapped) => "Trapped",
-        None => "none",
-    }
-}
-
-fn format_precision_outcome(outcome: Option<PrecisionOutcome>) -> &'static str {
-    match outcome {
-        Some(PrecisionOutcome::Success) => "Success",
-        Some(PrecisionOutcome::Countered) => "Countered",
-        Some(PrecisionOutcome::Failed) => "Failed",
-        None => "none",
-    }
-}
-
-fn format_precision_transition(transition: PrecisionMindGameTransition) -> String {
-    match transition {
-        PrecisionMindGameTransition::OpenWindow { window } => {
-            format!("open_window({})", format_precision_window(Some(window)))
-        }
-        PrecisionMindGameTransition::Commit { commitment } => {
-            format!("commit({})", format_precision_commitment(Some(commitment)))
-        }
-        PrecisionMindGameTransition::Reveal { reveal } => {
-            format!("reveal({})", format_precision_reveal(Some(reveal)))
-        }
-        PrecisionMindGameTransition::Resolve { outcome } => {
-            format!("resolve({})", format_precision_outcome(Some(outcome)))
-        }
-        PrecisionMindGameTransition::Rejected { attempted, reason } => format!(
-            "rejected({};reason={:?})",
-            format_precision_step(attempted),
-            reason
-        ),
-        PrecisionMindGameTransition::Ignored { attempted } => {
-            format!("ignored({})", format_precision_step(attempted))
-        }
-    }
-}
-
-fn format_precision_step(step: super::kernel::PrecisionMindGameStep) -> String {
-    match step {
-        super::kernel::PrecisionMindGameStep::OpenWindow { window } => {
-            format!("open_window({})", format_precision_window(Some(window)))
-        }
-        super::kernel::PrecisionMindGameStep::Commit { commitment } => {
-            format!("commit({})", format_precision_commitment(Some(commitment)))
-        }
-        super::kernel::PrecisionMindGameStep::Reveal { reveal } => {
-            format!("reveal({})", format_precision_reveal(Some(reveal)))
-        }
-        super::kernel::PrecisionMindGameStep::Resolve { outcome } => {
-            format!("resolve({})", format_precision_outcome(Some(outcome)))
-        }
     }
 }
 

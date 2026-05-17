@@ -19,6 +19,10 @@ const PASSIVE_TRIGGER_KEY: &str = "gabumon/twin_core/triggered";
 const PASSIVE_TIMELINE_ID: &str = "gabumon_twin_core_passive";
 const PASSIVE_OWNER: UnitId = UnitId(2);
 
+pub fn register_validation_ext(regs: &mut crate::combat::api::ExtRegistries) {
+    crate::combat::blueprints::twin_core::register_validation_ext(regs);
+}
+
 pub fn register_passive_runtime(app: &mut bevy::prelude::App) {
     register_passive_hooks(app);
 

@@ -7,6 +7,8 @@ use crate::combat::kernel::{
     CombatKernelTransition, CombatTagChangeKind, CombatTagId, CombatTagState, CombatTagTransition,
     TacticalCycleTransition,
 };
+use crate::combat::api::registry::{ValidationField, ValidationSection};
+use crate::combat::observability::{format_twin_core_transition, format_unit_ids};
 use crate::combat::types::UnitId;
 
 pub const OWNER: &str = "twin_core";
@@ -177,6 +179,48 @@ impl Default for TwinCoreState {
             last_signal: None,
         }
     }
+}
+
+impl TwinCoreState {
+    pub fn validation_section(&self) -> ValidationSection {
+        let mut spark_targets = self.active_thermal_spark_targets.clone();
+        spark_targets.sort_by_key(|unit_id| unit_id.0);
+
+        ValidationSection::new(
+            OWNER,
+            vec![
+                ValidationField::new("cr", self.cross_resonance.to_string()),
+                ValidationField::new("spark_targets", format_unit_ids(&spark_targets)),
+                ValidationField::new("fire", self.fire_spend_markers.to_string()),
+                ValidationField::new("ice", self.ice_spend_markers.to_string()),
+                ValidationField::new(
+                    "burst_guard",
+                    self.twin_burst_used_this_cycle.to_string(),
+                ),
+                ValidationField::new(
+                    "shatter_guard",
+                    self.shatter_used_this_cycle.to_string(),
+                ),
+                ValidationField::new(
+                    "last",
+                    self.last_signal
+                        .map(format_twin_core_transition)
+                        .unwrap_or_else(|| "none".to_string()),
+                ),
+            ],
+        )
+    }
+}
+
+pub fn register_validation_ext(regs: &mut crate::combat::api::ExtRegistries) {
+    regs.validation
+        .register("twin_core/validation", twin_core_validation_section);
+}
+
+fn twin_core_validation_section(world: &World) -> Option<ValidationSection> {
+    world
+        .get_resource::<TwinCoreState>()
+        .map(TwinCoreState::validation_section)
 }
 
 fn blueprint_transition(name: &'static str, amount: i64) -> CombatKernelTransition {
