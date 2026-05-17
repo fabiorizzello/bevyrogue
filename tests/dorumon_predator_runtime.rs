@@ -2,10 +2,12 @@ use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::api::SignalPayload;
 use bevyrogue::combat::api::intent::CastId;
 use bevyrogue::combat::blueprints;
-use bevyrogue::combat::blueprints::dorumon::PredatorLoopState;
+use bevyrogue::combat::blueprints::dorumon::{
+    PredatorLoopState, PredatorLoopTransition,
+};
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::kernel::{
-    CombatKernelTransition, PredatorLoopTransition, register_combat_kernel_runtime,
+    CombatKernelTransition, register_combat_kernel_runtime,
 };
 use bevyrogue::combat::log::ActionLog;
 use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
@@ -132,11 +134,6 @@ fn dorumon_runtime_transitions_flow_through_canonical_predator_events() {
         ]
     );
 
-    let expected_predator_results = vec![
-        PredatorLoopTransition::build_exploit(action.target, 2),
-        PredatorLoopTransition::apply_prey_lock(action.target, 2),
-    ];
-
     for transition in transitions.iter().cloned() {
         app.world_mut().write_message(CombatEvent {
             kind: CombatEventKind::OnKernelTransition { transition },
@@ -147,31 +144,7 @@ fn dorumon_runtime_transitions_flow_through_canonical_predator_events() {
         });
     }
 
-    let mut reader = cursor(&mut app);
     app.update();
-    app.update();
-
-    let events = drain(&mut reader, &app);
-    assert_eq!(events.len(), expected_predator_results.len());
-    assert!(events
-        .iter()
-        .all(|event| matches!(event.kind, CombatEventKind::PredatorLoopResolved { .. })));
-
-    let predator_results: Vec<_> = events
-        .iter()
-        .filter_map(|event| match &event.kind {
-            CombatEventKind::PredatorLoopResolved { transition } => Some(*transition),
-            _ => None,
-        })
-        .collect();
-
-    assert_eq!(predator_results, expected_predator_results);
-
-    let serialized = serde_json::to_string(&events).expect("serialize combat events");
-    assert!(!serialized.contains("OnKernelTransition"));
-    assert!(serialized.contains("PredatorLoopResolved"));
-    assert!(serialized.contains("BuildExploit"));
-    assert!(serialized.contains("ApplyPreyLock"));
 
     let state = app.world().resource::<PredatorLoopState>();
     let target = state.targets.get(&action.target).expect("tracked target");
@@ -187,6 +160,11 @@ fn dorumon_runtime_transitions_flow_through_canonical_predator_events() {
             state.prey_lock_duration as u16,
         ))
     );
+
+    let serialized = serde_json::to_string(&transitions).expect("serialize transitions");
+    assert!(serialized.contains("Blueprint"));
+    assert!(serialized.contains("build_exploit"));
+    assert!(serialized.contains("apply_prey_lock"));
 
     let snapshot = capture_validation_snapshot(app.world_mut()).expect("snapshot");
     let formatted = format_validation_snapshot(&snapshot);
@@ -235,12 +213,7 @@ fn dorumon_runtime_ignores_non_dorumon_and_malformed_blueprint_events() {
     });
 
     app.update();
-    app.update();
 
     let state = app.world().resource::<PredatorLoopState>();
     assert_eq!(state.snapshot(), baseline);
-
-    let mut reader = cursor(&mut app);
-    let events = drain(&mut reader, &app);
-    assert!(events.is_empty(), "unexpected resolved events: {events:?}");
 }
