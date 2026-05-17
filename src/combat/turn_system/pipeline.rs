@@ -4,11 +4,10 @@
 //! See `.gsd/M010-HANDOFF.md` for integration status. The functions here
 //! are the scaffolding; wire-up into the Bevy schedule is incomplete.
 
-use bevy::log;
 use bevy::prelude::*;
 
 use crate::combat::api::intent::CastId;
-use crate::combat::api::{registry::ExtRegistries, runner::{BeatRunner, StepOutcome}};
+use crate::combat::api::{runner::{BeatRunner, StepOutcome}};
 use crate::combat::api::applier::{IntentExecutionMeta, IntentQueue};
 
 use crate::combat::damage::triangle_modifiers;
@@ -149,10 +148,12 @@ fn dispatch_blueprint_transitions(
     }
 }
 
+#[allow(dead_code)]
 fn intern_timeline_id(value: &str) -> &'static str {
     Box::leak(value.to_owned().into_boxed_str())
 }
 
+#[allow(dead_code)]
 fn intern_compiled_timeline(
     timeline: &crate::combat::api::timeline::CompiledTimeline<String>,
 ) -> crate::combat::api::timeline::CompiledTimeline<&'static str> {
@@ -255,65 +256,25 @@ pub(crate) fn run_timeline_backed_action(
     inflight: InFlightAction,
     cast_id: CastId,
 ) {
-    let mut fallback_regs = None;
+    let mut _fallback_regs = None;
     let regs_ptr: *const crate::combat::api::registry::ExtRegistries =
         if let Some(regs) = world.get_resource::<crate::combat::api::registry::ExtRegistries>() {
             regs as *const _
         } else {
             let mut regs = crate::combat::api::registry::ExtRegistries::default();
             crate::combat::api::builtins::register_kernel_builtins(&mut regs);
-            fallback_regs = Some(regs);
-            fallback_regs
+            _fallback_regs = Some(regs);
+            _fallback_regs
                 .as_ref()
                 .expect("fallback ext registries initialized") as *const _
         };
 
-    let compiled = if let Some(timeline) = world
-        .get_resource::<crate::combat::api::timeline::TimelineLibrary<String>>()
-        .and_then(|library| {
-            library
-                .timelines
-                .iter()
-                .find(|timeline| timeline.id == inflight.action.skill_id.0)
-                .cloned()
-        }) {
-        timeline
-    } else {
-        let Some(book) = world
-            .get_resource::<bevy::prelude::Assets<crate::data::skills_ron::SkillBook>>()
-            .and_then(|assets| {
-                world.get_resource::<crate::data::SkillBookHandle>()
-                    .and_then(|handle| assets.get(&handle.0))
-            })
-        else {
-            log::warn!(
-                "timeline-backed action {:?} skipped: compiled timeline not found and SkillBook unavailable",
-                inflight.action.skill_id
-            );
-            return;
-        };
-
-        let compiled = unsafe {
-            crate::data::skill_timeline::compile_skill_book_timelines(book, &*regs_ptr)
-        };
-        let Ok(compiled) = compiled else {
-            log::warn!(
-                "timeline-backed action {:?} skipped: SkillBook timeline compile failed",
-                inflight.action.skill_id
-            );
-            return;
-        };
-        let Some(timeline) = compiled
-            .into_iter()
-            .find(|timeline| timeline.id == inflight.action.skill_id.0)
-        else {
-            log::warn!(
-                "timeline-backed action {:?} skipped: compiled timeline not found",
-                inflight.action.skill_id
-            );
-            return;
-        };
-        timeline
+    let Some(timeline) = crate::combat::preview::resolve_compiled_skill_timeline(
+        world,
+        &inflight.action.skill_id,
+        unsafe { &*regs_ptr },
+    ) else {
+        return;
     };
 
     let attacker_id = inflight.action.source;
@@ -388,8 +349,6 @@ pub(crate) fn run_timeline_backed_action(
             return;
         }
     }
-
-    let timeline = std::sync::Arc::new(intern_compiled_timeline(&compiled));
 
     let mut pending = std::collections::VecDeque::new();
     let mut runner = BeatRunner::new(timeline, cast_id, inflight.action.source, inflight.action.target);

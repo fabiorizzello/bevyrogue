@@ -48,6 +48,8 @@ pub mod av;
 pub mod speed;
 /// Tempo Resistance: diminishing returns on repeated Delay effects + MIN_ACTION_THRESHOLD_AV floor.
 pub mod resistance;
+/// Shared skill-preview seam for UI/AI consumers.
+pub mod preview;
 
 // ─── Combat mechanics ────────────────────────────────────────────────────────
 // Damage math, defensive gauges, resources, status/follow-up reactions.
@@ -114,8 +116,8 @@ pub mod plugin;
 // ─── Re-exports ──────────────────────────────────────────────────────────────
 // Stable shortcuts for the most-imported types.
 
-pub use battery_loop::{BatteryLoopBlockedReason, BatteryLoopChargeKind, BatteryLoopRequestKind, BatteryLoopSignal, BatteryLoopStep, BatteryLoopTransition};
-pub use blueprints::dorumon::{PredatorLoopBlockedReason, PredatorLoopCapKind, PredatorLoopDesignTag, PredatorLoopRequestKind, PredatorLoopSignal, PredatorLoopStep, PredatorLoopTransition};
 pub use plugin::CombatPlugin;
+#[allow(unused_imports)]
+pub use preview::query_skill_preview;
 #[allow(deprecated)]
 pub use status_effect::{StatusBag, StatusEffectKind};
