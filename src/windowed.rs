@@ -87,6 +87,8 @@ pub fn register(app: &mut App, validation: Option<WindowedValidationConfig>) {
     .add_plugins(DataPlugin)
     .add_plugins(EguiPlugin::default())
     .init_resource::<crate::ui::combat_panel::PendingAction>()
+    .init_resource::<crate::ui::combat_panel::PreviewDamageCache>()
+    .add_systems(Update, crate::ui::combat_panel::refresh_preview_damage_cache)
     .add_systems(Startup, setup)
     .add_systems(EguiPrimaryContextPass, roster_panel)
     .add_systems(EguiPrimaryContextPass, turn_order_panel)

@@ -5,7 +5,7 @@ use super::types::UnitId;
 
 /// Resource to track the current active unit and the next unit in the turn order.
 /// This resource will be managed by the Action Value system.
-#[derive(Resource, Debug, Default)]
+#[derive(Resource, Debug, Default, Clone)]
 pub struct TurnOrder {
     pub active_unit: Option<UnitId>,
     pub next_unit: Option<UnitId>,

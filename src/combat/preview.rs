@@ -170,6 +170,30 @@ pub(crate) fn resolve_compiled_skill_timeline(
     Some(Arc::new(intern_compiled_timeline(&timeline)))
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct PreviewDamageSummary {
+    pub total_damage: i32,
+    pub deal_damage_intents: usize,
+}
+
+/// Collapse a preview intent stream into a damage-only numeric summary.
+///
+/// This keeps the preview seam shared between UI and AI consumers: callers can
+/// assert the pending stream shape separately and use this helper only for the
+/// damage estimate they want to surface.
+pub fn summarize_preview_damage(pending: &VecDeque<Intent>) -> PreviewDamageSummary {
+    let mut summary = PreviewDamageSummary::default();
+
+    for intent in pending {
+        if let Intent::DealDamage { amount, .. } = intent {
+            summary.total_damage += *amount;
+            summary.deal_damage_intents += 1;
+        }
+    }
+
+    summary
+}
+
 /// Build the pending intent stream for a skill cast without applying queued intents.
 ///
 /// The helper runs the shared timeline through `BeatRunner` in `SkillCtxMode::Preview`

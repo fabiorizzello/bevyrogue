@@ -10,14 +10,16 @@ use crate::combat::{
     action_query::{
         ActionAffordance, ActionQueryKind, ActionStatus, CombatQuerySnapshot, ImplementationStatus,
         ResourceAffordanceDetail, ResourceKind, ResourceStatus, TargetAffordance, TargetStatus,
-        build_snapshot_from_ecs_with_sp, query_action_affordance,
+        build_snapshot_from_ecs_with_sp, first_enabled_target_id, query_action_affordance,
         query_charged_telegraph_affordance, query_enemy_trait_affordances,
     },
+    api::CastIdGen,
     enemy_counterplay::EnemyCounterplayKit,
     energy::{Energy, RoundEnergyTracker},
     floating::{FLOATING_LIFETIME_SECS, FloatingDamage},
     kit::UnitSkills,
     log::{ActionLog, LogEntry},
+    preview::{PreviewDamageSummary, query_skill_preview, summarize_preview_damage},
     sp::SpPool,
     state::{CombatPhase, CombatState},
     stun::Stunned,
@@ -44,6 +46,162 @@ pub enum PendingKind {
 #[derive(Resource, Default, Debug, Clone, PartialEq, Eq)]
 pub struct PendingAction {
     pub kind: Option<PendingKind>,
+}
+
+#[cfg(feature = "windowed")]
+#[derive(Resource, Default, Debug, Clone, PartialEq, Eq)]
+pub struct PreviewDamageCache {
+    pub actor_id: Option<UnitId>,
+    pub pending_kind: Option<PendingKind>,
+    pub skill_id: Option<SkillId>,
+    pub target_id: Option<UnitId>,
+    pub summary: Option<PreviewDamageSummary>,
+}
+
+#[cfg(feature = "windowed")]
+impl PreviewDamageCache {
+    fn matches_context(
+        &self,
+        actor_id: Option<UnitId>,
+        pending_kind: Option<&PendingKind>,
+        target_id: Option<UnitId>,
+    ) -> bool {
+        self.actor_id == actor_id
+            && self.target_id == target_id
+            && self.pending_kind.as_ref() == pending_kind
+    }
+
+    fn label_for(
+        &self,
+        actor_id: Option<UnitId>,
+        pending_kind: Option<&PendingKind>,
+        target_id: Option<UnitId>,
+    ) -> Option<String> {
+        let summary = self.summary.as_ref()?;
+        if !self.matches_context(actor_id, pending_kind, target_id) {
+            return None;
+        }
+
+        Some(format!(
+            "preview: {} dmg across {} hit(s)",
+            summary.total_damage, summary.deal_damage_intents
+        ))
+    }
+}
+
+#[cfg(feature = "windowed")]
+fn pending_kind_skill_id(kind: &PendingKind, kit: &UnitSkills) -> SkillId {
+    match kind {
+        PendingKind::Basic => kit.basic.clone(),
+        PendingKind::Skill(skill_id) => skill_id.clone(),
+        PendingKind::Ultimate => kit.ultimate.clone(),
+    }
+}
+
+#[cfg(feature = "windowed")]
+pub fn refresh_preview_damage_cache(world: &mut World) {
+    let Some(active_actor_id) = world
+        .get_resource::<TurnOrder>()
+        .and_then(|order| order.active_unit)
+    else {
+        return;
+    };
+
+    let Some(pending_kind) = world
+        .get_resource::<PendingAction>()
+        .and_then(|pending| pending.kind.clone())
+    else {
+        return;
+    };
+
+    let Some((skill_id, target_id, summary)) = (|| -> Option<(SkillId, UnitId, PreviewDamageSummary)> {
+        let skill_book = world
+            .get_resource::<Assets<SkillBook>>()
+            .and_then(|assets| {
+                world
+                    .get_resource::<SkillBookHandle>()
+                    .and_then(|handle| assets.get(&handle.0).cloned())
+            })?;
+        let Some(mut cast_id_gen) = world.get_resource_mut::<CastIdGen>() else {
+            return None;
+        };
+        let cast_id = cast_id_gen.next();
+        let combat_state = world.resource::<CombatState>().clone();
+        let order = world.resource::<TurnOrder>().clone();
+        let sp_current = world.resource::<SpPool>().current;
+
+        let mut units_data = Vec::new();
+        let mut active_kit: Option<UnitSkills> = None;
+        let mut units_q = world.query::<(
+            &'static Unit,
+            &'static Team,
+            Option<&'static Toughness>,
+            Option<&'static EnemyCounterplayKit>,
+            &'static UltimateCharge,
+            &'static UnitSkills,
+            Option<&'static Ko>,
+            Option<&'static Commander>,
+            Option<&'static Stunned>,
+            Option<&'static Energy>,
+            Option<&'static RoundEnergyTracker>,
+        )>();
+        for (unit, team, tough, counterplay, ult, kit, ko, commander, stunned, energy, tracker) in
+            units_q.iter(world)
+        {
+            if unit.id == active_actor_id {
+                active_kit = Some(kit.clone());
+            }
+            units_data.push((
+                unit.id,
+                *team,
+                unit,
+                Some(kit),
+                Some(ult),
+                tough,
+                counterplay,
+                ko.is_some(),
+                stunned.is_some(),
+                commander.is_some(),
+                energy,
+                tracker,
+            ));
+        }
+
+        let kit = active_kit?;
+        let snapshot = build_snapshot_from_ecs_with_sp(
+            &combat_state,
+            &order,
+            sp_current,
+            active_actor_id,
+            active_actor_id,
+            units_data,
+        );
+
+        let affordance = query_pending_action_affordance(
+            &snapshot,
+            &skill_book,
+            active_actor_id,
+            &pending_kind,
+        );
+        if !matches!(affordance.action, ActionStatus::Enabled) {
+            return None;
+        }
+
+        let target_id = first_enabled_target_id(&affordance)?;
+        let skill_id = pending_kind_skill_id(&pending_kind, &kit);
+        let preview_pending = query_skill_preview(world, &skill_id, cast_id, active_actor_id, target_id);
+        let summary = summarize_preview_damage(&preview_pending);
+        Some((skill_id, target_id, summary))
+    })() else {
+        return;
+    };
+
+    let mut cache = world.resource_mut::<PreviewDamageCache>();
+    cache.actor_id = Some(active_actor_id);
+    cache.pending_kind = Some(pending_kind);
+    cache.skill_id = Some(skill_id);
+    cache.target_id = Some(target_id);
+    cache.summary = Some(summary);
 }
 
 #[cfg(feature = "windowed")]
@@ -153,7 +311,7 @@ fn action_button_label(base: &str, status: &ActionStatus) -> String {
 }
 
 #[cfg(feature = "windowed")]
-fn action_tooltip(base: &str, affordance: &ActionAffordance<'_>) -> String {
+fn action_tooltip(base: &str, affordance: &ActionAffordance<'_>, preview: Option<&str>) -> String {
     let resources = if affordance.resource_details.is_empty() {
         "none".to_string()
     } else {
@@ -175,12 +333,27 @@ fn action_tooltip(base: &str, affordance: &ActionAffordance<'_>) -> String {
             .join(" | ")
     };
 
-    format!(
+    let mut tooltip = format!(
         "{base}\naction: {}\nresource: {}\ntargets: {}",
         action_status_label(&affordance.action),
         resources,
         targets,
-    )
+    );
+    if let Some(preview) = preview {
+        tooltip.push_str("\n");
+        tooltip.push_str(preview);
+    }
+    tooltip
+}
+
+#[cfg(feature = "windowed")]
+fn attr_color(a: Attribute) -> egui::Color32 {
+    match a {
+        Attribute::Vaccine => egui::Color32::from_rgb(80, 140, 220),
+        Attribute::Data => egui::Color32::from_rgb(220, 200, 60),
+        Attribute::Virus => egui::Color32::from_rgb(200, 60, 180),
+        Attribute::Free => egui::Color32::from_gray(160),
+    }
 }
 
 #[cfg(feature = "windowed")]
@@ -226,8 +399,8 @@ pub fn combat_panel(
     mut combat_state: ResMut<CombatState>,
     mut sp: ResMut<SpPool>,
     mut log: ResMut<ActionLog>,
+    preview_cache: Res<PreviewDamageCache>,
     skill_books: Res<Assets<SkillBook>>,
-    skill_book_handle: Option<Res<SkillBookHandle>>,
     mut action_intent: MessageWriter<ActionIntent>,
     units_q: CombatPanelUnitsQuery,
     floating_q: Query<&FloatingDamage>,
@@ -270,11 +443,12 @@ pub fn combat_panel(
         alpha: u8,
     }
 
-    let skill_book = skill_book_handle
-        .as_ref()
-        .and_then(|handle| skill_books.get(&handle.0));
     let fallback_skill_book = SkillBook(Vec::new());
-    let skill_book = skill_book.unwrap_or(&fallback_skill_book);
+    let skill_book = skill_books
+        .iter()
+        .next()
+        .map(|(_, book)| book)
+        .unwrap_or(&fallback_skill_book);
 
     let mut unit_displays: Vec<UnitDisplay> = Vec::new();
     let mut units_data = Vec::new();
@@ -369,10 +543,14 @@ pub fn combat_panel(
         )),
         _ => None,
     };
+    let selected_target_id = selected_action_affordance
+        .as_ref()
+        .and_then(first_enabled_target_id);
 
     let any_broken = enemies
         .iter()
         .any(|enemy| enemy.toughness.as_ref().is_some_and(|t| t.broken) && !enemy.is_ko);
+
 
     let now = time.elapsed_secs();
     let fd_displays: Vec<FdDisplay> = floating_q
@@ -421,14 +599,24 @@ pub fn combat_panel(
                 let basic_affordance =
                     query_action_affordance(snapshot, skill_book, actor_id, ActionQueryKind::Basic);
                 let basic_enabled = matches!(basic_affordance.action, ActionStatus::Enabled);
+                let basic_pending = PendingKind::Basic;
+                let basic_preview = preview_cache.label_for(
+                    active_actor_id,
+                    Some(&basic_pending),
+                    first_enabled_target_id(&basic_affordance),
+                );
                 let basic_response = ui
                     .add_enabled(
                         basic_enabled,
                         egui::Button::new(action_button_label("Basic", &basic_affordance.action)),
                     )
-                    .on_hover_text(action_tooltip("Basic", &basic_affordance));
+                    .on_hover_text(action_tooltip(
+                        "Basic",
+                        &basic_affordance,
+                        basic_preview.as_deref(),
+                    ));
                 if basic_response.clicked() {
-                    pending_request = Some(Some(PendingKind::Basic));
+                    pending_request = Some(Some(basic_pending));
                 }
 
                 if let Some(active) = active_display {
@@ -441,6 +629,12 @@ pub fn combat_panel(
                         );
                         let skill_enabled =
                             matches!(skill_affordance.action, ActionStatus::Enabled);
+                        let skill_pending = PendingKind::Skill(skill.id.clone());
+                        let skill_preview = preview_cache.label_for(
+                            active_actor_id,
+                            Some(&skill_pending),
+                            first_enabled_target_id(&skill_affordance),
+                        );
                         let skill_response = ui
                             .add_enabled(
                                 skill_enabled,
@@ -449,9 +643,13 @@ pub fn combat_panel(
                                     &skill_affordance.action,
                                 )),
                             )
-                            .on_hover_text(action_tooltip(&skill.label, &skill_affordance));
+                            .on_hover_text(action_tooltip(
+                                &skill.label,
+                                &skill_affordance,
+                                skill_preview.as_deref(),
+                            ));
                         if skill_response.clicked() {
-                            pending_request = Some(Some(PendingKind::Skill(skill.id.clone())));
+                            pending_request = Some(Some(skill_pending));
                         }
                     }
                 }
@@ -463,6 +661,12 @@ pub fn combat_panel(
                     ActionQueryKind::Ultimate,
                 );
                 let ultimate_enabled = matches!(ultimate_affordance.action, ActionStatus::Enabled);
+                let ultimate_pending = PendingKind::Ultimate;
+                let ultimate_preview = preview_cache.label_for(
+                    active_actor_id,
+                    Some(&ultimate_pending),
+                    first_enabled_target_id(&ultimate_affordance),
+                );
                 let ultimate_response = ui
                     .add_enabled(
                         ultimate_enabled,
@@ -471,9 +675,13 @@ pub fn combat_panel(
                             &ultimate_affordance.action,
                         )),
                     )
-                    .on_hover_text(action_tooltip("Ultimate", &ultimate_affordance));
+                    .on_hover_text(action_tooltip(
+                        "Ultimate",
+                        &ultimate_affordance,
+                        ultimate_preview.as_deref(),
+                    ));
                 if ultimate_response.clicked() {
-                    pending_request = Some(Some(PendingKind::Ultimate));
+                    pending_request = Some(Some(ultimate_pending));
                 }
             } else {
                 let disabled_status = ActionStatus::Disabled {
@@ -498,11 +706,24 @@ pub fn combat_panel(
 
             if let Some(kind) = pending_action.kind.as_ref() {
                 if let Some(affordance) = selected_action_affordance.as_ref() {
-                    ui.label(format!(
-                        "Pending: {} [{}]",
-                        pending_label(kind),
-                        action_status_label(&affordance.action)
-                    ));
+                    if let Some(preview) = preview_cache.label_for(
+                        active_actor_id,
+                        Some(kind),
+                        selected_target_id,
+                    ) {
+                        ui.label(format!(
+                            "Pending: {} [{}] · {}",
+                            pending_label(kind),
+                            action_status_label(&affordance.action),
+                            preview,
+                        ));
+                    } else {
+                        ui.label(format!(
+                            "Pending: {} [{}]",
+                            pending_label(kind),
+                            action_status_label(&affordance.action)
+                        ));
+                    }
                 } else {
                     ui.label(format!("Pending: {}", pending_label(kind)));
                 }
@@ -520,7 +741,7 @@ pub fn combat_panel(
             for ally in &allies {
                 cols[0].group(|ui| {
                     let bg = egui::Frame::default()
-                        .fill(crate::windowed::attr_color(ally.attribute))
+                        .fill(attr_color(ally.attribute))
                         .inner_margin(egui::Margin::symmetric(4, 2));
                     bg.show(ui, |ui| {
                         ui.horizontal(|ui| {
@@ -573,6 +794,11 @@ pub fn combat_panel(
                         ));
                         let target_enabled =
                             matches!(target_affordance.status, TargetStatus::Enabled);
+                        let target_preview = preview_cache.label_for(
+                            active_actor_id,
+                            pending_action.kind.as_ref(),
+                            Some(ally.id),
+                        );
                         let target_response = ui
                             .add_enabled(
                                 target_enabled,
@@ -581,19 +807,26 @@ pub fn combat_panel(
                                     Some(target_affordance),
                                 )),
                             )
-                            .on_hover_text(format!(
-                                "{}
+                            .on_hover_text({
+                                let mut text = format!(
+                                    "{}
 HP: {}/{}
 {}",
-                                ally.name,
-                                ally.hp_cur,
-                                ally.hp_max,
-                                if ally.is_commander {
-                                    "Commander target"
-                                } else {
-                                    ""
+                                    ally.name,
+                                    ally.hp_cur,
+                                    ally.hp_max,
+                                    if ally.is_commander {
+                                        "Commander target"
+                                    } else {
+                                        ""
+                                    }
+                                );
+                                if let Some(preview) = target_preview {
+                                    text.push('\n');
+                                    text.push_str(&preview);
                                 }
-                            ));
+                                text
+                            });
                         if target_response.clicked() && pending_enabled {
                             clicked_target = Some(ally.id);
                         }
@@ -661,7 +894,7 @@ HP: {}/{}
                     let chip = egui::Button::new(
                         egui::RichText::new(&enemy.name).color(egui::Color32::BLACK),
                     )
-                    .fill(crate::windowed::attr_color(enemy.attribute));
+                    .fill(attr_color(enemy.attribute));
                     let enemy_target = pending_targets.and_then(|affordance| {
                         affordance
                             .targets
@@ -676,15 +909,27 @@ HP: {}/{}
                         ));
                         let target_enabled =
                             matches!(target_affordance.status, TargetStatus::Enabled);
-                        let response = ui.add_enabled(target_enabled, chip).on_hover_text(format!(
-                            "{}
+                        let target_preview = preview_cache.label_for(
+                            active_actor_id,
+                            pending_action.kind.as_ref(),
+                            Some(enemy.id),
+                        );
+                        let response = ui.add_enabled(target_enabled, chip).on_hover_text({
+                            let mut text = format!(
+                                "{}
 HP: {}/{}
 {}",
-                            enemy.name,
-                            enemy.hp_cur,
-                            enemy.hp_max,
-                            if enemy.is_ko { "KO target" } else { "" }
-                        ));
+                                enemy.name,
+                                enemy.hp_cur,
+                                enemy.hp_max,
+                                if enemy.is_ko { "KO target" } else { "" }
+                            );
+                            if let Some(preview) = target_preview {
+                                text.push('\n');
+                                text.push_str(&preview);
+                            }
+                            text
+                        });
                         if response.clicked() && pending_enabled {
                             clicked_target = Some(enemy.id);
                         }
