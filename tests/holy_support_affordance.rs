@@ -1,12 +1,13 @@
 use bevy::prelude::*;
-use bevyrogue::combat::api::intent::CastId;
+use bevyrogue::combat::api::{SignalPayload, intent::CastId};
+use bevyrogue::combat::api::ExtRegistries;
 use bevyrogue::combat::blueprints::agumon::TwinCoreState;
 use bevyrogue::combat::blueprints::patamon::{
     HolySupportRejectReason, HolySupportState, HolySupportStep, HolySupportTransition,
-    apply_holy_support_transitions_system,
+    apply_holy_support_transitions_system, register_validation_ext,
 };
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
-use bevyrogue::combat::kernel::CombatKernelTransition;
+use bevyrogue::combat::kernel::{CombatKernelTransition, HolySupportSignal};
 use bevyrogue::combat::log::ActionLog;
 use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
 use bevyrogue::combat::sp::SpPool;
@@ -16,6 +17,11 @@ use bevyrogue::combat::types::UnitId;
 fn app_with_holy_support() -> App {
     let mut app = App::new();
     app.add_message::<CombatEvent>();
+    app.insert_resource(ExtRegistries::default());
+    {
+        let mut regs = app.world_mut().resource_mut::<ExtRegistries>();
+        register_validation_ext(&mut regs);
+    }
     app.insert_resource(CombatState::default())
         .insert_resource(SpPool::default())
         .insert_resource(ActionLog::default())
@@ -27,6 +33,12 @@ fn app_with_holy_support() -> App {
 
 fn app_without_holy_support() -> App {
     let mut app = App::new();
+    app.add_message::<CombatEvent>();
+    app.insert_resource(ExtRegistries::default());
+    {
+        let mut regs = app.world_mut().resource_mut::<ExtRegistries>();
+        register_validation_ext(&mut regs);
+    }
     app.insert_resource(CombatState::default())
         .insert_resource(SpPool::default())
         .insert_resource(ActionLog::default())
@@ -35,9 +47,37 @@ fn app_without_holy_support() -> App {
 }
 
 fn emit_holy_transition(app: &mut App, transition: HolySupportTransition) {
+    let (name, payload) = match transition.signal {
+        bevyrogue::combat::kernel::HolySupportSignal::BuildGrace => (
+            "build_holy_support_grace",
+            SignalPayload::Amount(i64::from(transition.amount)),
+        ),
+        bevyrogue::combat::kernel::HolySupportSignal::SpendGrace => (
+            "spend_holy_support_grace",
+            SignalPayload::Amount(i64::from(transition.amount)),
+        ),
+        bevyrogue::combat::kernel::HolySupportSignal::MarkMartyrLight => {
+            ("mark_martyr_light", SignalPayload::Empty)
+        }
+        bevyrogue::combat::kernel::HolySupportSignal::ConsumeMartyrLight => {
+            ("consume_martyr_light", SignalPayload::Empty)
+        }
+        bevyrogue::combat::kernel::HolySupportSignal::CycleReset => {
+            ("cycle_reset", SignalPayload::Empty)
+        }
+        bevyrogue::combat::kernel::HolySupportSignal::Rejected
+        | bevyrogue::combat::kernel::HolySupportSignal::Ignored => {
+            ("rejected", SignalPayload::Empty)
+        }
+    };
+
     app.world_mut().write_message(CombatEvent {
         kind: CombatEventKind::OnKernelTransition {
-            transition: CombatKernelTransition::HolySupport(transition),
+            transition: CombatKernelTransition::Blueprint {
+                owner: "patamon".to_owned(),
+                name: name.to_owned(),
+                payload,
+            },
         },
         source: UnitId(1),
         target: UnitId(1),
@@ -68,14 +108,21 @@ fn holy_support_snapshot_surfaces_grace_capacity_and_martyr_state() {
     );
 }
 
+fn holy_support_section<'a>(snapshot: &'a bevyrogue::combat::observability::ValidationSnapshot) -> &'a bevyrogue::combat::api::ValidationSection {
+    snapshot
+        .section("support")
+        .expect("support section should be present when HolySupportState is registered")
+}
+
 #[test]
 fn holy_support_missing_resource_is_absent_from_validation_snapshot() {
     let mut app = app_without_holy_support();
 
     let snapshot = capture_validation_snapshot(app.world_mut()).expect("snapshot should build");
 
-    assert!(snapshot.holy_support.is_none());
+    assert!(snapshot.section("support").is_none());
     assert!(format_validation_snapshot(&snapshot).contains("support=none"));
+    assert!(!format_validation_snapshot(&snapshot).contains("holy_support="));
 }
 
 #[test]
@@ -85,23 +132,19 @@ fn holy_support_transition_system_updates_snapshot_without_affordance_api() {
     emit_holy_transition(&mut app, HolySupportTransition::mark_martyr_light());
 
     let snapshot = capture_validation_snapshot(app.world_mut()).expect("snapshot should build");
-    let holy_support = snapshot
-        .holy_support
-        .as_ref()
-        .expect("holy holy_support state should be captured");
+    let holy_support = holy_support_section(&snapshot);
 
-    assert_eq!(holy_support.grace, 2);
-    assert!(holy_support.martyr_light_marked_this_cycle);
-    assert!(!holy_support.martyr_light_consumed_this_cycle);
-    assert_eq!(
-        holy_support.last_signal,
-        Some(HolySupportTransition::mark_martyr_light())
-    );
+    assert_eq!(holy_support.field("grace"), Some("2"));
+    assert_eq!(holy_support.field("grace_cap"), Some("3"));
+    assert_eq!(holy_support.field("martyr_marked"), Some("true"));
+    assert_eq!(holy_support.field("martyr_consumed"), Some("false"));
+    assert_eq!(holy_support.field("last"), Some("mark-martyr"));
 
     let formatted = format_validation_snapshot(&snapshot);
     assert!(formatted.contains("support=grace=2/3"));
     assert!(formatted.contains("martyr_marked=true"));
     assert!(formatted.contains("last=mark-martyr"));
+    assert!(!formatted.contains("holy_support="));
 }
 
 #[test]
@@ -110,18 +153,13 @@ fn holy_support_invalid_spend_is_visible_as_rejected_snapshot_state() {
     emit_holy_transition(&mut app, HolySupportTransition::spend_grace(1));
 
     let snapshot = capture_validation_snapshot(app.world_mut()).expect("snapshot should build");
-    let holy_support = snapshot
-        .holy_support
-        .as_ref()
-        .expect("holy holy_support state should be captured");
+    let holy_support = holy_support_section(&snapshot);
 
-    assert_eq!(holy_support.grace, 0);
+    assert_eq!(holy_support.field("grace"), Some("0"));
+    assert_eq!(holy_support.field("grace_cap"), Some("3"));
     assert_eq!(
-        holy_support.last_signal,
-        Some(HolySupportTransition::rejected(
-            HolySupportStep::SpendGrace { amount: 1 },
-            HolySupportRejectReason::GraceUnderflow,
-        ))
+        holy_support.field("last"),
+        Some("rejected(spend(1);reason=GraceUnderflow)")
     );
 
     let formatted = format_validation_snapshot(&snapshot);

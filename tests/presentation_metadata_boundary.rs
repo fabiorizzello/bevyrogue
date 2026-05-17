@@ -500,3 +500,18 @@ fn runtime_events_and_snapshots_ignore_misleading_presentation_metadata() {
         "snapshot drift: HolySupport last signal should remain none for metadata-only skill: {dramatic_snapshot}"
     );
 }
+
+#[test]
+fn optional_blueprint_sections_render_stable_none_tokens_when_missing() {
+    let skill_id = SkillId("metadata_optional_sections".into());
+    let mut app = app_with_skill_book(SkillBook(vec![boundary_skill(&skill_id.0)]), &skill_id);
+    app.world_mut().remove_resource::<HolySupportState>();
+
+    let snapshot = capture_validation_snapshot(app.world_mut()).expect("validation snapshot");
+    let formatted = format_validation_snapshot(&snapshot);
+
+    assert!(snapshot.section("support").is_none());
+    assert!(snapshot.section("twin_core").is_some());
+    assert!(formatted.contains("support=none"), "{formatted}");
+    assert!(!formatted.contains("holy_support="), "{formatted}");
+}

@@ -175,9 +175,18 @@ fn patamon_ult_builds_grace_through_the_blueprint_kernel_path() {
     );
 
     let snapshot = capture_validation_snapshot(app.world_mut()).expect("snapshot");
+    let support = snapshot
+        .section("support")
+        .expect("support section should be present after the blueprint transition");
+
+    assert_eq!(support.field("grace"), Some("1"));
+    assert_eq!(support.field("grace_cap"), Some("3"));
+    assert_eq!(support.field("last"), Some("build(1)"));
+
     let formatted = format_validation_snapshot(&snapshot);
     assert!(formatted.contains("support=grace=1/3"));
     assert!(formatted.contains("last=build(1)"));
+    assert!(!formatted.contains("holy_support="));
 }
 
 #[test]

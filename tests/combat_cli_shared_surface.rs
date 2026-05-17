@@ -102,4 +102,12 @@ fn combat_cli_source_stays_on_shared_surfaces_not_presentation_metadata() {
         !source.contains("qte"),
         "combat_cli must not branch on presentation QTE metadata"
     );
+    assert!(
+        !source.contains(".holy_support"),
+        "combat_cli must not depend on retired holy_support snapshot fields"
+    );
+    assert!(
+        !source.contains(".twin_core"),
+        "combat_cli must not depend on retired twin_core snapshot fields"
+    );
 }
