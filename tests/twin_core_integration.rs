@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use bevyrogue::combat::api::intent::CastId;
+use bevyrogue::combat::api::{CastId, ExtRegistries};
 use bevyrogue::combat::blueprints::twin_core::{
     TwinCoreDesignTag, TwinCoreHook, TwinCoreState, apply_twin_core_transitions_system,
     twin_core_design_tag,
@@ -78,6 +78,7 @@ fn build_app() -> App {
 
     app.insert_resource(registry)
         .init_resource::<TwinCoreState>()
+        .init_resource::<ExtRegistries>()
         .insert_resource(CombatState::default())
         .insert_resource(SpPool {
             current: 10,
@@ -86,6 +87,11 @@ fn build_app() -> App {
         .insert_resource(ActionLog::default())
         .add_message::<CombatEvent>()
         .add_systems(Update, apply_twin_core_transitions_system);
+
+    {
+        let mut regs = app.world_mut().resource_mut::<ExtRegistries>();
+        bevyrogue::combat::blueprints::register_all_blueprint_validation_exts(&mut regs);
+    }
 
     app
 }

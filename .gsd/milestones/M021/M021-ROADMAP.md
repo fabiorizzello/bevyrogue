@@ -51,8 +51,17 @@
 - [x] **S11: S11** `risk:low` `depends:[]`
   > After this: UI preview damage via stream; AI score ottimale via stream.
 
-- [ ] **S12: S12** `risk:low` `depends:[]`
+- [x] **S12: S12** `risk:low` `depends:[]`
   > After this: Test 'add new digimon' modifica solo le 2 dir; suite verde.
+
+- [ ] **S13: S13** `risk:high` `depends:[]`
+  > After this: After this: cast_id, UltInstant, and 5-step turn pipeline are covered by fresh proof; DryRun equals Execute is green; invalid timeline ids fail at boot with explicit evidence.
+
+- [ ] **S14: Prove two-clock parity and extension boundaries** `risk:medium` `depends:[S13]`
+  > After this: After this: HeadlessAuto and Windowed produce equivalent intent streams; blueprint modules stay bevy-free; add-new-digimon isolation and single-register boundaries are evidenced.
+
+- [ ] **S15: Final milestone closeout evidence** `risk:medium` `depends:[S14]`
+  > After this: After this: full cargo test is green again, final grep and closeout UAT evidence are recorded, and M021 is ready for validation rerun.
 
 ## Boundary Map
 

@@ -5,7 +5,7 @@ use bevyrogue::combat::blueprints::dorumon::{
 };
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::observability::{
-    ValidationSnapshot, ValidationTwinCoreSnapshot, format_validation_snapshot,
+    ValidationField, ValidationSection, ValidationSnapshot, format_validation_snapshot,
 };
 use bevyrogue::combat::state::CombatPhase;
 use bevyrogue::combat::types::UnitId;
@@ -245,22 +245,32 @@ fn predator_loop_event_and_snapshot_surfaces_are_serializable_and_readable() {
         action_log_tail: vec![],
         floating_live: 0,
         units: vec![],
-        twin_core: ValidationTwinCoreSnapshot {
-            active_thermal_spark_targets: vec![],
-            cross_resonance: 0,
-            fire_spend_markers: 0,
-            ice_spend_markers: 0,
-            twin_burst_used_this_cycle: false,
-            shatter_used_this_cycle: false,
-            last_signal: None,
-        },
-        holy_support: None,
-        predator_loop: Some(snapshot.clone()),
-        battery_loop: None,
-        precision_mind_game: None,
+        owner_sections: vec![ValidationSection::new(
+            "predator",
+            vec![
+                ValidationField::new("exploit_cap", snapshot.exploit_cap.to_string()),
+                ValidationField::new(
+                    "prey_lock_duration",
+                    snapshot.prey_lock_duration.to_string(),
+                ),
+                ValidationField::new(
+                    "berserk_threshold",
+                    snapshot.berserk_strain_threshold.to_string(),
+                ),
+                ValidationField::new(
+                    "targets",
+                    "[7:e1:p0c]".to_string(),
+                ),
+                ValidationField::new(
+                    "last",
+                    "payoff(target=Some(UnitId(7));amount=1)".to_string(),
+                ),
+                ValidationField::new("blocked", "none".to_string()),
+            ],
+        )],
     };
     let rendered = format_validation_snapshot(&validation);
-    assert!(rendered.contains("predator_loop"));
+    assert!(rendered.contains("predator=exploit_cap=3"));
     assert!(rendered.contains("battery=none"));
     assert!(rendered.contains("exploit_cap=3"));
     assert!(rendered.contains("targets=[7"));

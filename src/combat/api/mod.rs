@@ -6,7 +6,7 @@
 //!
 //! ## Module map
 //! - `intent`   — `CastId` + closed `Intent` enum (~18 variants).
-//! - `registry` — `ExtPoint` trait + `Registry<E>` + `ExtRegistries` Resource (7 axes).
+//! - `registry` — `ExtPoint` trait + `Registry<E>` + `ExtRegistries` Resource (8 axes).
 //! - `signal`   — `SignalBus` Resource scaffold (full impl in S04).
 //! - `event_filter` — typed runtime filters for passive subscriptions.
 //! - `rng`      — `CastRng` SplitMix64 deterministic per-cast RNG.
@@ -42,7 +42,7 @@ pub use intent::{CastId, CastIdGen, Intent};
 pub use passive_runner::{PassiveListeners, PassiveRunner, passive_dispatch_system};
 pub use registry::{
     AiUtilityExt, CueExt, ExtPoint, ExtRegistries, FormulaExt, HookExt, PredicateExt, Registry,
-    SelectorExt, TickExt,
+    SelectorExt, TickExt, ValidationExt, ValidationField, ValidationSection,
 };
 pub use rng::CastRng;
 pub use runner::{BeatRunner, LoopFrame, StepOutcome};

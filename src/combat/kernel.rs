@@ -721,6 +721,7 @@ pub fn register_combat_kernel_runtime(app: &mut App) {
         .init_resource::<crate::combat::battery_loop::BatteryLoopState>()
         .init_resource::<crate::combat::modifiers::DamageModifierLedger>()
         .init_resource::<crate::combat::rng::CombatRng>()
+        .init_resource::<crate::combat::api::ExtRegistries>()
         .add_systems(
             Update,
             crate::combat::battery_loop::apply_battery_loop_transitions_system,
@@ -738,6 +739,11 @@ pub fn register_combat_kernel_runtime(app: &mut App) {
         crate::combat::blueprints::tentomon::TentomonPlugin,
         crate::combat::blueprints::renamon::RenamonPlugin,
     ));
+
+    {
+        let mut regs = app.world_mut().resource_mut::<crate::combat::api::ExtRegistries>();
+        crate::combat::blueprints::register_all_blueprint_validation_exts(&mut regs);
+    }
 }
 
 pub fn register_canonical_passive_runners(app: &mut App) {
