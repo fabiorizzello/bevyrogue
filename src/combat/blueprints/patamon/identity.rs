@@ -5,9 +5,8 @@ use crate::combat::api::SignalPayload;
 use crate::combat::events::{CombatEvent, CombatEventKind};
 use crate::combat::kernel::{
     CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition, CombatTagChangeKind,
-    CombatTagId, CombatTagState, CombatTagTransition, HolySupportSignal, TacticalCycleTransition,
+    CombatTagId, CombatTagState, CombatTagTransition, TacticalCycleTransition,
 };
-pub use crate::combat::kernel::{HolySupportRejectReason, HolySupportStep, HolySupportTransition};
 use crate::combat::types::UnitId;
 
 use super::{
@@ -19,6 +18,107 @@ pub const GRACE_CAP: u8 = 3;
 
 pub const TAG_GRACE: &str = "Grace";
 pub const TAG_MARTYR_LIGHT: &str = "Martyr Light";
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum HolySupportSignal {
+    BuildGrace,
+    SpendGrace,
+    MarkMartyrLight,
+    ConsumeMartyrLight,
+    CycleReset,
+    Rejected,
+    Ignored,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum HolySupportStep {
+    BuildGrace { amount: u8 },
+    SpendGrace { amount: u8 },
+    MarkMartyrLight,
+    ConsumeMartyrLight,
+    CycleReset,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum HolySupportRejectReason {
+    GraceUnderflow,
+    MartyrAlreadyMarked,
+    MartyrNotMarked,
+    MartyrAlreadyConsumed,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct HolySupportTransition {
+    pub signal: HolySupportSignal,
+    pub amount: u8,
+    pub attempted: Option<HolySupportStep>,
+    pub reason: Option<HolySupportRejectReason>,
+}
+
+impl HolySupportTransition {
+    pub const fn build_grace(amount: u8) -> Self {
+        Self {
+            signal: HolySupportSignal::BuildGrace,
+            amount,
+            attempted: None,
+            reason: None,
+        }
+    }
+
+    pub const fn spend_grace(amount: u8) -> Self {
+        Self {
+            signal: HolySupportSignal::SpendGrace,
+            amount,
+            attempted: None,
+            reason: None,
+        }
+    }
+
+    pub const fn mark_martyr_light() -> Self {
+        Self {
+            signal: HolySupportSignal::MarkMartyrLight,
+            amount: 0,
+            attempted: None,
+            reason: None,
+        }
+    }
+
+    pub const fn consume_martyr_light() -> Self {
+        Self {
+            signal: HolySupportSignal::ConsumeMartyrLight,
+            amount: 0,
+            attempted: None,
+            reason: None,
+        }
+    }
+
+    pub const fn cycle_reset() -> Self {
+        Self {
+            signal: HolySupportSignal::CycleReset,
+            amount: 0,
+            attempted: None,
+            reason: None,
+        }
+    }
+
+    pub const fn rejected(attempted: HolySupportStep, reason: HolySupportRejectReason) -> Self {
+        Self {
+            signal: HolySupportSignal::Rejected,
+            amount: 0,
+            attempted: Some(attempted),
+            reason: Some(reason),
+        }
+    }
+
+    pub const fn ignored(attempted: HolySupportStep) -> Self {
+        Self {
+            signal: HolySupportSignal::Ignored,
+            amount: 0,
+            attempted: Some(attempted),
+            reason: None,
+        }
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum HolySupportDesignTag {

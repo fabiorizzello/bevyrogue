@@ -11,6 +11,7 @@ use crate::combat::{
     },
     blueprints::{
         dorumon::{PredatorLoopSignal, PredatorLoopStep, PredatorLoopTransition},
+        patamon::identity::{HolySupportSignal, HolySupportStep, HolySupportTransition},
         twin_core::{TwinCoreSignal, TwinCoreTransition},
     },
     floating::FloatingDamage,
@@ -468,23 +469,23 @@ pub(crate) fn format_twin_core_transition(transition: TwinCoreTransition) -> Str
     format!("{signal}({})", transition.amount)
 }
 
-pub(crate) fn format_holy_support_transition(transition: super::kernel::HolySupportTransition) -> String {
+pub(crate) fn format_holy_support_transition(transition: HolySupportTransition) -> String {
     let signal = match transition.signal {
-        super::kernel::HolySupportSignal::BuildGrace => "build",
-        super::kernel::HolySupportSignal::SpendGrace => "spend",
-        super::kernel::HolySupportSignal::MarkMartyrLight => "mark-martyr",
-        super::kernel::HolySupportSignal::ConsumeMartyrLight => "consume-martyr",
-        super::kernel::HolySupportSignal::CycleReset => "cycle-reset",
-        super::kernel::HolySupportSignal::Rejected => "rejected",
-        super::kernel::HolySupportSignal::Ignored => "ignored",
+        HolySupportSignal::BuildGrace => "build",
+        HolySupportSignal::SpendGrace => "spend",
+        HolySupportSignal::MarkMartyrLight => "mark-martyr",
+        HolySupportSignal::ConsumeMartyrLight => "consume-martyr",
+        HolySupportSignal::CycleReset => "cycle-reset",
+        HolySupportSignal::Rejected => "rejected",
+        HolySupportSignal::Ignored => "ignored",
     };
 
     match transition.signal {
-        super::kernel::HolySupportSignal::BuildGrace
-        | super::kernel::HolySupportSignal::SpendGrace => {
+        HolySupportSignal::BuildGrace
+        | HolySupportSignal::SpendGrace => {
             format!("{signal}({})", transition.amount)
         }
-        super::kernel::HolySupportSignal::Rejected | super::kernel::HolySupportSignal::Ignored => {
+        HolySupportSignal::Rejected | HolySupportSignal::Ignored => {
             match (transition.attempted, transition.reason) {
                 (Some(attempted), Some(reason)) => {
                     format!(
@@ -502,13 +503,13 @@ pub(crate) fn format_holy_support_transition(transition: super::kernel::HolySupp
     }
 }
 
-fn format_holy_support_step(step: super::kernel::HolySupportStep) -> String {
+fn format_holy_support_step(step: HolySupportStep) -> String {
     match step {
-        super::kernel::HolySupportStep::BuildGrace { amount } => format!("build({amount})"),
-        super::kernel::HolySupportStep::SpendGrace { amount } => format!("spend({amount})"),
-        super::kernel::HolySupportStep::MarkMartyrLight => "mark-martyr".to_string(),
-        super::kernel::HolySupportStep::ConsumeMartyrLight => "consume-martyr".to_string(),
-        super::kernel::HolySupportStep::CycleReset => "cycle-reset".to_string(),
+        HolySupportStep::BuildGrace { amount } => format!("build({amount})"),
+        HolySupportStep::SpendGrace { amount } => format!("spend({amount})"),
+        HolySupportStep::MarkMartyrLight => "mark-martyr".to_string(),
+        HolySupportStep::ConsumeMartyrLight => "consume-martyr".to_string(),
+        HolySupportStep::CycleReset => "cycle-reset".to_string(),
     }
 }
 

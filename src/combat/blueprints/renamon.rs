@@ -9,11 +9,12 @@ use crate::combat::{
         PassiveListeners, PassiveRunner, SignalPayload, SignalTaxonomy, SkillCtx,
     },
     events::{CombatEvent, CombatEventKind},
-    kernel::{
-        CombatKernelRegistry, CombatKernelTransition, PrecisionCommitment, PrecisionMindGamePhase,
+    kernel::{CombatKernelRegistry, CombatKernelTransition},
+    precision_mind_game::{
+        PrecisionCommitment, PrecisionMindGamePhase, PrecisionMindGameState,
         PrecisionMindGameTransition, PrecisionOutcome, PrecisionReveal, PrecisionWindowKind,
+        apply_precision_mind_game_transition,
     },
-    precision_mind_game::{PrecisionMindGameState, apply_precision_mind_game_transition},
     team::Team,
     types::UnitId,
     unit::Unit,
@@ -108,29 +109,11 @@ fn format_precision_transition(transition: PrecisionMindGameTransition) -> Strin
             format!("resolve({})", format_precision_outcome(Some(outcome)))
         }
         PrecisionMindGameTransition::Rejected { attempted, reason } => format!(
-            "rejected({};reason={:?})",
-            format_precision_step(attempted),
-            reason
+            "rejected({:?};reason={:?})",
+            attempted, reason
         ),
         PrecisionMindGameTransition::Ignored { attempted } => {
-            format!("ignored({})", format_precision_step(attempted))
-        }
-    }
-}
-
-fn format_precision_step(step: crate::combat::kernel::PrecisionMindGameStep) -> String {
-    match step {
-        crate::combat::kernel::PrecisionMindGameStep::OpenWindow { window } => {
-            format!("open_window({})", format_precision_window(Some(window)))
-        }
-        crate::combat::kernel::PrecisionMindGameStep::Commit { commitment } => {
-            format!("commit({})", format_precision_commitment(Some(commitment)))
-        }
-        crate::combat::kernel::PrecisionMindGameStep::Reveal { reveal } => {
-            format!("reveal({})", format_precision_reveal(Some(reveal)))
-        }
-        crate::combat::kernel::PrecisionMindGameStep::Resolve { outcome } => {
-            format!("resolve({})", format_precision_outcome(Some(outcome)))
+            format!("ignored({:?})", attempted)
         }
     }
 }

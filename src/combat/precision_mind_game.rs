@@ -1,11 +1,114 @@
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use super::kernel::{
-    CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition, PrecisionCommitment,
-    PrecisionMindGamePhase, PrecisionMindGameRejectReason, PrecisionMindGameStep,
-    PrecisionMindGameTransition, PrecisionOutcome, PrecisionReveal, PrecisionWindowKind,
-};
+use super::kernel::{CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PrecisionWindowKind {
+    Momentum,
+    Counterplay,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PrecisionCommitment {
+    Press,
+    Hold,
+    Feint,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PrecisionReveal {
+    Guarded,
+    Baited,
+    Trapped,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PrecisionOutcome {
+    Success,
+    Countered,
+    Failed,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PrecisionMindGamePhase {
+    Dormant,
+    WindowOpen,
+    CommitmentLocked,
+    CounterplayRevealed,
+    Resolved,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PrecisionMindGameRejectReason {
+    NoOpenWindow,
+    WindowAlreadyOpen,
+    DuplicateCommitment,
+    MissingCommitment,
+    DuplicateReveal,
+    MissingReveal,
+    AlreadyResolved,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PrecisionMindGameStep {
+    OpenWindow { window: PrecisionWindowKind },
+    Commit { commitment: PrecisionCommitment },
+    Reveal { reveal: PrecisionReveal },
+    Resolve { outcome: PrecisionOutcome },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PrecisionMindGameTransition {
+    OpenWindow {
+        window: PrecisionWindowKind,
+    },
+    Commit {
+        commitment: PrecisionCommitment,
+    },
+    Reveal {
+        reveal: PrecisionReveal,
+    },
+    Resolve {
+        outcome: PrecisionOutcome,
+    },
+    Rejected {
+        attempted: PrecisionMindGameStep,
+        reason: PrecisionMindGameRejectReason,
+    },
+    Ignored {
+        attempted: PrecisionMindGameStep,
+    },
+}
+
+impl PrecisionMindGameTransition {
+    pub const fn open_window(window: PrecisionWindowKind) -> Self {
+        Self::OpenWindow { window }
+    }
+
+    pub const fn commit(commitment: PrecisionCommitment) -> Self {
+        Self::Commit { commitment }
+    }
+
+    pub const fn reveal(reveal: PrecisionReveal) -> Self {
+        Self::Reveal { reveal }
+    }
+
+    pub const fn resolve(outcome: PrecisionOutcome) -> Self {
+        Self::Resolve { outcome }
+    }
+
+    pub const fn rejected(
+        attempted: PrecisionMindGameStep,
+        reason: PrecisionMindGameRejectReason,
+    ) -> Self {
+        Self::Rejected { attempted, reason }
+    }
+
+    pub const fn ignored(attempted: PrecisionMindGameStep) -> Self {
+        Self::Ignored { attempted }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Resource)]
 pub struct PrecisionMindGameState {
@@ -79,8 +182,6 @@ impl CombatKernelHook for PrecisionMindGameHook {
         _transition: &CombatKernelTransition,
         _out: &mut Vec<CombatKernelTransition>,
     ) {
-        // Intentionally no-op for this slice: the mechanic is driven directly by typed
-        // precision transitions and later slices can add shared-beat translation if needed.
     }
 }
 

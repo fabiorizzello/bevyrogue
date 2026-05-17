@@ -1,8 +1,6 @@
 use bevy::prelude::{App, Resource, Update};
 use serde::{Deserialize, Serialize};
 
-// CombatKernelRegistry must be Resource so it can be accessed via Bevy ECS Res<>.
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum TacticalCyclePhase {
     Declared,
@@ -427,113 +425,6 @@ impl CombatBeatId {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum PrecisionWindowKind {
-    Momentum,
-    Counterplay,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum PrecisionCommitment {
-    Press,
-    Hold,
-    Feint,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum PrecisionReveal {
-    Guarded,
-    Baited,
-    Trapped,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum PrecisionOutcome {
-    Success,
-    Countered,
-    Failed,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum PrecisionMindGamePhase {
-    Dormant,
-    WindowOpen,
-    CommitmentLocked,
-    CounterplayRevealed,
-    Resolved,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum PrecisionMindGameRejectReason {
-    NoOpenWindow,
-    WindowAlreadyOpen,
-    DuplicateCommitment,
-    MissingCommitment,
-    DuplicateReveal,
-    MissingReveal,
-    AlreadyResolved,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum PrecisionMindGameStep {
-    OpenWindow { window: PrecisionWindowKind },
-    Commit { commitment: PrecisionCommitment },
-    Reveal { reveal: PrecisionReveal },
-    Resolve { outcome: PrecisionOutcome },
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum PrecisionMindGameTransition {
-    OpenWindow {
-        window: PrecisionWindowKind,
-    },
-    Commit {
-        commitment: PrecisionCommitment,
-    },
-    Reveal {
-        reveal: PrecisionReveal,
-    },
-    Resolve {
-        outcome: PrecisionOutcome,
-    },
-    Rejected {
-        attempted: PrecisionMindGameStep,
-        reason: PrecisionMindGameRejectReason,
-    },
-    Ignored {
-        attempted: PrecisionMindGameStep,
-    },
-}
-
-impl PrecisionMindGameTransition {
-    pub const fn open_window(window: PrecisionWindowKind) -> Self {
-        Self::OpenWindow { window }
-    }
-
-    pub const fn commit(commitment: PrecisionCommitment) -> Self {
-        Self::Commit { commitment }
-    }
-
-    pub const fn reveal(reveal: PrecisionReveal) -> Self {
-        Self::Reveal { reveal }
-    }
-
-    pub const fn resolve(outcome: PrecisionOutcome) -> Self {
-        Self::Resolve { outcome }
-    }
-
-    pub const fn rejected(
-        attempted: PrecisionMindGameStep,
-        reason: PrecisionMindGameRejectReason,
-    ) -> Self {
-        Self::Rejected { attempted, reason }
-    }
-
-    pub const fn ignored(attempted: PrecisionMindGameStep) -> Self {
-        Self::Ignored { attempted }
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CombatKernelTransition {
     TacticalCycle(TacticalCycleTransition),
@@ -542,7 +433,6 @@ pub enum CombatKernelTransition {
     Fatigue(FatigueTransition),
     Tag(CombatTagTransition),
     Beat(CombatBeatId),
-    HolySupport(HolySupportTransition),
     Blueprint {
         owner: String,
         name: String,
@@ -556,107 +446,6 @@ pub struct TacticalCycleTransition {
     pub after: TacticalCycleStep,
     pub wrapped_phase: bool,
     pub wrapped_cycle: bool,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum HolySupportSignal {
-    BuildGrace,
-    SpendGrace,
-    MarkMartyrLight,
-    ConsumeMartyrLight,
-    CycleReset,
-    Rejected,
-    Ignored,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum HolySupportStep {
-    BuildGrace { amount: u8 },
-    SpendGrace { amount: u8 },
-    MarkMartyrLight,
-    ConsumeMartyrLight,
-    CycleReset,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum HolySupportRejectReason {
-    GraceUnderflow,
-    MartyrAlreadyMarked,
-    MartyrNotMarked,
-    MartyrAlreadyConsumed,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub struct HolySupportTransition {
-    pub signal: HolySupportSignal,
-    pub amount: u8,
-    pub attempted: Option<HolySupportStep>,
-    pub reason: Option<HolySupportRejectReason>,
-}
-
-impl HolySupportTransition {
-    pub const fn build_grace(amount: u8) -> Self {
-        Self {
-            signal: HolySupportSignal::BuildGrace,
-            amount,
-            attempted: None,
-            reason: None,
-        }
-    }
-
-    pub const fn spend_grace(amount: u8) -> Self {
-        Self {
-            signal: HolySupportSignal::SpendGrace,
-            amount,
-            attempted: None,
-            reason: None,
-        }
-    }
-
-    pub const fn mark_martyr_light() -> Self {
-        Self {
-            signal: HolySupportSignal::MarkMartyrLight,
-            amount: 0,
-            attempted: None,
-            reason: None,
-        }
-    }
-
-    pub const fn consume_martyr_light() -> Self {
-        Self {
-            signal: HolySupportSignal::ConsumeMartyrLight,
-            amount: 0,
-            attempted: None,
-            reason: None,
-        }
-    }
-
-    pub const fn cycle_reset() -> Self {
-        Self {
-            signal: HolySupportSignal::CycleReset,
-            amount: 0,
-            attempted: None,
-            reason: None,
-        }
-    }
-
-    pub const fn rejected(attempted: HolySupportStep, reason: HolySupportRejectReason) -> Self {
-        Self {
-            signal: HolySupportSignal::Rejected,
-            amount: 0,
-            attempted: Some(attempted),
-            reason: Some(reason),
-        }
-    }
-
-    pub const fn ignored(attempted: HolySupportStep) -> Self {
-        Self {
-            signal: HolySupportSignal::Ignored,
-            amount: 0,
-            attempted: Some(attempted),
-            reason: None,
-        }
-    }
 }
 
 impl TacticalCycleStep {
