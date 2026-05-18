@@ -54,7 +54,7 @@ BEVYROGUE_JSONL=1 BEVYROGUE_CLI_PROOF=1 cargo run --bin combat_cli
 - **Renamon** — Precision/MindGame (`src/combat/blueprints/renamon.rs`)
 - **Agumon, Gabumon** — Twin Core (`src/combat/blueprints/agumon.rs`, `src/combat/blueprints/gabumon.rs`)
 
-Each blueprint owns signal interpretation; shared mechanic primitives (`holy_support.rs`, `predator_loop.rs`, `battery_loop.rs`, `precision_mind_game.rs`, `twin_core.rs`) own canonical kernel mutation.
+Each blueprint owns both signal interpretation and canonical kernel mutation for its mechanic; the mechanic state/transition types live under `src/combat/blueprints/<name>` (Twin Core under `src/combat/blueprints/twin_core/`), not in shared root modules. The kernel mutates only through the generic `CombatKernelTransition::Blueprint { owner, name, payload }` envelope.
 
 ## Open future work
 

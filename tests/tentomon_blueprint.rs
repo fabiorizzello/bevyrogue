@@ -7,7 +7,7 @@ use bevyrogue::combat::kernel::CombatKernelTransition;
 use bevyrogue::combat::plugin::CombatPlugin;
 use bevyrogue::combat::state::{ResolvedAction, UltEffect};
 use bevyrogue::combat::types::{DamageTag, SkillId, UnitId};
-use bevyrogue::combat::{battery_loop::BatteryLoopState, blueprints};
+use bevyrogue::combat::blueprints::{self, tentomon::BatteryLoopState};
 use bevyrogue::data::skills_ron::{CustomSignalPayload, SkillCustomSignal, TargetShape};
 
 fn base_action() -> ResolvedAction {

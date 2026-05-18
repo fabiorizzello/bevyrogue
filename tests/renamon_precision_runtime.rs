@@ -7,7 +7,7 @@ use bevyrogue::combat::plugin::CombatPlugin;
 use bevyrogue::combat::kit::UnitSkills;
 use bevyrogue::combat::log::ActionLog;
 use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
-use bevyrogue::combat::precision_mind_game::{
+use bevyrogue::combat::blueprints::renamon::{
     PrecisionCommitment, PrecisionMindGameState, PrecisionOutcome, PrecisionReveal,
     PrecisionWindowKind,
 };

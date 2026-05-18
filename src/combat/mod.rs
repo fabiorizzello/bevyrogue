@@ -93,11 +93,6 @@ pub mod enemy_ai;
 /// Typed enemy counterplay declarations mirrored into runtime snapshots.
 pub mod enemy_counterplay;
 
-/// Battle loop redesign: Static/Circuit charge and battery payoff state.
-pub mod battery_loop;
-/// Precision mind game (Renamon): exploit weakness / Kitsune Grace stacks.
-pub mod precision_mind_game;
-
 // ─── Observability ───────────────────────────────────────────────────────────
 // Event bus, structured logs, JSONL dump, validation snapshots, UI signals.
 

@@ -32,7 +32,7 @@ tmp/
 # ── GSD: Runtime / Ephemeral (per-developer, per-session) ──────
 # Shared artifacts (tracked): PROJECT.md, REQUIREMENTS.md, DECISIONS.md,
 # KNOWLEDGE.md, CONTEXT.md, OVERRIDES.md, PREFERENCES.md, CODEBASE.md,
-# milestones/**, gsd.db
+# milestones/**
 .gsd/exec
 .gsd/auto.lock
 .gsd/completed-units*.json

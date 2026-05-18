@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 use bevyrogue::combat::{
     api::{Intent, IntentQueue, applier::intent_applier, intent::CastId},
-    battery_loop::BatteryLoopState,
     blueprints::dorumon::PredatorLoopState,
+    blueprints::tentomon::BatteryLoopState,
     events::{CombatEvent, CombatEventKind},
     kernel::register_combat_kernel_runtime,
     modifiers::DamageModifierLedger,

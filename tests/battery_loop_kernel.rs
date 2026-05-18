@@ -2,20 +2,18 @@ use bevy::prelude::*;
 
 use bevyrogue::combat::api::{SignalPayload, intent::CastId};
 use bevyrogue::combat::blueprints;
-use bevyrogue::combat::battery_loop::{
-    BATTERY_ENERGY_GRANT, BatteryLoopBlockedReason, BatteryLoopChargeKind, BatteryLoopSignal,
-    BatteryLoopState, BatteryLoopStep, BatteryLoopTransition, apply_battery_loop_transition,
-    apply_battery_loop_transitions_system,
-};
 use bevyrogue::combat::blueprints::tentomon::{
-    OWNER as TENTOMON_OWNER, SIG_BUILD_STATIC_CHARGE, SIG_CYCLE_RESET,
+    BATTERY_ENERGY_GRANT, BatteryLoopBlockedReason, BatteryLoopChargeKind, BatteryLoopSignal,
+    BatteryLoopState, BatteryLoopStep, BatteryLoopTransition, OWNER as TENTOMON_OWNER,
+    SIG_BUILD_STATIC_CHARGE, SIG_CYCLE_RESET, apply_battery_loop_transition,
+    apply_battery_loop_transitions_system,
 };
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::kernel::{
     CombatKernelHook, CombatKernelTransition, TacticalCycleStep, TacticalCycleTransition,
     register_combat_kernel_runtime,
 };
-use bevyrogue::combat::battery_loop::{BatteryLoopSnapshot, format_battery_loop_snapshot};
+use bevyrogue::combat::blueprints::tentomon::{BatteryLoopSnapshot, format_battery_loop_snapshot};
 use bevyrogue::combat::types::UnitId;
 
 fn app_with_battery_loop() -> App {
@@ -67,7 +65,7 @@ fn runtime_registration_applies_battery_loop_transition_once() {
 
 #[test]
 fn wrapped_cycle_hook_emits_tentomon_blueprint_cycle_reset() {
-    let hook = bevyrogue::combat::battery_loop::BatteryLoopHook;
+    let hook = bevyrogue::combat::blueprints::tentomon::BatteryLoopHook;
     let mut out = Vec::new();
 
     hook.on_transition(
