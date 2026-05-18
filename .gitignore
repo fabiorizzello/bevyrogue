@@ -50,13 +50,13 @@ tmp/
 .gsd/doctor-history.jsonl
 .gsd/last-snapshot.md
 .gsd/repo-meta.json
-.gsd/gsd.db*
+.gsd/gsd.db-shm
+.gsd/gsd.db-wal
 .gsd/completed-units.json
 .gsd/STATE.md
 .gsd/state-manifest.json
 .gsd/milestones/**/continue.md
 .gsd/milestones/**/*-CONTINUE.md
-.gsd/CODEBASE.md
 
 
 rustc-ice-*.txt
