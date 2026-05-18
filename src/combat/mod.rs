@@ -38,72 +38,54 @@ pub mod unit;
 // ─── Turn pipeline ───────────────────────────────────────────────────────────
 // AV gauge, order queue, intent resolution, speed / tempo modifiers.
 
-/// `ActionValue` component + `ActionValueUpdated` message (gauge math).
-pub mod av;
 /// Shared skill-preview seam for UI/AI consumers.
 pub mod preview;
-/// Tempo Resistance: diminishing returns on repeated Delay effects + MIN_ACTION_THRESHOLD_AV floor.
-pub mod resistance;
 /// Apply runtime payloads: traduce `Action` (resolved) → mutazioni stato + eventi.
 pub mod resolution;
-/// Speed component + modificatori temporanei (slow/haste).
-pub mod speed;
-/// `TurnOrder` action-value queue + `TurnAdvanced` event.
-pub mod turn_order;
-/// Turn pipeline: `advance_turn_system`, `resolve_action_system`, `check_victory_system`.
+/// Turn pipeline, AV gauge, turn order, speed, tempo resistance.
 pub mod turn_system;
+pub use turn_system::av;
+pub use turn_system::resistance;
+pub use turn_system::speed;
+pub use turn_system::turn_order;
 
 // ─── Combat mechanics ────────────────────────────────────────────────────────
 // Damage math, defensive gauges, resources, status/follow-up reactions.
 
-/// Damage-reduction bag (`DrBag` + `sum_dr`); generic multiplicative DR primitive.
-pub mod buffs;
-/// Calcolo danno (attribute matchup, resistenze, elementi).
-pub mod damage;
-/// Per-unit Energy component (max 100) + RoundEnergyTracker (10 secondary / 30 external per turn).
-pub mod energy;
-/// Reazioni follow-up FIFO + depth guard.
-pub mod follow_up;
-/// Ordered modifier aggregation and one-shot incoming-damage ledger.
-pub mod modifiers;
-/// Per-unit flags reset each round (Break Seal, etc.).
-pub mod round_flags;
-/// SP pool condiviso (cap 5, gen Basic, +2 extra/round). Vedi D038.
-pub mod sp;
-/// Buff/debuff con durata; tick a turn end.
-pub mod status_effect;
-/// Component `Stunned { turns_left }`.
-pub mod stun;
-/// Toughness/break gauge (HSR-like).
-pub mod toughness;
-/// Ultimate charge meter + accumulation triggers.
-pub mod ultimate;
+/// Submodule: damage math, defensive gauges, resources, status/follow-up reactions.
+pub mod mechanics;
+pub use mechanics::buffs;
+pub use mechanics::damage;
+pub use mechanics::energy;
+pub use mechanics::follow_up;
+pub use mechanics::modifiers;
+pub use mechanics::round_flags;
+pub use mechanics::sp;
+pub use mechanics::status_effect;
+pub use mechanics::stun;
+pub use mechanics::toughness;
+pub use mechanics::ultimate;
 
 // ─── Enemy & encounter ───────────────────────────────────────────────────────
 // Spawn composition, enemy AI, counterplay catalog, per-digimon blueprints.
 
 /// Per-Digimon blueprint routing from RON custom signals into generic kernel transitions.
 pub mod blueprints;
-/// Spawn composizione encounter (party + nemici) da `SelectionRequest`.
-pub mod bootstrap;
-/// Typed enemy counterplay declarations shared by unit data and future query surfaces.
-pub mod counterplay;
-/// AI nemica: routing decisioni → `ActionIntent`.
-pub mod enemy_ai;
+/// Encounter setup: spawn composition, enemy AI, counterplay catalog.
+pub mod encounter;
+pub use encounter::bootstrap;
+pub use encounter::counterplay;
+pub use encounter::enemy_ai;
 
 // ─── Observability ───────────────────────────────────────────────────────────
 // Event bus, structured logs, JSONL dump, validation snapshots, UI signals.
 
-/// `CombatEvent` / `CombatEventKind` — bus single-source-of-truth.
-pub mod events;
-/// Floating damage numbers (component spawnato a hit, decaduto da `decay_floating_damage`).
-pub mod floating;
-/// Logger JSONL su stdout dietro env `BEVYROGUE_JSONL`.
-pub mod jsonl_logger;
-/// `ActionLog` ring buffer + `LogEntry` enum.
-pub mod log;
-/// Validation snapshot per debugging / contract testing.
+/// Observability: event bus, structured logs, JSONL dump, validation snapshots, UI signals.
 pub mod observability;
+pub use observability::events;
+pub use observability::floating;
+pub use observability::jsonl_logger;
+pub use observability::log;
 
 /// Bevy `Plugin` wrapper for the full combat runtime (M021).
 pub mod plugin;
