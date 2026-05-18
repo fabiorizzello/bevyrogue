@@ -41,7 +41,7 @@ Consumes:
 Produces:
 - Tipo `Clip` (`meta{frame_size,columns,rows,total_frames}`, `clips: Map<String, ClipRange{start,end,fps,loop}>`); loader-side defaults fps/loop/texture_path.
 - Agumon `assets/digimon/agumon/clip.ron` generato lossless da `agumon_atlas.json`.
-- `RonAssetPlugin::<Clip>` registrato; lifecycle/tracker condiviso con S01.
+- `RonAssetPlugin::<Clip>` registrato; lifecycle/tracker condiviso with S01.
 
 Consumes:
 - nothing (first slice)
