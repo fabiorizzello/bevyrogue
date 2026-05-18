@@ -120,7 +120,6 @@ impl StatusBag {
 
     /// Remove every Debuff-classified instance; returns kinds removed. Blessed survives.
     // Consumed by tests/status_cleanse_policy.rs and tests/status_blessed_cleanse_immune.rs.
-    #[allow(dead_code)]
     pub fn cleanse_debuffs(&mut self) -> Vec<StatusEffectKind> {
         let mut removed = Vec::new();
         self.0.retain(|inst| {
@@ -146,7 +145,6 @@ impl StatusBag {
     }
 
     // Public API for emptiness check; not yet consumed by external tests.
-    #[allow(dead_code)]
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }

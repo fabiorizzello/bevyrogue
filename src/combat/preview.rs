@@ -262,7 +262,6 @@ pub fn try_query_skill_preview(
 /// This convenience wrapper preserves the existing call sites that only care about the
 /// preview stream and can treat an unavailable preview as an empty queue.
 // Consumed by tests/windowed_preview_cache.rs and tests/skill_preview.rs.
-#[allow(dead_code)]
 pub fn query_skill_preview(
     world: &mut World,
     skill_id: &SkillId,

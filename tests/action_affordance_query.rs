@@ -270,15 +270,6 @@ fn deferred_row_skill() -> SkillDef {
     }
 }
 
-fn hidden_row_skill() -> SkillDef {
-    SkillDef {
-        implementation: SkillImplementation::Hidden {
-            reason: LegalityReasonCode::EnemyTraitDeferred,
-        },
-        ..row_skill()
-    }
-}
-
 fn skill_book(skills: Vec<SkillDef>) -> SkillBook {
     SkillBook(skills)
 }

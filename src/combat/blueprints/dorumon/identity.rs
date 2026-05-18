@@ -144,7 +144,6 @@ impl PredatorLoopTransition {
     }
 
     // Constructor not yet consumed; kept for API symmetry with rejected().
-    #[allow(dead_code)]
     pub const fn ignored(attempted: PredatorLoopStep) -> Self {
         Self {
             signal: PredatorLoopSignal::Ignored,
@@ -178,7 +177,6 @@ impl PredatorLockState {
     }
 
     // Constructor for consumed state; kept for API completeness, not yet called.
-    #[allow(dead_code)]
     pub const fn consumed() -> Self {
         Self {
             turns_left: 0,
@@ -311,7 +309,6 @@ impl PredatorLoopState {
     }
 
     // Consumed by tests/predator_loop_kernel.rs.
-    #[allow(dead_code)]
     pub fn consume_prey_lock_payoff(&mut self, unit_id: UnitId) -> PredatorLoopTransition {
         apply_predator_loop_transition(
             self,
@@ -320,19 +317,16 @@ impl PredatorLoopState {
     }
 
     // Consumed by tests/predator_loop_kernel.rs and tests/dorumon_blueprint.rs.
-    #[allow(dead_code)]
     pub fn enter_berserk(&mut self, strain_current: u16) -> PredatorLoopTransition {
         apply_predator_loop_transition(self, PredatorLoopTransition::enter_berserk(strain_current))
     }
 
     // Consumed by tests/predator_loop_kernel.rs.
-    #[allow(dead_code)]
     pub fn tick_all_prey_locks(&mut self) -> PredatorLoopTransition {
         apply_predator_loop_transition(self, PredatorLoopTransition::tick())
     }
 
     // Not yet consumed by tests; reserved for expiry handling.
-    #[allow(dead_code)]
     pub fn expire_prey_lock(&mut self, unit_id: UnitId) -> PredatorLoopTransition {
         apply_predator_loop_transition(self, PredatorLoopTransition::expire(unit_id))
     }

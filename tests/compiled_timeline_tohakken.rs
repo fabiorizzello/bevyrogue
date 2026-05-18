@@ -30,13 +30,6 @@ fn canonical_book() -> SkillBook {
     bevyrogue::data::aggregate_skill_book()
 }
 
-fn canonical_regs() -> ExtRegistries {
-    let mut regs = ExtRegistries::default();
-    register_kernel_builtins(&mut regs);
-    register_all_blueprint_exts(&mut regs);
-    regs
-}
-
 fn build_app(book: &SkillBook) -> App {
     let mut app = App::new();
     let mut assets = Assets::<SkillBook>::default();

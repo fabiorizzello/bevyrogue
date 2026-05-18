@@ -18,7 +18,6 @@ pub struct DrBag(Vec<DrInstance>);
 
 // apply consumed by tests/dr_pipeline.rs and tests/block_reaction_pipeline.rs.
 // instances is public API; not yet consumed outside this module.
-#[allow(dead_code)]
 impl DrBag {
     /// Push a new DR instance. No merging or capping — caller controls semantics.
     pub fn apply(&mut self, value: f32, duration: u32) {

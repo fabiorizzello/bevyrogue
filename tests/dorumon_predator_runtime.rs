@@ -1,4 +1,4 @@
-use bevy::{ecs::message::MessageCursor, prelude::*};
+use bevy::prelude::*;
 use bevyrogue::combat::runtime::SignalPayload;
 use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::blueprints;
@@ -68,17 +68,6 @@ fn dorumon_action() -> ResolvedAction {
         damage_curve: Default::default(),
         cleanse_count: None,
     }
-}
-
-fn cursor(app: &mut App) -> MessageCursor<CombatEvent> {
-    app.world_mut()
-        .resource_mut::<Messages<CombatEvent>>()
-        .get_cursor()
-}
-
-fn drain(cursor: &mut MessageCursor<CombatEvent>, app: &App) -> Vec<CombatEvent> {
-    let messages = app.world().resource::<Messages<CombatEvent>>();
-    cursor.read(messages).cloned().collect()
 }
 
 fn app_with_dorumon_runtime() -> App {

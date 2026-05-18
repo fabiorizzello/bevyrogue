@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-05-18T10:58:31Z | Files: 372 | Described: 0/372
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-18T10:58:31Z","fingerprint":"d44070fefa12fb215313c433a5dee01bd579e7a2","fileCount":372,"truncated":false} -->
+Generated: 2026-05-18T12:13:41Z | Files: 387 | Described: 0/387
+<!-- gsd:codebase-meta {"generatedAt":"2026-05-18T12:13:41Z","fingerprint":"58a699e747a889aab8bf6c29eae359ffffb7224f","fileCount":387,"truncated":false} -->
 
 ### (root)/
 - `.claudeignore`
@@ -189,36 +189,21 @@ Generated: 2026-05-18T10:58:31Z | Files: 372 | Described: 0/372
 - `src/bin/combat_cli.rs`
 
 ### src/combat/
-- `src/combat/action_query.rs`
 - `src/combat/bevy_types.rs`
 - `src/combat/kit.rs`
 - `src/combat/mod.rs`
 - `src/combat/plugin.rs`
 - `src/combat/preview.rs`
-- `src/combat/resolution.rs`
 - `src/combat/rng.rs`
 - `src/combat/state.rs`
 - `src/combat/team.rs`
 - `src/combat/types.rs`
 - `src/combat/unit.rs`
 
-### src/combat/api/
-- `src/combat/api/applier.rs`
-- `src/combat/api/blueprint_state.rs`
-- `src/combat/api/builtins.rs`
-- `src/combat/api/clock.rs`
-- `src/combat/api/event_bridge.rs`
-- `src/combat/api/event_filter.rs`
-- `src/combat/api/intent.rs`
-- `src/combat/api/mod.rs`
-- `src/combat/api/passive_runner.rs`
-- `src/combat/api/registry.rs`
-- `src/combat/api/rng.rs`
-- `src/combat/api/runner_common.rs`
-- `src/combat/api/runner.rs`
-- `src/combat/api/signal.rs`
-- `src/combat/api/skill_ctx.rs`
-- `src/combat/api/timeline.rs`
+### src/combat/action_query/
+- `src/combat/action_query/legality.rs`
+- `src/combat/action_query/mod.rs`
+- `src/combat/action_query/types.rs`
 
 ### src/combat/blueprints/
 - `src/combat/blueprints/mod.rs`
@@ -261,7 +246,6 @@ Generated: 2026-05-18T10:58:31Z | Files: 372 | Described: 0/372
 - `src/combat/mechanics/buffs.rs`
 - `src/combat/mechanics/damage.rs`
 - `src/combat/mechanics/energy.rs`
-- `src/combat/mechanics/follow_up.rs`
 - `src/combat/mechanics/mod.rs`
 - `src/combat/mechanics/modifiers.rs`
 - `src/combat/mechanics/round_flags.rs`
@@ -270,6 +254,13 @@ Generated: 2026-05-18T10:58:31Z | Files: 372 | Described: 0/372
 - `src/combat/mechanics/stun.rs`
 - `src/combat/mechanics/toughness.rs`
 - `src/combat/mechanics/ultimate.rs`
+
+### src/combat/mechanics/follow_up/
+- `src/combat/mechanics/follow_up/form_identity.rs`
+- `src/combat/mechanics/follow_up/mod.rs`
+- `src/combat/mechanics/follow_up/resolve.rs`
+- `src/combat/mechanics/follow_up/triggers.rs`
+- `src/combat/mechanics/follow_up/types.rs`
 
 ### src/combat/observability/
 - `src/combat/observability/events.rs`
@@ -280,14 +271,48 @@ Generated: 2026-05-18T10:58:31Z | Files: 372 | Described: 0/372
 - `src/combat/observability/mod.rs`
 - `src/combat/observability/snapshot.rs`
 
+### src/combat/resolution/
+- `src/combat/resolution/apply.rs`
+- `src/combat/resolution/mod.rs`
+- `src/combat/resolution/skill_extract.rs`
+- `src/combat/resolution/types.rs`
+
+### src/combat/runtime/
+- `src/combat/runtime/blueprint_state.rs`
+- `src/combat/runtime/builtins.rs`
+- `src/combat/runtime/clock.rs`
+- `src/combat/runtime/event_bridge.rs`
+- `src/combat/runtime/event_filter.rs`
+- `src/combat/runtime/intent.rs`
+- `src/combat/runtime/mod.rs`
+- `src/combat/runtime/passive_runner.rs`
+- `src/combat/runtime/registry.rs`
+- `src/combat/runtime/rng.rs`
+- `src/combat/runtime/runner_common.rs`
+- `src/combat/runtime/runner.rs`
+- `src/combat/runtime/signal.rs`
+- `src/combat/runtime/skill_ctx.rs`
+- `src/combat/runtime/timeline.rs`
+
+### src/combat/runtime/applier/
+- `src/combat/runtime/applier/effects.rs`
+- `src/combat/runtime/applier/mod.rs`
+
 ### src/combat/turn_system/
 - `src/combat/turn_system/av.rs`
+- `src/combat/turn_system/helpers.rs`
 - `src/combat/turn_system/mod.rs`
-- `src/combat/turn_system/pipeline.rs`
 - `src/combat/turn_system/resistance.rs`
 - `src/combat/turn_system/speed.rs`
 - `src/combat/turn_system/tests.rs`
 - `src/combat/turn_system/turn_order.rs`
+- `src/combat/turn_system/types.rs`
+
+### src/combat/turn_system/pipeline/
+- `src/combat/turn_system/pipeline/application.rs`
+- `src/combat/turn_system/pipeline/declaration.rs`
+- `src/combat/turn_system/pipeline/mod.rs`
+- `src/combat/turn_system/pipeline/timeline_exec.rs`
 
 ### src/data/
 - `src/data/mod.rs`

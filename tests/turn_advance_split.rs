@@ -75,7 +75,6 @@ fn advance_skill(id: &str, pct: u32) -> SkillDef {
 
 struct Setup {
     app: App,
-    attacker: Entity,
     target: Entity,
 }
 
@@ -111,8 +110,7 @@ fn build_app(
         .map(|s| s.id.clone())
         .unwrap_or_else(|| SkillId("noop".into()));
 
-    let attacker = app
-        .world_mut()
+    app.world_mut()
         .spawn((
             Unit {
                 id: UnitId(1),
@@ -139,8 +137,7 @@ fn build_app(
             },
             Toughness::new(1_000, vec![]),
             StatusBag::default(),
-        ))
-        .id();
+        ));
 
     let mut target_builder = app.world_mut().spawn((
         Unit {
@@ -164,7 +161,6 @@ fn build_app(
 
     Setup {
         app,
-        attacker,
         target,
     }
 }

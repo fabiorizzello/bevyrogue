@@ -107,7 +107,6 @@ impl BatteryLoopTransition {
     }
 
     // block_ready/self_energy_gain/transfer_energy not yet consumed; kept for API completeness.
-    #[allow(dead_code)]
     pub const fn block_ready() -> Self {
         Self {
             signal: BatteryLoopSignal::BlockReady,
@@ -135,7 +134,6 @@ impl BatteryLoopTransition {
         }
     }
 
-    #[allow(dead_code)]
     pub const fn self_energy_gain(amount: u8) -> Self {
         Self {
             signal: BatteryLoopSignal::SelfEnergyGain,
@@ -145,7 +143,6 @@ impl BatteryLoopTransition {
         }
     }
 
-    #[allow(dead_code)]
     pub const fn transfer_energy(amount: u8) -> Self {
         Self {
             signal: BatteryLoopSignal::TransferEnergy,
@@ -214,7 +211,6 @@ impl Default for BatteryLoopState {
     }
 }
 
-#[allow(dead_code)] // consumed by integration tests
 impl BatteryLoopState {
     pub fn threshold_grant_eligible(&self) -> bool {
         self.static_charge >= self.static_charge_threshold
@@ -630,7 +626,6 @@ impl From<&BatteryLoopState> for BatteryLoopSnapshot {
     }
 }
 
-#[allow(dead_code)] // consumed by integration tests
 pub fn format_battery_loop_snapshot(snapshot: &BatteryLoopSnapshot) -> String {
     format!(
         "static={}/{} circuit={}/{} threshold={} grant_guard={} block_ready={} last_block_cast={} last={} blocked={}",
@@ -695,7 +690,6 @@ fn format_battery_loop_step(step: BatteryLoopStep) -> String {
     }
 }
 
-#[allow(dead_code)] // consumed by integration tests
 fn format_battery_loop_blocked_reason(reason: BatteryLoopBlockedReason) -> String {
     match reason {
         BatteryLoopBlockedReason::ChargeCapReached { charge } => format!("cap-reached({charge:?})"),

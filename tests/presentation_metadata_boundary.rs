@@ -3,7 +3,7 @@ use bevyrogue::combat::{
     action_query::{
         ActionQueryKind, CombatQuerySnapshot, UnitQuerySnapshot, query_action_affordance,
     },
-    blueprints::patamon::{HolySupportState, HolySupportTransition},
+    blueprints::patamon::HolySupportState,
     events::{CombatEvent, CombatEventKind},
     kernel::{CombatBeatId, CombatKernelTransition, register_combat_kernel_runtime},
     kit::UnitSkills,

@@ -9,8 +9,12 @@ Branch: `gsd/refactor/combat-module-reorganization-and-old-fil`
 |------|-------------|--------|
 | 6 | Move 22 flat files into mechanics/, encounter/, observability/, turn_system/ | `3e16435` |
 | 7 | Remove shared demo skills, update consumers, update 3 captures | `6bd8c42` |
+| 8 | Rename api/ → runtime/ across 103 files | `3328f40` |
+| 9 | Split pipeline.rs, resolution.rs, action_query.rs, turn_system/mod.rs | `cf0effe` |
+| 10 | Split applier.rs and follow_up.rs into submodules | `a805c25` |
+| 11 | Captures verified, SUMMARY.md written | — |
 
-## Remaining Waves
+## Completed Waves (detail)
 
 ### Wave 8 — Rename `api/` → `runtime/`
 

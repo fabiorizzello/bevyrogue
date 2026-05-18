@@ -125,7 +125,7 @@ fn patamon_ult_builds_grace_through_the_blueprint_kernel_path() {
     let mut streak = BasicStreak::default();
     let resolved = resolved_skill(&book, "patamon_ult", attacker.id, defender.id);
 
-    let (outcome, events) = apply_legacy_ops(
+    let (outcome, _events) = apply_legacy_ops(
         &resolved,
         &attacker,
         &mut defender,

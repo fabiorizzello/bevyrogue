@@ -18,10 +18,6 @@ use bevyrogue::data::{
     },
 };
 
-fn load_skill_book() -> SkillBook {
-    bevyrogue::data::aggregate_skill_book()
-}
-
 fn build_app(book: SkillBook) -> App {
     let mut app = App::new();
     let mut assets = Assets::<SkillBook>::default();
@@ -120,11 +116,6 @@ fn drain_messages<T: Message + Clone>(cursor: &mut MessageCursor<T>, app: &App) 
         .read(app.world().resource::<Messages<T>>())
         .cloned()
         .collect()
-}
-
-fn setup_app_with_canonical_book() -> App {
-    let book = load_skill_book();
-    build_app(book)
 }
 
 fn setup_app_with_inline_book(book: SkillBook) -> App {

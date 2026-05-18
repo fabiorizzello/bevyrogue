@@ -1,7 +1,17 @@
 use super::*;
+use bevy::prelude::*;
+use crate::combat::{
+    sp::SpPool,
+    state::{CombatPhase, CombatState},
+    stun::Stunned,
+    turn_order::TurnOrder,
+    types::{SkillId, UnitId},
+    ultimate::UltimateCharge,
+    unit::{Ko, Unit},
+};
 use crate::combat::runtime::timeline::{Beat, BeatKind, TimelineLibrary};
 use crate::combat::{
-    runtime::{ExtRegistries, register_kernel_builtins},
+    runtime::ExtRegistries,
     events::CombatEvent,
     kit::UnitSkills,
     log::{ActionLog, LogEntry},
@@ -103,17 +113,6 @@ fn build_app(book: SkillBook) -> App {
         .timelines = compiled;
 
     app
-}
-
-fn combat_events(app: &mut App) -> Vec<CombatEvent> {
-    let mut cursor = app
-        .world_mut()
-        .resource_mut::<Messages<CombatEvent>>()
-        .get_cursor();
-    cursor
-        .read(app.world().resource::<Messages<CombatEvent>>())
-        .cloned()
-        .collect()
 }
 
 #[test]

@@ -1,10 +1,7 @@
 //! Shared fixtures for scenario TTK tests (boss/miniboss/minion).
 //!
 //! Rust integration-test convention: this file is included with `mod common;`
-//! in the consuming test binaries. Functions may be unused per-binary, hence
-//! the blanket `dead_code` allow.
-
-#![allow(dead_code)]
+//! in the consuming test binaries.
 
 use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::{

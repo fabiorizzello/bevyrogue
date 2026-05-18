@@ -140,7 +140,6 @@ impl PrecisionMindGameTransition {
     }
 
     // Constructor not consumed; kept for API symmetry with rejected().
-    #[allow(dead_code)]
     pub const fn ignored(attempted: PrecisionMindGameStep) -> Self {
         Self::Ignored { attempted }
     }
@@ -172,7 +171,6 @@ impl Default for PrecisionMindGameState {
 }
 
 // Snapshot type; not yet consumed by integration tests.
-#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PrecisionMindGameSnapshot {
     pub phase: PrecisionMindGamePhase,
@@ -200,13 +198,11 @@ impl From<&PrecisionMindGameState> for PrecisionMindGameSnapshot {
 
 impl PrecisionMindGameState {
     // Consumed by tests/renamon_precision_runtime.rs and tests/validation_snapshot.rs.
-    #[allow(dead_code)]
     pub fn is_window_open(&self) -> bool {
         self.phase == PrecisionMindGamePhase::WindowOpen
     }
 
     // Public snapshot method; not yet consumed by tests.
-    #[allow(dead_code)]
     pub fn snapshot(&self) -> PrecisionMindGameSnapshot {
         PrecisionMindGameSnapshot::from(self)
     }

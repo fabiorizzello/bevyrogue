@@ -19,7 +19,6 @@ use crate::combat::{
 /// for AI simulation and UI affordance display respectively; full support arrives
 /// in S05+. For S01 all paths behave identically.
 // DryRun/Preview consumed by tests/timeline_mode_parity.rs.
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum SkillCtxMode {
     /// Normal in-game execution: intents are committed to state.
@@ -46,11 +45,9 @@ pub struct SkillCtx<'a> {
     pub primary_target: UnitId,
     pub cast_id: CastId,
     // `mode` is passed to the context constructor; accessed via mode() accessor in runner_common.
-    #[allow(dead_code)]
     pub mode: SkillCtxMode,
     /// All extension registries for this cast (hooks, selectors, predicates, cues…).
     // `registries` is part of the public context API surface for extension hooks.
-    #[allow(dead_code)]
     pub registries: &'a ExtRegistries,
     /// Read-only borrow of the Bevy world — replaces the spike's thread-local F7 pattern.
     pub world: &'a World,
@@ -94,13 +91,11 @@ impl<'a> SkillCtx<'a> {
     }
 
     // Accessor used in runner_common.rs and potentially by blueprint hook fns.
-    #[allow(dead_code)]
     pub fn cast_id(&self) -> CastId {
         self.cast_id
     }
 
     // Accessor for mode; used in runner_common.rs.
-    #[allow(dead_code)]
     pub fn mode(&self) -> SkillCtxMode {
         self.mode
     }
@@ -111,7 +106,6 @@ impl<'a> SkillCtx<'a> {
 
     /// Return the caster's team using an immutable world query.
     // Available for blueprint hook fns to use in filtering logic.
-    #[allow(dead_code)]
     pub fn caster_team(&self) -> Option<Team> {
         let mut q = self.world.try_query::<(&Unit, &Team)>()?;
         q.iter(self.world)

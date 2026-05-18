@@ -9,7 +9,6 @@ pub enum TacticalCyclePhase {
 }
 
 // ALL/next/as_str used in cfg(test) in this file; public API surface for blueprint callers.
-#[allow(dead_code)]
 impl TacticalCyclePhase {
     pub const ALL: [Self; 4] = [Self::Declared, Self::PreApp, Self::Impact, Self::Applied];
 
@@ -106,7 +105,6 @@ impl Default for Strain {
 }
 
 // gain/spend consumed in cfg(test) and via CombatKernelState delegation.
-#[allow(dead_code)]
 impl Strain {
     pub fn gain(&mut self, amount: u16, config: &CombatKernelConfig) -> StrainTransition {
         let before = self.current;
@@ -163,7 +161,6 @@ pub struct FlowTransition {
 }
 
 // enter/exit/momentum consumed in cfg(test) and via CombatKernelState delegation.
-#[allow(dead_code)]
 impl FlowState {
     pub fn enter(&mut self, config: &CombatKernelConfig) -> FlowTransition {
         let before = *self;
@@ -232,7 +229,6 @@ pub struct FatigueTransition {
 }
 
 // gain consumed in cfg(test) and via CombatKernelState::gain_fatigue.
-#[allow(dead_code)]
 impl Fatigue {
     pub fn gain(&mut self, amount: u16, config: &CombatKernelConfig) -> FatigueTransition {
         let before = self.current;
@@ -280,7 +276,6 @@ pub struct CombatTagState {
 }
 
 // is_active/tick/consume used in cfg(test) and CombatKernelState::consume_tag; public API.
-#[allow(dead_code)]
 impl CombatTagState {
     pub fn new(id: impl Into<CombatTagId>, turns_left: u8) -> Self {
         Self {
@@ -344,7 +339,6 @@ pub enum CombatBeatId {
 }
 
 // ALL/as_str reserved public API; not yet consumed by tests or binary.
-#[allow(dead_code)]
 impl CombatBeatId {
     pub const ALL: [Self; 7] = [
         Self::Declared,
@@ -393,7 +387,6 @@ pub struct TacticalCycleTransition {
 }
 
 // advance consumed in cfg(test) and CombatKernelState::advance_tactical_cycle.
-#[allow(dead_code)]
 impl TacticalCycleStep {
     pub fn advance(self, config: &CombatKernelConfig) -> TacticalCycleTransition {
         let before = self;

@@ -111,7 +111,6 @@ impl HolySupportTransition {
     }
 
     // Constructor not consumed; kept for API symmetry with rejected().
-    #[allow(dead_code)]
     pub const fn ignored(attempted: HolySupportStep) -> Self {
         Self {
             signal: HolySupportSignal::Ignored,
@@ -129,7 +128,6 @@ pub enum HolySupportDesignTag {
 }
 
 // Called from holy_support_design_tag which is consumed by tests/holy_support_mechanics.rs.
-#[allow(dead_code)]
 pub fn holy_support_design_tag_name(tag: HolySupportDesignTag) -> &'static str {
     match tag {
         HolySupportDesignTag::Grace => TAG_GRACE,
@@ -158,7 +156,6 @@ fn blueprint_transition(name: &str, payload: SignalPayload) -> CombatKernelTrans
 }
 
 // Public API re-exported from patamon/mod.rs; not yet consumed by tests.
-#[allow(dead_code)]
 pub fn holy_support_added_tag_transition(
     tag: HolySupportDesignTag,
     turns_left: u8,
@@ -193,7 +190,6 @@ impl Default for HolySupportState {
 }
 
 // Public snapshot type; not yet consumed by tests or binary.
-#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HolySupportSnapshot {
     pub grace: u8,
@@ -217,7 +213,6 @@ impl From<&HolySupportState> for HolySupportSnapshot {
 
 impl HolySupportState {
     // snapshot() not yet consumed; kept as public API surface.
-    #[allow(dead_code)]
     pub fn snapshot(&self) -> HolySupportSnapshot {
         HolySupportSnapshot::from(self)
     }

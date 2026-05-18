@@ -267,14 +267,6 @@ fn unit_energy(app: &mut App, unit_id: UnitId) -> i32 {
         .unwrap_or_else(|| panic!("missing unit {:?}", unit_id))
 }
 
-fn form_identity_used(app: &mut App, unit_id: UnitId) -> bool {
-    let mut q = app.world_mut().query::<(&Unit, &RoundFlags)>();
-    q.iter(app.world())
-        .find(|(u, _)| u.id == unit_id)
-        .map(|(_, f)| f.form_identity_used)
-        .unwrap_or(false)
-}
-
 fn setup_form_identity_app(skill_book: SkillBook) -> App {
     let mut app = App::new();
     app.init_resource::<CombatState>()

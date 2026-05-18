@@ -204,7 +204,6 @@ pub enum ActionQueryKind<'a> {
 macro_rules! status_enum {
     ($name:ident) => {
         // Deferred/Hidden variants consumed by tests/action_affordance_query.rs and consumers.
-        #[allow(dead_code)]
         #[derive(Debug, Clone, PartialEq, Eq)]
         pub enum $name {
             Enabled,
@@ -220,7 +219,6 @@ status_enum!(TargetStatus);
 status_enum!(ResourceStatus);
 
 // Deferred/Hidden consumed by tests/action_affordance_query.rs and action_affordance_consumers.rs.
-#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ImplementationStatus {
     Implemented,
@@ -229,7 +227,6 @@ pub enum ImplementationStatus {
 }
 
 // Hidden/Visible consumed by tests/action_affordance_query.rs.
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ToughnessAffordance {
     Hidden,
@@ -245,7 +242,6 @@ pub struct TargetAffordance {
 }
 
 // Consumed by tests/action_affordance_consumers.rs and action_affordance_query.rs.
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ResourceKind {
     Sp,
@@ -254,7 +250,6 @@ pub enum ResourceKind {
 }
 
 // Consumed by tests/action_affordance_query.rs.
-#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ResourceAffordanceDetail {
     pub kind: ResourceKind,
@@ -264,7 +259,6 @@ pub struct ResourceAffordanceDetail {
 }
 
 // Consumed by tests/action_affordance_consumers.rs via the public surface.
-#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ActionAffordance<'a> {
     pub kind: ActionQueryKind<'a>,

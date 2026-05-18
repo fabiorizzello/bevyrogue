@@ -361,5 +361,5 @@ fn unregistered_blueprint_signal_panics_in_debug() {
             cast_id: CastId::ROOT,
         });
 
-    app.world_mut().run_system_once(intent_applier);
+    app.world_mut().run_system_once(intent_applier).expect("intent_applier system runs");
 }

@@ -89,7 +89,6 @@ impl CombatState {
 
     // kept for: M020 reactive bus (UnitDied taxonomy) + M023 phase-strip
     // observability; exercised by unit tests in this module.
-    #[allow(dead_code)]
     pub fn update_terminal_state(&mut self, ally_alive: bool, enemy_alive: bool) {
         if self.winner.is_some() {
             return;

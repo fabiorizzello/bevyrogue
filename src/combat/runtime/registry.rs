@@ -46,13 +46,11 @@ impl<E: ExtPoint> Registry<E> {
     }
 
     // Used in cfg(test) within this file and in tests/holy_support_mechanics.rs dispatch chain.
-    #[allow(dead_code)]
     pub fn len(&self) -> usize {
         self.entries.len()
     }
 
     // Used in cfg(test) within this file (ext_registries_default_empty).
-    #[allow(dead_code)]
     pub fn is_empty(&self) -> bool {
         self.entries.is_empty()
     }
@@ -155,7 +153,6 @@ impl ValidationSection {
     }
 
     // Public inspection method for external callers and future test surface.
-    #[allow(dead_code)]
     pub fn field(&self, key: &str) -> Option<&str> {
         self.fields
             .iter()
@@ -175,7 +172,6 @@ impl ExtPoint for ValidationExt {
 /// Inserted as a Bevy `Resource` at startup. Built-in fns are registered in S05;
 /// blueprint-specific fns are registered by each `register(reg)` call in S08+.
 // Fields `formulas`, `ticks`, `ai_utilities`, `cues` exercised in cfg(test) via is_empty().
-#[allow(dead_code)]
 #[derive(Resource, Default)]
 pub struct ExtRegistries {
     pub hooks: Registry<HookExt>,

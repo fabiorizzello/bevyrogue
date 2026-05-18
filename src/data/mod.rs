@@ -340,7 +340,6 @@ fn sync_skill_book_on_load(
 
 // ── Compile-time aggregate helpers (for tests and CLI) ──────────────────────
 
-#[allow(dead_code)] // used by integration tests and combat_cli binary
 pub fn aggregate_unit_roster() -> UnitRoster {
     let fragments: &[&str] = &[
         include_str!("../../assets/data/digimon/agumon/unit.ron"),
@@ -362,7 +361,6 @@ pub fn aggregate_unit_roster() -> UnitRoster {
     UnitRoster(merged)
 }
 
-#[allow(dead_code)] // used by integration tests and combat_cli binary
 pub fn aggregate_skill_book() -> SkillBook {
     let fragments: &[&str] = &[
         include_str!("../../assets/data/digimon/agumon/skills.ron"),
@@ -384,7 +382,6 @@ pub fn aggregate_skill_book() -> SkillBook {
     SkillBook(merged)
 }
 
-#[allow(dead_code)] // used by integration tests
 pub fn aggregate_skill_book_ron_text() -> String {
     let fragments: &[&str] = &[
         include_str!("../../assets/data/digimon/agumon/skills.ron"),

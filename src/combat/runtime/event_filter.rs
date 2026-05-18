@@ -8,7 +8,6 @@ use crate::combat::{runtime::signal::Signal, events::CombatEvent};
 /// strings, combat-envelope listeners can inspect the bridged `CombatEvent`, and
 /// custom predicates are available for one-off cases without expanding the enum.
 // Consumed by tests/passive_event_filters.rs and tests/passive_kitsune_grace.rs via public API.
-#[allow(dead_code)]
 #[derive(Clone)]
 pub enum EventFilter {
     Any(Vec<EventFilter>),
@@ -23,7 +22,6 @@ pub enum EventFilter {
 }
 
 // Constructor functions consumed by tests/passive_event_filters.rs and passive_kitsune_grace.rs.
-#[allow(dead_code)]
 impl EventFilter {
     pub fn any(filters: impl IntoIterator<Item = EventFilter>) -> Self {
         Self::Any(filters.into_iter().collect())

@@ -9,33 +9,33 @@ use bevy::app::ScheduleRunnerPlugin;
 use bevy::prelude::*;
 use moonshine_kind::Instance;
 
-use crate::combat::runtime::intent::CastId;
-use crate::combat::bootstrap::{
+use bevyrogue::combat::runtime::intent::CastId;
+use bevyrogue::combat::bootstrap::{
     EncounterPreset, SelectionRequest, apply_composition, bootstrap_encounter,
 };
-use crate::combat::events::{CombatEvent, CombatEventKind};
-use crate::combat::follow_up::{
+use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
+use bevyrogue::combat::follow_up::{
     follow_up_listener_system, form_identity_listener_system, resolve_follow_up_action_system,
 };
-use crate::combat::jsonl_logger::jsonl_logger_system;
-use crate::combat::log::ActionLog;
-use crate::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
-use crate::combat::rng::CombatRng;
-use crate::combat::sp::SpPool;
-use crate::combat::state::{CombatPhase, CombatState};
-use crate::combat::stun::Stunned;
-use crate::combat::team::Team;
-use crate::combat::toughness::{Toughness, visible_toughness};
-use crate::combat::turn_order::{TurnAdvanced, TurnOrder};
-use crate::combat::turn_system::{
+use bevyrogue::combat::jsonl_logger::jsonl_logger_system;
+use bevyrogue::combat::log::ActionLog;
+use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
+use bevyrogue::combat::rng::CombatRng;
+use bevyrogue::combat::sp::SpPool;
+use bevyrogue::combat::state::{CombatPhase, CombatState};
+use bevyrogue::combat::stun::Stunned;
+use bevyrogue::combat::team::Team;
+use bevyrogue::combat::toughness::{Toughness, visible_toughness};
+use bevyrogue::combat::turn_order::{TurnAdvanced, TurnOrder};
+use bevyrogue::combat::turn_system::{
     ActionIntent, EnemyTurnRequestQueue, advance_turn_system, apply_av_ops_system,
     check_victory_system, resolve_action_system, resolve_enemy_turn_action_system,
 };
-use crate::combat::types::UnitId;
-use crate::combat::ultimate::{UltimateCharge, flush_ult_gain_system, ult_accumulation_system};
-use crate::combat::unit::{Ko, Unit};
-use crate::data::{self, DataPlugin};
-use crate::party_validation;
+use bevyrogue::combat::types::UnitId;
+use bevyrogue::combat::ultimate::{UltimateCharge, flush_ult_gain_system, ult_accumulation_system};
+use bevyrogue::combat::unit::{Ko, Unit};
+use bevyrogue::data::{self, DataPlugin};
+use bevyrogue::party_validation;
 
 /// Tick budget for headless smoke runs. ~2 seconds at 60 Hz — enough for
 /// asset loader init and first-frame ECS snapshots, short enough that
@@ -339,9 +339,9 @@ fn headless_smoke_tick(
                         let _ = script.pop();
                         debug!("script step: ReloadAssets");
                         // Reload per-digimon unit sources to trigger re-assembly.
-                        for path in crate::data::DIGIMON_UNIT_PATHS
+                        for path in bevyrogue::data::DIGIMON_UNIT_PATHS
                             .iter()
-                            .chain(crate::data::ENEMY_UNIT_PATHS.iter())
+                            .chain(bevyrogue::data::ENEMY_UNIT_PATHS.iter())
                         {
                             asset_server.reload(*path);
                         }

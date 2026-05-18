@@ -8,7 +8,7 @@
 use bevy::prelude::*;
 use bevyrogue::combat::{
     runtime::{
-        CastId, CastIdGen, Intent, IntentQueue,
+        CastIdGen, Intent, IntentQueue,
         applier::intent_applier,
         registry::ExtRegistries,
         runner::{BeatRunner, StepOutcome},

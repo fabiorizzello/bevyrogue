@@ -33,7 +33,6 @@ pub struct ValidationSnapshot {
 }
 
 impl ValidationSnapshot {
-    #[allow(dead_code)]
     pub fn section(&self, owner: &str) -> Option<&ValidationSection> {
         self.owner_sections.iter().find(|section| section.owner == owner)
     }

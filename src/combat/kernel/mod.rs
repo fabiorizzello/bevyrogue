@@ -41,7 +41,6 @@ pub fn register_combat_kernel_runtime(app: &mut App) {
 
 pub trait CombatKernelHook: Send + Sync {
     // domain() is part of the hook trait API; implemented by blueprint hooks.
-    #[allow(dead_code)]
     fn domain(&self) -> CombatKernelHookDomain;
 
     fn on_transition(
@@ -53,7 +52,6 @@ pub trait CombatKernelHook: Send + Sync {
 }
 
 // Used by blueprint hook impls (dorumon, patamon, renamon, tentomon) to classify hooks.
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CombatKernelHookDomain {
     Digimon,
@@ -86,7 +84,6 @@ impl Default for CombatKernelState {
 }
 
 // Methods consumed in cfg(test) within this file; public API for blueprint systems.
-#[allow(dead_code)]
 impl CombatKernelState {
     pub fn gain_strain(&mut self, amount: u16) -> StrainTransition {
         self.strain.gain(amount, &self.config)

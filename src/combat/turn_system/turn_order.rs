@@ -11,16 +11,13 @@ pub struct TurnOrder {
     pub next_unit: Option<UnitId>,
     /// Compat shim for pre-AV tests: always empty in the AV system.
     // Compat shim field; only referenced in test comments, not actual test code.
-    #[allow(dead_code)]
     pub future_preview: Vec<UnitId>,
     /// Compat shim for pre-AV tests: always empty in the AV system.
     // Consumed by tests/ultimate_meter.rs via order.queue.front().
-    #[allow(dead_code)]
     pub queue: VecDeque<UnitId>,
 }
 
 // seed/insert_out_of_queue consumed by many tests as compat shims.
-#[allow(dead_code)]
 impl TurnOrder {
     /// No-op in the AV system; seeds were needed only for the old VecDeque order.
     pub fn seed(&mut self, _units: impl IntoIterator<Item = UnitId>) {}
@@ -41,7 +38,6 @@ pub struct TurnAdvanced {
 impl TurnAdvanced {
     /// Convenience constructor for tests and compatibility code; sets AV metadata to zero.
     // Consumed by many integration tests via TurnAdvanced::of(unit_id).
-    #[allow(dead_code)]
     pub fn of(unit_id: UnitId) -> Self {
         TurnAdvanced {
             unit_id,

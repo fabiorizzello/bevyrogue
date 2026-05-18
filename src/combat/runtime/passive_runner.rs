@@ -155,7 +155,7 @@ mod tests {
         intent::CastId,
         registry::ExtRegistries,
         signal::{Signal, SignalPayload},
-        timeline::{Beat, BeatEdge, BeatEvent, BeatKind},
+        timeline::{Beat, BeatEvent, BeatKind},
     };
     use std::{collections::VecDeque, num::NonZeroU32};
 
@@ -165,7 +165,7 @@ mod tests {
 
     #[test]
     fn blueprint_filter_matches_exact_signal() {
-        let mut runner = PassiveRunner::new(
+        let runner = PassiveRunner::new(
             Arc::new(CompiledTimeline {
                 id: "passive_test",
                 entry: "impact",

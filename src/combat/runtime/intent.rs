@@ -77,7 +77,6 @@ pub enum Intent {
         cast_id: CastId,
     },
     // Consumed by tests/block_reaction_pipeline.rs.
-    #[allow(dead_code)]
     ApplyDamageModifier {
         target: UnitId,
         layer: ModifierLayer,

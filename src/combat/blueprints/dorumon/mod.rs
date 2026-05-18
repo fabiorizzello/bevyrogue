@@ -15,7 +15,6 @@ pub mod signals;
 
 // Public blueprint surface: lib-target sees no consumer, but `tests/` import these
 // via `bevyrogue::combat::blueprints::dorumon::{...}`. Kept as the stable seam.
-#[allow(unused_imports)]
 pub use identity::{
     PredatorLoopBlockedReason, PredatorLoopCapKind, PredatorLoopSignal, PredatorLoopSnapshot,
     PredatorLoopState, PredatorLoopStep, PredatorLoopTransition,
@@ -88,7 +87,6 @@ pub struct DorumonPlugin;
 
 /// Register only the Dorumon extension-point functions into an `ExtRegistries`.
 // Called from register_all_blueprint_exts (consumed by tests).
-#[allow(dead_code)]
 pub fn register_dorumon_ext(_regs: &mut crate::combat::runtime::ExtRegistries) {
     // Dorumon is currently driven by Bevy systems, no fn-by-id extensions yet.
 }

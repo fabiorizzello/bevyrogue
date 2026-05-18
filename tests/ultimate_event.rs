@@ -6,7 +6,6 @@
 /// - No `UltimateUsed` event is emitted for a Basic intent.
 /// - No `UltimateUsed` event is emitted for a Skill (non-Reset) intent.
 use bevy::{ecs::message::MessageCursor, prelude::*};
-use bevyrogue::combat::runtime::CastId;
 use bevyrogue::combat::{
     events::{CombatEvent, CombatEventKind},
     kit::UnitSkills,
@@ -42,16 +41,6 @@ fn make_unit(id: u32, name: &str, hp: i32) -> Unit {
         attribute: Attribute::Vaccine,
         resists: vec![],
         evo_stage: EvoStage::Adult,
-    }
-}
-
-fn combat_event(kind: CombatEventKind, source: UnitId, target: UnitId) -> CombatEvent {
-    CombatEvent {
-        kind,
-        source,
-        target,
-        follow_up_depth: 0,
-        cast_id: CastId::ROOT,
     }
 }
 

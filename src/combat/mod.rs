@@ -94,7 +94,6 @@ pub mod plugin;
 // Stable shortcuts for the most-imported types.
 
 pub use plugin::CombatPlugin;
-#[allow(unused_imports)]
 pub use preview::query_skill_preview;
 #[allow(deprecated)]
 pub use status_effect::{StatusBag, StatusEffectKind};

@@ -98,7 +98,6 @@ pub struct TwinCoreTransition {
     pub amount: u8,
 }
 
-#[allow(dead_code)] // consumed by integration tests
 impl TwinCoreTransition {
     pub const fn build_cross_resonance(amount: u8) -> Self {
         Self {

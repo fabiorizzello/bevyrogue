@@ -14,22 +14,9 @@ use bevyrogue::combat::{
     resolution::apply_cleanse_only,
     state::{ResolvedAction, UltEffect},
     status_effect::{StatusBag, StatusEffectKind},
-    types::{Attribute, DamageTag, EvoStage, SkillId, UnitId},
-    unit::Unit,
+    types::{DamageTag, SkillId, UnitId},
 };
 use bevyrogue::data::skills_ron::TargetShape;
-
-fn ally(id: u32, hp_current: i32, hp_max: i32) -> Unit {
-    Unit {
-        id: UnitId(id),
-        name: format!("ally{id}"),
-        hp_max,
-        hp_current,
-        attribute: Attribute::Data,
-        resists: vec![],
-        evo_stage: EvoStage::Adult,
-    }
-}
 
 fn cleanse_action(count: Option<u8>) -> ResolvedAction {
     ResolvedAction {

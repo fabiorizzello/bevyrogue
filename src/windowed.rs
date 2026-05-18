@@ -6,20 +6,20 @@
 use bevy::prelude::*;
 use bevy_egui::{EguiContexts, EguiPlugin, EguiPrimaryContextPass, egui};
 
-use crate::combat::events::CombatEvent;
-use crate::combat::follow_up::{
+use bevyrogue::combat::events::CombatEvent;
+use bevyrogue::combat::follow_up::{
     follow_up_listener_system, form_identity_listener_system, resolve_follow_up_action_system,
 };
-use crate::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
-use crate::combat::turn_order::{TurnAdvanced, TurnOrder};
-use crate::combat::turn_system::{
+use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
+use bevyrogue::combat::turn_order::{TurnAdvanced, TurnOrder};
+use bevyrogue::combat::turn_system::{
     advance_turn_system, check_victory_system, resolve_action_system,
     resolve_enemy_turn_action_system,
 };
-use crate::combat::types::{Attribute, UnitId};
-use crate::combat::ultimate::{flush_ult_gain_system, ult_accumulation_system};
-use crate::combat::unit::Unit;
-use crate::data::{self, DataPlugin};
+use bevyrogue::combat::types::{Attribute, UnitId};
+use bevyrogue::combat::ultimate::{flush_ult_gain_system, ult_accumulation_system};
+use bevyrogue::combat::unit::Unit;
+use bevyrogue::data::{self, DataPlugin};
 
 #[derive(Resource, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct WindowedValidationConfig {
@@ -87,18 +87,18 @@ pub fn register(app: &mut App, validation: Option<WindowedValidationConfig>) {
     }))
     .add_plugins(DataPlugin)
     .add_plugins(EguiPlugin::default())
-    .init_resource::<crate::ui::combat_panel::PendingAction>()
-    .init_resource::<crate::ui::combat_panel::PreviewDamageCache>()
+    .init_resource::<bevyrogue::ui::combat_panel::PendingAction>()
+    .init_resource::<bevyrogue::ui::combat_panel::PreviewDamageCache>()
     .add_systems(
         Update,
-        crate::ui::combat_panel::refresh_preview_damage_cache,
+        bevyrogue::ui::combat_panel::refresh_preview_damage_cache,
     )
     .add_systems(Startup, setup)
     .add_systems(EguiPrimaryContextPass, roster_panel)
     .add_systems(EguiPrimaryContextPass, turn_order_panel)
     .add_systems(
         EguiPrimaryContextPass,
-        crate::ui::combat_panel::combat_panel,
+        bevyrogue::ui::combat_panel::combat_panel,
     );
 
     if let Some(config) = validation {
@@ -109,7 +109,7 @@ pub fn register(app: &mut App, validation: Option<WindowedValidationConfig>) {
 }
 
 pub fn register_combat_systems(app: &mut App) {
-    app.init_resource::<crate::combat::turn_system::EnemyTurnRequestQueue>()
+    app.init_resource::<bevyrogue::combat::turn_system::EnemyTurnRequestQueue>()
         .add_systems(
             Update,
             (
@@ -198,15 +198,15 @@ fn roster_panel(
             ));
         }
         if ui.button("reload combat").clicked() {
-            for path in crate::data::DIGIMON_UNIT_PATHS
+            for path in bevyrogue::data::DIGIMON_UNIT_PATHS
                 .iter()
-                .chain(crate::data::ENEMY_UNIT_PATHS.iter())
+                .chain(bevyrogue::data::ENEMY_UNIT_PATHS.iter())
             {
                 asset_server.reload(*path);
             }
-            for path in crate::data::DIGIMON_SKILL_PATHS
+            for path in bevyrogue::data::DIGIMON_SKILL_PATHS
                 .iter()
-                .chain(crate::data::ENEMY_SKILL_PATHS.iter())
+                .chain(bevyrogue::data::ENEMY_SKILL_PATHS.iter())
             {
                 asset_server.reload(*path);
             }

@@ -4,7 +4,6 @@ use bevyrogue::combat::blueprints::dorumon::{
     PredatorLoopBlockedReason, PredatorLoopCapKind, PredatorLoopSignal, PredatorLoopSnapshot,
     PredatorLoopState, PredatorLoopStep, PredatorLoopTransition,
 };
-use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::observability::{
     ValidationSection, ValidationSnapshot, format_validation_snapshot,
 };
@@ -15,14 +14,6 @@ fn tracked_state() -> PredatorLoopState {
     let mut state = PredatorLoopState::default();
     state.track_target(UnitId(7));
     state
-}
-
-fn rejected_build(
-    target: UnitId,
-    amount: u16,
-    reason: PredatorLoopBlockedReason,
-) -> PredatorLoopTransition {
-    PredatorLoopTransition::rejected(PredatorLoopStep::BuildExploit { target, amount }, reason)
 }
 
 #[test]

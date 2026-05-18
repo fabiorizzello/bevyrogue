@@ -16,7 +16,6 @@ use crate::combat::{
 
 /// Snapshot of a single potential target, populated by the caller from Bevy components.
 // hp_current/hp_max consumed by tests/enemy_ai.rs and tests/enemy_ai_preview.rs.
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct TargetInfo {
     pub id: UnitId,
@@ -84,7 +83,6 @@ fn build_ultimate_intent(attacker_id: UnitId, target: UnitId) -> ActionIntent {
 /// to the legacy deterministic routing: ultimate if ready, otherwise first skill,
 /// otherwise basic, all against the lowest-toughness target.
 // Used in cfg(test) within enemy_ai.rs; public seam for runtime bridge.
-#[allow(dead_code)]
 pub fn pick_enemy_action(ctx: &EnemyTurnContext<'_>) -> Option<ActionIntent> {
     pick_enemy_action_with_preview(ctx, |_skill_id, _target| None)
 }
