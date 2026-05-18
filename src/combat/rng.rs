@@ -88,25 +88,34 @@ pub fn roll_pct_entropy(entropy: &mut CombatEntropy, threshold: i32) -> bool {
     next_below(entropy, 100) < threshold as u32
 }
 
-/// Roll status accuracy for `attacker` from inside an exclusive (`&mut World`)
-/// system — the timeline-backed apply path.
+/// Roll a percentage check against `unit`'s own per-entity `CombatEntropy`
+/// stream from inside an exclusive (`&mut World`) system.
 ///
-/// The attacker's per-entity `CombatEntropy` stream (forked from the seeded
-/// global source by [`seed_unit_rngs`]) is the canonical source. When the
-/// attacker has no forked stream yet — only minimal test fixtures that never
-/// run `seed_unit_rngs` — it falls back to the **persistent** seeded
-/// [`CombatRng`] resource (inserted on first use so successive rolls keep
-/// advancing). There is no per-roll throwaway RNG.
-pub fn roll_accuracy_in_world(world: &mut World, attacker: UnitId, threshold: i32) -> bool {
+/// The unit's forked stream (seeded from the global source by
+/// [`seed_unit_rngs`]) is the canonical source: the entity that owns the random
+/// decision rolls from its own replayable stream. When that unit has no forked
+/// stream yet — only minimal test fixtures that never run `seed_unit_rngs` — it
+/// falls back to the **persistent** seeded [`CombatRng`] resource (inserted on
+/// first use so successive rolls keep advancing). There is no per-roll
+/// throwaway RNG.
+pub fn roll_pct_for_unit_in_world(world: &mut World, unit: UnitId, threshold: i32) -> bool {
     let mut q = world.query::<(&Unit, &mut CombatEntropy)>();
-    for (unit, mut entropy) in q.iter_mut(world) {
-        if unit.id == attacker {
+    for (u, mut entropy) in q.iter_mut(world) {
+        if u.id == unit {
             return roll_pct_entropy(&mut entropy, threshold);
         }
     }
     world
         .get_resource_or_insert_with(CombatRng::default)
         .roll_pct(threshold)
+}
+
+/// Roll status accuracy for `attacker` — the timeline-backed apply path.
+///
+/// Thin alias over [`roll_pct_for_unit_in_world`] kept for call-site clarity:
+/// accuracy is rolled from the attacker's own per-entity stream.
+pub fn roll_accuracy_in_world(world: &mut World, attacker: UnitId, threshold: i32) -> bool {
+    roll_pct_for_unit_in_world(world, attacker, threshold)
 }
 
 impl Default for CombatRng {

@@ -6,7 +6,7 @@ use crate::combat::kernel::{
     CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition, TacticalCycleTransition,
 };
 use crate::combat::modifiers::{DamageModifierLedger, ModifierLayer};
-use crate::combat::rng::CombatRng;
+use crate::combat::rng::roll_pct_for_unit_in_world;
 use crate::combat::types::UnitId;
 
 use super::{CustomSignalDispatchError, amount_payload};
@@ -173,10 +173,9 @@ pub fn resolve_block_reaction_in_world(
         return None;
     }
 
-    let rolled = world.resource_scope(|_w, mut rng: Mut<CombatRng>| {
-        rng.roll_pct(BLOCK_REACTION_CHANCE_PCT)
-    });
-    if !rolled {
+    // The defending Tentomon (`target`) rolls its block reaction from its own
+    // per-entity entropy stream, mirroring the accuracy seam.
+    if !roll_pct_for_unit_in_world(world, target, BLOCK_REACTION_CHANCE_PCT) {
         return None;
     }
 
