@@ -2,7 +2,6 @@ use super::*;
 use crate::combat::runtime::intent::CastId;
 use super::av::{AV_PER_SPEED, ActionValue, ActionValueUpdated, MAX_AV};
 use crate::combat::buffs::DrBag;
-use crate::combat::rng::CombatRng;
 use crate::combat::{
     StatusBag,
     energy::RoundEnergyTracker,
@@ -51,7 +50,6 @@ pub fn advance_turn_system(
     mut event_writer: MessageWriter<CombatEvent>,
     mut av_event_writer: MessageWriter<ActionValueUpdated>,
     mut enemy_turn_requests: Option<ResMut<EnemyTurnRequestQueue>>,
-    _combat_rng: Option<ResMut<CombatRng>>,
 ) {
     // === Part 1: Process incoming TurnAdvanced messages ===
     // Collect snapshots first so we can do enemy AI after mutable status tick

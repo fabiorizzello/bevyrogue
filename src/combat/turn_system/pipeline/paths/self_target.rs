@@ -6,7 +6,6 @@ use crate::combat::floating::FloatingDamage;
 use crate::combat::kernel::{CombatBeatId, CombatKernelRegistry};
 use crate::combat::log::{ActionLog, LogEntry};
 use crate::combat::resolution::{apply_cleanse_only, apply_legacy_ops};
-use crate::combat::rng::CombatRng;
 use crate::combat::runtime::intent::CastId;
 use crate::combat::sp::{RoundSpTracker, SpPool};
 use crate::combat::state::{CombatPhase, CombatState, InFlightAction, UltEffect};
@@ -30,7 +29,6 @@ pub(in crate::combat::turn_system::pipeline) fn run(
     event_writer: &mut MessageWriter<CombatEvent>,
     registry: Option<&CombatKernelRegistry>,
     actors: &mut ResolveActorsQuery,
-    _rng: &mut Option<ResMut<CombatRng>>,
     energy_q: &mut Query<(&mut Energy, Option<&mut RoundEnergyTracker>)>,
     cast_id: CastId,
     attacker_entity: Entity,

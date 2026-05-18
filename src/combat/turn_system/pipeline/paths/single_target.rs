@@ -7,7 +7,7 @@ use crate::combat::floating::FloatingDamage;
 use crate::combat::kernel::{CombatBeatId, CombatKernelRegistry};
 use crate::combat::log::{ActionLog, LogEntry};
 use crate::combat::resolution::{apply_cleanse_only, apply_legacy_ops};
-use crate::combat::rng::CombatRng;
+use crate::combat::rng::{CombatEntropy, CombatRng, roll_pct_entropy};
 use crate::combat::runtime::intent::CastId;
 use crate::combat::sp::{RoundSpTracker, SpPool};
 use crate::combat::state::{CombatPhase, CombatState, InFlightAction, UltEffect};
@@ -15,7 +15,7 @@ use crate::combat::status_effect::{StatusBag, StatusEffectKind};
 use crate::combat::stun::Stunned;
 use crate::combat::turn_order::TurnOrder;
 use crate::combat::types::UnitId;
-use crate::combat::unit::{BasicStreak, Ko};
+use crate::combat::unit::{BasicStreak, Ko, Unit};
 
 use super::super::super::{ResolveActorsQuery, emit_combat_beat, emit_combat_event, set_phase};
 use super::dispatch_blueprint_transitions;
@@ -33,6 +33,7 @@ pub(in crate::combat::turn_system::pipeline) fn run(
     registry: Option<&CombatKernelRegistry>,
     actors: &mut ResolveActorsQuery,
     rng: &mut Option<ResMut<CombatRng>>,
+    entropy_q: &mut Query<&mut CombatEntropy, With<Unit>>,
     energy_q: &mut Query<(&mut Energy, Option<&mut RoundEnergyTracker>)>,
     cast_id: CastId,
     attacker_entity: Entity,
@@ -345,9 +346,20 @@ pub(in crate::combat::turn_system::pipeline) fn run(
             if !outcome.ko {
                 let tri = triangle_modifiers(attacker_unit.attribute, defender_unit.attribute);
                 let threshold = (tri.status_acc_modifier * 100.0) as i32;
-                let passes = match rng {
-                    Some(r) => r.roll_pct(threshold),
-                    None => CombatRng::from_seed(42).roll_pct(threshold),
+                // The attacker's per-entity stream (forked from the seeded
+                // global source by `seed_unit_rngs`) is the canonical roll
+                // source; the global `CombatRng` resource is the fallback for
+                // fixtures that never forked one. No per-roll throwaway RNG.
+                let passes = if let Ok(mut entropy) = entropy_q.get_mut(attacker_entity) {
+                    roll_pct_entropy(&mut entropy, threshold)
+                } else if let Some(r) = rng.as_deref_mut() {
+                    r.roll_pct(threshold)
+                } else {
+                    // Neither a forked stream nor the resource exists — only
+                    // minimal fixtures that wire neither. single_target rolls
+                    // accuracy exactly once per action, so one seeded draw is
+                    // deterministic with no across-roll state to lose.
+                    CombatRng::default().roll_pct(threshold)
                 };
                 if passes {
                     // Check first-apply before bag.apply() mutates it.

@@ -4,11 +4,12 @@ use crate::combat::energy::{Energy, RoundEnergyTracker};
 use crate::combat::events::CombatEvent;
 use crate::combat::kernel::CombatKernelRegistry;
 use crate::combat::log::ActionLog;
-use crate::combat::rng::CombatRng;
+use crate::combat::rng::{CombatEntropy, CombatRng};
 use crate::combat::runtime::intent::CastId;
 use crate::combat::sp::SpPool;
 use crate::combat::state::{CombatState, InFlightAction};
 use crate::combat::turn_order::TurnOrder;
+use crate::combat::unit::Unit;
 
 use super::super::ResolveActorsQuery;
 use super::paths;
@@ -26,6 +27,7 @@ pub(crate) fn step_app(
     registry: Option<&CombatKernelRegistry>,
     actors: &mut ResolveActorsQuery,
     rng: &mut Option<ResMut<CombatRng>>,
+    entropy_q: &mut Query<&mut CombatEntropy, With<Unit>>,
     energy_q: &mut Query<(&mut Energy, Option<&mut RoundEnergyTracker>)>,
     cast_id: CastId,
 ) {
@@ -77,7 +79,6 @@ pub(crate) fn step_app(
         event_writer,
         registry,
         actors,
-        rng,
         energy_q,
         cast_id,
         attacker_entity,
@@ -99,7 +100,6 @@ pub(crate) fn step_app(
         event_writer,
         registry,
         actors,
-        rng,
         energy_q,
         cast_id,
         attacker_entity,
@@ -121,7 +121,6 @@ pub(crate) fn step_app(
         event_writer,
         registry,
         actors,
-        rng,
         energy_q,
         cast_id,
         attacker_entity,
@@ -144,6 +143,7 @@ pub(crate) fn step_app(
         registry,
         actors,
         rng,
+        entropy_q,
         energy_q,
         cast_id,
         attacker_entity,

@@ -41,7 +41,10 @@ impl Plugin for CombatPlugin {
             .add_systems(
                 Update,
                 (
-                    seed_unit_rngs,
+                    // Fork per-entity RNG streams before any applier rolls so
+                    // the timeline path reads the per-unit stream, not the
+                    // resource fallback.
+                    seed_unit_rngs.before(intent_applier),
                     intent_applier,
                     combat_event_to_signal_system.after(intent_applier),
                     passive_dispatch_system.after(combat_event_to_signal_system),

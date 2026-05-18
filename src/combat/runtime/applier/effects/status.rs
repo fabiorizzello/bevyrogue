@@ -6,7 +6,7 @@ use crate::combat::{
     damage::triangle_modifiers,
     events::CombatEventKind,
     modifiers::{DamageModifierLedger, ModifierLayer},
-    rng::CombatRng,
+    rng::roll_accuracy_in_world,
     status_effect::{StatusBag, StatusEffectKind},
     types::UnitId,
     unit::Unit,
@@ -43,10 +43,7 @@ pub(in crate::combat::runtime::applier) fn apply_status(
             target_snapshot.unit.attribute,
         );
         let threshold = (tri.status_acc_modifier * 100.0) as i32;
-        let passes = world.get_resource_mut::<CombatRng>().map_or_else(
-            || CombatRng::default().roll_pct(threshold),
-            |mut rng| rng.roll_pct(threshold),
-        );
+        let passes = roll_accuracy_in_world(world, source, threshold);
         if !passes {
             emit_event(
                 world,

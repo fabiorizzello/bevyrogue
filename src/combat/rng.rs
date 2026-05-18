@@ -1,8 +1,11 @@
-use bevy::prelude::{Commands, Component, Entity, Query, Resource, Single, With, Without};
+use bevy::prelude::{
+    Commands, Component, Entity, Query, Resource, Single, With, Without, World,
+};
 use bevy_prng::WyRand;
 use bevy_rand::prelude::{EntropyPlugin, ForkableRng, ForkableSeed, GlobalRng, RngSeed};
 use rand_core::{Rng, SeedableRng};
 
+use crate::combat::types::UnitId;
 use crate::combat::unit::Unit;
 
 pub const DEFAULT_COMBAT_RNG_SEED: u64 = 0xDEAD_BEEF;
@@ -48,30 +51,62 @@ impl CombatRng {
     }
 
     /// Returns `true` if a uniform draw in `[0, 100)` is strictly less than
-    /// `threshold`. Boundary cases are clamped:
-    ///   - `threshold <= 0` -> always `false`
-    ///   - `threshold >= 100` -> always `true`
+    /// `threshold`. Delegates to [`roll_pct_entropy`] so the global resource and
+    /// per-entity streams share identical roll math (same draws -> same outcome).
     pub fn roll_pct(&mut self, threshold: i32) -> bool {
-        if threshold <= 0 {
-            return false;
-        }
-        if threshold >= 100 {
-            return true;
-        }
-
-        self.next_below(100) < threshold as u32
+        roll_pct_entropy(&mut self.entropy, threshold)
     }
+}
 
-    fn next_below(&mut self, upper_exclusive: u32) -> u32 {
-        debug_assert!(upper_exclusive > 0);
-        let rejection_zone = u32::MAX - (u32::MAX % upper_exclusive);
-        loop {
-            let value = self.entropy.next_u32();
-            if value < rejection_zone {
-                return value % upper_exclusive;
-            }
+/// Uniform `[0, upper_exclusive)` draw with rejection sampling (no modulo bias).
+fn next_below(entropy: &mut CombatEntropy, upper_exclusive: u32) -> u32 {
+    debug_assert!(upper_exclusive > 0);
+    let rejection_zone = u32::MAX - (u32::MAX % upper_exclusive);
+    loop {
+        let value = entropy.next_u32();
+        if value < rejection_zone {
+            return value % upper_exclusive;
         }
     }
+}
+
+/// Percent roll against any combat entropy stream. Boundary cases are clamped
+/// and consume **no** entropy:
+///   - `threshold <= 0` -> always `false`
+///   - `threshold >= 100` -> always `true`
+///
+/// This is the single canonical roll primitive: [`CombatRng::roll_pct`] (the
+/// global resource) and per-entity `CombatEntropy` rolls both go through it, so
+/// a forked stream and the resource produce the same outcome for the same draw.
+pub fn roll_pct_entropy(entropy: &mut CombatEntropy, threshold: i32) -> bool {
+    if threshold <= 0 {
+        return false;
+    }
+    if threshold >= 100 {
+        return true;
+    }
+    next_below(entropy, 100) < threshold as u32
+}
+
+/// Roll status accuracy for `attacker` from inside an exclusive (`&mut World`)
+/// system — the timeline-backed apply path.
+///
+/// The attacker's per-entity `CombatEntropy` stream (forked from the seeded
+/// global source by [`seed_unit_rngs`]) is the canonical source. When the
+/// attacker has no forked stream yet — only minimal test fixtures that never
+/// run `seed_unit_rngs` — it falls back to the **persistent** seeded
+/// [`CombatRng`] resource (inserted on first use so successive rolls keep
+/// advancing). There is no per-roll throwaway RNG.
+pub fn roll_accuracy_in_world(world: &mut World, attacker: UnitId, threshold: i32) -> bool {
+    let mut q = world.query::<(&Unit, &mut CombatEntropy)>();
+    for (unit, mut entropy) in q.iter_mut(world) {
+        if unit.id == attacker {
+            return roll_pct_entropy(&mut entropy, threshold);
+        }
+    }
+    world
+        .get_resource_or_insert_with(CombatRng::default)
+        .roll_pct(threshold)
 }
 
 impl Default for CombatRng {

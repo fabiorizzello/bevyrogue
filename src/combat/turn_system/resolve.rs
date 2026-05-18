@@ -28,6 +28,10 @@ pub fn resolve_action_system(
     registry: Option<Res<CombatKernelRegistry>>,
     mut actors: ResolveActorsQuery,
     mut combat_rng: Option<ResMut<CombatRng>>,
+    mut entropy_q: Query<
+        &mut crate::combat::rng::CombatEntropy,
+        With<crate::combat::unit::Unit>,
+    >,
     mut energy_q: Query<(&mut Energy, Option<&mut RoundEnergyTracker>)>,
     mut cast_id_gen: Option<ResMut<CastIdGen>>,
 ) {
@@ -215,6 +219,7 @@ pub fn resolve_action_system(
                 registry.as_deref(),
                 &mut actors,
                 &mut combat_rng,
+                &mut entropy_q,
                 &mut energy_q,
                 action_cast_id,
             );
