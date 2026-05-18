@@ -103,7 +103,8 @@ fn paralyzed_enemy_skips_all_100_turns() {
             event_cursor.read(msgs).cloned().collect()
         };
         for ev in &frame_events {
-            if matches!(&ev.kind, CombatEventKind::OnActionFailed { reason } if reason == "paralyzed") {
+            if matches!(&ev.kind, CombatEventKind::OnActionFailed { reason } if reason == "paralyzed")
+            {
                 skip_count += 1;
             }
         }

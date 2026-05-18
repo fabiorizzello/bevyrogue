@@ -40,8 +40,12 @@ fn status_skill(id: &str, kind: StatusEffectKind, duration: u32) -> SkillDef {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![
-            Effect::Damage { amount: 1, target: TargetShape::Single , per_hop: Default::default()},
+        legacy_ops: vec![
+            Effect::Damage {
+                amount: 1,
+                target: TargetShape::Single,
+                per_hop: Default::default(),
+            },
             Effect::ToughnessHit(0),
             Effect::ApplyStatus { kind, duration },
         ],
@@ -61,7 +65,10 @@ fn setup_app() -> (App, Entity) {
         .insert_resource(SkillBookHandle(handle))
         .init_resource::<CombatState>()
         .init_resource::<TurnOrder>()
-        .insert_resource(SpPool { current: 100, max: 100 })
+        .insert_resource(SpPool {
+            current: 100,
+            max: 100,
+        })
         .init_resource::<ActionLog>()
         .init_resource::<Time>()
         .insert_resource(CombatRng::from_seed(0))
@@ -148,10 +155,20 @@ fn three_different_kinds_coexist_in_bag() {
 
     let bag = app.world().get::<StatusBag>(defender).unwrap();
 
-    assert_eq!(bag.iter().count(), 3, "all three distinct kinds must coexist");
+    assert_eq!(
+        bag.iter().count(),
+        3,
+        "all three distinct kinds must coexist"
+    );
     assert!(bag.has(&StatusEffectKind::Heated), "Heated must be present");
-    assert!(bag.has(&StatusEffectKind::Chilled), "Chilled must be present");
-    assert!(bag.has(&StatusEffectKind::Blessed), "Blessed must be present");
+    assert!(
+        bag.has(&StatusEffectKind::Chilled),
+        "Chilled must be present"
+    );
+    assert!(
+        bag.has(&StatusEffectKind::Blessed),
+        "Blessed must be present"
+    );
     assert_eq!(bag.get_dur(&StatusEffectKind::Heated), Some(3));
     assert_eq!(bag.get_dur(&StatusEffectKind::Chilled), Some(2));
     assert_eq!(bag.get_dur(&StatusEffectKind::Blessed), Some(4));

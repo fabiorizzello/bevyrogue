@@ -7,6 +7,7 @@
 /// - Turn-order front-insert on successful ultimate fire (via resolve_action_system)
 /// - Negative paths: ult not ready, commander defender
 use bevy::prelude::*;
+use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::{
     events::{CombatEvent, CombatEventKind},
     kit::UnitSkills,
@@ -27,8 +28,8 @@ use bevyrogue::combat::{
 use bevyrogue::data::{
     SkillBookHandle,
     skills_ron::{
-        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
-        SkillTargeting, TargetLife, TargetShape, TargetSide,
+        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation, SkillTargeting,
+        TargetLife, TargetShape, TargetSide,
     },
 };
 
@@ -54,6 +55,7 @@ fn combat_event(kind: CombatEventKind, source: UnitId, target: UnitId) -> Combat
         source,
         target,
         follow_up_depth: 0,
+        cast_id: CastId::ROOT,
     }
 }
 
@@ -115,17 +117,18 @@ fn ult_skill() -> SkillDef {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![
+        legacy_ops: vec![
             Effect::Damage {
                 amount: 50,
                 target: TargetShape::Single,
-            per_hop: Default::default(),
+                per_hop: Default::default(),
             },
             Effect::ToughnessHit(10),
         ],
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
 }
 
@@ -143,17 +146,18 @@ fn basic_skill() -> SkillDef {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![
+        legacy_ops: vec![
             Effect::Damage {
                 amount: 10,
                 target: TargetShape::Single,
-            per_hop: Default::default(),
+                per_hop: Default::default(),
             },
             Effect::ToughnessHit(5),
         ],
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
 }
 
@@ -294,7 +298,7 @@ fn taichi_still_charges_on_offensive_party_events() {
 /// Turn-order interruption: after a successful ultimate fire, the attacker is front-inserted
 /// into the queue so their next turn arrives before any unit that was ahead of them.
 #[test]
-fn ultimate_fire_injects_attacker_front_of_queue() {
+fn ultimate_fire_resets_meter_and_damages_target() {
     let mut app = setup_resolve_app(SkillBook(vec![ult_skill(), basic_skill()]));
 
     // unit 1: the attacker — ult ready
@@ -311,15 +315,6 @@ fn ultimate_fire_injects_attacker_front_of_queue() {
         Team::Enemy,
         Toughness::new(200, vec![]),
     ));
-    // unit 3: another unit in the queue ahead of the attacker
-    app.world_mut()
-        .spawn((make_unit(3, "Other", 100), Team::Enemy));
-
-    // Seed queue so "Other" is in front and "Attacker" is behind
-    app.world_mut()
-        .resource_mut::<TurnOrder>()
-        .seed([UnitId(3), UnitId(1), UnitId(2)]);
-
     // Fire the ultimate
     app.world_mut().write_message(ActionIntent::Ultimate {
         attacker: UnitId(1),
@@ -327,7 +322,6 @@ fn ultimate_fire_injects_attacker_front_of_queue() {
     });
     app.update();
 
-    // In the AV system, there is no queue front-insert; verify ult resolved correctly.
     let mut q = app.world_mut().query::<(&Unit, &UltimateCharge)>();
     for (unit, ult) in q.iter(app.world()) {
         if unit.id == UnitId(1) {
@@ -345,9 +339,10 @@ fn ultimate_fire_injects_attacker_front_of_queue() {
     }
 }
 
-/// Negative: when the ultimate meter is not ready, no front-insert occurs.
+/// Negative: when the ultimate meter is not ready, the ult is rejected and the
+/// target takes no damage.
 #[test]
-fn ult_not_ready_does_not_front_insert() {
+fn ult_not_ready_is_rejected() {
     let mut app = setup_resolve_app(SkillBook(vec![ult_skill(), basic_skill()]));
 
     app.world_mut().spawn((
@@ -363,20 +358,13 @@ fn ult_not_ready_does_not_front_insert() {
         Team::Enemy,
         Toughness::new(200, vec![]),
     ));
-    app.world_mut()
-        .spawn((make_unit(3, "Other", 100), Team::Enemy));
-
-    app.world_mut()
-        .resource_mut::<TurnOrder>()
-        .seed([UnitId(3), UnitId(1), UnitId(2)]);
-
     app.world_mut().write_message(ActionIntent::Ultimate {
         attacker: UnitId(1),
         target: UnitId(2),
     });
     app.update();
 
-    // In the AV system, there is no queue; verify ult was rejected (defender HP unchanged).
+    // Ult not ready → rejected, defender HP unchanged.
     let mut q = app.world_mut().query::<&Unit>();
     let defender_hp = q
         .iter(app.world())
@@ -389,10 +377,10 @@ fn ult_not_ready_does_not_front_insert() {
     );
 }
 
-/// Negative: when the target is a Commander, apply_effects rejects the action without
-/// consuming the ult meter, so no front-insert occurs.
+/// Negative: when the target is a Commander, apply_legacy_ops rejects the action
+/// without consuming the ult meter.
 #[test]
-fn commander_defender_does_not_front_insert() {
+fn ult_targeting_commander_does_not_consume_meter() {
     let mut app = setup_resolve_app(SkillBook(vec![ult_skill(), basic_skill()]));
 
     app.world_mut().spawn((
@@ -403,36 +391,20 @@ fn commander_defender_does_not_front_insert() {
         ult_charge(100, 100, UltAccumulationTrigger::OnBasicAttack, 25),
         Toughness::new(100, vec![]),
     ));
-    // Defender is a Commander — apply_effects will reject and skip meter reset
+    // Defender is a Commander — apply_legacy_ops will reject and skip meter reset
     app.world_mut().spawn((
         make_unit(2, "Taichi", 200),
         Team::Ally,
         Commander,
         Toughness::new(200, vec![]),
     ));
-    app.world_mut()
-        .spawn((make_unit(3, "Other", 100), Team::Enemy));
-
-    app.world_mut()
-        .resource_mut::<TurnOrder>()
-        .seed([UnitId(3), UnitId(1)]);
-
     app.world_mut().write_message(ActionIntent::Ultimate {
         attacker: UnitId(1),
         target: UnitId(2),
     });
     app.update();
 
-    // Commander rejection means meter is not consumed → no front-insert
-    let order = app.world().resource::<TurnOrder>();
-    assert_ne!(
-        order.queue.front().copied(),
-        Some(UnitId(1)),
-        "attacker should NOT be front-inserted when defender is Commander (queue: {:?})",
-        order.queue
-    );
-
-    // Verify ult meter was NOT consumed
+    // Commander rejection means the ult meter is not consumed.
     let mut q = app.world_mut().query::<(&Unit, &UltimateCharge)>();
     for (unit, ult) in q.iter(app.world()) {
         if unit.id == UnitId(1) {

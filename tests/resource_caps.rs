@@ -45,11 +45,11 @@ fn build_app() -> App {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![
+            legacy_ops: vec![
                 Effect::Damage {
                     amount: 5,
                     target: TargetShape::Single,
-                per_hop: Default::default(),
+                    per_hop: Default::default(),
                 },
                 Effect::ToughnessHit(1),
             ],
@@ -57,6 +57,7 @@ fn build_app() -> App {
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
         SkillDef {
             id: SkillId("skill".into()),
@@ -71,11 +72,11 @@ fn build_app() -> App {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![
+            legacy_ops: vec![
                 Effect::Damage {
                     amount: 10,
                     target: TargetShape::Single,
-                per_hop: Default::default(),
+                    per_hop: Default::default(),
                 },
                 Effect::ToughnessHit(1),
             ],
@@ -83,6 +84,7 @@ fn build_app() -> App {
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
         SkillDef {
             id: SkillId("grant_energy".into()),
@@ -97,11 +99,12 @@ fn build_app() -> App {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![Effect::GrantEnergy(15)],
+            legacy_ops: vec![Effect::GrantEnergy(15)],
 
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
     ]);
     let handle = assets.add(book);
@@ -153,11 +156,11 @@ fn energy_gain_amounts(events: &[CombatEvent]) -> Vec<i32> {
 }
 
 fn load_roster() -> bevyrogue::data::units_ron::UnitRoster {
-    ron::from_str(include_str!("../assets/data/units.ron")).expect("parse units.ron")
+    bevyrogue::data::aggregate_unit_roster()
 }
 
 fn load_skill_book() -> SkillBook {
-    ron::from_str(include_str!("../assets/data/skills.ron")).expect("parse skills.ron")
+    bevyrogue::data::aggregate_skill_book()
 }
 
 fn pilot(
@@ -262,14 +265,6 @@ fn unit_energy(app: &mut App, unit_id: UnitId) -> i32 {
         .find(|(u, _)| u.id == unit_id)
         .map(|(_, e)| e.current)
         .unwrap_or_else(|| panic!("missing unit {:?}", unit_id))
-}
-
-fn form_identity_used(app: &mut App, unit_id: UnitId) -> bool {
-    let mut q = app.world_mut().query::<(&Unit, &RoundFlags)>();
-    q.iter(app.world())
-        .find(|(u, _)| u.id == unit_id)
-        .map(|(_, f)| f.form_identity_used)
-        .unwrap_or(false)
 }
 
 fn setup_form_identity_app(skill_book: SkillBook) -> App {

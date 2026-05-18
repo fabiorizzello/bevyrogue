@@ -2,7 +2,7 @@ use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::action_query::{
     ActionQueryKind, CombatQuerySnapshot, UnitQuerySnapshot, query_intent_legality,
 };
-use bevyrogue::combat::enemy_counterplay::EnemyCounterplayKit;
+use bevyrogue::combat::counterplay::EnemyCounterplayKit;
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::kit::UnitSkills;
 use bevyrogue::combat::log::ActionLog;
@@ -61,14 +61,15 @@ fn offensive_skill(id: &str) -> SkillDef {
             target_hp_rule: TargetHpRule::Any,
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Damage {
+        legacy_ops: vec![Effect::Damage {
             amount: 10,
             target: TargetShape::Single,
-        per_hop: Default::default(),
+            per_hop: Default::default(),
         }],
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
 }
 
@@ -86,10 +87,11 @@ fn revive_skill(id: &str) -> SkillDef {
             target_hp_rule: TargetHpRule::Any,
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Revive(25)],
+        legacy_ops: vec![Effect::Revive(25)],
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
 }
 
@@ -239,15 +241,6 @@ fn snapshot_unit(fixture: &UnitFixture, is_active: bool) -> UnitQuerySnapshot {
         energy_external_gained: 0,
         skills: fixture.skills.clone(),
         toughness: None,
-        enemy_traits: fixture
-            .counterplay
-            .as_ref()
-            .map(|kit| kit.enemy_traits.clone())
-            .unwrap_or_default(),
-        charged_attack: fixture
-            .counterplay
-            .as_ref()
-            .and_then(|kit| kit.charged_attack.clone()),
         ..Default::default()
     }
 }

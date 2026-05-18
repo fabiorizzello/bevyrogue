@@ -39,10 +39,17 @@ fn heated_skill(id: &str, duration: u32) -> SkillDef {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![
-            Effect::Damage { amount: 1, target: TargetShape::Single , per_hop: Default::default()},
+        legacy_ops: vec![
+            Effect::Damage {
+                amount: 1,
+                target: TargetShape::Single,
+                per_hop: Default::default(),
+            },
             Effect::ToughnessHit(0),
-            Effect::ApplyStatus { kind: StatusEffectKind::Heated, duration },
+            Effect::ApplyStatus {
+                kind: StatusEffectKind::Heated,
+                duration,
+            },
         ],
         ..Default::default()
     }
@@ -60,7 +67,10 @@ fn setup_app() -> (App, Entity) {
         .insert_resource(SkillBookHandle(handle))
         .init_resource::<CombatState>()
         .init_resource::<TurnOrder>()
-        .insert_resource(SpPool { current: 100, max: 100 })
+        .insert_resource(SpPool {
+            current: 100,
+            max: 100,
+        })
         .init_resource::<ActionLog>()
         .init_resource::<Time>()
         .insert_resource(CombatRng::from_seed(0))
@@ -130,7 +140,11 @@ fn refresh_max_dur_keeps_longer_and_replaces_with_longer() {
     app.update();
 
     let bag = app.world().get::<StatusBag>(defender).unwrap();
-    assert_eq!(bag.get_dur(&StatusEffectKind::Heated), Some(2), "initial apply: dur must be 2");
+    assert_eq!(
+        bag.get_dur(&StatusEffectKind::Heated),
+        Some(2),
+        "initial apply: dur must be 2"
+    );
     assert_eq!(bag.iter().count(), 1, "single instance after first apply");
 
     // Re-apply Heated(dur=1): refresh_max_dur must keep max(2, 1) = 2.
@@ -147,7 +161,11 @@ fn refresh_max_dur_keeps_longer_and_replaces_with_longer() {
         Some(2),
         "re-apply with shorter dur: refresh_max_dur must keep max(2,1)=2"
     );
-    assert_eq!(bag.iter().count(), 1, "re-apply must not duplicate the instance");
+    assert_eq!(
+        bag.iter().count(),
+        1,
+        "re-apply must not duplicate the instance"
+    );
 
     // Apply Heated(dur=5): refresh_max_dur must update to max(2, 5) = 5.
     app.world_mut().write_message(ActionIntent::Skill {
@@ -163,5 +181,9 @@ fn refresh_max_dur_keeps_longer_and_replaces_with_longer() {
         Some(5),
         "re-apply with longer dur: refresh_max_dur must update to max(2,5)=5"
     );
-    assert_eq!(bag.iter().count(), 1, "still exactly one instance after three applies");
+    assert_eq!(
+        bag.iter().count(),
+        1,
+        "still exactly one instance after three applies"
+    );
 }

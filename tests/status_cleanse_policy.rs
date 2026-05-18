@@ -15,7 +15,11 @@ fn cleanse_removes_all_debuffs_and_keeps_blessed() {
     let removed = bag.cleanse_debuffs();
 
     let removed_set: HashSet<_> = removed.iter().collect();
-    assert_eq!(removed_set.len(), 4, "cleanse must remove exactly 4 debuff kinds");
+    assert_eq!(
+        removed_set.len(),
+        4,
+        "cleanse must remove exactly 4 debuff kinds"
+    );
     assert!(removed_set.contains(&StatusEffectKind::Heated));
     assert!(removed_set.contains(&StatusEffectKind::Chilled));
     assert!(removed_set.contains(&StatusEffectKind::Paralyzed));
@@ -26,6 +30,9 @@ fn cleanse_removes_all_debuffs_and_keeps_blessed() {
     assert!(!bag.has(&StatusEffectKind::Paralyzed));
     assert!(!bag.has(&StatusEffectKind::Slowed));
 
-    assert!(bag.has(&StatusEffectKind::Blessed), "Blessed (Buff) must survive cleanse");
+    assert!(
+        bag.has(&StatusEffectKind::Blessed),
+        "Blessed (Buff) must survive cleanse"
+    );
     assert_eq!(bag.get_dur(&StatusEffectKind::Blessed), Some(5));
 }

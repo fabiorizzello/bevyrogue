@@ -1,5 +1,6 @@
+use bevyrogue::combat::runtime::SignalPayload;
 use bevyrogue::combat::blueprints::{self, CustomSignalDispatchError};
-use bevyrogue::combat::kernel::{CombatKernelTransition, PredatorLoopTransition};
+use bevyrogue::combat::kernel::CombatKernelTransition;
 use bevyrogue::combat::kit::UnitSkills;
 use bevyrogue::combat::resolution::resolve_action;
 use bevyrogue::combat::turn_system::ActionIntent;
@@ -10,7 +11,7 @@ use bevyrogue::data::skills_ron::{
 };
 
 fn canonical_skill_book() -> SkillBook {
-    ron::from_str(include_str!("../assets/data/skills.ron")).expect("parse skills.ron")
+    bevyrogue::data::aggregate_skill_book()
 }
 
 fn find_skill<'a>(book: &'a SkillBook, id: &str) -> &'a SkillDef {
@@ -36,12 +37,7 @@ fn resolve_skill(book: &SkillBook, skill_id: &str) -> bevyrogue::combat::state::
     resolve_action(&intent, &kit, Some(book)).expect("skill resolves")
 }
 
-fn blueprint_skill(
-    id: &str,
-    owner: &str,
-    signal: &str,
-    payload: CustomSignalPayload,
-) -> SkillDef {
+fn blueprint_skill(id: &str, owner: &str, signal: &str, payload: CustomSignalPayload) -> SkillDef {
     SkillDef {
         id: SkillId(id.into()),
         name: id.to_owned(),
@@ -55,10 +51,10 @@ fn blueprint_skill(
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Damage {
+        legacy_ops: vec![Effect::Damage {
             amount: 1,
             target: TargetShape::Single,
-        per_hop: Default::default(),
+            per_hop: Default::default(),
         }],
         custom_signals: vec![SkillCustomSignal::blueprint(owner, signal, payload)],
         ..Default::default()
@@ -98,33 +94,43 @@ fn registry_routes_dorumon_signals_to_predator_loop_transitions() {
     assert_eq!(
         transitions,
         vec![
-            CombatKernelTransition::PredatorLoop(PredatorLoopTransition::build_exploit(
-                UnitId(7),
-                2,
-            )),
-            CombatKernelTransition::PredatorLoop(PredatorLoopTransition::apply_prey_lock(
-                UnitId(7),
-                2,
-            )),
+            CombatKernelTransition::Blueprint {
+                owner: "dorumon".into(),
+                name: "build_exploit".into(),
+                payload: SignalPayload::Amount(2),
+            },
+            CombatKernelTransition::Blueprint {
+                owner: "dorumon".into(),
+                name: "apply_prey_lock".into(),
+                payload: SignalPayload::Amount(0),
+            },
         ]
     );
 }
 
 #[test]
-fn renamon_precision_signals_route_to_precision_mind_game_transitions() {
+fn renamon_precision_signals_route_to_blueprint_envelopes() {
     let book = canonical_skill_book();
-    
-    // Test open_momentum_window (Diamond Storm)
+
+    // open_momentum_window (Diamond Storm)
     let resolved = resolve_skill(&book, "diamond_storm");
     let transitions = blueprints::transitions_for_action_checked(&resolved).expect("dispatch");
     assert_eq!(transitions.len(), 1);
-    assert!(matches!(transitions[0], CombatKernelTransition::PrecisionMindGame(_)));
+    assert!(matches!(
+        &transitions[0],
+        CombatKernelTransition::Blueprint { owner, name, payload: SignalPayload::Empty }
+            if owner == "renamon" && name == "open_momentum_window"
+    ));
 
-    // Test commit_precision_press (Renamon Ult)
+    // commit_precision_press (Renamon Ult)
     let resolved = resolve_skill(&book, "renamon_ult");
     let transitions = blueprints::transitions_for_action_checked(&resolved).expect("dispatch");
     assert_eq!(transitions.len(), 1);
-    assert!(matches!(transitions[0], CombatKernelTransition::PrecisionMindGame(_)));
+    assert!(matches!(
+        &transitions[0],
+        CombatKernelTransition::Blueprint { owner, name, payload: SignalPayload::Empty }
+            if owner == "renamon" && name == "commit_precision_press"
+    ));
 }
 
 #[test]
@@ -138,8 +144,8 @@ fn registry_rejects_unknown_blueprint_owner() {
     let book = SkillBook(vec![skill.clone()]);
     let resolved = resolve_skill(&book, &skill.id.0);
 
-    let error = blueprints::transitions_for_action_checked(&resolved)
-        .expect_err("unknown owner rejected");
+    let error =
+        blueprints::transitions_for_action_checked(&resolved).expect_err("unknown owner rejected");
 
     assert!(matches!(
         error,

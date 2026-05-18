@@ -1,5 +1,10 @@
 use bevy::prelude::*;
 
+use bevyrogue::combat::runtime::{CastId, ExtRegistries};
+use bevyrogue::combat::blueprints::twin_core::{
+    TwinCoreDesignTag, TwinCoreHook, TwinCoreState, apply_twin_core_transitions_system,
+    twin_core_design_tag,
+};
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::kernel::{
     CombatBeatId, CombatKernelRegistry, CombatKernelTransition, CombatTagChangeKind,
@@ -10,10 +15,6 @@ use bevyrogue::combat::observability::{capture_validation_snapshot, format_valid
 use bevyrogue::combat::sp::SpPool;
 use bevyrogue::combat::state::CombatState;
 use bevyrogue::combat::toughness::Toughness;
-use bevyrogue::combat::blueprints::agumon::{
-    TwinCoreDesignTag, TwinCoreHook, TwinCoreState, apply_twin_core_transitions_system,
-    twin_core_design_tag,
-};
 use bevyrogue::combat::types::{SkillId, UnitId};
 use bevyrogue::combat::ultimate::UltimateCharge;
 use bevyrogue::combat::unit::Unit;
@@ -21,11 +22,11 @@ use bevyrogue::data::skills_ron::{SkillBook, SkillDef};
 use bevyrogue::data::units_ron::{UnitDef, UnitRoster};
 
 fn load_roster() -> UnitRoster {
-    ron::from_str(include_str!("../assets/data/units.ron")).expect("parse units.ron")
+    bevyrogue::data::aggregate_unit_roster()
 }
 
 fn load_skill_book() -> SkillBook {
-    ron::from_str(include_str!("../assets/data/skills.ron")).expect("parse skills.ron")
+    bevyrogue::data::aggregate_skill_book()
 }
 
 fn unit_def<'a>(roster: &'a UnitRoster, name: &str) -> &'a UnitDef {
@@ -77,6 +78,7 @@ fn build_app() -> App {
 
     app.insert_resource(registry)
         .init_resource::<TwinCoreState>()
+        .init_resource::<ExtRegistries>()
         .insert_resource(CombatState::default())
         .insert_resource(SpPool {
             current: 10,
@@ -85,6 +87,11 @@ fn build_app() -> App {
         .insert_resource(ActionLog::default())
         .add_message::<CombatEvent>()
         .add_systems(Update, apply_twin_core_transitions_system);
+
+    {
+        let mut regs = app.world_mut().resource_mut::<ExtRegistries>();
+        bevyrogue::combat::blueprints::register_all_blueprint_validation_exts(&mut regs);
+    }
 
     app
 }
@@ -115,6 +122,7 @@ fn pump_kernel_transition(
             source,
             target,
             follow_up_depth: 0,
+            cast_id: CastId::ROOT,
         });
     }
 
@@ -162,7 +170,7 @@ fn canonical_fire_ice_twin_core_loop_is_visible_through_validation_snapshots() {
         target,
     );
     let after_fire = capture_snapshot_string(&mut app);
-    assert!(after_fire.contains("twin_core=cr=1"), "{after_fire}");
+    assert!(after_fire.contains("cr=1"), "{after_fire}");
     assert!(after_fire.contains("spark_targets=[]"), "{after_fire}");
     assert!(after_fire.contains("last=build(1)"), "{after_fire}");
 
@@ -173,7 +181,7 @@ fn canonical_fire_ice_twin_core_loop_is_visible_through_validation_snapshots() {
         target,
     );
     let after_ice = capture_snapshot_string(&mut app);
-    assert!(after_ice.contains("twin_core=cr=2"), "{after_ice}");
+    assert!(after_ice.contains("cr=2"), "{after_ice}");
     assert!(after_ice.contains("spark_targets=[]"), "{after_ice}");
     assert!(after_ice.contains("last=build(1)"), "{after_ice}");
 
@@ -197,7 +205,7 @@ fn canonical_fire_ice_twin_core_loop_is_visible_through_validation_snapshots() {
         target,
     );
     let after_beat = capture_snapshot_string(&mut app);
-    assert!(after_beat.contains("twin_core=cr=0"), "{after_beat}");
+    assert!(after_beat.contains("cr=0"), "{after_beat}");
     assert!(after_beat.contains("spark_targets=[]"), "{after_beat}");
     assert!(after_beat.contains("burst_guard=true"), "{after_beat}");
     assert!(after_beat.contains("last=twin-burst(1)"), "{after_beat}");
@@ -205,7 +213,7 @@ fn canonical_fire_ice_twin_core_loop_is_visible_through_validation_snapshots() {
 
     let final_snapshot = capture_snapshot_string(&mut app);
     assert!(
-        final_snapshot.contains("twin_core=cr=0"),
+        final_snapshot.contains("cr=0"),
         "{final_snapshot}"
     );
     assert!(
@@ -239,8 +247,9 @@ fn skill_resolution_emits_twin_core_signals_through_blueprints() {
         follow_up: None,
     };
 
-    let resolved = bevyrogue::combat::resolution::resolve_action(&intent, &agumon_kit, Some(&skills))
-        .expect("should resolve baby_flame");
+    let resolved =
+        bevyrogue::combat::resolution::resolve_action(&intent, &agumon_kit, Some(&skills))
+            .expect("should resolve baby_flame");
 
     assert_eq!(resolved.skill_id, SkillId("baby_flame".into()));
     assert!(!resolved.custom_signals.is_empty());
@@ -253,8 +262,16 @@ fn skill_resolution_emits_twin_core_signals_through_blueprints() {
 
     match &transitions[0] {
         bevyrogue::combat::kernel::CombatKernelTransition::Tag(tag) => {
-            assert_eq!(tag.before.id, bevyrogue::combat::blueprints::agumon::twin_core_design_tag(bevyrogue::combat::blueprints::agumon::TwinCoreDesignTag::Heated));
-            assert_eq!(tag.kind, bevyrogue::combat::kernel::CombatTagChangeKind::Added);
+            assert_eq!(
+                tag.before.id,
+                bevyrogue::combat::blueprints::twin_core::twin_core_design_tag(
+                    bevyrogue::combat::blueprints::twin_core::TwinCoreDesignTag::Heated
+                )
+            );
+            assert_eq!(
+                tag.kind,
+                bevyrogue::combat::kernel::CombatTagChangeKind::Added
+            );
         }
         _ => panic!("Expected Tag transition"),
     }

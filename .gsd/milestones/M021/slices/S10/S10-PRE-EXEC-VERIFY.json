@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "milestoneId": "M021",
+  "sliceId": "S10",
+  "timestamp": 1778971914588,
+  "status": "fail",
+  "durationMs": 1,
+  "checks": [
+    {
+      "category": "tool",
+      "target": "T04 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: rg 'TwinCore|BatteryLoop|HolySupport|PredatorLoop|PrecisionMindGame|KitsuneGrace' src/combat --glob '!blueprints/**'\ncargo test --test validation_snapshot\ncargo test --test combat_cli_shared_surface\ncargo check\ncargo check --features windowed (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    }
+  ]
+}

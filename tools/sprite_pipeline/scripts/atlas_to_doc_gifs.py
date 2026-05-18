@@ -15,7 +15,7 @@ from PIL import Image
 REPO = Path("/home/fabio/dev/bevyrogue")
 ATLAS_DIR = REPO / "assets" / "digimon"
 DOCS_DIR = REPO / "docs" / "future_design_draft" / "digimon"
-SCALE = 1  # 1 = native frame_size (atlases are pre-cropped to bbox via repack_atlas.py)
+SCALE = 1  # 1 = native frame_size (uniform 512px across all characters)
 FPS = 12
 FRAME_MS = int(1000 / FPS)
 IDLE_HOLD_FRAMES = 6  # ~0.5s @ 12fps prima e dopo l'anim

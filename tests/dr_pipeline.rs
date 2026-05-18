@@ -1,3 +1,4 @@
+use bevyrogue::combat::sp::RoundSpTracker;
 /// Integration tests for the DR pipeline (M019/S01 T04).
 ///
 /// Cases:
@@ -10,7 +11,7 @@
 use bevyrogue::combat::{
     buffs::DrBag,
     events::CombatEventKind,
-    resolution::apply_effects,
+    resolution::apply_legacy_ops,
     sp::SpPool,
     state::{ResolvedAction, UltEffect},
     team::Team,
@@ -19,7 +20,6 @@ use bevyrogue::combat::{
     ultimate::{UltAccumulationTrigger, UltimateCharge},
     unit::{BasicStreak, Unit},
 };
-use bevyrogue::combat::sp::RoundSpTracker;
 use bevyrogue::data::skills_ron::TargetShape;
 
 fn attacker() -> Unit {
@@ -81,7 +81,7 @@ fn damage_action(tag: DamageTag, base: i32) -> ResolvedAction {
     }
 }
 
-/// Run apply_effects with the given parameters; return (OnDamageDealt amount, all events).
+/// Run apply_legacy_ops with the given parameters; return (OnDamageDealt amount, all events).
 fn run(
     base: i32,
     tag: DamageTag,
@@ -97,10 +97,13 @@ fn run(
         t
     };
     let mut ult = default_ult();
-    let mut sp = SpPool { current: 99, max: 99 };
+    let mut sp = SpPool {
+        current: 99,
+        max: 99,
+    };
     let action = damage_action(tag, base);
 
-    let (_outcome, events) = apply_effects(
+    let (_outcome, events) = apply_legacy_ops(
         &action,
         &atk,
         &mut def,
@@ -143,7 +146,9 @@ fn dr_single_30pct_reduces_damage() {
 
     assert_eq!(amount, 70, "30% DR should yield 70; got {amount}");
     assert!(
-        events.iter().any(|e| matches!(e, CombatEventKind::OnDamageDealt { amount: 70, .. })),
+        events
+            .iter()
+            .any(|e| matches!(e, CombatEventKind::OnDamageDealt { amount: 70, .. })),
         "OnDamageDealt with amount=70 must be present"
     );
 }
@@ -159,7 +164,10 @@ fn dr_stacked_sums_unclamped() {
 
     let (amount, _) = run(100, DamageTag::Physical, vec![], Some(&bag), false);
 
-    assert_eq!(amount, 50, "Stacked 20%+30% DR should yield 50; got {amount}");
+    assert_eq!(
+        amount, 50,
+        "Stacked 20%+30% DR should yield 50; got {amount}"
+    );
 }
 
 // ─── Case C: DR=30% + Fire resist (0.75 tag mod) ─────────────────────────────
@@ -171,9 +179,18 @@ fn dr_combined_with_resist_stacks_multiplicatively() {
     let mut bag = DrBag::default();
     bag.apply(0.30, 2);
 
-    let (amount, _) = run(100, DamageTag::Fire, vec![DamageTag::Fire], Some(&bag), false);
+    let (amount, _) = run(
+        100,
+        DamageTag::Fire,
+        vec![DamageTag::Fire],
+        Some(&bag),
+        false,
+    );
 
-    assert_eq!(amount, 53, "DR + resist should stack multiplicatively to 53; got {amount}");
+    assert_eq!(
+        amount, 53,
+        "DR + resist should stack multiplicatively to 53; got {amount}"
+    );
 }
 
 // ─── Case D: DR during Break (toughness already broken) ───────────────────────
@@ -204,7 +221,9 @@ fn dr_100pct_clamps_to_zero_and_event_emitted() {
 
     assert_eq!(amount, 0, "100% DR must clamp damage to 0; got {amount}");
     assert!(
-        events.iter().any(|e| matches!(e, CombatEventKind::OnDamageDealt { amount: 0, .. })),
+        events
+            .iter()
+            .any(|e| matches!(e, CombatEventKind::OnDamageDealt { amount: 0, .. })),
         "OnDamageDealt with amount=0 must be emitted even when DR absorbs all damage"
     );
 }
@@ -220,5 +239,8 @@ fn dr_over_100pct_no_panic_damage_zero() {
 
     let (amount, _) = run(100, DamageTag::Physical, vec![], Some(&bag), false);
 
-    assert_eq!(amount, 0, "DR > 100% must not panic and must clamp damage to 0; got {amount}");
+    assert_eq!(
+        amount, 0,
+        "DR > 100% must not panic and must clamp damage to 0; got {amount}"
+    );
 }

@@ -22,8 +22,8 @@ use bevyrogue::combat::{
 use bevyrogue::data::{
     SkillBookHandle,
     skills_ron::{
-        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
-        SkillTargeting, TargetLife, TargetShape, TargetSide,
+        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation, SkillTargeting,
+        TargetLife, TargetShape, TargetSide,
     },
 };
 
@@ -66,15 +66,16 @@ fn build_app() -> App {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![Effect::Damage {
+            legacy_ops: vec![Effect::Damage {
                 amount: 8,
                 target: TargetShape::Single,
-            per_hop: Default::default(),
+                per_hop: Default::default(),
             }],
 
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
         SkillDef {
             id: SkillId("ally_skill_3".into()),
@@ -89,15 +90,16 @@ fn build_app() -> App {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![Effect::Damage {
+            legacy_ops: vec![Effect::Damage {
                 amount: 16,
                 target: TargetShape::Single,
-            per_hop: Default::default(),
+                per_hop: Default::default(),
             }],
 
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
         SkillDef {
             id: SkillId("ally_skill_4".into()),
@@ -112,15 +114,16 @@ fn build_app() -> App {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![Effect::Damage {
+            legacy_ops: vec![Effect::Damage {
                 amount: 18,
                 target: TargetShape::Single,
-            per_hop: Default::default(),
+                per_hop: Default::default(),
             }],
 
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
         SkillDef {
             id: SkillId("holy_revive".into()),
@@ -135,11 +138,12 @@ fn build_app() -> App {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![Effect::Revive(25)],
+            legacy_ops: vec![Effect::Revive(25)],
 
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
         SkillDef {
             id: SkillId("enemy_smash".into()),
@@ -154,15 +158,16 @@ fn build_app() -> App {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![Effect::Damage {
+            legacy_ops: vec![Effect::Damage {
                 amount: 9999,
                 target: TargetShape::Single,
-            per_hop: Default::default(),
+                per_hop: Default::default(),
             }],
 
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
     ]);
     let handle = assets.add(book);
@@ -187,7 +192,7 @@ fn cast(app: &mut App, intent: ActionIntent, history: &mut Vec<i32>) {
 }
 
 #[test]
-fn s_m008_s05_sp_economy_20_turn_regression() {
+fn sp_economy_20_turn_regression() {
     let mut app = build_app();
     let ally = app
         .world_mut()

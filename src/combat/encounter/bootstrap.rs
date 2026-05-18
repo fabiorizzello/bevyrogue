@@ -1,0 +1,268 @@
+use crate::combat::team::Team;
+use crate::combat::types::UnitId;
+use crate::data::units_ron::{UnitDef, UnitRoster};
+use bevy::prelude::*;
+use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
+
+use crate::combat::av::ActionValue;
+use crate::combat::buffs::DrBag;
+use crate::combat::counterplay::EnemyCounterplayKit;
+use crate::combat::energy::{Energy, RoundEnergyTracker};
+use crate::combat::kit::{FormIdentityKit, UnitSkills};
+use crate::combat::resistance::TempoResistance;
+use crate::combat::round_flags::RoundFlags;
+use crate::combat::speed::{Speed, SpeedModifier};
+use crate::combat::status_effect::StatusBag;
+use crate::combat::toughness::{Toughness, ToughnessCategory};
+use crate::combat::ultimate::{UltAccumulationTrigger, UltimateCharge};
+use crate::combat::unit::{BasicStreak, Commander, SlotIndex, Unit};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SelectionRequest {
+    pub rookie_ids: Vec<UnitId>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EncounterComposition {
+    pub allies: Vec<UnitDef>,
+    pub enemies: Vec<UnitDef>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, thiserror::Error)]
+pub enum SelectionError {
+    #[error("expected exactly {expected} picks, got {actual}")]
+    WrongPickCount { expected: usize, actual: usize },
+    #[error("duplicate rookies selected: {duplicates:?}")]
+    DuplicateRookies { duplicates: Vec<UnitId> },
+    #[error("unknown rookie id: {id:?}")]
+    UnknownRookie { id: UnitId },
+    #[error("unselectable entry {id:?}: {reason}")]
+    UnselectableEntry { id: UnitId, reason: String },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum EncounterPreset {
+    /// Three Goblimon minions (UnitId 102 ×3).
+    MinionWave,
+    /// One Ogremon mini-boss (UnitId 103) flanked by two Goblimon (UnitId 102 ×2).
+    MiniBossEncounter,
+    /// Devimon boss solo (UnitId 101).
+    BossEncounter,
+}
+
+impl std::fmt::Display for EncounterPreset {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            EncounterPreset::MinionWave => write!(f, "Minion Wave (3× Goblimon)"),
+            EncounterPreset::MiniBossEncounter => {
+                write!(f, "Mini-Boss Encounter (Ogremon + 2× Goblimon)")
+            }
+            EncounterPreset::BossEncounter => write!(f, "Boss Encounter (Devimon)"),
+        }
+    }
+}
+
+pub fn bootstrap_encounter(
+    roster: &UnitRoster,
+    request: &SelectionRequest,
+    preset: EncounterPreset,
+) -> Result<EncounterComposition, SelectionError> {
+    if request.rookie_ids.len() != 4 {
+        return Err(SelectionError::WrongPickCount {
+            expected: 4,
+            actual: request.rookie_ids.len(),
+        });
+    }
+
+    let mut seen = HashSet::new();
+    let mut duplicates = Vec::new();
+    for &id in &request.rookie_ids {
+        if !seen.insert(id) {
+            duplicates.push(id);
+        }
+    }
+    if !duplicates.is_empty() {
+        return Err(SelectionError::DuplicateRookies { duplicates });
+    }
+
+    let mut allies = Vec::new();
+    for &id in &request.rookie_ids {
+        let Some(def) = roster.0.iter().find(|d| d.id == id) else {
+            return Err(SelectionError::UnknownRookie { id });
+        };
+
+        if def.team != Team::Ally {
+            return Err(SelectionError::UnselectableEntry {
+                id,
+                reason: "unit is not on the Ally team".into(),
+            });
+        }
+        allies.push(def.clone());
+    }
+
+    // Always inject Taichi
+    allies.push(taichi_def());
+
+    let enemy_ids: Vec<UnitId> = match preset {
+        EncounterPreset::MinionWave => vec![UnitId(102), UnitId(102), UnitId(102)],
+        EncounterPreset::MiniBossEncounter => vec![UnitId(103), UnitId(102), UnitId(102)],
+        EncounterPreset::BossEncounter => vec![UnitId(101)],
+    };
+
+    let mut enemies = Vec::new();
+    for &id in &enemy_ids {
+        let Some(def) = roster.0.iter().find(|d| d.id == id) else {
+            return Err(SelectionError::UnknownRookie { id });
+        };
+        enemies.push(def.clone());
+    }
+
+    Ok(EncounterComposition { allies, enemies })
+}
+
+pub fn spawn_unit_from_def(commands: &mut Commands, def: &UnitDef) -> Entity {
+    let mut entity = commands.spawn((
+        Unit {
+            id: def.id,
+            name: def.name.clone(),
+            hp_max: def.hp_max,
+            hp_current: def.hp_max,
+            attribute: def.attribute,
+            resists: def.resists.clone(),
+            evo_stage: def.evo_stage,
+        },
+        ActionValue::default(), // Add ActionValue component
+        Speed(def.speed),
+        SpeedModifier(0),
+        def.team,
+        Toughness::with_category(
+            def.toughness_max,
+            def.weaknesses.clone(),
+            def.toughness_category,
+        ),
+        RoundFlags::default(),
+        StatusBag::default(),
+        DrBag::default(),
+        UltimateCharge::new(
+            def.ultimate_trigger,
+            def.ultimate_cap,
+            def.ultimate_accumulation_trigger,
+            def.ultimate_charge_per_event,
+        ),
+        UnitSkills {
+            basic: def.basic_skill.clone(),
+            skills: def.skill_ids.clone(),
+            ultimate: def.ultimate_skill.clone(),
+            follow_up: def.follow_up.clone(),
+        },
+        Energy::default(),
+        RoundEnergyTracker::default(),
+        BasicStreak::default(),
+    ));
+
+    if def.role_tags.contains(&"commander".to_string()) {
+        entity.insert(Commander);
+    }
+
+    if def.tempo_resistant {
+        entity.insert(TempoResistance::default());
+    }
+
+    if let Some(fi_config) = def.form_identity.clone() {
+        entity.insert(FormIdentityKit { config: fi_config });
+    }
+
+    if let Some(counterplay) = EnemyCounterplayKit::from_def(def) {
+        entity.insert(counterplay);
+    }
+
+    entity.id()
+}
+
+/// Returns the spawned unit ids in turn-seed order (allies then enemies).
+pub fn apply_composition(
+    commands: &mut Commands,
+    composition: &EncounterComposition,
+) -> Vec<UnitId> {
+    let mut seeded = Vec::with_capacity(composition.allies.len() + composition.enemies.len());
+
+    for (idx, def) in composition.allies.iter().enumerate() {
+        let entity = spawn_unit_from_def(commands, def);
+        commands.entity(entity).insert(SlotIndex(idx as u8));
+        seeded.push(def.id);
+    }
+
+    for (idx, def) in composition.enemies.iter().enumerate() {
+        let entity = spawn_unit_from_def(commands, def);
+        commands.entity(entity).insert(SlotIndex(idx as u8));
+        seeded.push(def.id);
+    }
+
+    seeded
+}
+
+pub fn taichi_def() -> UnitDef {
+    UnitDef {
+        id: UnitId(0),
+        name: "Taichi".into(),
+        role_tags: vec!["commander".into()],
+        signature_traits: vec!["courage".into()],
+        hp_max: 1,
+        attribute: crate::combat::types::Attribute::Free,
+        team: Team::Ally,
+        basic_damage_tag: crate::combat::types::DamageTag::Fire,
+        basic_skill: crate::combat::types::SkillId("goblimon_basic".into()),
+        skill_ids: vec![
+            crate::combat::types::SkillId("goblimon_basic".into()),
+            crate::combat::types::SkillId("goblimon_slash".into()),
+        ],
+        ultimate_skill: crate::combat::types::SkillId("goblimon_ult".into()),
+        follow_up: None,
+        enemy_traits: vec![],
+        charged_attack: None,
+        form_identity: None,
+        blueprint_metadata: Default::default(),
+        resists: vec![],
+        toughness_max: 1,
+        weaknesses: vec![],
+        ultimate_trigger: 100,
+        ultimate_cap: 100,
+        ultimate_accumulation_trigger: UltAccumulationTrigger::OnOffensivePartyEvent,
+        ultimate_charge_per_event: 10,
+        speed: 100,
+        evo_stage: crate::combat::types::EvoStage::Child,
+        evo_line: crate::combat::types::EvoLineId("tamer".into()),
+        evolves_to: vec![],
+        tempo_resistant: false,
+        toughness_category: ToughnessCategory::Standard,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_spawn_commander() {
+        let mut app = App::new();
+        let def = taichi_def();
+
+        let entity = spawn_unit_from_def(&mut app.world_mut().commands(), &def);
+        app.update();
+
+        assert!(app.world().get::<Commander>(entity).is_some());
+    }
+
+    #[test]
+    fn test_spawn_non_commander() {
+        let mut app = App::new();
+        let mut def = taichi_def();
+        def.role_tags = vec!["damage".into()];
+
+        let entity = spawn_unit_from_def(&mut app.world_mut().commands(), &def);
+        app.update();
+
+        assert!(app.world().get::<Commander>(entity).is_none());
+    }
+}

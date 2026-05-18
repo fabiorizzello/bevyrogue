@@ -97,6 +97,7 @@ fn advance_does_not_exceed_2x_max_av() {
 // ──────────────────────────────────────────────────────────────────────────────
 
 use bevy::ecs::message::Messages;
+use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::av::ActionValueUpdated;
 use bevyrogue::combat::bootstrap::spawn_unit_from_def;
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
@@ -164,6 +165,7 @@ fn system_applies_delay_with_resistance_via_combat_event() {
             source: uid(1),
             target: uid(10),
             follow_up_depth: 0,
+            cast_id: CastId::ROOT,
         },
     );
     app.update();
@@ -184,6 +186,7 @@ fn system_applies_delay_with_resistance_via_combat_event() {
             source: uid(1),
             target: uid(10),
             follow_up_depth: 0,
+            cast_id: CastId::ROOT,
         },
     );
     app.update();
@@ -209,6 +212,7 @@ fn system_applies_advance_without_touching_resistance_stack() {
             source: uid(1),
             target: uid(11),
             follow_up_depth: 0,
+            cast_id: CastId::ROOT,
         },
     );
     app.update();
@@ -248,8 +252,7 @@ fn devimon_def() -> bevyrogue::data::units_ron::UnitDef {
         enemy_traits: vec![],
         charged_attack: None,
         form_identity: None,
-        twin_core: Default::default(),
-        holy_support: Default::default(),
+        blueprint_metadata: Default::default(),
         resists: vec![DamageTag::Fire, DamageTag::Ice],
         toughness_max: 100,
         weaknesses: vec![DamageTag::Light],
@@ -287,8 +290,7 @@ fn ally_def() -> bevyrogue::data::units_ron::UnitDef {
         enemy_traits: vec![],
         charged_attack: None,
         form_identity: None,
-        twin_core: Default::default(),
-        holy_support: Default::default(),
+        blueprint_metadata: Default::default(),
         resists: vec![],
         toughness_max: 50,
         weaknesses: vec![DamageTag::Ice],
@@ -383,6 +385,7 @@ fn boss_scenario_three_slow_hits_show_resistance_curve() {
             source: uid(1),
             target: boss_id,
             follow_up_depth: 0,
+            cast_id: CastId::ROOT,
         },
     );
     app.update();
@@ -411,6 +414,7 @@ fn boss_scenario_three_slow_hits_show_resistance_curve() {
             source: uid(1),
             target: boss_id,
             follow_up_depth: 0,
+            cast_id: CastId::ROOT,
         },
     );
     app.update();
@@ -439,6 +443,7 @@ fn boss_scenario_three_slow_hits_show_resistance_curve() {
             source: uid(1),
             target: boss_id,
             follow_up_depth: 0,
+            cast_id: CastId::ROOT,
         },
     );
     app.update();
@@ -461,7 +466,7 @@ fn boss_scenario_three_slow_hits_show_resistance_curve() {
 #[test]
 fn canonical_units_ron_contains_tempo_resistant_boss() {
     let roster: bevyrogue::data::units_ron::UnitRoster =
-        ron::from_str(include_str!("../assets/data/units.ron")).expect("parse units.ron");
+        bevyrogue::data::aggregate_unit_roster();
 
     let devimon = roster
         .0

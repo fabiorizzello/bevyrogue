@@ -1,27 +1,30 @@
 use bevy::prelude::*;
 
-use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
+use bevyrogue::combat::runtime::{SignalPayload, intent::CastId};
+use bevyrogue::combat::blueprints::twin_core::TwinCoreState;
 use bevyrogue::combat::blueprints::patamon::{
     GRACE_CAP, HolySupportDesignTag, HolySupportHook, HolySupportRejectReason, HolySupportState,
-    HolySupportStep, HolySupportTransition,
-    classify_holy_support_tag, holy_support_design_tag,
+    HolySupportStep, HolySupportTransition, classify_holy_support_tag, holy_support_design_tag,
+    register_validation_ext,
 };
+use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
+use bevyrogue::combat::runtime::ExtRegistries;
+use bevyrogue::combat::blueprints::patamon::identity::HolySupportSignal;
 use bevyrogue::combat::kernel::{
-    CombatKernelRegistry, CombatKernelTransition, CombatTagChangeKind,
-    CombatTagState, CombatTagTransition, TacticalCyclePhase, TacticalCycleStep,
-    TacticalCycleTransition,
+    CombatKernelRegistry, CombatKernelTransition, CombatTagChangeKind, CombatTagState,
+    CombatTagTransition, TacticalCyclePhase, TacticalCycleStep, TacticalCycleTransition,
 };
 use bevyrogue::combat::log::ActionLog;
 use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
 use bevyrogue::combat::sp::SpPool;
 use bevyrogue::combat::state::CombatState;
-use bevyrogue::combat::blueprints::agumon::TwinCoreState;
 use bevyrogue::combat::types::UnitId;
 
 fn app_with_holy_support() -> App {
     let mut app = App::new();
     app.add_message::<CombatEvent>();
     bevyrogue::combat::kernel::register_combat_kernel_runtime(&mut app);
+    bevyrogue::combat::blueprints::add_runtime_plugins(&mut app);
     app
 }
 
@@ -37,12 +40,47 @@ fn queue_kernel_transition(app: &mut App, transition: CombatKernelTransition) {
             source: UnitId(1),
             target: UnitId(2),
             follow_up_depth: 0,
+            cast_id: CastId::ROOT,
         });
     }
 }
 
 fn emit_kernel_transition(app: &mut App, transition: CombatKernelTransition) {
     queue_kernel_transition(app, transition);
+    app.update();
+}
+
+fn emit_holy_blueprint_transition(app: &mut App, transition: HolySupportTransition) {
+    let (name, payload) = match transition.signal {
+        HolySupportSignal::BuildGrace => (
+            "build_holy_support_grace",
+            SignalPayload::Amount(i64::from(transition.amount)),
+        ),
+        HolySupportSignal::SpendGrace => (
+            "spend_holy_support_grace",
+            SignalPayload::Amount(i64::from(transition.amount)),
+        ),
+        HolySupportSignal::MarkMartyrLight => ("mark_martyr_light", SignalPayload::Empty),
+        HolySupportSignal::ConsumeMartyrLight => ("consume_martyr_light", SignalPayload::Empty),
+        HolySupportSignal::CycleReset => ("cycle_reset", SignalPayload::Empty),
+        HolySupportSignal::Rejected | HolySupportSignal::Ignored => {
+            ("rejected", SignalPayload::Empty)
+        }
+    };
+
+    app.world_mut().write_message(CombatEvent {
+        kind: CombatEventKind::OnKernelTransition {
+            transition: CombatKernelTransition::Blueprint {
+                owner: "patamon".to_owned(),
+                name: name.to_owned(),
+                payload,
+            },
+        },
+        source: UnitId(1),
+        target: UnitId(2),
+        follow_up_depth: 0,
+        cast_id: CastId::ROOT,
+    });
     app.update();
 }
 
@@ -69,7 +107,11 @@ fn hook_translates_holy_tags_and_ignores_unknown_tags() {
     assert_eq!(outputs.len(), 2);
     assert_eq!(
         outputs[1],
-        CombatKernelTransition::HolySupport(HolySupportTransition::build_grace(1))
+        CombatKernelTransition::Blueprint {
+            owner: "patamon".to_owned(),
+            name: "build_holy_support_grace".to_owned(),
+            payload: SignalPayload::Amount(1),
+        }
     );
 
     let martyr = CombatKernelTransition::Tag(CombatTagTransition {
@@ -86,7 +128,11 @@ fn hook_translates_holy_tags_and_ignores_unknown_tags() {
     let martyr_outputs = registry.dispatch(martyr);
     assert_eq!(
         martyr_outputs[1],
-        CombatKernelTransition::HolySupport(HolySupportTransition::mark_martyr_light())
+        CombatKernelTransition::Blueprint {
+            owner: "patamon".to_owned(),
+            name: "mark_martyr_light".to_owned(),
+            payload: SignalPayload::Empty,
+        }
     );
 
     let unrelated = CombatKernelTransition::Tag(CombatTagTransition {
@@ -101,12 +147,19 @@ fn hook_translates_holy_tags_and_ignores_unknown_tags() {
 fn grace_builds_saturate_at_cap_after_bevy_flush() {
     let mut app = app_with_holy_support();
 
-    queue_kernel_transition(
-        &mut app,
-        CombatKernelTransition::HolySupport(HolySupportTransition::build_grace(
-            GRACE_CAP.saturating_add(4),
-        )),
-    );
+    app.world_mut().write_message(CombatEvent {
+        kind: CombatEventKind::OnKernelTransition {
+            transition: CombatKernelTransition::Blueprint {
+                owner: "patamon".to_owned(),
+                name: "build_holy_support_grace".to_owned(),
+                payload: SignalPayload::Amount(i64::from(GRACE_CAP.saturating_add(4))),
+            },
+        },
+        source: UnitId(1),
+        target: UnitId(2),
+        follow_up_depth: 0,
+        cast_id: CastId::ROOT,
+    });
 
     {
         let state = app.world().resource::<HolySupportState>();
@@ -134,10 +187,7 @@ fn grace_builds_saturate_at_cap_after_bevy_flush() {
 fn spending_grace_underflow_is_rejected_without_underflowing() {
     let mut app = app_with_holy_support();
 
-    emit_kernel_transition(
-        &mut app,
-        CombatKernelTransition::HolySupport(HolySupportTransition::spend_grace(1)),
-    );
+    emit_holy_blueprint_transition(&mut app, HolySupportTransition::spend_grace(1));
 
     let state = app.world().resource::<HolySupportState>();
     assert_eq!(state.grace, 0);
@@ -154,10 +204,7 @@ fn spending_grace_underflow_is_rejected_without_underflowing() {
 fn martyr_light_is_only_marked_and_consumed_once_per_cycle() {
     let mut app = app_with_holy_support();
 
-    emit_kernel_transition(
-        &mut app,
-        CombatKernelTransition::HolySupport(HolySupportTransition::mark_martyr_light()),
-    );
+    emit_holy_blueprint_transition(&mut app, HolySupportTransition::mark_martyr_light());
     {
         let state = app.world().resource::<HolySupportState>();
         assert!(state.martyr_light_marked_this_cycle);
@@ -168,10 +215,7 @@ fn martyr_light_is_only_marked_and_consumed_once_per_cycle() {
         );
     }
 
-    emit_kernel_transition(
-        &mut app,
-        CombatKernelTransition::HolySupport(HolySupportTransition::mark_martyr_light()),
-    );
+    emit_holy_blueprint_transition(&mut app, HolySupportTransition::mark_martyr_light());
     {
         let state = app.world().resource::<HolySupportState>();
         assert!(state.martyr_light_marked_this_cycle);
@@ -184,10 +228,7 @@ fn martyr_light_is_only_marked_and_consumed_once_per_cycle() {
         );
     }
 
-    emit_kernel_transition(
-        &mut app,
-        CombatKernelTransition::HolySupport(HolySupportTransition::consume_martyr_light()),
-    );
+    emit_holy_blueprint_transition(&mut app, HolySupportTransition::consume_martyr_light());
     {
         let state = app.world().resource::<HolySupportState>();
         assert!(state.martyr_light_marked_this_cycle);
@@ -198,10 +239,7 @@ fn martyr_light_is_only_marked_and_consumed_once_per_cycle() {
         );
     }
 
-    emit_kernel_transition(
-        &mut app,
-        CombatKernelTransition::HolySupport(HolySupportTransition::consume_martyr_light()),
-    );
+    emit_holy_blueprint_transition(&mut app, HolySupportTransition::consume_martyr_light());
     {
         let state = app.world().resource::<HolySupportState>();
         assert!(state.martyr_light_consumed_this_cycle);
@@ -219,14 +257,8 @@ fn martyr_light_is_only_marked_and_consumed_once_per_cycle() {
 fn wrapped_tactical_cycle_resets_holy_support_guards() {
     let mut app = app_with_holy_support();
 
-    emit_kernel_transition(
-        &mut app,
-        CombatKernelTransition::HolySupport(HolySupportTransition::mark_martyr_light()),
-    );
-    emit_kernel_transition(
-        &mut app,
-        CombatKernelTransition::HolySupport(HolySupportTransition::consume_martyr_light()),
-    );
+    emit_holy_blueprint_transition(&mut app, HolySupportTransition::mark_martyr_light());
+    emit_holy_blueprint_transition(&mut app, HolySupportTransition::consume_martyr_light());
 
     let wrapped_cycle = CombatKernelTransition::TacticalCycle(TacticalCycleTransition {
         before: TacticalCycleStep {
@@ -266,12 +298,26 @@ fn validation_snapshot_includes_holy_support_fields() {
         martyr_light_consumed_this_cycle: false,
         last_signal: Some(HolySupportTransition::build_grace(2)),
     });
+    world.insert_resource(ExtRegistries::default());
+    {
+        let mut regs = world.resource_mut::<ExtRegistries>();
+        register_validation_ext(&mut regs);
+    }
 
     let snapshot = capture_validation_snapshot(&mut world).expect("snapshot should build");
-    assert!(snapshot.holy_support.is_some());
+    let holy_support = snapshot
+        .section("support")
+        .expect("support section should be present");
+
+    assert_eq!(holy_support.field("grace"), Some("2"));
+    assert_eq!(holy_support.field("grace_cap"), Some("3"));
+    assert_eq!(holy_support.field("martyr_marked"), Some("true"));
+    assert_eq!(holy_support.field("martyr_consumed"), Some("false"));
+    assert_eq!(holy_support.field("last"), Some("build(2)"));
 
     let formatted = format_validation_snapshot(&snapshot);
-    assert!(formatted.contains("holy_support=grace=2/3"));
+    assert!(formatted.contains("grace=2"));
     assert!(formatted.contains("martyr_marked=true"));
     assert!(formatted.contains("last=build(2)"));
+    assert!(!formatted.contains("holy_support="));
 }

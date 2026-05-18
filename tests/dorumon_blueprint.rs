@@ -1,5 +1,6 @@
+use bevyrogue::combat::runtime::SignalPayload;
 use bevyrogue::combat::blueprints::{self, CustomSignalDispatchError};
-use bevyrogue::combat::kernel::{CombatKernelTransition, PredatorLoopTransition};
+use bevyrogue::combat::kernel::CombatKernelTransition;
 use bevyrogue::combat::state::{ResolvedAction, UltEffect};
 use bevyrogue::combat::types::{DamageTag, SkillId, UnitId};
 use bevyrogue::data::skills_ron::{CustomSignalPayload, SkillCustomSignal};
@@ -33,68 +34,85 @@ fn custom_signal(owner: &str, signal: &str, payload: CustomSignalPayload) -> Ski
     SkillCustomSignal::blueprint(owner, signal, payload)
 }
 
-fn predator_transition(
-    action: &ResolvedAction,
-    signal: &str,
-    payload: CustomSignalPayload,
-) -> PredatorLoopTransition {
-    let custom = custom_signal("dorumon", signal, payload);
-    let transitions = blueprints::dispatch_custom_signal(&custom, action).expect("dispatch");
-    assert_eq!(transitions.len(), 1);
-    match &transitions[0] {
-        CombatKernelTransition::PredatorLoop(transition) => *transition,
-        other => panic!("expected predator transition, got {other:?}"),
+fn dorumon_blueprint_transition(name: &str, payload: SignalPayload) -> CombatKernelTransition {
+    CombatKernelTransition::Blueprint {
+        owner: "dorumon".to_string(),
+        name: name.to_string(),
+        payload,
     }
 }
 
+fn dorumon_transitions(
+    action: &ResolvedAction,
+    signal: &str,
+    payload: CustomSignalPayload,
+) -> Vec<CombatKernelTransition> {
+    let custom = custom_signal("dorumon", signal, payload);
+    blueprints::dispatch_custom_signal(&custom, action).expect("dispatch")
+}
+
 #[test]
-fn dorumon_build_exploit_maps_to_predator_loop_transition() {
+fn dorumon_build_exploit_maps_to_blueprint_transition() {
     let action = base_action();
-    let transition = predator_transition(
+    let transitions = dorumon_transitions(
         &action,
         "build_exploit",
         CustomSignalPayload::Amount { amount: 2 },
     );
 
     assert_eq!(
-        transition,
-        PredatorLoopTransition::build_exploit(action.target, 2)
+        transitions,
+        vec![dorumon_blueprint_transition(
+            "build_exploit",
+            SignalPayload::Amount(2)
+        )]
     );
 }
 
 #[test]
-fn dorumon_apply_prey_lock_uses_resolved_action_target() {
+fn dorumon_apply_prey_lock_uses_blueprint_owner_envelope() {
     let action = base_action();
-    let transition = predator_transition(&action, "apply_prey_lock", CustomSignalPayload::Empty);
+    let transitions = dorumon_transitions(&action, "apply_prey_lock", CustomSignalPayload::Empty);
 
     assert_eq!(
-        transition.signal,
-        bevyrogue::combat::kernel::PredatorLoopSignal::ApplyPreyLock
+        transitions,
+        vec![dorumon_blueprint_transition(
+            "apply_prey_lock",
+            SignalPayload::Amount(0)
+        )]
     );
-    assert_eq!(transition.target, Some(action.target));
 }
 
 #[test]
-fn dorumon_consume_payoff_maps_to_predator_loop_transition() {
+fn dorumon_consume_payoff_maps_to_blueprint_transition() {
     let action = base_action();
-    let transition = predator_transition(
+    let transitions = dorumon_transitions(
         &action,
         "consume_prey_lock_payoff",
         CustomSignalPayload::Empty,
     );
 
     assert_eq!(
-        transition,
-        PredatorLoopTransition::consume_prey_lock_payoff(action.target, 1)
+        transitions,
+        vec![dorumon_blueprint_transition(
+            "consume_prey_lock_payoff",
+            SignalPayload::Amount(1),
+        )]
     );
 }
 
 #[test]
-fn dorumon_enter_berserk_maps_to_predator_loop_transition() {
+fn dorumon_enter_berserk_maps_to_blueprint_transition() {
     let action = base_action();
-    let transition = predator_transition(&action, "enter_berserk", CustomSignalPayload::Empty);
+    let transitions = dorumon_transitions(&action, "enter_berserk", CustomSignalPayload::Empty);
 
-    assert_eq!(transition, PredatorLoopTransition::enter_berserk(0));
+    assert_eq!(
+        transitions,
+        vec![dorumon_blueprint_transition(
+            "enter_berserk",
+            SignalPayload::Amount(0)
+        )]
+    );
 }
 
 #[test]
@@ -118,18 +136,9 @@ fn multiple_dorumon_signals_preserve_order() {
     assert_eq!(
         transitions,
         vec![
-            CombatKernelTransition::PredatorLoop(PredatorLoopTransition::build_exploit(
-                action.target,
-                1,
-            )),
-            CombatKernelTransition::PredatorLoop(PredatorLoopTransition::apply_prey_lock(
-                action.target,
-                0,
-            )),
-            CombatKernelTransition::PredatorLoop(PredatorLoopTransition::consume_prey_lock_payoff(
-                action.target,
-                1
-            )),
+            dorumon_blueprint_transition("build_exploit", SignalPayload::Amount(1)),
+            dorumon_blueprint_transition("apply_prey_lock", SignalPayload::Amount(0)),
+            dorumon_blueprint_transition("consume_prey_lock_payoff", SignalPayload::Amount(1)),
         ]
     );
 }

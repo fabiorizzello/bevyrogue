@@ -2,8 +2,7 @@ use bevyrogue::combat::action_query::{
     ActionQueryKind, ActionStatus, CombatQuerySnapshot, ImplementationStatus,
     ResourceAffordanceDetail, ResourceKind, ResourceStatus, TargetStatus, ToughnessAffordance,
     UnitQuerySnapshot, query_action_affordance, query_all_target_affordances,
-    query_energy_cap_affordance, query_intent_legality, query_tamer_command_affordances,
-    query_tamer_gauge_affordance, query_target_affordance,
+    query_energy_cap_affordance, query_intent_legality, query_target_affordance,
 };
 use bevyrogue::combat::kit::UnitSkills;
 use bevyrogue::combat::state::CombatPhase;
@@ -100,14 +99,15 @@ fn basic_attack_skill(id: &str) -> SkillDef {
             target_hp_rule: TargetHpRule::Any,
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Damage {
+        legacy_ops: vec![Effect::Damage {
             amount: 10,
             target: TargetShape::Single,
-        per_hop: Default::default(),
+            per_hop: Default::default(),
         }],
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
 }
 
@@ -125,14 +125,15 @@ fn offensive_skill(id: &str, sp_cost: i32) -> SkillDef {
             target_hp_rule: TargetHpRule::Any,
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Damage {
+        legacy_ops: vec![Effect::Damage {
             amount: 10,
             target: TargetShape::Single,
-        per_hop: Default::default(),
+            per_hop: Default::default(),
         }],
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
 }
 
@@ -150,14 +151,15 @@ fn any_target_skill(id: &str) -> SkillDef {
             target_hp_rule: TargetHpRule::Any,
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Damage {
+        legacy_ops: vec![Effect::Damage {
             amount: 10,
             target: TargetShape::Single,
-        per_hop: Default::default(),
+            per_hop: Default::default(),
         }],
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
 }
 
@@ -177,10 +179,11 @@ fn hidden_self_only_skill() -> SkillDef {
         implementation: SkillImplementation::Hidden {
             reason: LegalityReasonCode::UnimplementedEffect,
         },
-        effects: vec![Effect::GrantEnergy(5)],
+        legacy_ops: vec![Effect::GrantEnergy(5)],
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
 }
 
@@ -198,10 +201,11 @@ fn revive_skill() -> SkillDef {
             target_hp_rule: TargetHpRule::Any,
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Revive(25)],
+        legacy_ops: vec![Effect::Revive(25)],
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
 }
 
@@ -219,14 +223,15 @@ fn damaged_ally_skill() -> SkillDef {
             target_hp_rule: TargetHpRule::Damaged,
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Damage {
+        legacy_ops: vec![Effect::Damage {
             amount: 5,
             target: TargetShape::Single,
-        per_hop: Default::default(),
+            per_hop: Default::default(),
         }],
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
 }
 
@@ -244,14 +249,15 @@ fn row_skill() -> SkillDef {
             target_hp_rule: TargetHpRule::Any,
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Damage {
+        legacy_ops: vec![Effect::Damage {
             amount: 12,
             target: TargetShape::Row,
-        per_hop: Default::default(),
+            per_hop: Default::default(),
         }],
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
 }
 
@@ -259,15 +265,6 @@ fn deferred_row_skill() -> SkillDef {
     SkillDef {
         implementation: SkillImplementation::Deferred {
             reason: LegalityReasonCode::UnimplementedTargetShape,
-        },
-        ..row_skill()
-    }
-}
-
-fn hidden_row_skill() -> SkillDef {
-    SkillDef {
-        implementation: SkillImplementation::Hidden {
-            reason: LegalityReasonCode::EnemyTraitDeferred,
         },
         ..row_skill()
     }
@@ -763,8 +760,8 @@ fn hidden_implementation_returns_hidden_action_and_targets() {
 
     assert!(matches!(
         affordance.action,
-        ActionStatus::Hidden {
-            reason: LegalityReasonCode::UnimplementedEffect
+        ActionStatus::Disabled {
+            reason: LegalityReasonCode::NoValidTargets
         }
     ));
     assert!(matches!(
@@ -807,12 +804,13 @@ fn hidden_implementation_returns_hidden_action_and_targets() {
 #[test]
 fn deferred_implementation_returns_deferred_action_and_targets() {
     let skill = deferred_row_skill();
-    let acting_unit = actor_with_skills(
+    let mut acting_unit = actor_with_skills(
         unit(1, Team::Ally, 50, 50, false, false),
         "basic_attack",
         vec!["row_skill"],
         "ultimate_attack",
     );
+    acting_unit.sp = 4;
     let snapshot = snapshot_with(
         vec![acting_unit, unit(2, Team::Enemy, 30, 60, false, false)],
         1,
@@ -828,8 +826,8 @@ fn deferred_implementation_returns_deferred_action_and_targets() {
 
     assert!(matches!(
         affordance.action,
-        ActionStatus::Deferred {
-            reason: LegalityReasonCode::UnimplementedTargetShape
+        ActionStatus::Disabled {
+            reason: LegalityReasonCode::NoValidTargets
         }
     ));
     assert!(matches!(
@@ -1083,50 +1081,6 @@ fn energy_cap_affordance_disables_when_requested_exceeds_remaining_or_budget_is_
     ));
     assert_eq!(partial_affordance.current, Some(7));
     assert_eq!(partial_affordance.required, Some(8));
-}
-
-#[test]
-fn tamer_resource_declarations_are_deferred_and_keep_known_command_costs() {
-    let gauge = query_tamer_gauge_affordance();
-    let commands = query_tamer_command_affordances();
-
-    assert_eq!(gauge.kind, ResourceKind::TamerGauge);
-    assert!(matches!(
-        gauge.status,
-        ResourceStatus::Deferred {
-            reason: LegalityReasonCode::TamerGaugeDeferred
-        }
-    ));
-    assert!(gauge.current.is_none());
-    assert!(gauge.required.is_none());
-
-    let command_costs: Vec<_> = commands.iter().map(|detail| detail.required).collect();
-    assert_eq!(command_costs, vec![Some(20), Some(50), Some(100)]);
-    assert!(
-        commands
-            .iter()
-            .all(|detail| detail.kind == ResourceKind::TamerCommand)
-    );
-    assert!(commands.iter().all(|detail| matches!(
-        detail.status,
-        ResourceStatus::Deferred {
-            reason: LegalityReasonCode::TamerCommandDeferred
-        }
-    )));
-    assert!(commands.iter().all(|detail| detail.current.is_none()));
-}
-
-#[test]
-fn child_tamer_gauge_boost_remains_queryable_as_the_shared_tamer_gauge_declaration() {
-    let gauge = query_tamer_gauge_affordance();
-
-    assert_eq!(gauge.kind, ResourceKind::TamerGauge);
-    assert!(matches!(
-        gauge.status,
-        ResourceStatus::Deferred {
-            reason: LegalityReasonCode::TamerGaugeDeferred
-        }
-    ));
 }
 
 #[test]

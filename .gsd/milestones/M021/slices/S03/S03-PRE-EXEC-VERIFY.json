@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "milestoneId": "M021",
+  "sliceId": "S03",
+  "timestamp": 1778833514286,
+  "status": "fail",
+  "durationMs": 1,
+  "checks": [
+    {
+      "category": "tool",
+      "target": "T01 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: cargo test --lib combat::api::runner 2>&1 | tail -5 (inline runner tests incl. new headless/windowed/parity cases pass); cargo test --test timeline_onturnstart_kills --test timeline_chain_bolt_port --test timeline_validate_typo 2>&1 | tail -5 (S02 fixtures green, no regression); cargo check 2>&1 | tail -3 and cargo check --features windowed 2>&1 | tail -3 (exit 0, no new warnings) (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "T02 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: cargo test --test timeline_mode_parity 2>&1 | tail -5 (all cases pass, including the branch-routing assertion) (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "T03 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: cargo test --test timeline_two_clock_parity 2>&1 | tail -5 (passes; asserts AwaitingCue observed and HeadlessAuto pending == Windowed pending) (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "T04 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: cargo test --test timeline_circuit_breaker 2>&1 | tail -5 (passes: Halted at MAX_HOPS, bounded pending, no panic) (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    }
+  ]
+}

@@ -52,11 +52,11 @@ fn blast_skill() -> SkillBook {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![
+        legacy_ops: vec![
             Effect::Damage {
                 amount: 10,
                 target: TargetShape::Blast,
-            per_hop: Default::default(),
+                per_hop: Default::default(),
             },
             Effect::ToughnessHit(5),
         ],

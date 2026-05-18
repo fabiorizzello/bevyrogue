@@ -9,52 +9,31 @@ pub mod gabumon;
 pub mod patamon;
 pub mod renamon;
 pub mod tentomon;
+pub mod twin_core;
 
-use std::fmt;
+use thiserror::Error;
 
 use crate::combat::{kernel::CombatKernelTransition, state::ResolvedAction};
 use crate::data::skills_ron::{CustomSignalPayload, SkillCustomSignal};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum CustomSignalDispatchError {
+    #[error("unknown blueprint owner '{owner}'")]
     UnknownOwner {
         owner: String,
     },
+    #[error("unknown signal '{signal}' for owner '{owner}'")]
     UnknownSignal {
         owner: String,
         signal: String,
     },
+    #[error("malformed payload for {owner}::{signal}: {detail}")]
     MalformedPayload {
         owner: String,
         signal: String,
         detail: String,
     },
 }
-
-impl fmt::Display for CustomSignalDispatchError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::UnknownOwner { owner } => {
-                write!(f, "unknown blueprint owner '{owner}'")
-            }
-            Self::UnknownSignal { owner, signal } => {
-                write!(f, "unknown signal '{signal}' for owner '{owner}'")
-            }
-            Self::MalformedPayload {
-                owner,
-                signal,
-                detail,
-            } => {
-                write!(
-                    f,
-                    "malformed payload for {owner}::{signal}: {detail}"
-                )
-            }
-        }
-    }
-}
-
-impl std::error::Error for CustomSignalDispatchError {}
 
 pub(crate) fn amount_payload(
     signal: &SkillCustomSignal,
@@ -73,25 +52,6 @@ pub(crate) fn amount_payload(
             owner: owner.to_string(),
             signal: signal_name.to_string(),
             detail: "expected Amount payload".to_string(),
-        }),
-    }
-}
-
-// kept for: empty-payload custom signals (Tentomon Battery Loop M026 /
-// Renamon Kitsune Grace M027 reactive passives); sibling amount_payload
-// is already wired — keep dispatcher pattern symmetric.
-#[allow(dead_code)]
-pub(crate) fn no_payload(
-    signal: &SkillCustomSignal,
-    owner: &'static str,
-    signal_name: &'static str,
-) -> Result<(), CustomSignalDispatchError> {
-    match signal.payload() {
-        CustomSignalPayload::Empty => Ok(()),
-        CustomSignalPayload::Amount { .. } => Err(CustomSignalDispatchError::MalformedPayload {
-            owner: owner.to_string(),
-            signal: signal_name.to_string(),
-            detail: "expected empty payload".to_string(),
         }),
     }
 }
@@ -134,6 +94,63 @@ const BLUEPRINTS: &[BlueprintRegistration] = &[
     },
 ];
 
+/// Register all blueprint extension points (hooks, predicates, selectors) into `regs`.
+///
+/// Call this alongside `register_kernel_builtins` whenever you compile the full
+/// `SkillBook` timeline set, so that blueprint-specific references in timelines
+/// (like `"agumon/has_bouncing_fire"`) resolve correctly.
+// Consumed by tests/compiled_timeline_petit_thunder.rs and several other test files.
+pub fn register_all_blueprint_exts(regs: &mut crate::combat::runtime::ExtRegistries) {
+    agumon::register_agumon_ext(regs);
+    gabumon::register_gabumon_ext(regs);
+    patamon::register_patamon_ext(regs);
+    renamon::register_renamon_ext(regs);
+    tentomon::register_tentomon_ext(regs);
+    dorumon::register_dorumon_ext(regs);
+}
+
+pub fn register_all_blueprint_validation_exts(regs: &mut crate::combat::runtime::ExtRegistries) {
+    agumon::register_validation_ext(regs);
+    gabumon::register_validation_ext(regs);
+    twin_core::register_validation_ext(regs);
+    patamon::register_validation_ext(regs);
+    dorumon::register_validation_ext(regs);
+    tentomon::register_tentomon_ext(regs);
+    renamon::register_renamon_ext(regs);
+}
+
+pub fn register_canonical_passive_runners(app: &mut crate::combat::bevy_types::App) {
+    agumon::register_passive_runtime(app);
+    gabumon::register_passive_runtime(app);
+    patamon::register_passive_runtime(app);
+    renamon::register_passive_runtime(app);
+}
+
+pub fn add_runtime_plugins(app: &mut crate::combat::bevy_types::App) {
+    app.add_plugins((
+        twin_core::TwinCorePlugin,
+        patamon::PatamonPlugin,
+        dorumon::DorumonPlugin,
+        tentomon::TentomonPlugin,
+        renamon::RenamonPlugin,
+    ));
+}
+
+/// Single composition seam: plugins + validation exts + passive runners.
+///
+/// `CombatPlugin` calls this once; tests that need granular control can
+/// still call the individual functions above.
+pub fn register_blueprints(app: &mut crate::combat::bevy_types::App) {
+    add_runtime_plugins(app);
+    {
+        let mut regs = app
+            .world_mut()
+            .resource_mut::<crate::combat::runtime::ExtRegistries>();
+        register_all_blueprint_validation_exts(&mut regs);
+    }
+    register_canonical_passive_runners(app);
+}
+
 pub fn dispatch_custom_signal(
     signal: &SkillCustomSignal,
     action: &ResolvedAction,
@@ -150,6 +167,7 @@ pub fn dispatch_custom_signal(
     (blueprint.dispatch)(signal, action)
 }
 
+// Consumed by tests/dorumon_predator_runtime.rs, twin_core_integration.rs, and others.
 pub fn transitions_for_action(action: &ResolvedAction) -> Vec<CombatKernelTransition> {
     action
         .custom_signals

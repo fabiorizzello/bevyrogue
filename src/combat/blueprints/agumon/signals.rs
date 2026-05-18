@@ -2,8 +2,8 @@ use crate::combat::kernel::CombatKernelTransition;
 use crate::combat::state::ResolvedAction;
 use crate::data::skills_ron::SkillCustomSignal;
 
-use super::identity::{TwinCoreDesignTag, twin_core_added_tag_transition};
 use super::super::{CustomSignalDispatchError, amount_payload};
+use super::{TwinCoreDesignTag, twin_core_added_tag_transition};
 
 pub const OWNER: &str = "agumon";
 const APPLY_HEATED: &str = "apply_heated";

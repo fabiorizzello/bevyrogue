@@ -5,7 +5,7 @@ use bevyrogue::combat::types::UnitId;
 use bevyrogue::data::units_ron::UnitRoster;
 
 fn canonical_roster() -> UnitRoster {
-    ron::from_str(include_str!("../assets/data/units.ron")).expect("parse units.ron")
+    bevyrogue::data::aggregate_unit_roster()
 }
 
 // MVP v5.3 roster (D039): valid IDs are 1, 2, 5, 7, 9, 11, 12, 13, 14, 15, 16, 17.

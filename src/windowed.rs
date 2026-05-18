@@ -6,19 +6,20 @@
 use bevy::prelude::*;
 use bevy_egui::{EguiContexts, EguiPlugin, EguiPrimaryContextPass, egui};
 
-use crate::combat::events::CombatEvent;
-use crate::combat::follow_up::{
+use bevyrogue::combat::follow_up::{
     follow_up_listener_system, form_identity_listener_system, resolve_follow_up_action_system,
 };
-use crate::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
-use crate::combat::turn_order::{TurnAdvanced, TurnOrder};
-use crate::combat::turn_system::{
+use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
+use bevyrogue::combat::av::ActionValue;
+use bevyrogue::combat::turn_order::TurnAdvanced;
+use bevyrogue::combat::turn_system::{
     advance_turn_system, check_victory_system, resolve_action_system,
+    resolve_enemy_turn_action_system,
 };
-use crate::combat::types::{Attribute, UnitId};
-use crate::combat::ultimate::{flush_ult_gain_system, ult_accumulation_system};
-use crate::combat::unit::Unit;
-use crate::data::{self, DataPlugin};
+use bevyrogue::combat::types::{Attribute, UnitId};
+use bevyrogue::combat::ultimate::{flush_ult_gain_system, ult_accumulation_system};
+use bevyrogue::combat::unit::Unit;
+use bevyrogue::data::{self, DataPlugin};
 
 #[derive(Resource, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct WindowedValidationConfig {
@@ -86,13 +87,18 @@ pub fn register(app: &mut App, validation: Option<WindowedValidationConfig>) {
     }))
     .add_plugins(DataPlugin)
     .add_plugins(EguiPlugin::default())
-    .init_resource::<crate::ui::combat_panel::PendingAction>()
+    .init_resource::<bevyrogue::ui::combat_panel::PendingAction>()
+    .init_resource::<bevyrogue::ui::combat_panel::PreviewDamageCache>()
+    .add_systems(
+        Update,
+        bevyrogue::ui::combat_panel::refresh_preview_damage_cache,
+    )
     .add_systems(Startup, setup)
     .add_systems(EguiPrimaryContextPass, roster_panel)
     .add_systems(EguiPrimaryContextPass, turn_order_panel)
     .add_systems(
         EguiPrimaryContextPass,
-        crate::ui::combat_panel::combat_panel,
+        bevyrogue::ui::combat_panel::combat_panel,
     );
 
     if let Some(config) = validation {
@@ -103,20 +109,22 @@ pub fn register(app: &mut App, validation: Option<WindowedValidationConfig>) {
 }
 
 pub fn register_combat_systems(app: &mut App) {
-    app.add_systems(
-        Update,
-        (
-            resolve_action_system,
-            follow_up_listener_system,
-            form_identity_listener_system,
-            resolve_follow_up_action_system,
-            ult_accumulation_system,
-            flush_ult_gain_system,
-            advance_turn_system,
-            check_victory_system,
-        )
-            .chain(),
-    );
+    app.init_resource::<bevyrogue::combat::turn_system::EnemyTurnRequestQueue>()
+        .add_systems(
+            Update,
+            (
+                resolve_action_system,
+                follow_up_listener_system,
+                form_identity_listener_system,
+                resolve_follow_up_action_system,
+                ult_accumulation_system,
+                flush_ult_gain_system,
+                advance_turn_system,
+                resolve_enemy_turn_action_system,
+                check_victory_system,
+            )
+                .chain(),
+        );
 }
 
 fn setup(mut commands: Commands) {
@@ -190,24 +198,44 @@ fn roster_panel(
             ));
         }
         if ui.button("reload combat").clicked() {
-            asset_server.reload("data/units.ron");
-            asset_server.reload("data/skills.ron");
+            for path in bevyrogue::data::DIGIMON_UNIT_PATHS
+                .iter()
+                .chain(bevyrogue::data::ENEMY_UNIT_PATHS.iter())
+            {
+                asset_server.reload(*path);
+            }
+            for path in bevyrogue::data::DIGIMON_SKILL_PATHS
+                .iter()
+                .chain(bevyrogue::data::ENEMY_SKILL_PATHS.iter())
+            {
+                asset_server.reload(*path);
+            }
         }
     });
     Ok(())
 }
 
+/// Computes the upcoming turn order from live Action Values: units closest to
+/// acting (highest AV) first, ties broken by ascending `UnitId` to match
+/// `advance_turn_system`.
+fn av_preview(units: &Query<(&Unit, &ActionValue)>, limit: usize) -> Vec<UnitId> {
+    let mut ranked: Vec<(UnitId, i32)> = units.iter().map(|(u, av)| (u.id, av.0)).collect();
+    ranked.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.0.cmp(&b.0.0)));
+    ranked.into_iter().take(limit).map(|(id, _)| id).collect()
+}
+
 fn turn_order_panel(
     mut contexts: EguiContexts,
-    mut order: ResMut<TurnOrder>,
+    av_units: Query<(&Unit, &ActionValue)>,
     units: Query<&Unit>,
     mut turn_advanced: MessageWriter<TurnAdvanced>,
 ) -> Result {
     let ctx = contexts.ctx_mut()?;
+    let preview = av_preview(&av_units, 5);
     egui::TopBottomPanel::top("av_bar").show(ctx, |ui| {
         ui.heading("AV Bar (next 5)");
         ui.horizontal(|ui| {
-            for id in &order.future_preview.clone() {
+            for id in &preview {
                 let (label, color) = unit_chip(*id, &units);
                 let bg = egui::Frame::default()
                     .fill(color)
@@ -219,7 +247,7 @@ fn turn_order_panel(
         });
         ui.horizontal(|ui| {
             if ui.button("Advance").clicked() {
-                if let Some(id) = order.future_preview.first().copied() {
+                if let Some(id) = preview.first().copied() {
                     turn_advanced.write(TurnAdvanced::of(id));
                 }
             }

@@ -1,0 +1,218 @@
+[
+  {
+    "kind": "bash",
+    "toolCallId": "call_W0O8rSu1aTZswJdBt43kRYln|fc_0582f5de24594fe8016a0858c8d9f88191addb7f693420ce2f",
+    "command": "rg -n \"passive_reactive_canon|BlockReactionTriggered|resolve_block_reaction|TentomonPlugin|DorumonPlugin\" tests src -g '!target'",
+    "exitCode": 0,
+    "outputSnippet": "tests/block_reaction_pipeline.rs:107:    assert!(baseline_events.iter().all(|ev| !matches!(ev.kind, CombatEventKind::BlockReactionTriggered { .. })));\ntests/block_reaction_pipeline.rs:117:            CombatEventKind::BlockReactionTriggered { .. } => \"BlockReactionTriggered\",\ntests/block_reaction_pipeline.rs:124:        kinds.windows(3).any(|window| window == [\"IncomingDamage\", \"OnDamageDealt\", \"BlockReactionTriggered\"]),\ntests/block_reaction_pipeline.rs:125:        \"expected IncomingDamage -> On",
+    "timestamp": 1778931914535
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_DLVVEavfV7ujusKxQ0UPB8NX|fc_0582f5de24594fe8016a0858cd58c4819192076f9df7dce6bf",
+    "command": "cargo test --test passive_reactive_canon --no-run",
+    "exitCode": 0,
+    "outputSnippet": "    Blocking waiting for file lock on package cache\n    Blocking waiting for file lock on package cache\n    Blocking waiting for file lock on package cache\nwarning: unused imports: `classify_buff_kind` and `classify`\n  --> src/combat/api/applier.rs:19:50\n   |\n19 |     status_effect::{StatusBag, StatusEffectKind, classify_buff_kind},\n   |                                                  ^^^^^^^^^^^^^^^^^^\n...\n22 |     toughness::{DamageKind, Toughness, can_apply_toughness_damage, classify},\n   | ",
+    "timestamp": 1778931918868
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_9Js7QQvmWMatSN0aMUceXP2M|fc_0582f5de24594fe8016a0858cd58cc8191aeeef054ccca9bf9",
+    "command": "cargo test --test passive_reactive_canon",
+    "exitCode": 101,
+    "outputSnippet": "    Blocking waiting for file lock on package cache\n    Blocking waiting for file lock on package cache\n    Blocking waiting for file lock on package cache\n    Blocking waiting for file lock on build directory\nwarning: unused imports: `classify_buff_kind` and `classify`\n  --> src/combat/api/applier.rs:19:50\n   |\n19 |     status_effect::{StatusBag, StatusEffectKind, classify_buff_kind},\n   |                                                  ^^^^^^^^^^^^^^^^^^\n...\n22 |     toughness::{DamageKind, T",
+    "timestamp": 1778931918868
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_ifrI8deUThitarntw4cjb2Gi|fc_0582f5de24594fe8016a0858de06948191a83a5cfc428a4872",
+    "command": "rg -n \"fn calculate_damage|calculate_damage\\(\" src/combat/damage.rs src/combat/api/applier.rs tests/passive_reactive_canon.rs tests/block_reaction_pipeline.rs",
+    "exitCode": 0,
+    "outputSnippet": "src/combat/damage.rs:91:pub fn calculate_damage(\nsrc/combat/damage.rs:203:            calculate_damage(\nsrc/combat/damage.rs:222:            calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[DamageTag::Fire], None, 1.0, None).final_damage,\nsrc/combat/damage.rs:232:            calculate_damage(\nsrc/combat/damage.rs:251:            calculate_damage(&a, &atk(DamageTag::Fire, 100, true), &d, &[DamageTag::Fire], None, 1.0, None).final_damage,\nsrc/combat/damage.rs:261:            calculate_",
+    "timestamp": 1778931934904
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_L22wikoChKpduEm2CDFC9Af0|fc_0582f5de24594fe8016a0858f7f95c8191936205220ba2507b",
+    "command": "cargo test --test block_reaction_pipeline -- --nocapture",
+    "exitCode": 101,
+    "outputSnippet": "    Blocking waiting for file lock on package cache\n    Blocking waiting for file lock on package cache\n    Blocking waiting for file lock on package cache\nwarning: unused imports: `classify_buff_kind` and `classify`\n  --> src/combat/api/applier.rs:19:50\n   |\n19 |     status_effect::{StatusBag, StatusEffectKind, classify_buff_kind},\n   |                                                  ^^^^^^^^^^^^^^^^^^\n...\n22 |     toughness::{DamageKind, Toughness, can_apply_toughness_damage, classify},\n   | ",
+    "timestamp": 1778931960458
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_CP91uY0uL8c0lvjgfrh3ceSA|fc_0582f5de24594fe8016a0858f7f96481918f4d31826d49725c",
+    "command": "cargo test --test passive_reactive_canon tentomon_block_reaction_is_deterministic_when_armed -- --nocapture",
+    "exitCode": 101,
+    "outputSnippet": "    Blocking waiting for file lock on package cache\n    Blocking waiting for file lock on package cache\n    Blocking waiting for file lock on package cache\n    Blocking waiting for file lock on build directory\nwarning: unused imports: `classify_buff_kind` and `classify`\n  --> src/combat/api/applier.rs:19:50\n   |\n19 |     status_effect::{StatusBag, StatusEffectKind, classify_buff_kind},\n   |                                                  ^^^^^^^^^^^^^^^^^^\n...\n22 |     toughness::{DamageKind, T",
+    "timestamp": 1778931960459
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_DvjwfJT5VIPuVstpiw27fAAY|fc_0582f5de24594fe8016a08590f09b88191bd1304aebef0030a",
+    "command": "rg -n \"CombatRng|roll_pct\\(\" src tests -g '!target'",
+    "exitCode": 0,
+    "outputSnippet": "src/headless.rs:23:use crate::combat::rng::CombatRng;\nsrc/headless.rs:124:    .init_resource::<CombatRng>()\nsrc/combat/status_effect.rs:49:/// A re-apply that fails the accuracy roll does NOT call `apply` — the `roll_pct(threshold)`\ntests/compiled_timeline_tohakken.rs:8:    rng::CombatRng,\ntests/compiled_timeline_tohakken.rs:50:        .insert_resource(CombatRng::from_seed(7))\nsrc/combat/turn_system/pipeline.rs:25:use crate::combat::rng::CombatRng;\nsrc/combat/turn_system/pipeline.rs:535:    rng:",
+    "timestamp": 1778931983404
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_QKh8CoQ1YxfuYWhAEzIAjvzk|fc_0582f5de24594fe8016a08590f09d081919018eff226d3e6d1",
+    "command": "cargo test --test block_reaction_pipeline block_reaction_applies_before_dr_and_replays_deterministically -- --exact --nocapture",
+    "exitCode": 101,
+    "outputSnippet": "    Blocking waiting for file lock on package cache\n    Blocking waiting for file lock on package cache\n    Blocking waiting for file lock on package cache\nwarning: unused imports: `classify_buff_kind` and `classify`\n  --> src/combat/api/applier.rs:19:50\n   |\n19 |     status_effect::{StatusBag, StatusEffectKind, classify_buff_kind},\n   |                                                  ^^^^^^^^^^^^^^^^^^\n...\n22 |     toughness::{DamageKind, Toughness, can_apply_toughness_damage, classify},\n   | ",
+    "timestamp": 1778931983404
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_ddjE79eJk4YJBFBsVFDksM7c|fc_0582f5de24594fe8016a08590f09dc8191b05e02e030ac2d4d",
+    "command": "cargo test --test passive_reactive_canon dorumon_enemy_kill_listener_reuses_predator_loop_state -- --exact --nocapture",
+    "exitCode": 0,
+    "outputSnippet": "    Blocking waiting for file lock on package cache\n    Blocking waiting for file lock on package cache\n    Blocking waiting for file lock on package cache\n    Blocking waiting for file lock on build directory\nwarning: unused imports: `classify_buff_kind` and `classify`\n  --> src/combat/api/applier.rs:19:50\n   |\n19 |     status_effect::{StatusBag, StatusEffectKind, classify_buff_kind},\n   |                                                  ^^^^^^^^^^^^^^^^^^\n...\n22 |     toughness::{DamageKind, T",
+    "timestamp": 1778931983414
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_4hFk8VNc6TnqrZmsIk1ygbgS|fc_0582f5de24594fe8016a085933d2588191ac1be2458e392995",
+    "command": "rg -n \"block_reaction_armed|last_block_reaction_cast_id|block_ready|block_proc\" src tests -g '!target'",
+    "exitCode": 0,
+    "outputSnippet": "src/combat/observability.rs:66:    pub block_reaction_armed: bool,\nsrc/combat/observability.rs:67:    pub last_block_reaction_cast_id: Option<crate::combat::api::intent::CastId>,\nsrc/combat/observability.rs:81:            block_reaction_armed: state.block_reaction_armed,\nsrc/combat/observability.rs:82:            last_block_reaction_cast_id: state.last_block_reaction_cast_id,\nsrc/combat/observability.rs:587:        \"static={}/{} circuit={}/{} threshold={} grant_guard={} block_ready={} last_block",
+    "timestamp": 1778932020411
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_6V4ynfiutrU2bVCBKc2P4vVb|fc_0582f5de24594fe8016a08596c34fc8191815f4260ee498b78",
+    "command": "cargo test --test status_accuracy -- --exact seed_search --nocapture",
+    "exitCode": 0,
+    "outputSnippet": "warning: unused imports: `classify_buff_kind` and `classify`\n  --> src/combat/api/applier.rs:19:50\n   |\n19 |     status_effect::{StatusBag, StatusEffectKind, classify_buff_kind},\n   |                                                  ^^^^^^^^^^^^^^^^^^\n...\n22 |     toughness::{DamageKind, Toughness, can_apply_toughness_damage, classify},\n   |                                                                    ^^^^^^^^\n   |\n   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by defa",
+    "timestamp": 1778932076403
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_3dBkFUfD2AXGlgDB7wv0ZUHA|fc_0582f5de24594fe8016a0859a5b3808191bbbf25c5afb942af",
+    "command": "rg -n \"arm_block_reaction|block_reaction_armed|block_ready\" tests src/combat -g '!target'",
+    "exitCode": 0,
+    "outputSnippet": "tests/passive_reactive_canon.rs:107:            .block_reaction_armed = true;\nsrc/combat/battery_loop.rs:40:    pub block_reaction_armed: bool,\nsrc/combat/battery_loop.rs:55:            block_reaction_armed: false,\nsrc/combat/battery_loop.rs:70:        self.block_reaction_armed\nsrc/combat/battery_loop.rs:73:    pub fn arm_block_reaction(&mut self) -> BatteryLoopTransition {\nsrc/combat/battery_loop.rs:74:        apply_battery_loop_transition(self, BatteryLoopTransition::block_ready())\nsrc/combat/",
+    "timestamp": 1778932135222
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_DrrjrCXAzBeGhHZQ9R6coZNN|fc_0582f5de24594fe8016a0859bbab4081919ff5c499917dd698",
+    "command": "rg -n \"Tentomon|Dorumon\" tests/block_reaction_pipeline.rs tests/passive_reactive_canon.rs src/combat/blueprints -g '!target'",
+    "exitCode": 0,
+    "outputSnippet": "tests/passive_reactive_canon.rs:76:    spawn_unit(&mut app, dorumon, \"Dorumon\", Team::Ally, 90);\ntests/passive_reactive_canon.rs:102:    spawn_unit(&mut app, tentomon, \"Tentomon\", Team::Ally, 120);\ntests/passive_reactive_canon.rs:125:            .expect(\"Tentomon should exist\")\ntests/passive_reactive_canon.rs:148:    assert!(armed_hp < baseline_hp, \"armed Tentomon should take less damage\");\nsrc/combat/blueprints/dorumon/hooks.rs:59:            .any(|unit| unit.id == event.source && unit.name == ",
+    "timestamp": 1778932156236
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_n5LFrmcMZjgZEK6aXSeP6kSY|fc_0582f5de24594fe8016a0859f9a09c819187351f32cf026e7d",
+    "path": "/home/fabio/dev/bevyrogue/src/combat/api/applier.rs",
+    "timestamp": 1778932222657
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_IyRp82kA7TSORvi4jG6J56Sp|fc_0582f5de24594fe8016a085a01e3ec819195b03dc02f3e0ae1",
+    "command": "cargo test --test passive_reactive_canon tentomon_block_reaction_is_deterministic_when_armed -- --exact --nocapture",
+    "exitCode": 101,
+    "outputSnippet": "[tentomon-debug] guard failed armed=false last_cast=None\n[tentomon-debug] enter target=Tentomon cast_id=1 armed=true last_cast=None\n[tentomon-debug] roll cast_id=1 success=false \n[tentomon-debug] enter target=Tentomon cast_id=1 armed=false last_cast=None\n[tentomon-debug] guard failed armed=false last_cast=None\n[tentomon-debug] enter target=Tentomon cast_id=1 armed=true last_cast=None\n[tentomon-debug] roll cast_id=1 success=false \n[tentomon-debug] enter target=Tentomon cast_id=1 armed=false last_",
+    "timestamp": 1778932227468
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_QplB1p7EtfG6fDkrdntM9tqb|fc_0582f5de24594fe8016a085a25206481919b68fc0db8f99eb6",
+    "path": "/home/fabio/dev/bevyrogue/src/combat/api/applier.rs",
+    "timestamp": 1778932264299
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_W49y60zWGp0zpd7pmI3DbN7l|fc_0582f5de24594fe8016a085a3614848191b8e569b0633a8437",
+    "command": "cargo test --test passive_reactive_canon tentomon_block_reaction_is_deterministic_when_armed -- --exact --nocapture > /tmp/tentomon_debug.log 2>&1; rg -n \"\\[tentomon-debug\\]\" /tmp/tentomon_debug.log | head -n 80",
+    "exitCode": 0,
+    "outputSnippet": "1200:[tentomon-debug] enter target=Tentomon cast_id=1 armed=false last_cast=None\n1201:[tentomon-debug] guard failed armed=false last_cast=None\n1202:[tentomon-debug] damage cast_id=1 base=100 final=100 layers=[]\n1203:[tentomon-debug] enter target=Tentomon cast_id=1 armed=true last_cast=None\n1204:[tentomon-debug] roll cast_id=1 success=false \n1205:[tentomon-debug] damage cast_id=1 base=100 final=100 layers=[]\n1206:[tentomon-debug] enter target=Tentomon cast_id=1 armed=false last_cast=None\n1207:[te",
+    "timestamp": 1778932279184
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_agkHPrkxDtvyswUfTi8OKBTs|fc_0582f5de24594fe8016a085a57d7188191a59940e2b1f3c15b",
+    "path": "/home/fabio/dev/bevyrogue/tests/passive_reactive_canon.rs",
+    "timestamp": 1778932328375
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_PxV2Emk0OumRD1CuXdqdKoOG|fc_0582f5de24594fe8016a085a718df08191af79d25284887476",
+    "path": "/home/fabio/dev/bevyrogue/src/combat/api/applier.rs",
+    "timestamp": 1778932339238
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_N9K2sviTsFUCmZPeU3KDnYgY|fc_0582f5de24594fe8016a085a78a450819180e429eb45b61a5f",
+    "path": "/home/fabio/dev/bevyrogue/src/combat/api/applier.rs",
+    "timestamp": 1778932355555
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_hyy8iGzTyFV4PL1RXhtmKSQM|fc_0582f5de24594fe8016a085a87f818819188be9061ddae81a5",
+    "command": "cargo test --test passive_reactive_canon",
+    "exitCode": 101,
+    "outputSnippet": "   Compiling bevyrogue v0.1.0 (/home/fabio/dev/bevyrogue)\nwarning: unused imports: `classify_buff_kind` and `classify`\n  --> src/combat/api/applier.rs:19:50\n   |\n19 |     status_effect::{StatusBag, StatusEffectKind, classify_buff_kind},\n   |                                                  ^^^^^^^^^^^^^^^^^^\n...\n22 |     toughness::{DamageKind, Toughness, can_apply_toughness_damage, classify},\n   |                                                                    ^^^^^^^^\n   |\n   = note: `#[war",
+    "timestamp": 1778932361597
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_cRg8UaYnkPMqqyC9WiyBjNMK|fc_0582f5de24594fe8016a085a94c5f4819193edab492a623651",
+    "path": "/home/fabio/dev/bevyrogue/tests/passive_reactive_canon.rs",
+    "timestamp": 1778932373532
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_jqXNQQBNHD7stJEAcpybngqo|fc_0582f5de24594fe8016a085a9c21a48191870e408c79d81919",
+    "command": "cargo test --test passive_reactive_canon",
+    "exitCode": 0,
+    "outputSnippet": "warning: unused imports: `classify_buff_kind` and `classify`\n  --> src/combat/api/applier.rs:19:50\n   |\n19 |     status_effect::{StatusBag, StatusEffectKind, classify_buff_kind},\n   |                                                  ^^^^^^^^^^^^^^^^^^\n...\n22 |     toughness::{DamageKind, Toughness, can_apply_toughness_damage, classify},\n   |                                                                    ^^^^^^^^\n   |\n   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by defa",
+    "timestamp": 1778932381821
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_YM38x9FE2QKOzOqSwEGGCPkW|fc_0582f5de24594fe8016a085aab7f30819193fdd82522271427",
+    "path": "/home/fabio/dev/bevyrogue/src/combat/api/applier.rs",
+    "timestamp": 1778932397366
+  },
+  {
+    "kind": "edit",
+    "toolCallId": "call_wj8w3NhpABTl1iMh1S1owZNs|fc_0582f5de24594fe8016a085ab3d9c4819185ef5c031844a9b7",
+    "path": "/home/fabio/dev/bevyrogue/src/combat/api/applier.rs",
+    "timestamp": 1778932405026
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_nl5xXIu4udjCivC5tY85Wzlt|fc_0582f5de24594fe8016a085abbf9848191925995ba1fd2ec0a",
+    "command": "cargo test --test passive_reactive_canon",
+    "exitCode": 0,
+    "outputSnippet": "    Blocking waiting for file lock on package cache\n    Blocking waiting for file lock on package cache\n    Blocking waiting for file lock on package cache\n    Blocking waiting for file lock on build directory\nwarning: unused imports: `classify_buff_kind` and `classify`\n  --> src/combat/api/applier.rs:19:50\n   |\n19 |     status_effect::{StatusBag, StatusEffectKind, classify_buff_kind},\n   |                                                  ^^^^^^^^^^^^^^^^^^\n...\n22 |     toughness::{DamageKind, T",
+    "timestamp": 1778932413086
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_StkOHJ6Z7HWSeQCDCrBFcm1U|fc_0582f5de24594fe8016a085abbf99481919816161de1b7e2b9",
+    "command": "cargo test --test block_reaction_pipeline",
+    "exitCode": 0,
+    "outputSnippet": "    Blocking waiting for file lock on package cache\n    Blocking waiting for file lock on package cache\n    Blocking waiting for file lock on package cache\n   Compiling bevyrogue v0.1.0 (/home/fabio/dev/bevyrogue)\nwarning: unused imports: `classify_buff_kind` and `classify`\n  --> src/combat/api/applier.rs:19:50\n   |\n19 |     status_effect::{StatusBag, StatusEffectKind, classify_buff_kind},\n   |                                                  ^^^^^^^^^^^^^^^^^^\n...\n22 |     toughness::{DamageKin",
+    "timestamp": 1778932413087
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_2jdsvCrRtDures3AgHGvA8pU|fc_0582f5de24594fe8016a085ae2a92c819191c059cb14b2b952",
+    "command": "start=$(date +%s%3N); cargo test --test passive_reactive_canon >/tmp/passive_reactive_canon.log 2>&1; ec=$?; end=$(date +%s%3N); dur=$((end-start)); echo \"EXIT=$ec DUR_MS=$dur\"; tail -n 5 /tmp/passive_reactive_canon.log",
+    "exitCode": 0,
+    "outputSnippet": "EXIT=0 DUR_MS=259\ntest tentomon_block_reaction_stays_off_when_guard_conditions_fail ... ok\ntest tentomon_block_reaction_is_deterministic_when_armed ... ok\n\ntest result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n\n",
+    "timestamp": 1778932451945
+  },
+  {
+    "kind": "bash",
+    "toolCallId": "call_x0Namw7SuGvSnVorRzjeKVoW|fc_0582f5de24594fe8016a085ae2a9448191b32f8687c54b76c7",
+    "command": "start=$(date +%s%3N); cargo test --test block_reaction_pipeline >/tmp/block_reaction_pipeline.log 2>&1; ec=$?; end=$(date +%s%3N); dur=$((end-start)); echo \"EXIT=$ec DUR_MS=$dur\"; tail -n 5 /tmp/block_reaction_pipeline.log",
+    "exitCode": 0,
+    "outputSnippet": "EXIT=0 DUR_MS=271\nrunning 1 test\ntest block_reaction_applies_before_dr_and_replays_deterministically ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n",
+    "timestamp": 1778932451945
+  }
+]

@@ -47,8 +47,12 @@ fn damage_skill(id: &str, tag: DamageTag, amount: i32) -> SkillDef {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![
-            Effect::Damage { amount, target: TargetShape::Single , per_hop: Default::default()},
+        legacy_ops: vec![
+            Effect::Damage {
+                amount,
+                target: TargetShape::Single,
+                per_hop: Default::default(),
+            },
             Effect::ToughnessHit(0),
         ],
         ..Default::default()
@@ -79,7 +83,10 @@ fn setup_amp_app() -> (App, Entity, Entity) {
         .insert_resource(SkillBookHandle(handle))
         .init_resource::<CombatState>()
         .init_resource::<TurnOrder>()
-        .insert_resource(SpPool { current: 100, max: 100 })
+        .insert_resource(SpPool {
+            current: 100,
+            max: 100,
+        })
         .init_resource::<ActionLog>()
         .init_resource::<Time>()
         .insert_resource(CombatRng::from_seed(0))
@@ -90,48 +97,54 @@ fn setup_amp_app() -> (App, Entity, Entity) {
         .add_systems(Update, resolve_action_system)
         .add_systems(Update, advance_turn_system);
 
-    let attacker = app.world_mut().spawn((
-        Unit {
-            id: UnitId(1),
-            name: "Attacker".into(),
-            hp_max: 10_000,
-            hp_current: 10_000,
-            attribute: Attribute::Vaccine,
-            resists: vec![],
-            evo_stage: EvoStage::Adult,
-        },
-        Team::Ally,
-        UnitSkills {
-            basic: SkillId("fire100".into()),
-            skills: vec![SkillId("fire100".into()), SkillId("ice100".into())],
-            ultimate: SkillId("fire100".into()),
-            follow_up: None,
-        },
-        UltimateCharge {
-            current: 0,
-            trigger: 100,
-            cap: 150,
-            trigger_type: UltAccumulationTrigger::OnBasicAttack,
-            charge_per_event: 10,
-        },
-        Toughness::new(1_000, vec![]),
-        StatusBag::default(),
-    )).id();
+    let attacker = app
+        .world_mut()
+        .spawn((
+            Unit {
+                id: UnitId(1),
+                name: "Attacker".into(),
+                hp_max: 10_000,
+                hp_current: 10_000,
+                attribute: Attribute::Vaccine,
+                resists: vec![],
+                evo_stage: EvoStage::Adult,
+            },
+            Team::Ally,
+            UnitSkills {
+                basic: SkillId("fire100".into()),
+                skills: vec![SkillId("fire100".into()), SkillId("ice100".into())],
+                ultimate: SkillId("fire100".into()),
+                follow_up: None,
+            },
+            UltimateCharge {
+                current: 0,
+                trigger: 100,
+                cap: 150,
+                trigger_type: UltAccumulationTrigger::OnBasicAttack,
+                charge_per_event: 10,
+            },
+            Toughness::new(1_000, vec![]),
+            StatusBag::default(),
+        ))
+        .id();
 
-    let defender = app.world_mut().spawn((
-        Unit {
-            id: UnitId(2),
-            name: "Defender".into(),
-            hp_max: 10_000,
-            hp_current: 10_000,
-            attribute: Attribute::Vaccine,
-            resists: vec![],
-            evo_stage: EvoStage::Adult,
-        },
-        Team::Enemy,
-        Toughness::new(1_000, vec![]),
-        StatusBag::default(),
-    )).id();
+    let defender = app
+        .world_mut()
+        .spawn((
+            Unit {
+                id: UnitId(2),
+                name: "Defender".into(),
+                hp_max: 10_000,
+                hp_current: 10_000,
+                attribute: Attribute::Vaccine,
+                resists: vec![],
+                evo_stage: EvoStage::Adult,
+            },
+            Team::Enemy,
+            Toughness::new(1_000, vec![]),
+            StatusBag::default(),
+        ))
+        .id();
 
     (app, attacker, defender)
 }
@@ -153,7 +166,10 @@ fn fire_base100_non_heated_deals_100() {
     let damage_event = events.iter().find(|e| {
         matches!(
             &e.kind,
-            CombatEventKind::OnDamageDealt { damage_tag: DamageTag::Fire, .. }
+            CombatEventKind::OnDamageDealt {
+                damage_tag: DamageTag::Fire,
+                ..
+            }
         )
     });
     let amount = match damage_event.map(|e| &e.kind) {
@@ -186,7 +202,10 @@ fn fire_base100_heated_defender_deals_115() {
     let damage_event = events.iter().find(|e| {
         matches!(
             &e.kind,
-            CombatEventKind::OnDamageDealt { damage_tag: DamageTag::Fire, .. }
+            CombatEventKind::OnDamageDealt {
+                damage_tag: DamageTag::Fire,
+                ..
+            }
         )
     });
     let amount = match damage_event.map(|e| &e.kind) {
@@ -219,7 +238,10 @@ fn ice_base100_chilled_defender_deals_115() {
     let damage_event = events.iter().find(|e| {
         matches!(
             &e.kind,
-            CombatEventKind::OnDamageDealt { damage_tag: DamageTag::Ice, .. }
+            CombatEventKind::OnDamageDealt {
+                damage_tag: DamageTag::Ice,
+                ..
+            }
         )
     });
     let amount = match damage_event.map(|e| &e.kind) {
@@ -245,24 +267,27 @@ fn heated_unit_turn_emits_dot_4_fire() {
         .add_message::<ActionValueUpdated>()
         .add_systems(Update, advance_turn_system);
 
-    let unit_entity = app.world_mut().spawn((
-        Unit {
-            id: UnitId(1),
-            name: "HotUnit".into(),
-            hp_max: 500,
-            hp_current: 500,
-            attribute: Attribute::Vaccine,
-            resists: vec![],
-            evo_stage: EvoStage::Adult,
-        },
-        Team::Ally,
-        Toughness::new(100, vec![]),
-        {
-            let mut bag = StatusBag::default();
-            bag.apply(StatusEffectKind::Heated, 3);
-            bag
-        },
-    )).id();
+    let unit_entity = app
+        .world_mut()
+        .spawn((
+            Unit {
+                id: UnitId(1),
+                name: "HotUnit".into(),
+                hp_max: 500,
+                hp_current: 500,
+                attribute: Attribute::Vaccine,
+                resists: vec![],
+                evo_stage: EvoStage::Adult,
+            },
+            Team::Ally,
+            Toughness::new(100, vec![]),
+            {
+                let mut bag = StatusBag::default();
+                bag.apply(StatusEffectKind::Heated, 3);
+                bag
+            },
+        ))
+        .id();
 
     // Trigger turn for unit 1.
     app.world_mut().write_message(TurnAdvanced::of(UnitId(1)));
@@ -290,6 +315,14 @@ fn heated_unit_turn_emits_dot_4_fire() {
         "expected OnDamageDealt{{amount:4, damage_tag:Fire}} in event stream; got: {events:?}"
     );
     let evt = dot_event.unwrap();
-    assert_eq!(evt.source, UnitId(1), "DoT source must be the Heated unit itself");
-    assert_eq!(evt.target, UnitId(1), "DoT target must be the Heated unit itself");
+    assert_eq!(
+        evt.source,
+        UnitId(1),
+        "DoT source must be the Heated unit itself"
+    );
+    assert_eq!(
+        evt.target,
+        UnitId(1),
+        "DoT target must be the Heated unit itself"
+    );
 }

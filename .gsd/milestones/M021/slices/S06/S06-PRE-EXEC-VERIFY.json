@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "milestoneId": "M021",
+  "sliceId": "S06",
+  "timestamp": 1778868914094,
+  "status": "fail",
+  "durationMs": 1,
+  "checks": [
+    {
+      "category": "tool",
+      "target": "T04 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: cargo test\ncargo check\ncargo check --features windowed\nbash -lc '! rg -n \"enum Effect|timeline_backed|apply_effects\\\\(|effects:\" src tests assets/data/skills.ron' (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    }
+  ]
+}

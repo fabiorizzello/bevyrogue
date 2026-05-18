@@ -44,8 +44,7 @@ fn test_bootstrap_spawn_composition() {
                 enemy_traits: vec![],
                 charged_attack: None,
                 form_identity: None,
-                twin_core: Default::default(),
-                holy_support: Default::default(),
+                blueprint_metadata: Default::default(),
                 resists: vec![],
                 toughness_max: 50,
                 weaknesses: vec![],
@@ -77,8 +76,7 @@ fn test_bootstrap_spawn_composition() {
                 enemy_traits: vec![],
                 charged_attack: None,
                 form_identity: None,
-                twin_core: Default::default(),
-                holy_support: Default::default(),
+                blueprint_metadata: Default::default(),
                 resists: vec![],
                 toughness_max: 50,
                 weaknesses: vec![],
@@ -110,8 +108,7 @@ fn test_bootstrap_spawn_composition() {
                 enemy_traits: vec![],
                 charged_attack: None,
                 form_identity: None,
-                twin_core: Default::default(),
-                holy_support: Default::default(),
+                blueprint_metadata: Default::default(),
                 resists: vec![],
                 toughness_max: 50,
                 weaknesses: vec![],
@@ -143,8 +140,7 @@ fn test_bootstrap_spawn_composition() {
                 enemy_traits: vec![],
                 charged_attack: None,
                 form_identity: None,
-                twin_core: Default::default(),
-                holy_support: Default::default(),
+                blueprint_metadata: Default::default(),
                 resists: vec![],
                 toughness_max: 50,
                 weaknesses: vec![],
@@ -176,8 +172,7 @@ fn test_bootstrap_spawn_composition() {
                 enemy_traits: vec![],
                 charged_attack: None,
                 form_identity: None,
-                twin_core: Default::default(),
-                holy_support: Default::default(),
+                blueprint_metadata: Default::default(),
                 resists: vec![],
                 toughness_max: 50,
                 weaknesses: vec![],
@@ -209,8 +204,7 @@ fn test_bootstrap_spawn_composition() {
                 enemy_traits: vec![],
                 charged_attack: None,
                 form_identity: None,
-                twin_core: Default::default(),
-                holy_support: Default::default(),
+                blueprint_metadata: Default::default(),
                 resists: vec![],
                 toughness_max: 100,
                 weaknesses: vec![],
@@ -242,10 +236,9 @@ fn test_bootstrap_spawn_composition() {
 
     // 3. Apply composition
     {
-        let mut system_state: SystemState<(Commands, ResMut<TurnOrder>)> =
-            SystemState::new(app.world_mut());
-        let (mut commands, mut order) = system_state.get_mut(app.world_mut());
-        apply_composition(&mut commands, &composition, &mut order);
+        let mut system_state: SystemState<Commands> = SystemState::new(app.world_mut());
+        let mut commands = system_state.get_mut(app.world_mut());
+        apply_composition(&mut commands, &composition);
         system_state.apply(app.world_mut());
     }
 

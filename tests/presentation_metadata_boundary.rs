@@ -3,8 +3,8 @@ use bevyrogue::combat::{
     action_query::{
         ActionQueryKind, CombatQuerySnapshot, UnitQuerySnapshot, query_action_affordance,
     },
+    blueprints::patamon::HolySupportState,
     events::{CombatEvent, CombatEventKind},
-    blueprints::patamon::{HolySupportState, HolySupportTransition},
     kernel::{CombatBeatId, CombatKernelTransition, register_combat_kernel_runtime},
     kit::UnitSkills,
     log::ActionLog,
@@ -23,7 +23,7 @@ use bevyrogue::combat::{
 use bevyrogue::data::{
     SkillBookHandle,
     skills_ron::{
-        Effect, CustomSignalPayload, SelfTargetRule, SkillBook, SkillCustomSignal, SkillDef,
+        CustomSignalPayload, Effect, SelfTargetRule, SkillBook, SkillCustomSignal, SkillDef,
         SkillImplementation, SkillTargeting, TargetLife, TargetShape, TargetSide,
     },
 };
@@ -32,7 +32,7 @@ const ACTOR: UnitId = UnitId(1);
 const TARGET: UnitId = UnitId(2);
 
 fn canonical_skill_book() -> SkillBook {
-    ron::from_str(include_str!("../assets/data/skills.ron")).expect("parse tracked skills.ron")
+    bevyrogue::data::aggregate_skill_book()
 }
 
 fn find_skill<'a>(book: &'a SkillBook, id: &str) -> &'a SkillDef {
@@ -56,15 +56,16 @@ fn boundary_skill(id: &str) -> SkillDef {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![
+        legacy_ops: vec![
             Effect::Damage {
                 amount: 23,
                 target: TargetShape::Single,
-            per_hop: Default::default(),
+                per_hop: Default::default(),
             },
             Effect::ToughnessHit(11),
             Effect::GainSP(1),
         ],
+        timeline: None,
         ..Default::default()
     }
 }
@@ -174,6 +175,13 @@ fn drain(cursor: &mut MessageCursor<CombatEvent>, app: &App) -> Vec<CombatEvent>
 fn app_with_skill_book(book: SkillBook, skill_id: &SkillId) -> App {
     let mut app = App::new();
     register_combat_kernel_runtime(&mut app);
+    bevyrogue::combat::blueprints::add_runtime_plugins(&mut app);
+    {
+        let mut regs = app
+            .world_mut()
+            .resource_mut::<bevyrogue::combat::runtime::ExtRegistries>();
+        bevyrogue::combat::blueprints::register_all_blueprint_validation_exts(&mut regs);
+    }
     app.init_resource::<CombatState>()
         .init_resource::<TurnOrder>()
         .init_resource::<SpPool>()
@@ -256,13 +264,13 @@ fn kernel_beats(events: &[CombatEvent]) -> Vec<CombatBeatId> {
         .collect()
 }
 
-fn holy_support_transitions(events: &[CombatEvent]) -> Vec<HolySupportTransition> {
+fn holy_support_transitions(events: &[CombatEvent]) -> Vec<String> {
     events
         .iter()
-        .filter_map(|event| match event.kind {
+        .filter_map(|event| match &event.kind {
             CombatEventKind::OnKernelTransition {
-                transition: CombatKernelTransition::HolySupport(transition),
-            } => Some(transition),
+                transition: CombatKernelTransition::Blueprint { owner, name, .. },
+            } if owner == "patamon" => Some(name.clone()),
             _ => None,
         })
         .collect()
@@ -377,7 +385,7 @@ fn presentation_metadata_does_not_change_action_query_or_resolved_action() {
             grant_free_skill_count: 0,
             status_to_apply: None,
             advance_pct: 0,
-        delay_pct: 0,
+            delay_pct: 0,
             energy_grant: 0,
             self_advance_pct: 0,
             target_shape: TargetShape::Single,
@@ -491,11 +499,26 @@ fn runtime_events_and_snapshots_ignore_misleading_presentation_metadata() {
         "snapshot leak: presentation metadata changed validation snapshot output"
     );
     assert!(
-        dramatic_snapshot.contains("holy_support=grace=0/3"),
+        dramatic_snapshot.contains("grace=0"),
         "snapshot drift: HolySupport grace should remain zero for metadata-only skill: {dramatic_snapshot}"
     );
     assert!(
         dramatic_snapshot.contains("last=none"),
         "snapshot drift: HolySupport last signal should remain none for metadata-only skill: {dramatic_snapshot}"
     );
+}
+
+#[test]
+fn optional_blueprint_sections_render_stable_none_tokens_when_missing() {
+    let skill_id = SkillId("metadata_optional_sections".into());
+    let mut app = app_with_skill_book(SkillBook(vec![boundary_skill(&skill_id.0)]), &skill_id);
+    app.world_mut().remove_resource::<HolySupportState>();
+
+    let snapshot = capture_validation_snapshot(app.world_mut()).expect("validation snapshot");
+    let formatted = format_validation_snapshot(&snapshot);
+
+    assert!(snapshot.section("support").is_none());
+    assert!(snapshot.section("twin_core").is_some());
+    assert!(!formatted.contains("support="), "{formatted}");
+    assert!(!formatted.contains("holy_support="), "{formatted}");
 }

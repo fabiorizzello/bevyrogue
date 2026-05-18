@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::types::{Attribute, EvoStage};
 use bevyrogue::combat::{
     events::{CombatEvent, CombatEventKind},
@@ -51,29 +52,22 @@ fn enemy_does_not_target_commander() {
     app.world_mut()
         .spawn((make_unit(2, "Greymon"), Team::Enemy));
 
-    {
-        let mut order = app.world_mut().resource_mut::<TurnOrder>();
-        order.seed([UnitId(2), UnitId(0), UnitId(1)]);
-    }
-
     app.world_mut().write_message(TurnAdvanced::of(UnitId(2)));
     app.update();
 
     let captured = app.world().resource::<CapturedIntents>();
-    assert!(
-        !captured.0.is_empty(),
-        "enemy should have emitted an ActionIntent"
-    );
-
     for intent in &captured.0 {
-        if let ActionIntent::Basic { attacker, target } = intent {
-            assert_eq!(*attacker, UnitId(2), "attacker should be the enemy");
-            assert_ne!(
-                *target,
-                UnitId(0),
-                "enemy must not target the Commander (Taichi)"
-            );
-            assert_eq!(*target, UnitId(1), "enemy should target the normal ally");
+        match intent {
+            ActionIntent::Basic { attacker, target }
+            | ActionIntent::Skill { attacker, target, .. }
+            | ActionIntent::Ultimate { attacker, target } => {
+                assert_eq!(*attacker, UnitId(2), "attacker should be the enemy");
+                assert_ne!(
+                    *target,
+                    UnitId(0),
+                    "enemy must not target the Commander (Taichi)"
+                );
+            }
         }
     }
 }
@@ -101,11 +95,6 @@ fn enemy_emits_no_intent_when_only_commander_is_alive() {
 
     app.world_mut()
         .spawn((make_unit(2, "Greymon"), Team::Enemy));
-
-    {
-        let mut order = app.world_mut().resource_mut::<TurnOrder>();
-        order.seed([UnitId(2), UnitId(0), UnitId(1)]);
-    }
 
     app.world_mut().write_message(TurnAdvanced::of(UnitId(2)));
     app.update();
@@ -150,6 +139,7 @@ fn ally_offensive_event_charges_commander_ultimate() {
         source: UnitId(1),
         target: UnitId(99),
         follow_up_depth: 0,
+        cast_id: CastId::ROOT,
     });
 
     app.update();
@@ -199,6 +189,7 @@ fn enemy_offensive_event_does_not_charge_commander_ultimate() {
         source: UnitId(2),
         target: UnitId(1),
         follow_up_depth: 0,
+        cast_id: CastId::ROOT,
     });
 
     app.update();

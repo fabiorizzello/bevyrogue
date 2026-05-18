@@ -1,10 +1,7 @@
 //! Shared fixtures for scenario TTK tests (boss/miniboss/minion).
 //!
 //! Rust integration-test convention: this file is included with `mod common;`
-//! in the consuming test binaries. Functions may be unused per-binary, hence
-//! the blanket `dead_code` allow.
-
-#![allow(dead_code)]
+//! in the consuming test binaries.
 
 use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::{
@@ -27,11 +24,11 @@ use bevyrogue::combat::{
 use bevyrogue::data::{SkillBookHandle, skills_ron::SkillBook, units_ron::UnitRoster};
 
 pub fn load_roster() -> UnitRoster {
-    ron::from_str(include_str!("../../assets/data/units.ron")).expect("parse units.ron")
+    bevyrogue::data::aggregate_unit_roster()
 }
 
 pub fn load_skill_book() -> SkillBook {
-    ron::from_str(include_str!("../../assets/data/skills.ron")).expect("parse skills.ron")
+    bevyrogue::data::aggregate_skill_book()
 }
 
 pub fn build_app(skill_book: SkillBook) -> App {

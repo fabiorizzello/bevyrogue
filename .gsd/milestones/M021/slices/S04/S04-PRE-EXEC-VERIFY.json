@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "milestoneId": "M021",
+  "sliceId": "S04",
+  "timestamp": 1778837105285,
+  "status": "fail",
+  "durationMs": 2,
+  "checks": [
+    {
+      "category": "tool",
+      "target": "T05 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: rg \"TwinCore|BatteryLoop|HolySupport|PredatorLoop|PrecisionMindGame|KitsuneGrace\" src/combat/api/ (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    }
+  ]
+}

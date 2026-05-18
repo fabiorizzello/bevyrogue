@@ -78,7 +78,7 @@ fn ult_skill_def() -> SkillDef {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Damage {
+        legacy_ops: vec![Effect::Damage {
             amount: 50,
             target: TargetShape::Single,
             per_hop: Default::default(),
@@ -86,6 +86,7 @@ fn ult_skill_def() -> SkillDef {
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
 }
 
@@ -103,7 +104,7 @@ fn basic_skill_def() -> SkillDef {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Damage {
+        legacy_ops: vec![Effect::Damage {
             amount: 10,
             target: TargetShape::Single,
             per_hop: Default::default(),
@@ -111,6 +112,7 @@ fn basic_skill_def() -> SkillDef {
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
 }
 
@@ -128,7 +130,7 @@ fn skill_def() -> SkillDef {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![Effect::Damage {
+        legacy_ops: vec![Effect::Damage {
             amount: 20,
             target: TargetShape::Single,
             per_hop: Default::default(),
@@ -136,6 +138,7 @@ fn skill_def() -> SkillDef {
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
+        timeline: None,
     }
 }
 
@@ -220,8 +223,6 @@ fn ultimate_used_emitted_once_on_ult_cast() {
         Toughness::new(200, vec![]),
     ));
 
-    app.world_mut().resource_mut::<TurnOrder>().seed([attacker_id, defender_id]);
-
     let mut cursor = message_cursor::<CombatEvent>(&mut app);
     app.world_mut().write_message(ActionIntent::Ultimate {
         attacker: attacker_id,
@@ -268,8 +269,6 @@ fn no_ultimate_used_on_basic_attack() {
         Toughness::new(200, vec![]),
     ));
 
-    app.world_mut().resource_mut::<TurnOrder>().seed([attacker_id, defender_id]);
-
     let mut cursor = message_cursor::<CombatEvent>(&mut app);
     app.world_mut().write_message(ActionIntent::Basic {
         attacker: attacker_id,
@@ -310,8 +309,6 @@ fn no_ultimate_used_on_skill_cast() {
         Team::Enemy,
         Toughness::new(200, vec![]),
     ));
-
-    app.world_mut().resource_mut::<TurnOrder>().seed([attacker_id, defender_id]);
 
     let mut cursor = message_cursor::<CombatEvent>(&mut app);
     app.world_mut().write_message(ActionIntent::Skill {

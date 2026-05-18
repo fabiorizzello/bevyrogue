@@ -14,8 +14,8 @@ use bevyrogue::combat::{
 use bevyrogue::data::{
     SkillBookHandle,
     skills_ron::{
-        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
-        SkillTargeting, TargetLife, TargetShape, TargetSide,
+        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation, SkillTargeting,
+        TargetLife, TargetShape, TargetSide,
     },
 };
 
@@ -30,7 +30,7 @@ fn sync_events(app: &App, collected: &mut Vec<LogEntry>) {
 }
 
 #[test]
-fn s12_revive_semantics() {
+fn revive_semantics() {
     let mut app = App::new();
     app.init_resource::<CombatState>()
         .init_resource::<bevyrogue::combat::turn_order::TurnOrder>()
@@ -53,11 +53,12 @@ fn s12_revive_semantics() {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![Effect::Revive(25)],
+            legacy_ops: vec![Effect::Revive(25)],
 
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
         SkillDef {
             id: SkillId("attack_skill".into()),
@@ -72,15 +73,16 @@ fn s12_revive_semantics() {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![Effect::Damage {
+            legacy_ops: vec![Effect::Damage {
                 amount: 1000,
                 target: TargetShape::Single,
-            per_hop: Default::default(),
+                per_hop: Default::default(),
             }],
 
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
     ]);
     let handle = assets.add(book);

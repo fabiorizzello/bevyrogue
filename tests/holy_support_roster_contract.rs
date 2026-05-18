@@ -3,11 +3,11 @@ use bevyrogue::data::skills_ron::{CustomSignalPayload, SkillBook, SkillCustomSig
 use bevyrogue::data::units_ron::UnitRoster;
 
 fn canonical_roster() -> UnitRoster {
-    ron::from_str(include_str!("../assets/data/units.ron")).expect("parse units.ron")
+    bevyrogue::data::aggregate_unit_roster()
 }
 
 fn canonical_skill_book() -> SkillBook {
-    ron::from_str(include_str!("../assets/data/skills.ron")).expect("parse skills.ron")
+    bevyrogue::data::aggregate_skill_book()
 }
 
 fn patamon_signal() -> SkillCustomSignal {
@@ -91,9 +91,11 @@ fn patamon_roster_references_the_seeded_blueprint_skill() {
 }
 
 #[test]
-fn holy_support_metadata_remains_optional_for_backward_compatibility() {
+fn blueprint_metadata_remains_optional_for_backward_compatibility() {
     let roster = canonical_roster();
     let agumon = roster.0.iter().find(|u| u.name == "Agumon").unwrap();
-    assert_eq!(agumon.holy_support.line, None);
-    assert_eq!(agumon.holy_support.role, None);
+    assert!(
+        agumon.blueprint_metadata.0.is_empty(),
+        "generic blueprint metadata should remain absent when not declared"
+    );
 }

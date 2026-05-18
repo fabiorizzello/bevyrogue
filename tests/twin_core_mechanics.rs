@@ -1,14 +1,15 @@
 use bevy::prelude::*;
 
+use bevyrogue::combat::runtime::intent::CastId;
+use bevyrogue::combat::blueprints::twin_core::{
+    TwinCoreDesignTag, TwinCoreHook, TwinCoreSignal, TwinCoreState,
+    apply_twin_core_transitions_system, twin_core_design_tag,
+};
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::kernel::{
     CombatBeatId, CombatKernelRegistry, CombatKernelTransition, CombatTagChangeKind,
     CombatTagState, CombatTagTransition, TacticalCyclePhase, TacticalCycleStep,
-    TacticalCycleTransition, TwinCoreSignal,
-};
-use bevyrogue::combat::blueprints::agumon::{
-    TwinCoreDesignTag, TwinCoreHook, TwinCoreState, apply_twin_core_transitions_system,
-    twin_core_design_tag,
+    TacticalCycleTransition,
 };
 use bevyrogue::combat::types::UnitId;
 
@@ -29,6 +30,7 @@ fn route_transition(
             source,
             target,
             follow_up_depth: 0,
+            cast_id: CastId::ROOT,
         });
     }
 

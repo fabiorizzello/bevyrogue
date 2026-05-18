@@ -1,0 +1,47 @@
+[
+    (
+        id: SkillId("goblimon_basic"),
+        name: "Goblin Claw",
+        damage_tag: Physical,
+        sp_cost: 0,
+        targeting: SkillTargeting(
+            shape: Single,
+            side: Enemy,
+            life: Alive,
+            self_rule: Forbid,
+            target_hp_rule: Any,
+        ),
+        implementation: Implemented,
+        legacy_ops: [Damage(amount: 12, target: Single)],
+    ),
+    (
+        id: SkillId("goblimon_slash"),
+        name: "Goblin Strike",
+        damage_tag: Physical,
+        sp_cost: 1,
+        targeting: SkillTargeting(
+            shape: Single,
+            side: Enemy,
+            life: Alive,
+            self_rule: Forbid,
+            target_hp_rule: Any,
+        ),
+        implementation: Implemented,
+        legacy_ops: [Damage(amount: 15, target: Single)],
+    ),
+    (
+        id: SkillId("goblimon_ult"),
+        name: "Goblin Rampage",
+        damage_tag: Physical,
+        sp_cost: 0,
+        targeting: SkillTargeting(
+            shape: Single,
+            side: Enemy,
+            life: Alive,
+            self_rule: Forbid,
+            target_hp_rule: Any,
+        ),
+        implementation: Implemented,
+        legacy_ops: [Damage(amount: 28, target: Single)],
+    ),
+]

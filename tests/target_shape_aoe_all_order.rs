@@ -52,11 +52,11 @@ fn all_enemies_skill() -> SkillBook {
             ..Default::default()
         },
         implementation: SkillImplementation::Implemented,
-        effects: vec![
+        legacy_ops: vec![
             Effect::Damage {
                 amount: 10,
                 target: TargetShape::AllEnemies,
-            per_hop: Default::default(),
+                per_hop: Default::default(),
             },
             Effect::ToughnessHit(5),
         ],
@@ -170,9 +170,9 @@ fn aoe_skips_ko_and_fires_in_slot_order() {
     let mut app = build_app(all_enemies_skill());
 
     spawn_attacker(&mut app);
-    spawn_enemy_alive(&mut app, 10, 0);  // slot 0 — alive
-    spawn_enemy_ko(&mut app, 11, 1);     // slot 1 — KO'd
-    spawn_enemy_alive(&mut app, 12, 2);  // slot 2 — alive
+    spawn_enemy_alive(&mut app, 10, 0); // slot 0 — alive
+    spawn_enemy_ko(&mut app, 11, 1); // slot 1 — KO'd
+    spawn_enemy_alive(&mut app, 12, 2); // slot 2 — alive
 
     let events = run_once(&mut app);
 

@@ -14,22 +14,9 @@ use bevyrogue::combat::{
     resolution::apply_cleanse_only,
     state::{ResolvedAction, UltEffect},
     status_effect::{StatusBag, StatusEffectKind},
-    types::{Attribute, DamageTag, EvoStage, SkillId, UnitId},
-    unit::Unit,
+    types::{DamageTag, SkillId, UnitId},
 };
 use bevyrogue::data::skills_ron::TargetShape;
-
-fn ally(id: u32, hp_current: i32, hp_max: i32) -> Unit {
-    Unit {
-        id: UnitId(id),
-        name: format!("ally{id}"),
-        hp_max,
-        hp_current,
-        attribute: Attribute::Data,
-        resists: vec![],
-        evo_stage: EvoStage::Adult,
-    }
-}
 
 fn cleanse_action(count: Option<u8>) -> ResolvedAction {
     ResolvedAction {
@@ -61,10 +48,10 @@ fn cleanse_count_some_two_removes_two_longest_debuffs() {
     // 4 debuffs at durations 3,1,2,4; count=Some(2) → removes dur4 then dur3
     let action = cleanse_action(Some(2));
     let mut bag = StatusBag::default();
-    bag.apply(StatusEffectKind::Heated, 3);    // idx 0
-    bag.apply(StatusEffectKind::Chilled, 1);   // idx 1
+    bag.apply(StatusEffectKind::Heated, 3); // idx 0
+    bag.apply(StatusEffectKind::Chilled, 1); // idx 1
     bag.apply(StatusEffectKind::Paralyzed, 2); // idx 2
-    bag.apply(StatusEffectKind::Slowed, 4);    // idx 3
+    bag.apply(StatusEffectKind::Slowed, 4); // idx 3
 
     let (_outcome, events) = apply_cleanse_only(&action, &mut bag, true);
 
@@ -86,8 +73,8 @@ fn cleanse_count_some_two_tie_break_lower_insertion_index_first() {
     // Two debuffs at the same duration: the one inserted first (lower idx) is selected first
     let action = cleanse_action(Some(2));
     let mut bag = StatusBag::default();
-    bag.apply(StatusEffectKind::Heated, 5);    // idx 0 — ties with Chilled
-    bag.apply(StatusEffectKind::Chilled, 5);   // idx 1
+    bag.apply(StatusEffectKind::Heated, 5); // idx 0 — ties with Chilled
+    bag.apply(StatusEffectKind::Chilled, 5); // idx 1
 
     let (_outcome, events) = apply_cleanse_only(&action, &mut bag, true);
 
@@ -96,7 +83,10 @@ fn cleanse_count_some_two_tie_break_lower_insertion_index_first() {
         panic!("expected OnCleansed");
     };
     // Both removed; idx-0 (Heated) appears first in kinds vec
-    assert_eq!(kinds, &[StatusEffectKind::Heated, StatusEffectKind::Chilled]);
+    assert_eq!(
+        kinds,
+        &[StatusEffectKind::Heated, StatusEffectKind::Chilled]
+    );
     assert!(!bag.has(&StatusEffectKind::Heated));
     assert!(!bag.has(&StatusEffectKind::Chilled));
 }

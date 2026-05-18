@@ -1,12 +1,12 @@
-use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
-use bevyrogue::combat::kernel::{
-    PredatorLoopBlockedReason, PredatorLoopCapKind, PredatorLoopSignal,
-    PredatorLoopStep, PredatorLoopTransition,
+use bevyrogue::combat::runtime::intent::CastId;
+use bevyrogue::combat::runtime::registry::ValidationField;
+use bevyrogue::combat::blueprints::dorumon::{
+    PredatorLoopBlockedReason, PredatorLoopCapKind, PredatorLoopSignal, PredatorLoopSnapshot,
+    PredatorLoopState, PredatorLoopStep, PredatorLoopTransition,
 };
 use bevyrogue::combat::observability::{
-    ValidationSnapshot, ValidationTwinCoreSnapshot, format_validation_snapshot,
+    ValidationSection, ValidationSnapshot, format_validation_snapshot,
 };
-use bevyrogue::combat::blueprints::dorumon::{PredatorLoopSnapshot, PredatorLoopState};
 use bevyrogue::combat::state::CombatPhase;
 use bevyrogue::combat::types::UnitId;
 
@@ -14,14 +14,6 @@ fn tracked_state() -> PredatorLoopState {
     let mut state = PredatorLoopState::default();
     state.track_target(UnitId(7));
     state
-}
-
-fn rejected_build(
-    target: UnitId,
-    amount: u16,
-    reason: PredatorLoopBlockedReason,
-) -> PredatorLoopTransition {
-    PredatorLoopTransition::rejected(PredatorLoopStep::BuildExploit { target, amount }, reason)
 }
 
 #[test]
@@ -245,41 +237,59 @@ fn predator_loop_event_and_snapshot_surfaces_are_serializable_and_readable() {
         action_log_tail: vec![],
         floating_live: 0,
         units: vec![],
-        twin_core: ValidationTwinCoreSnapshot {
-            active_thermal_spark_targets: vec![],
-            cross_resonance: 0,
-            fire_spend_markers: 0,
-            ice_spend_markers: 0,
-            twin_burst_used_this_cycle: false,
-            shatter_used_this_cycle: false,
-            last_signal: None,
-        },
-        holy_support: None,
-        predator_loop: Some(snapshot.clone()),
-        battery_loop: None,
-        precision_mind_game: None,
+        owner_sections: vec![ValidationSection::new(
+            "predator",
+            vec![
+                ValidationField::new("exploit_cap", snapshot.exploit_cap.to_string()),
+                ValidationField::new(
+                    "prey_lock_duration",
+                    snapshot.prey_lock_duration.to_string(),
+                ),
+                ValidationField::new(
+                    "berserk_threshold",
+                    snapshot.berserk_strain_threshold.to_string(),
+                ),
+                ValidationField::new(
+                    "targets",
+                    "[7:e1:p0c]".to_string(),
+                ),
+                ValidationField::new(
+                    "last",
+                    "payoff(target=Some(UnitId(7));amount=1)".to_string(),
+                ),
+                ValidationField::new("blocked", "none".to_string()),
+            ],
+        )],
     };
     let rendered = format_validation_snapshot(&validation);
-    assert!(rendered.contains("predator"));
-    assert!(rendered.contains("battery_loop=none"));
-    assert!(rendered.contains("exploit_cap=3"));
-    assert!(rendered.contains("targets=[7"));
+    assert!(rendered.contains("predator="), "missing predator section: {rendered}");
+    assert!(rendered.contains("exploit_cap=3"), "missing exploit_cap: {rendered}");
+    assert!(rendered.contains("targets=[7"), "missing targets: {rendered}");
+    assert!(!rendered.contains("battery="), "battery should not appear: {rendered}");
 
     let transition = PredatorLoopTransition::build_exploit(target, 2);
-    let event = CombatEvent {
-        kind: CombatEventKind::PredatorLoopResolved { transition },
+    let event = bevyrogue::combat::events::CombatEvent {
+        kind: bevyrogue::combat::events::CombatEventKind::OnKernelTransition {
+            transition: bevyrogue::combat::kernel::CombatKernelTransition::Blueprint {
+                owner: "dorumon".to_string(),
+                name: "build_exploit".to_string(),
+                payload: bevyrogue::combat::runtime::SignalPayload::Amount(2),
+            },
+        },
         source: target,
         target,
         follow_up_depth: 0,
+        cast_id: CastId::ROOT,
     };
-    let json = serde_json::to_string(&event).expect("serialize predator event");
-    assert!(json.contains("PredatorLoopResolved"));
-    assert!(json.contains("BuildExploit"));
+    let json = serde_json::to_string(&event).expect("serialize predator_loop event");
+    assert!(json.contains("OnKernelTransition"));
+    assert!(json.contains("Blueprint"));
+    assert!(json.contains("build_exploit"));
     assert!(json.contains("7"));
 
     let transition_json =
-        serde_json::to_string(&transition).expect("serialize predator transition");
+        serde_json::to_string(&transition).expect("serialize predator_loop transition");
     let roundtrip: PredatorLoopTransition =
-        serde_json::from_str(&transition_json).expect("roundtrip predator transition");
+        serde_json::from_str(&transition_json).expect("roundtrip predator_loop transition");
     assert_eq!(roundtrip, transition);
 }

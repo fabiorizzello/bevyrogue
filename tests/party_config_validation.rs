@@ -7,7 +7,7 @@ use bevyrogue::data::units_ron::UnitRoster;
 use bevyrogue::party_validation::{PartyConfigError, validate_party_config};
 
 fn canonical_roster() -> UnitRoster {
-    ron::from_str(include_str!("../assets/data/units.ron")).expect("parse units.ron")
+    bevyrogue::data::aggregate_unit_roster()
 }
 
 #[test]

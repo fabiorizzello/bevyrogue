@@ -1,0 +1,32 @@
+[
+    (
+        id: SkillId("enemy_skill_fire"),
+        name: "Ember Burst",
+        damage_tag: Fire,
+        sp_cost: 0,
+        targeting: SkillTargeting(
+            shape: Single,
+            side: Enemy,
+            life: Alive,
+            self_rule: Forbid,
+            target_hp_rule: Any,
+        ),
+        implementation: Implemented,
+        legacy_ops: [Damage(amount: 20, target: Single), ToughnessHit(12)],
+    ),
+    (
+        id: SkillId("enemy_ult_fire"),
+        name: "Inferno Strike",
+        damage_tag: Fire,
+        sp_cost: 0,
+        targeting: SkillTargeting(
+            shape: Single,
+            side: Enemy,
+            life: Alive,
+            self_rule: Forbid,
+            target_hp_rule: Any,
+        ),
+        implementation: Implemented,
+        legacy_ops: [Damage(amount: 45, target: Single), ToughnessHit(25)],
+    ),
+]

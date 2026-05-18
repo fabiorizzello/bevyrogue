@@ -1,18 +1,19 @@
 use bevy::prelude::*;
+use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::{
+    runtime::{ExtRegistries, SignalPayload},
+    blueprints::{self, dorumon::PredatorLoopState, patamon::HolySupportState},
+    blueprints::patamon::identity::HolySupportTransition,
+    blueprints::renamon::{PrecisionMindGameState, PrecisionWindowKind},
+    blueprints::twin_core::{TwinCoreState, TwinCoreTransition},
     events::{CombatEvent, CombatEventKind},
     floating::FloatingDamage,
-    blueprints::patamon::HolySupportState,
-    kernel::{
-        CombatKernelTransition, HolySupportTransition, PrecisionMindGameTransition,
-        PrecisionWindowKind, TwinCoreTransition, register_combat_kernel_runtime,
-    },
+    kernel::CombatKernelTransition,
+    plugin::CombatPlugin,
     log::{ActionLog, LogEntry},
     observability::{
         ValidationStatusSnapshot, capture_validation_snapshot, format_validation_snapshot,
     },
-    precision_mind_game::PrecisionMindGameState,
-    blueprints::dorumon::PredatorLoopState,
     sp::SpPool,
     state::{CombatPhase, CombatState},
     status_effect::{StatusBag, StatusEffectKind},
@@ -20,7 +21,6 @@ use bevyrogue::combat::{
     team::Team,
     toughness::{DamageKind, Toughness},
     turn_order::TurnOrder,
-    blueprints::agumon::TwinCoreState,
     types::{Attribute, DamageTag, EvoStage, UnitId},
     ultimate::{UltAccumulationTrigger, UltimateCharge},
     unit::{Ko, Unit},
@@ -36,6 +36,12 @@ fn unit(id: u32, hp_current: i32, hp_max: i32, attribute: Attribute) -> Unit {
         resists: vec![],
         evo_stage: EvoStage::Adult,
     }
+}
+
+fn install_validation_exts(world: &mut World) {
+    world.insert_resource(ExtRegistries::default());
+    let mut regs = world.resource_mut::<ExtRegistries>();
+    blueprints::register_all_blueprint_validation_exts(&mut regs);
 }
 
 #[test]
@@ -64,8 +70,7 @@ fn snapshot_contract_covers_promised_fields_and_shape() {
         .into_iter()
         .collect(),
     });
-    let mut order = TurnOrder::default();
-    order.seed([UnitId(1), UnitId(4), UnitId(2)]);
+    let order = TurnOrder::default();
     world.insert_resource(order);
     world.insert_resource(TwinCoreState {
         active_thermal_spark_targets: vec![UnitId(4)],
@@ -76,6 +81,7 @@ fn snapshot_contract_covers_promised_fields_and_shape() {
         shatter_used_this_cycle: true,
         last_signal: Some(TwinCoreTransition::twin_burst(1)),
     });
+    install_validation_exts(&mut world);
 
     world.spawn((
         unit(1, 100, 100, Attribute::Vaccine),
@@ -141,7 +147,7 @@ fn snapshot_contract_covers_promised_fields_and_shape() {
 
     assert_eq!(
         formatted,
-        "phase=Victory winner=Ally sp=5/5 twin_core=cr=2 spark_targets=[4] fire=1 ice=1 burst_guard=true shatter_guard=true last=twin-burst(1) holy_support=none predator_loop=none precision=none battery_loop=none turn_preview=[1,2] action_log_tail=[hit(attacker=1,target=4,amount=18,kind=Weak)|break(target=4,element=Fire)|ko(target=4)] floating_live=2 units=[id=1,team=Ally,hp=100/100,tough=N/A,ult=75/100/150,ko=false,stun=0,statuses=[];id=2,team=Ally,hp=55/80,tough=N/A,ult=100/100/150,ko=false,stun=2,statuses=[];id=4,team=Enemy,hp=0/90,tough=-5/50,weaknesses=[Fire],broken=true,ult=0/100/150,ko=true,stun=1,statuses=[]]"
+        "phase=Victory winner=Ally sp=5/5 twin_core=burst_guard=true cr=2 fire=1 ice=1 last=twin-burst(1) shatter_guard=true spark_targets=[4] turn_preview=[1,2] action_log_tail=[hit(attacker=1,target=4,amount=18,kind=Weak)|break(target=4,element=Fire)|ko(target=4)] floating_live=2 units=[id=1,team=Ally,hp=100/100,tough=N/A,ult=75/100/150,ko=false,stun=0,statuses=[];id=2,team=Ally,hp=55/80,tough=N/A,ult=100/100/150,ko=false,stun=2,statuses=[];id=4,team=Enemy,hp=0/90,tough=-5/50,weaknesses=[Fire],broken=true,ult=0/100/150,ko=true,stun=1,statuses=[]]"
     );
 }
 
@@ -151,10 +157,10 @@ fn snapshot_defaults_empty_optional_surfaces() {
     world.insert_resource(CombatState::default());
     world.insert_resource(SpPool::default());
     world.insert_resource(ActionLog::default());
-    let mut order = TurnOrder::default();
-    order.seed([UnitId(7)]);
+    let order = TurnOrder::default();
     world.insert_resource(order);
     world.insert_resource(TwinCoreState::default());
+    install_validation_exts(&mut world);
     world.spawn((
         unit(7, 42, 70, Attribute::Free),
         Team::Ally,
@@ -173,28 +179,38 @@ fn snapshot_defaults_empty_optional_surfaces() {
 
     assert_eq!(
         formatted,
-        "phase=WaitingAction winner=none sp=3/5 twin_core=cr=0 spark_targets=[] fire=0 ice=0 burst_guard=false shatter_guard=false last=none holy_support=none predator_loop=none precision=none battery_loop=none turn_preview=[7] action_log_tail=[] floating_live=0 units=[id=7,team=Ally,hp=42/70,tough=N/A,ult=0/100/150,ko=false,stun=0,statuses=[]]"
+        "phase=WaitingAction winner=none sp=3/5 twin_core=burst_guard=false cr=0 fire=0 ice=0 last=none shatter_guard=false spark_targets=[] turn_preview=[7] action_log_tail=[] floating_live=0 units=[id=7,team=Ally,hp=42/70,tough=N/A,ult=0/100/150,ko=false,stun=0,statuses=[]]"
     );
 }
 
 #[test]
 fn runtime_registration_applies_all_kernel_transition_domains() {
     let mut app = App::new();
-    app.add_message::<CombatEvent>();
-    register_combat_kernel_runtime(&mut app);
+    app.add_message::<CombatEvent>().add_plugins(CombatPlugin);
 
     for transition in [
-        CombatKernelTransition::TwinCore(TwinCoreTransition::build_cross_resonance(1)),
-        CombatKernelTransition::HolySupport(HolySupportTransition::build_grace(1)),
-        CombatKernelTransition::PrecisionMindGame(PrecisionMindGameTransition::open_window(
-            PrecisionWindowKind::Momentum,
-        )),
+        CombatKernelTransition::Blueprint {
+            owner: "twin_core".into(),
+            name: "build_cross_resonance".into(),
+            payload: SignalPayload::Amount(1),
+        },
+        CombatKernelTransition::Blueprint {
+            owner: "patamon".into(),
+            name: "build_holy_support_grace".into(),
+            payload: SignalPayload::Amount(1),
+        },
+        CombatKernelTransition::Blueprint {
+            owner: "renamon".into(),
+            name: "open_momentum_window".into(),
+            payload: SignalPayload::Empty,
+        },
     ] {
         app.world_mut().write_message(CombatEvent {
             kind: CombatEventKind::OnKernelTransition { transition },
             source: UnitId(1),
             target: UnitId(2),
             follow_up_depth: 0,
+            cast_id: CastId::ROOT,
         });
     }
 
@@ -225,13 +241,12 @@ fn runtime_registration_applies_all_kernel_transition_domains() {
 #[test]
 fn runtime_registration_populates_snapshot_kernel_resources() {
     let mut app = App::new();
-    register_combat_kernel_runtime(&mut app);
+    app.add_message::<CombatEvent>().add_plugins(CombatPlugin);
 
     app.world_mut().insert_resource(CombatState::default());
     app.world_mut().insert_resource(SpPool::default());
     app.world_mut().insert_resource(ActionLog::default());
-    let mut order = TurnOrder::default();
-    order.seed([UnitId(21)]);
+    let order = TurnOrder::default();
     app.world_mut().insert_resource(order);
     app.world_mut().spawn((
         unit(21, 70, 70, Attribute::Free),
@@ -254,13 +269,13 @@ fn runtime_registration_populates_snapshot_kernel_resources() {
     let snapshot =
         capture_validation_snapshot(app.world_mut()).expect("runtime snapshot should build");
     let formatted = format_validation_snapshot(&snapshot);
-    assert!(formatted.contains("twin_core=cr=0"), "{formatted}");
-    assert!(formatted.contains("holy_support=grace=0/3"), "{formatted}");
-    assert!(
-        formatted.contains("predator_loop=exploit_cap=3"),
-        "{formatted}"
-    );
-    assert!(formatted.contains("precision=phase=Dormant"), "{formatted}");
+    assert!(formatted.contains("twin_core="), "missing twin_core: {formatted}");
+    assert!(formatted.contains("cr=0"), "missing cr: {formatted}");
+    assert!(formatted.contains("support="), "missing support: {formatted}");
+    assert!(formatted.contains("grace=0"), "missing grace: {formatted}");
+    assert!(formatted.contains("predator="), "missing predator: {formatted}");
+    assert!(formatted.contains("exploit_cap=3"), "missing exploit_cap: {formatted}");
+    assert!(formatted.contains("mind_game="), "missing mind_game: {formatted}");
 }
 
 #[test]
@@ -269,10 +284,10 @@ fn snapshot_hides_ally_missing_toughness_and_zero_max_enemy_bars() {
     world.insert_resource(CombatState::default());
     world.insert_resource(SpPool::default());
     world.insert_resource(ActionLog::default());
-    let mut order = TurnOrder::default();
-    order.seed([UnitId(11), UnitId(12), UnitId(13)]);
+    let order = TurnOrder::default();
     world.insert_resource(order);
     world.insert_resource(TwinCoreState::default());
+    install_validation_exts(&mut world);
 
     world.spawn((
         unit(11, 20, 20, Attribute::Vaccine),
@@ -315,7 +330,7 @@ fn snapshot_hides_ally_missing_toughness_and_zero_max_enemy_bars() {
 
     assert_eq!(
         formatted,
-        "phase=WaitingAction winner=none sp=3/5 twin_core=cr=0 spark_targets=[] fire=0 ice=0 burst_guard=false shatter_guard=false last=none holy_support=none predator_loop=none precision=none battery_loop=none turn_preview=[11,12,13] action_log_tail=[] floating_live=0 units=[id=11,team=Ally,hp=20/20,tough=N/A,ult=10/100/150,ko=false,stun=0,statuses=[];id=12,team=Enemy,hp=30/30,tough=N/A,ult=0/100/150,ko=false,stun=0,statuses=[];id=13,team=Enemy,hp=40/40,tough=15/15,weaknesses=[Ice],broken=false,ult=0/100/150,ko=false,stun=0,statuses=[]]"
+        "phase=WaitingAction winner=none sp=3/5 twin_core=burst_guard=false cr=0 fire=0 ice=0 last=none shatter_guard=false spark_targets=[] turn_preview=[11,12,13] action_log_tail=[] floating_live=0 units=[id=11,team=Ally,hp=20/20,tough=N/A,ult=10/100/150,ko=false,stun=0,statuses=[];id=12,team=Enemy,hp=30/30,tough=N/A,ult=0/100/150,ko=false,stun=0,statuses=[];id=13,team=Enemy,hp=40/40,tough=15/15,weaknesses=[Ice],broken=false,ult=0/100/150,ko=false,stun=0,statuses=[]]"
     );
 }
 
@@ -325,8 +340,7 @@ fn per_unit_statuses_populated_deterministically() {
     world.insert_resource(CombatState::default());
     world.insert_resource(SpPool::default());
     world.insert_resource(ActionLog::default());
-    let mut order = TurnOrder::default();
-    order.seed([UnitId(99)]);
+    let order = TurnOrder::default();
     world.insert_resource(order);
     world.insert_resource(TwinCoreState::default());
 
@@ -358,11 +372,26 @@ fn per_unit_statuses_populated_deterministically() {
         .find(|u| u.id == UnitId(99))
         .expect("unit 99 present");
     let expected_statuses = vec![
-        ValidationStatusSnapshot { kind: StatusEffectKind::Heated, duration_remaining: 2 },
-        ValidationStatusSnapshot { kind: StatusEffectKind::Chilled, duration_remaining: 5 },
-        ValidationStatusSnapshot { kind: StatusEffectKind::Paralyzed, duration_remaining: 4 },
-        ValidationStatusSnapshot { kind: StatusEffectKind::Slowed, duration_remaining: 3 },
-        ValidationStatusSnapshot { kind: StatusEffectKind::Blessed, duration_remaining: 1 },
+        ValidationStatusSnapshot {
+            kind: StatusEffectKind::Heated,
+            duration_remaining: 2,
+        },
+        ValidationStatusSnapshot {
+            kind: StatusEffectKind::Chilled,
+            duration_remaining: 5,
+        },
+        ValidationStatusSnapshot {
+            kind: StatusEffectKind::Paralyzed,
+            duration_remaining: 4,
+        },
+        ValidationStatusSnapshot {
+            kind: StatusEffectKind::Slowed,
+            duration_remaining: 3,
+        },
+        ValidationStatusSnapshot {
+            kind: StatusEffectKind::Blessed,
+            duration_remaining: 1,
+        },
     ];
     assert_eq!(unit_snap.statuses, expected_statuses);
 

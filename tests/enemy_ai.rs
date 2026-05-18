@@ -12,7 +12,9 @@ use bevyrogue::combat::{
     team::Team,
     toughness::Toughness,
     turn_order::{TurnAdvanced, TurnOrder},
-    turn_system::{ActionIntent, advance_turn_system},
+    turn_system::{
+        ActionIntent, EnemyTurnRequestQueue, advance_turn_system, resolve_enemy_turn_action_system,
+    },
     types::{Attribute, EvoStage, SkillId, UnitId},
     ultimate::{UltAccumulationTrigger, UltimateCharge},
     unit::Unit,
@@ -26,12 +28,16 @@ fn setup_app() -> App {
     let mut app = App::new();
     app.init_resource::<CombatState>()
         .init_resource::<TurnOrder>()
+        .init_resource::<EnemyTurnRequestQueue>()
         .init_resource::<Time>()
         .add_message::<TurnAdvanced>()
         .add_message::<bevyrogue::combat::av::ActionValueUpdated>()
         .add_message::<ActionIntent>()
         .add_message::<bevyrogue::combat::events::CombatEvent>()
-        .add_systems(Update, advance_turn_system);
+        .add_systems(
+            Update,
+            (advance_turn_system, resolve_enemy_turn_action_system).chain(),
+        );
     app
 }
 
@@ -96,9 +102,6 @@ fn enemy_uses_ultimate_when_charge_ready() {
         enemy_skills(),
     ));
 
-    app.world_mut()
-        .resource_mut::<TurnOrder>()
-        .seed([UnitId(101)]);
     let mut intent_cursor = message_cursor::<ActionIntent>(&mut app);
 
     app.world_mut().write_message(TurnAdvanced::of(UnitId(101)));
@@ -148,9 +151,6 @@ fn enemy_uses_skill_when_ult_not_ready() {
         enemy_skills(),
     ));
 
-    app.world_mut()
-        .resource_mut::<TurnOrder>()
-        .seed([UnitId(101)]);
     let mut intent_cursor = message_cursor::<ActionIntent>(&mut app);
 
     app.world_mut().write_message(TurnAdvanced::of(UnitId(101)));
@@ -217,9 +217,6 @@ fn enemy_targets_lowest_toughness_ratio() {
         enemy_skills(),
     ));
 
-    app.world_mut()
-        .resource_mut::<TurnOrder>()
-        .seed([UnitId(101)]);
     let mut intent_cursor = message_cursor::<ActionIntent>(&mut app);
 
     app.world_mut().write_message(TurnAdvanced::of(UnitId(101)));

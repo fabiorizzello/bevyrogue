@@ -8,6 +8,8 @@
 /// stop showing events with follow_up_depth >= 2. The assertions below guard against that.
 use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::{
+    runtime::{ExtRegistries, register_kernel_builtins, timeline::TimelineLibrary},
+    blueprints::register_all_blueprint_exts,
     events::{CombatEvent, CombatEventKind},
     follow_up::{
         FollowUpIntent, FollowUpTrace, follow_up_listener_system, resolve_follow_up_action_system,
@@ -26,16 +28,17 @@ use bevyrogue::combat::{
 };
 use bevyrogue::data::{
     SkillBookHandle,
+    skill_timeline::compile_skill_book_timelines,
     skills_ron::SkillBook,
     units_ron::{UnitDef, UnitRoster},
 };
 
 fn load_roster() -> UnitRoster {
-    ron::from_str(include_str!("../assets/data/units.ron")).expect("parse units.ron")
+    bevyrogue::data::aggregate_unit_roster()
 }
 
 fn load_skill_book() -> SkillBook {
-    ron::from_str(include_str!("../assets/data/skills.ron")).expect("parse skills.ron")
+    bevyrogue::data::aggregate_skill_book()
 }
 
 fn pilot(roster: &UnitRoster, name: &str) -> UnitDef {
@@ -54,6 +57,8 @@ fn setup_app(skill_book: SkillBook) -> App {
         .init_resource::<SpPool>()
         .init_resource::<ActionLog>()
         .init_resource::<Time>()
+        .insert_resource(TimelineLibrary::<String>::default())
+        .init_resource::<ExtRegistries>()
         .add_message::<ActionIntent>()
         .add_message::<CombatEvent>()
         .add_message::<FollowUpIntent>()
@@ -69,9 +74,17 @@ fn setup_app(skill_book: SkillBook) -> App {
         );
 
     let mut assets = Assets::<SkillBook>::default();
-    let handle = assets.add(skill_book);
+    let handle = assets.add(skill_book.clone());
     app.insert_resource(assets);
     app.insert_resource(SkillBookHandle(handle));
+    {
+        let mut regs = app.world_mut().resource_mut::<ExtRegistries>();
+        register_kernel_builtins(&mut regs);
+        register_all_blueprint_exts(&mut regs);
+        let compiled = compile_skill_book_timelines(&skill_book, &regs)
+            .expect("follow_up_chains test book must compile");
+        app.world_mut().resource_mut::<TimelineLibrary<String>>().timelines = compiled;
+    }
     app.world_mut().resource_mut::<SpPool>().current = 999;
     app
 }
@@ -175,8 +188,7 @@ fn depth_chain_progresses_to_depth_two() {
         enemy_traits: vec![],
         charged_attack: None,
         form_identity: None,
-        twin_core: Default::default(),
-        holy_support: Default::default(),
+        blueprint_metadata: Default::default(),
         resists: vec![],
         toughness_max: 42,
         weaknesses: vec![],
@@ -368,8 +380,7 @@ fn chain_terminates_when_follow_up_cannot_retrigger() {
         enemy_traits: vec![],
         charged_attack: None,
         form_identity: None,
-        twin_core: Default::default(),
-        holy_support: Default::default(),
+        blueprint_metadata: Default::default(),
         resists: vec![],
         toughness_max: 50,
         weaknesses: vec![],

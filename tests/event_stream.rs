@@ -1,4 +1,5 @@
 use bevy::{ecs::message::MessageCursor, prelude::*};
+use bevyrogue::combat::runtime::SignalPayload;
 use bevyrogue::combat::{
     events::{ActionIntentKind, CombatEvent, CombatEventKind},
     kernel::{CombatBeatId, CombatKernelTransition, register_combat_kernel_runtime},
@@ -17,8 +18,8 @@ use bevyrogue::combat::{
 use bevyrogue::data::{
     SkillBookHandle,
     skills_ron::{
-        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
-        SkillTargeting, TargetLife, TargetShape, TargetSide,
+        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation, SkillTargeting,
+        TargetLife, TargetShape, TargetSide,
     },
 };
 
@@ -46,7 +47,7 @@ fn drain(cursor: &mut MessageCursor<CombatEvent>, app: &App, out: &mut Vec<Comba
 }
 
 #[test]
-fn s09_event_stream_observes_all_variants() {
+fn event_stream_observes_all_variants() {
     let mut app = App::new();
     register_combat_kernel_runtime(&mut app);
 
@@ -74,17 +75,18 @@ fn s09_event_stream_observes_all_variants() {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![
+            legacy_ops: vec![
                 Effect::Damage {
                     amount: 10,
                     target: TargetShape::Single,
-                per_hop: Default::default(),
+                    per_hop: Default::default(),
                 },
                 Effect::ToughnessHit(5),
             ],
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
         SkillDef {
             id: SkillId("skill_a1".into()),
@@ -99,17 +101,18 @@ fn s09_event_stream_observes_all_variants() {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![
+            legacy_ops: vec![
                 Effect::Damage {
                     amount: 20,
                     target: TargetShape::Single,
-                per_hop: Default::default(),
+                    per_hop: Default::default(),
                 },
                 Effect::ToughnessHit(5),
             ],
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
         SkillDef {
             id: SkillId("enemy_basic".into()),
@@ -124,17 +127,18 @@ fn s09_event_stream_observes_all_variants() {
                 ..Default::default()
             },
             implementation: SkillImplementation::Implemented,
-            effects: vec![
+            legacy_ops: vec![
                 Effect::Damage {
                     amount: 10,
                     target: TargetShape::Single,
-                per_hop: Default::default(),
+                    per_hop: Default::default(),
                 },
                 Effect::ToughnessHit(0),
             ],
             custom_signals: vec![],
             animation_sequence: None,
             qte: None,
+            timeline: None,
         },
     ]));
     app.insert_resource(assets);
@@ -248,7 +252,11 @@ fn s09_event_stream_observes_all_variants() {
             .iter()
             .any(|k| matches!(k, CombatEventKind::OnBreak { .. }))
     );
-    assert!(kinds.iter().any(|k| matches!(k, CombatEventKind::UnitDied { .. })));
+    assert!(
+        kinds
+            .iter()
+            .any(|k| matches!(k, CombatEventKind::UnitDied { .. }))
+    );
     assert!(
         kinds
             .iter()
@@ -274,8 +282,6 @@ fn s09_event_stream_observes_all_variants() {
             | CombatEventKind::OnActionPreApp
             | CombatEventKind::OnCombatBeat { .. }
             | CombatEventKind::OnKernelTransition { .. }
-            | CombatEventKind::BatteryLoopResolved { .. }
-            | CombatEventKind::PredatorLoopResolved { .. }
             | CombatEventKind::OnActionApplied
             | CombatEventKind::OnActionResolved
             | CombatEventKind::OnStatusApplied { .. }
@@ -305,12 +311,25 @@ fn s09_event_stream_observes_all_variants() {
         })
         .collect();
     assert_eq!(beat_ids, kernel_beat_ids);
-    assert!(kinds.iter().any(|kind| matches!(
-        kind,
-        CombatEventKind::OnKernelTransition {
-            transition: CombatKernelTransition::TwinCore(_),
-        }
-    )));
-    // Suppress unused-import warning until T02 emits these variants.
+
+    for owner in ["twin_core", "dorumon", "tentomon"] {
+        let event = CombatEvent {
+            kind: CombatEventKind::OnKernelTransition {
+                transition: CombatKernelTransition::Blueprint {
+                    owner: owner.to_string(),
+                    name: "signal".to_string(),
+                    payload: SignalPayload::Amount(1),
+                },
+            },
+            source: UnitId(1),
+            target: UnitId(2),
+            follow_up_depth: 0,
+            cast_id: bevyrogue::combat::runtime::intent::CastId::ROOT,
+        };
+        let serialized = serde_json::to_string(&event).expect("serialize blueprint event");
+        assert!(serialized.contains(owner), "{serialized}");
+        assert!(serialized.contains("Blueprint"), "{serialized}");
+    }
+    // Keep the coarse intent enum exercised so serde coverage stays anchored on the shared bus.
     let _ = ActionIntentKind::Basic;
 }

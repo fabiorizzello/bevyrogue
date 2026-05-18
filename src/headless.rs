@@ -9,37 +9,39 @@ use bevy::app::ScheduleRunnerPlugin;
 use bevy::prelude::*;
 use moonshine_kind::Instance;
 
-use crate::combat::bootstrap::{
+use bevyrogue::combat::runtime::intent::CastId;
+use bevyrogue::combat::bootstrap::{
     EncounterPreset, SelectionRequest, apply_composition, bootstrap_encounter,
 };
-use crate::combat::events::{CombatEvent, CombatEventKind};
-use crate::combat::follow_up::{
+use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
+use bevyrogue::combat::follow_up::{
     follow_up_listener_system, form_identity_listener_system, resolve_follow_up_action_system,
 };
-use crate::combat::jsonl_logger::jsonl_logger_system;
-use crate::combat::log::ActionLog;
-use crate::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
-use crate::combat::rng::CombatRng;
-use crate::combat::sp::SpPool;
-use crate::combat::state::{CombatPhase, CombatState};
-use crate::combat::stun::Stunned;
-use crate::combat::team::Team;
-use crate::combat::toughness::{Toughness, visible_toughness};
-use crate::combat::turn_order::{TurnAdvanced, TurnOrder};
-use crate::combat::turn_system::{
-    ActionIntent, advance_turn_system, apply_av_ops_system, check_victory_system,
-    resolve_action_system,
+use bevyrogue::combat::jsonl_logger::jsonl_logger_system;
+use bevyrogue::combat::log::ActionLog;
+use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
+use bevyrogue::combat::rng::CombatRng;
+use bevyrogue::combat::sp::SpPool;
+use bevyrogue::combat::state::{CombatPhase, CombatState};
+use bevyrogue::combat::stun::Stunned;
+use bevyrogue::combat::team::Team;
+use bevyrogue::combat::toughness::{Toughness, visible_toughness};
+use bevyrogue::combat::turn_order::{TurnAdvanced, TurnOrder};
+use bevyrogue::combat::turn_system::{
+    ActionIntent, EnemyTurnRequestQueue, advance_turn_system, apply_av_ops_system,
+    check_victory_system, resolve_action_system, resolve_enemy_turn_action_system,
 };
-use crate::combat::types::UnitId;
-use crate::combat::ultimate::{UltimateCharge, flush_ult_gain_system, ult_accumulation_system};
-use crate::combat::unit::{Ko, Unit};
-use crate::data::{self, DataPlugin};
-use crate::party_validation;
+use bevyrogue::combat::types::UnitId;
+use bevyrogue::combat::ultimate::{UltimateCharge, flush_ult_gain_system, ult_accumulation_system};
+use bevyrogue::combat::unit::{Ko, Unit};
+use bevyrogue::data::{self, DataPlugin};
+use bevyrogue::party_validation;
 
 /// Tick budget for headless smoke runs. ~2 seconds at 60 Hz — enough for
 /// asset loader init and first-frame ECS snapshots, short enough that
 /// `cargo run` exits cleanly without SIGTERM.
 const HEADLESS_TICK_BUDGET: u32 = 120;
+const HEADLESS_BOSS_ID: UnitId = UnitId(101);
 
 #[derive(Resource, Default)]
 struct TickCounter(u32);
@@ -86,17 +88,17 @@ fn default_headless_script() -> VecDeque<ScriptStep> {
     for _ in 0..5 {
         actions.push_back(EmitIntent(ActionIntent::Basic {
             attacker: UnitId(1),
-            target: UnitId(4),
+            target: HEADLESS_BOSS_ID,
         }));
     }
     actions.push_back(EmitIntent(ActionIntent::Ultimate {
         attacker: UnitId(1),
-        target: UnitId(4),
+        target: HEADLESS_BOSS_ID,
     }));
     for _ in 0..6 {
         actions.push_back(EmitIntent(ActionIntent::Basic {
             attacker: UnitId(1),
-            target: UnitId(5),
+            target: HEADLESS_BOSS_ID,
         }));
     }
     actions.push_back(ReloadAssets);
@@ -110,7 +112,7 @@ pub fn register(app: &mut App) {
             1.0 / 60.0,
         ))),
     )
-    .add_plugins(bevy::log::LogPlugin::default())
+    .add_plugins(bevyrogue::agent_tracing::log_plugin_from_env())
     .add_plugins(bevy::state::app::StatesPlugin)
     .add_plugins(AssetPlugin {
         watch_for_changes_override: Some(true),
@@ -130,7 +132,7 @@ pub fn register(app: &mut App) {
 }
 
 pub fn register_combat_systems(app: &mut App) {
-    app.add_systems(
+    app.init_resource::<EnemyTurnRequestQueue>().add_systems(
         Update,
         (
             resolve_action_system,
@@ -141,6 +143,7 @@ pub fn register_combat_systems(app: &mut App) {
             flush_ult_gain_system,
             apply_av_ops_system,
             advance_turn_system,
+            resolve_enemy_turn_action_system,
             check_victory_system,
             jsonl_logger_system,
         )
@@ -241,11 +244,17 @@ fn headless_smoke_tick(
 
         match bootstrap_encounter(roster, &request, EncounterPreset::BossEncounter) {
             Ok(composition) => {
-                apply_composition(&mut commands, &composition, &mut order);
+                let seeded_ids = apply_composition(&mut commands, &composition);
                 info!(
                     "bootstrap: success, selected_party={:?}",
                     request.rookie_ids
                 );
+                // The headless script is a deterministic observability smoke run, not a
+                // resource-economy scenario. Start capped SP high enough that scripted
+                // actions exercise resolution/apply/follow-up paths instead of only
+                // producing SP-shortfall failures.
+                sp.current = 999;
+                sp.max = 999;
                 bootstrap.combat_events.write(CombatEvent {
                     source: UnitId(0),
                     target: UnitId(0),
@@ -254,14 +263,16 @@ fn headless_smoke_tick(
                         tamer_id: pcfg.tamer_id,
                     },
                     follow_up_depth: 0,
+                    cast_id: CastId::ROOT,
                 });
                 bootstrap.combat_events.write(CombatEvent {
                     source: UnitId(0),
                     target: UnitId(0),
                     kind: CombatEventKind::TurnOrderSeeded {
-                        unit_ids: order.next_unit.map(|id| vec![id]).unwrap_or_default(),
+                        unit_ids: seeded_ids,
                     },
                     follow_up_depth: 0,
+                    cast_id: CastId::ROOT,
                 });
             }
             Err(err) => {
@@ -311,10 +322,7 @@ fn headless_smoke_tick(
         }
     }
     if counter.0 == 2 {
-        info!(
-            "turn order seeded: active={:?} next={:?}",
-            order.active_unit, order.next_unit
-        );
+        info!("turn order seeded: active={:?}", order.active_unit);
     }
 
     if counter.0 >= 5 {
@@ -334,7 +342,13 @@ fn headless_smoke_tick(
                     Some(ScriptStep::ReloadAssets) => {
                         let _ = script.pop();
                         debug!("script step: ReloadAssets");
-                        asset_server.reload("data/units.ron");
+                        // Reload per-digimon unit sources to trigger re-assembly.
+                        for path in bevyrogue::data::DIGIMON_UNIT_PATHS
+                            .iter()
+                            .chain(bevyrogue::data::ENEMY_UNIT_PATHS.iter())
+                        {
+                            asset_server.reload(*path);
+                        }
                         for unit in &unit_entities {
                             commands.entity(unit.entity()).despawn();
                         }

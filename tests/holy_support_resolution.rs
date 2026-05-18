@@ -1,13 +1,15 @@
 use bevy::prelude::*;
 
+use bevyrogue::combat::runtime::SignalPayload;
+use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::blueprints;
-use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::blueprints::patamon::{HolySupportState, HolySupportTransition};
+use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::kernel::{CombatKernelRegistry, CombatKernelTransition};
 use bevyrogue::combat::kit::UnitSkills;
 use bevyrogue::combat::log::ActionLog;
 use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
-use bevyrogue::combat::resolution::{apply_effects, resolve_action};
+use bevyrogue::combat::resolution::{apply_legacy_ops, resolve_action};
 use bevyrogue::combat::sp::{RoundSpTracker, SpPool};
 use bevyrogue::combat::state::CombatState;
 use bevyrogue::combat::team::Team;
@@ -19,7 +21,7 @@ use bevyrogue::combat::unit::{BasicStreak, Unit};
 use bevyrogue::data::skills_ron::SkillBook;
 
 fn load_skill_book() -> SkillBook {
-    ron::from_str(include_str!("../assets/data/skills.ron")).expect("parse skills.ron")
+    bevyrogue::data::aggregate_skill_book()
 }
 
 fn unit(id: u32, hp_current: i32) -> Unit {
@@ -65,6 +67,11 @@ fn app_with_holy_support() -> App {
     let mut app = App::new();
     app.add_message::<CombatEvent>();
     bevyrogue::combat::kernel::register_combat_kernel_runtime(&mut app);
+    bevyrogue::combat::blueprints::add_runtime_plugins(&mut app);
+    {
+        let mut regs = app.world_mut().resource_mut::<bevyrogue::combat::runtime::ExtRegistries>();
+        bevyrogue::combat::blueprints::register_all_blueprint_validation_exts(&mut regs);
+    }
     app.insert_resource(CombatState::default())
         .insert_resource(SpPool::default())
         .insert_resource(ActionLog::default());
@@ -92,6 +99,7 @@ fn emit_transitions(
                 source,
                 target,
                 follow_up_depth: 0,
+                cast_id: CastId::ROOT,
             });
         }
     }
@@ -117,7 +125,7 @@ fn patamon_ult_builds_grace_through_the_blueprint_kernel_path() {
     let mut streak = BasicStreak::default();
     let resolved = resolved_skill(&book, "patamon_ult", attacker.id, defender.id);
 
-    let (outcome, events) = apply_effects(
+    let (outcome, _events) = apply_legacy_ops(
         &resolved,
         &attacker,
         &mut defender,
@@ -135,19 +143,15 @@ fn patamon_ult_builds_grace_through_the_blueprint_kernel_path() {
     );
 
     assert!(outcome.succeeded);
-    assert!(events.iter().all(|event| !matches!(
-        event,
-        CombatEventKind::OnKernelTransition {
-            transition: CombatKernelTransition::HolySupport(_)
-        }
-    )));
 
     let transitions = blueprints::transitions_for_action(&resolved);
     assert_eq!(
         transitions,
-        vec![CombatKernelTransition::HolySupport(
-            HolySupportTransition::build_grace(1)
-        )]
+        vec![CombatKernelTransition::Blueprint {
+            owner: "patamon".to_owned(),
+            name: "build_holy_support_grace".to_owned(),
+            payload: SignalPayload::Amount(1),
+        }]
     );
 
     let mut app = app_with_holy_support();
@@ -155,9 +159,11 @@ fn patamon_ult_builds_grace_through_the_blueprint_kernel_path() {
 
     assert_eq!(
         emitted,
-        vec![CombatKernelTransition::HolySupport(
-            HolySupportTransition::build_grace(1)
-        )]
+        vec![CombatKernelTransition::Blueprint {
+            owner: "patamon".to_owned(),
+            name: "build_holy_support_grace".to_owned(),
+            payload: SignalPayload::Amount(1),
+        }]
     );
 
     let state = app.world().resource::<HolySupportState>();
@@ -168,9 +174,18 @@ fn patamon_ult_builds_grace_through_the_blueprint_kernel_path() {
     );
 
     let snapshot = capture_validation_snapshot(app.world_mut()).expect("snapshot");
+    let support = snapshot
+        .section("support")
+        .expect("support section should be present after the blueprint transition");
+
+    assert_eq!(support.field("grace"), Some("1"));
+    assert_eq!(support.field("grace_cap"), Some("3"));
+    assert_eq!(support.field("last"), Some("build(1)"));
+
     let formatted = format_validation_snapshot(&snapshot);
-    assert!(formatted.contains("holy_support=grace=1/3"));
+    assert!(formatted.contains("grace=1"));
     assert!(formatted.contains("last=build(1)"));
+    assert!(!formatted.contains("holy_support="));
 }
 
 #[test]

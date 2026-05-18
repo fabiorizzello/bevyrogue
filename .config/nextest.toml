@@ -1,0 +1,14 @@
+[profile.default]
+# Agent-first default: every discovered test is run even after a panic, so a
+# single failure still leaves a complete machine-readable outcome set.
+fail-fast = false
+
+[profile.agent]
+# Dedicated profile for parsable agent/CI output. Keep this separate from the
+# default profile so local humans can still use `cargo nextest run` normally if
+# they want only terminal output.
+fail-fast = false
+
+[profile.agent.junit]
+# Written by nextest under target/nextest/agent/junit.xml.
+path = "junit.xml"

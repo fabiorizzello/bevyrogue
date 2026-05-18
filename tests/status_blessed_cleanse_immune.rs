@@ -9,9 +9,19 @@ fn blessed_survives_cleanse_when_alone() {
 
     let removed = bag.cleanse_debuffs();
 
-    assert!(removed.is_empty(), "cleanse must remove nothing when only Blessed is present");
-    assert!(bag.has(&StatusEffectKind::Blessed), "Blessed must still be present after cleanse");
-    assert_eq!(bag.get_dur(&StatusEffectKind::Blessed), Some(3), "duration must be unchanged");
+    assert!(
+        removed.is_empty(),
+        "cleanse must remove nothing when only Blessed is present"
+    );
+    assert!(
+        bag.has(&StatusEffectKind::Blessed),
+        "Blessed must still be present after cleanse"
+    );
+    assert_eq!(
+        bag.get_dur(&StatusEffectKind::Blessed),
+        Some(3),
+        "duration must be unchanged"
+    );
 }
 
 #[test]
@@ -26,6 +36,9 @@ fn blessed_survives_cleanse_alongside_debuffs() {
     assert_eq!(removed.len(), 2, "only debuffs removed");
     assert!(!bag.has(&StatusEffectKind::Heated));
     assert!(!bag.has(&StatusEffectKind::Paralyzed));
-    assert!(bag.has(&StatusEffectKind::Blessed), "Blessed must survive cleanse of debuffs");
+    assert!(
+        bag.has(&StatusEffectKind::Blessed),
+        "Blessed must survive cleanse of debuffs"
+    );
     assert_eq!(bag.get_dur(&StatusEffectKind::Blessed), Some(5));
 }
