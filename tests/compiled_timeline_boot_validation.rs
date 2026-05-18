@@ -4,7 +4,7 @@ use bevy::prelude::*;
 use bevyrogue::{
     combat::types::SkillId,
     combat::{
-        api::{ExtRegistries, TimelineLibrary, register_kernel_builtins},
+        runtime::{ExtRegistries, TimelineLibrary, register_kernel_builtins},
         blueprints::register_all_blueprint_exts,
         plugin::CombatPlugin,
     },
@@ -107,26 +107,26 @@ fn asset_typo_in_hook_id_fails_with_skill_and_beat_site() {
 
 #[test]
 fn invalid_timeline_refs_report_hook_and_predicate_sites() {
-    let timeline: bevyrogue::combat::api::timeline::CompiledTimeline<String> =
-        bevyrogue::combat::api::timeline::CompiledTimeline {
+    let timeline: bevyrogue::combat::runtime::timeline::CompiledTimeline<String> =
+        bevyrogue::combat::runtime::timeline::CompiledTimeline {
         id: "bad_boot_timeline".into(),
         entry: "cast".into(),
-        beats: vec![bevyrogue::combat::api::timeline::Beat {
+        beats: vec![bevyrogue::combat::runtime::timeline::Beat {
             id: "cast".into(),
-            kind: bevyrogue::combat::api::timeline::BeatKind::Cast,
+            kind: bevyrogue::combat::runtime::timeline::BeatKind::Cast,
             hook: Some("missing_boot_hook".into()),
             selector: None,
             presentation: None,
             payload: None,
         }],
-        edges: vec![bevyrogue::combat::api::timeline::BeatEdge {
+        edges: vec![bevyrogue::combat::runtime::timeline::BeatEdge {
             from: "cast".into(),
             to: "impact".into(),
             gate: Some("missing_boot_pred".into()),
         }],
     };
 
-    let errs = bevyrogue::combat::api::timeline::validate_timeline_refs(&timeline, &canonical_regs())
+    let errs = bevyrogue::combat::runtime::timeline::validate_timeline_refs(&timeline, &canonical_regs())
         .expect_err("invalid timeline refs must fail validation");
 
     assert!(errs.iter().any(|err| {
@@ -147,18 +147,18 @@ fn invalid_timeline_ids_fail_during_app_finish() {
     app.add_plugins(CombatPlugin);
 
     app.world_mut().resource_mut::<TimelineLibrary<String>>().timelines.push(
-        bevyrogue::combat::api::timeline::CompiledTimeline {
+        bevyrogue::combat::runtime::timeline::CompiledTimeline {
             id: "bad_boot_timeline".into(),
             entry: "cast".into(),
-            beats: vec![bevyrogue::combat::api::timeline::Beat {
+            beats: vec![bevyrogue::combat::runtime::timeline::Beat {
                 id: "cast".into(),
-                kind: bevyrogue::combat::api::timeline::BeatKind::Cast,
+                kind: bevyrogue::combat::runtime::timeline::BeatKind::Cast,
                 hook: Some("missing_boot_hook".into()),
                 selector: None,
                 presentation: None,
                 payload: None,
             }],
-            edges: vec![bevyrogue::combat::api::timeline::BeatEdge {
+            edges: vec![bevyrogue::combat::runtime::timeline::BeatEdge {
                 from: "cast".into(),
                 to: "impact".into(),
                 gate: Some("missing_boot_pred".into()),

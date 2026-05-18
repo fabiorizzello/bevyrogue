@@ -1,5 +1,5 @@
 use bevy::{ecs::message::MessageCursor, prelude::*};
-use bevyrogue::combat::api::SignalPayload;
+use bevyrogue::combat::runtime::SignalPayload;
 use bevyrogue::combat::blueprints::patamon::{HolySupportState, HolySupportTransition};
 use bevyrogue::combat::blueprints::{self, CustomSignalDispatchError};
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
@@ -96,7 +96,7 @@ fn app_with_canonical_skills() -> App {
     {
         let mut regs = app
             .world_mut()
-            .resource_mut::<bevyrogue::combat::api::ExtRegistries>();
+            .resource_mut::<bevyrogue::combat::runtime::ExtRegistries>();
         bevyrogue::combat::blueprints::register_all_blueprint_validation_exts(&mut regs);
     }
     app.init_resource::<CombatState>()

@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
-use bevyrogue::combat::api::SignalPayload;
-use bevyrogue::combat::api::intent::CastId;
+use bevyrogue::combat::runtime::SignalPayload;
+use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::blueprints;
 use bevyrogue::combat::blueprints::patamon::{HolySupportState, HolySupportTransition};
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
@@ -69,7 +69,7 @@ fn app_with_holy_support() -> App {
     bevyrogue::combat::kernel::register_combat_kernel_runtime(&mut app);
     bevyrogue::combat::blueprints::add_runtime_plugins(&mut app);
     {
-        let mut regs = app.world_mut().resource_mut::<bevyrogue::combat::api::ExtRegistries>();
+        let mut regs = app.world_mut().resource_mut::<bevyrogue::combat::runtime::ExtRegistries>();
         bevyrogue::combat::blueprints::register_all_blueprint_validation_exts(&mut regs);
     }
     app.insert_resource(CombatState::default())

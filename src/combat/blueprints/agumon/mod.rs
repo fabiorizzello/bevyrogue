@@ -7,7 +7,7 @@ use std::sync::Arc;
 use crate::combat::bevy_types::*;
 
 use crate::combat::{
-    api::{
+    runtime::{
         Beat, BeatEvent, BeatKind, BlueprintState, CompiledTimeline, EventFilter, Intent,
         PassiveListeners, PassiveRunner, SelectorCtx, SignalPayload, SignalTaxonomy, SkillCtx,
     },
@@ -32,7 +32,7 @@ const PASSIVE_OWNER: UnitId = UnitId(1);
 /// Register only the Agumon extension-point functions (hooks, predicates, selectors)
 /// into an `ExtRegistries` without requiring a full `App`.
 /// Useful for timeline validation in tests that build a bare registry.
-pub fn register_agumon_ext(regs: &mut crate::combat::api::ExtRegistries) {
+pub fn register_agumon_ext(regs: &mut crate::combat::runtime::ExtRegistries) {
     regs.predicates
         .register("agumon/twin_core/passive_trigger", passive_trigger);
     regs.hooks
@@ -45,7 +45,7 @@ pub fn register_agumon_ext(regs: &mut crate::combat::api::ExtRegistries) {
     regs.hooks.register("agumon/on_bounce_hop", on_bounce_hop);
 }
 
-pub fn register_validation_ext(regs: &mut crate::combat::api::ExtRegistries) {
+pub fn register_validation_ext(regs: &mut crate::combat::runtime::ExtRegistries) {
     crate::combat::blueprints::twin_core::register_validation_ext(regs);
 }
 
@@ -98,12 +98,12 @@ fn build_passive_timeline() -> Arc<CompiledTimeline> {
             },
         ],
         edges: vec![
-            crate::combat::api::timeline::BeatEdge {
+            crate::combat::runtime::timeline::BeatEdge {
                 from: "dormant",
                 to: "proc",
                 gate: Some("agumon/twin_core/passive_trigger"),
             },
-            crate::combat::api::timeline::BeatEdge {
+            crate::combat::runtime::timeline::BeatEdge {
                 from: "proc",
                 to: "resolve",
                 gate: None,
@@ -238,6 +238,6 @@ fn on_bounce_hop(evt: &BeatEvent, ctx: &mut SkillCtx<'_>) {
 fn register_passive_hooks(app: &mut App) {
     let mut regs = app
         .world_mut()
-        .resource_mut::<crate::combat::api::ExtRegistries>();
+        .resource_mut::<crate::combat::runtime::ExtRegistries>();
     register_agumon_ext(&mut regs);
 }

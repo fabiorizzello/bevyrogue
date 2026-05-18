@@ -1,7 +1,7 @@
 use super::*;
-use crate::combat::api::timeline::{Beat, BeatKind, TimelineLibrary};
+use crate::combat::runtime::timeline::{Beat, BeatKind, TimelineLibrary};
 use crate::combat::{
-    api::{ExtRegistries, register_kernel_builtins},
+    runtime::{ExtRegistries, register_kernel_builtins},
     events::CombatEvent,
     kit::UnitSkills,
     log::{ActionLog, LogEntry},

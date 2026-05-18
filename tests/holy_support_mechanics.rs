@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use bevyrogue::combat::api::{SignalPayload, intent::CastId};
+use bevyrogue::combat::runtime::{SignalPayload, intent::CastId};
 use bevyrogue::combat::blueprints::twin_core::TwinCoreState;
 use bevyrogue::combat::blueprints::patamon::{
     GRACE_CAP, HolySupportDesignTag, HolySupportHook, HolySupportRejectReason, HolySupportState,
@@ -8,7 +8,7 @@ use bevyrogue::combat::blueprints::patamon::{
     register_validation_ext,
 };
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
-use bevyrogue::combat::api::ExtRegistries;
+use bevyrogue::combat::runtime::ExtRegistries;
 use bevyrogue::combat::blueprints::patamon::identity::HolySupportSignal;
 use bevyrogue::combat::kernel::{
     CombatKernelRegistry, CombatKernelTransition, CombatTagChangeKind, CombatTagState,

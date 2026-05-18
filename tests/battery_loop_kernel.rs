@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use bevyrogue::combat::api::{SignalPayload, intent::CastId};
+use bevyrogue::combat::runtime::{SignalPayload, intent::CastId};
 use bevyrogue::combat::blueprints;
 use bevyrogue::combat::blueprints::tentomon::{
     BATTERY_ENERGY_GRANT, BatteryLoopBlockedReason, BatteryLoopChargeKind, BatteryLoopSignal,

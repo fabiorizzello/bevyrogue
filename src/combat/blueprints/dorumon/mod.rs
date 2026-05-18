@@ -6,7 +6,7 @@
 
 use crate::combat::bevy_types::*;
 
-use crate::combat::api::registry::{ValidationField, ValidationSection};
+use crate::combat::runtime::registry::{ValidationField, ValidationSection};
 use crate::combat::kernel::CombatKernelRegistry;
 use crate::combat::blueprints::dorumon::identity::format_predator_loop_transition;
 pub mod hooks;
@@ -23,7 +23,7 @@ pub use identity::{
 };
 pub use signals::{OWNER, dispatch};
 
-pub fn register_validation_ext(regs: &mut crate::combat::api::ExtRegistries) {
+pub fn register_validation_ext(regs: &mut crate::combat::runtime::ExtRegistries) {
     regs.validation
         .register("predator/validation", predator_validation_section);
 }
@@ -89,7 +89,7 @@ pub struct DorumonPlugin;
 /// Register only the Dorumon extension-point functions into an `ExtRegistries`.
 // Called from register_all_blueprint_exts (consumed by tests).
 #[allow(dead_code)]
-pub fn register_dorumon_ext(_regs: &mut crate::combat::api::ExtRegistries) {
+pub fn register_dorumon_ext(_regs: &mut crate::combat::runtime::ExtRegistries) {
     // Dorumon is currently driven by Bevy systems, no fn-by-id extensions yet.
 }
 

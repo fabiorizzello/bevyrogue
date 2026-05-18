@@ -1,6 +1,6 @@
 use bevy::{ecs::message::MessageCursor, prelude::*};
-use bevyrogue::combat::api::SignalPayload;
-use bevyrogue::combat::api::intent::CastId;
+use bevyrogue::combat::runtime::SignalPayload;
+use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::blueprints;
 use bevyrogue::combat::blueprints::dorumon::{PredatorLoopState, PredatorLoopTransition};
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
@@ -89,7 +89,7 @@ fn app_with_dorumon_runtime() -> App {
     {
         let mut regs = app
             .world_mut()
-            .resource_mut::<bevyrogue::combat::api::ExtRegistries>();
+            .resource_mut::<bevyrogue::combat::runtime::ExtRegistries>();
         blueprints::register_all_blueprint_validation_exts(&mut regs);
     }
     app.init_resource::<CombatState>();

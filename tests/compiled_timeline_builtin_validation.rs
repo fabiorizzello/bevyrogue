@@ -1,10 +1,10 @@
 use bevy::prelude::App;
 use bevyrogue::combat::{
-    api::{
+    runtime::{
         Beat, BeatEdge, BeatKind, BeatPayload, CompiledTimeline, ExtRegistries, Presentation,
         SelectorCtx, SkillCtx, SkillCtxMode, validate_timeline_refs,
     },
-    api::{
+    runtime::{
         builtins::register_kernel_builtins,
         intent::{CastId, Intent},
     },
@@ -114,7 +114,7 @@ fn builtins_hook_selector_and_predicates_work_through_registry() {
         .predicates
         .get("core/never")
         .expect("builtin predicate");
-    let evt = bevyrogue::combat::api::BeatEvent {
+    let evt = bevyrogue::combat::runtime::BeatEvent {
         cast_id: CastId(NonZeroU32::new(8).unwrap()),
         beat_id: "impact",
         hop_index: 0,
@@ -170,7 +170,7 @@ fn builtin_extended_verbs_translate_to_expected_intents() {
     let mut pending = VecDeque::new();
     let caster = UnitId(1);
     let primary_target = UnitId(2);
-    let evt = bevyrogue::combat::api::BeatEvent {
+    let evt = bevyrogue::combat::runtime::BeatEvent {
         cast_id: CastId(NonZeroU32::new(8).unwrap()),
         beat_id: "beat",
         hop_index: 0,

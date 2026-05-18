@@ -1,7 +1,7 @@
 use bevy::prelude::*;
-use bevyrogue::combat::api::timeline::{Beat, BeatEdge, BeatKind, BeatPayload};
+use bevyrogue::combat::runtime::timeline::{Beat, BeatEdge, BeatKind, BeatPayload};
 use bevyrogue::combat::{
-    api::{
+    runtime::{
         ExtRegistries, SignalBus, SignalTaxonomy, register_kernel_builtins,
         timeline::TimelineLibrary,
     },

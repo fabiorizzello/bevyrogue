@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevyrogue::combat::{
-    api::{
+    runtime::{
         ExtRegistries, register_kernel_builtins,
         timeline::{Beat, BeatEdge, BeatKind, BeatPayload, TimelineLibrary},
     },

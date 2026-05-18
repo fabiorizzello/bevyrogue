@@ -1,6 +1,6 @@
 /// Integration-level demo gate for slice S02 / demo gate 2:
 /// `validate_timeline_refs` reports a dangling-reference typo with axis + site.
-use bevyrogue::combat::api::{
+use bevyrogue::combat::runtime::{
     registry::ExtRegistries,
     timeline::{Beat, BeatEdge, BeatKind, CompiledTimeline, validate_timeline_refs},
 };

@@ -1,6 +1,6 @@
 use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::{
-    api::{ExtRegistries, register_kernel_builtins, timeline::TimelineLibrary},
+    runtime::{ExtRegistries, register_kernel_builtins, timeline::TimelineLibrary},
     blueprints::register_all_blueprint_exts,
     events::{ActionIntentKind, CombatEvent, CombatEventKind},
     follow_up::{

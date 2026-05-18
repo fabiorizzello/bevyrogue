@@ -380,7 +380,7 @@ pub enum CombatKernelTransition {
     Blueprint {
         owner: String,
         name: String,
-        payload: crate::combat::api::SignalPayload,
+        payload: crate::combat::runtime::SignalPayload,
     },
 }
 

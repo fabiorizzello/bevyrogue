@@ -9,7 +9,7 @@ use std::time::Duration;
 
 // Use the library modules
 use bevyrogue::CombatPlugin;
-use bevyrogue::combat::api::intent::CastId;
+use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::bootstrap::{
     EncounterPreset, SelectionRequest, apply_composition, bootstrap_encounter,
 };

@@ -3,7 +3,7 @@ use std::{collections::VecDeque, sync::Arc};
 use bevy::{log, prelude::*};
 
 use crate::combat::{
-    api::{
+    runtime::{
         intent::{CastId, Intent},
         registry::ExtRegistries,
         runner::{BeatRunner, StepOutcome},
@@ -234,7 +234,7 @@ pub fn try_query_skill_preview(
         regs as *const _
     } else {
         let mut regs = ExtRegistries::default();
-        crate::combat::api::builtins::register_kernel_builtins(&mut regs);
+        crate::combat::runtime::builtins::register_kernel_builtins(&mut regs);
         _fallback_regs = Some(regs);
         _fallback_regs
             .as_ref()

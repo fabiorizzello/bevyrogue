@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use bevy::prelude::*;
 use bevyrogue::combat::{
-    api::{
+    runtime::{
         CastIdGen, ExtRegistries, Intent, IntentQueue, SkillCtxMode, StepOutcome,
         register_kernel_builtins,
         runner::BeatRunner,

@@ -1,6 +1,6 @@
 use bevyrogue::{
     combat::{
-        api::{ExtRegistries, register_kernel_builtins},
+        runtime::{ExtRegistries, register_kernel_builtins},
         blueprints::agumon::register_agumon_ext,
     },
     data::{

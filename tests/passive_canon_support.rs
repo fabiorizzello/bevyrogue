@@ -1,7 +1,7 @@
 use bevy::ecs::message::{MessageCursor, Messages};
 use bevy::prelude::*;
 
-use bevyrogue::combat::api::intent::CastId;
+use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::blueprints::renamon::dispatch as renamon_dispatch;
 use bevyrogue::combat::blueprints::{self, twin_core::TwinCoreState, patamon::HolySupportState};
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
@@ -79,7 +79,7 @@ fn canonical_passive_bootstrap_routes_ally_ult_to_four_blueprint_reactions() {
 
     let drained: Vec<_> = app
         .world_mut()
-        .resource_mut::<bevyrogue::combat::api::SignalBus>()
+        .resource_mut::<bevyrogue::combat::runtime::SignalBus>()
         .drain()
         .collect();
     assert!(
@@ -139,7 +139,7 @@ fn canonical_passive_bootstrap_routes_ally_ult_to_four_blueprint_reactions() {
 
     let state = app
         .world()
-        .resource::<bevyrogue::combat::api::BlueprintState>();
+        .resource::<bevyrogue::combat::runtime::BlueprintState>();
     assert_eq!(
         state
             .map
@@ -193,7 +193,7 @@ fn kitsune_grace_ignores_self_ult() {
 
     let state = app
         .world()
-        .resource::<bevyrogue::combat::api::BlueprintState>();
+        .resource::<bevyrogue::combat::runtime::BlueprintState>();
     assert!(
         !state
             .map
@@ -228,7 +228,7 @@ fn kitsune_grace_ignores_enemy_ult() {
 
     let state = app
         .world()
-        .resource::<bevyrogue::combat::api::BlueprintState>();
+        .resource::<bevyrogue::combat::runtime::BlueprintState>();
     assert!(
         !state
             .map

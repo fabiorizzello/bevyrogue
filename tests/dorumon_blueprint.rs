@@ -1,4 +1,4 @@
-use bevyrogue::combat::api::SignalPayload;
+use bevyrogue::combat::runtime::SignalPayload;
 use bevyrogue::combat::blueprints::{self, CustomSignalDispatchError};
 use bevyrogue::combat::kernel::CombatKernelTransition;
 use bevyrogue::combat::state::{ResolvedAction, UltEffect};

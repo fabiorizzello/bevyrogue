@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevyrogue::combat::{
-    api::{Intent, IntentQueue, applier::intent_applier, intent::CastId},
+    runtime::{Intent, IntentQueue, applier::intent_applier, intent::CastId},
     blueprints::dorumon::PredatorLoopState,
     blueprints::tentomon::BatteryLoopState,
     events::{CombatEvent, CombatEventKind},

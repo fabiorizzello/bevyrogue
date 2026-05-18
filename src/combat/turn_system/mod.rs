@@ -3,7 +3,7 @@ pub mod resistance;
 pub mod speed;
 pub mod turn_order;
 
-use crate::combat::api::intent::{CastId, CastIdGen};
+use crate::combat::runtime::intent::{CastId, CastIdGen};
 use av::{AV_PER_SPEED, ActionValue, ActionValueUpdated, MAX_AV};
 use crate::combat::buffs::DrBag;
 use crate::combat::enemy_ai;

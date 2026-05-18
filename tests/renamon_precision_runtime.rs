@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use bevyrogue::combat::api::intent::CastId;
+use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::blueprints;
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::plugin::CombatPlugin;

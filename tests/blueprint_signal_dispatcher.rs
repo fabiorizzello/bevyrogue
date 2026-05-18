@@ -1,6 +1,6 @@
 use bevy::{ecs::message::MessageCursor, ecs::system::RunSystemOnce, prelude::*};
 use bevyrogue::combat::{
-    api::{
+    runtime::{
         CastId, Intent, Signal, SignalBus, SignalPayload, SignalTaxonomy,
         applier::{IntentQueue, intent_applier},
         blueprint_state::BlueprintState,

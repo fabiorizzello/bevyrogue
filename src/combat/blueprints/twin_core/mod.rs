@@ -7,7 +7,7 @@ use crate::combat::kernel::{
     CombatKernelTransition, CombatTagChangeKind, CombatTagId, CombatTagState, CombatTagTransition,
     TacticalCycleTransition,
 };
-use crate::combat::api::registry::{ValidationField, ValidationSection};
+use crate::combat::runtime::registry::{ValidationField, ValidationSection};
 use crate::combat::observability::format_unit_ids;
 use crate::combat::types::UnitId;
 
@@ -213,7 +213,7 @@ impl TwinCoreState {
     }
 }
 
-pub fn register_validation_ext(regs: &mut crate::combat::api::ExtRegistries) {
+pub fn register_validation_ext(regs: &mut crate::combat::runtime::ExtRegistries) {
     regs.validation
         .register("twin_core/validation", twin_core_validation_section);
 }
@@ -228,7 +228,7 @@ fn blueprint_transition(name: &'static str, amount: i64) -> CombatKernelTransiti
     CombatKernelTransition::Blueprint {
         owner: OWNER.to_string(),
         name: name.to_string(),
-        payload: crate::combat::api::SignalPayload::Amount(amount),
+        payload: crate::combat::runtime::SignalPayload::Amount(amount),
     }
 }
 
@@ -327,7 +327,7 @@ pub fn apply_twin_core_transitions_system(
         };
 
         let amount = match payload {
-            crate::combat::api::SignalPayload::Amount(a) => *a as u8,
+            crate::combat::runtime::SignalPayload::Amount(a) => *a as u8,
             _ => 0,
         };
 

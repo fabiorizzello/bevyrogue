@@ -474,7 +474,7 @@ pub fn resolve_follow_up_action_system(
     mut actors: ResolveActorsQuery,
     mut combat_rng: Option<ResMut<crate::combat::rng::CombatRng>>,
     mut energy_q: Query<(&mut Energy, Option<&mut RoundEnergyTracker>)>,
-    mut cast_id_gen: Option<ResMut<crate::combat::api::intent::CastIdGen>>,
+    mut cast_id_gen: Option<ResMut<crate::combat::runtime::intent::CastIdGen>>,
 ) {
     if let Some(intent) = intents.read().next() {
         debug!(
@@ -517,7 +517,7 @@ pub fn resolve_follow_up_action_system(
             inflight.action.source,
             inflight.action.target,
             inflight.follow_up_depth,
-            crate::combat::api::intent::CastId::ROOT,
+            crate::combat::runtime::intent::CastId::ROOT,
         );
         emit_combat_beat(
             &mut event_writer,
@@ -526,7 +526,7 @@ pub fn resolve_follow_up_action_system(
             inflight.action.source,
             inflight.action.target,
             inflight.follow_up_depth,
-            crate::combat::api::intent::CastId::ROOT,
+            crate::combat::runtime::intent::CastId::ROOT,
         );
         emit_combat_event(
             &mut event_writer,
@@ -534,7 +534,7 @@ pub fn resolve_follow_up_action_system(
             inflight.action.source,
             inflight.action.target,
             inflight.follow_up_depth,
-            crate::combat::api::intent::CastId::ROOT,
+            crate::combat::runtime::intent::CastId::ROOT,
         );
         emit_combat_beat(
             &mut event_writer,
@@ -543,13 +543,13 @@ pub fn resolve_follow_up_action_system(
             inflight.action.source,
             inflight.action.target,
             inflight.follow_up_depth,
-            crate::combat::api::intent::CastId::ROOT,
+            crate::combat::runtime::intent::CastId::ROOT,
         );
 
         let follow_up_cast_id = cast_id_gen
             .as_deref_mut()
             .map(|g| g.next())
-            .unwrap_or(crate::combat::api::intent::CastId::ROOT);
+            .unwrap_or(crate::combat::runtime::intent::CastId::ROOT);
 
         step_app(
             &mut commands,
@@ -573,7 +573,7 @@ pub fn resolve_follow_up_action_system(
             inflight.action.source,
             inflight.action.target,
             inflight.follow_up_depth,
-            crate::combat::api::intent::CastId::ROOT,
+            crate::combat::runtime::intent::CastId::ROOT,
         );
         emit_combat_beat(
             &mut event_writer,
@@ -582,7 +582,7 @@ pub fn resolve_follow_up_action_system(
             inflight.action.source,
             inflight.action.target,
             inflight.follow_up_depth,
-            crate::combat::api::intent::CastId::ROOT,
+            crate::combat::runtime::intent::CastId::ROOT,
         );
         emit_combat_event(
             &mut event_writer,
@@ -590,7 +590,7 @@ pub fn resolve_follow_up_action_system(
             inflight.action.source,
             inflight.action.target,
             inflight.follow_up_depth,
-            crate::combat::api::intent::CastId::ROOT,
+            crate::combat::runtime::intent::CastId::ROOT,
         );
         emit_combat_beat(
             &mut event_writer,
@@ -599,7 +599,7 @@ pub fn resolve_follow_up_action_system(
             inflight.action.source,
             inflight.action.target,
             inflight.follow_up_depth,
-            crate::combat::api::intent::CastId::ROOT,
+            crate::combat::runtime::intent::CastId::ROOT,
         );
 
         if intent.origin_kind == FollowUpOriginKind::FormIdentity {
@@ -624,9 +624,9 @@ mod tests {
         prelude::{App, Entity, Messages, Update},
     };
 
-    use crate::combat::api::intent::CastId;
-    use crate::combat::api::timeline::{Beat, BeatEdge, BeatKind, BeatPayload, TimelineLibrary};
-    use crate::combat::api::{ExtRegistries, SignalBus, SignalTaxonomy, register_kernel_builtins};
+    use crate::combat::runtime::intent::CastId;
+    use crate::combat::runtime::timeline::{Beat, BeatEdge, BeatKind, BeatPayload, TimelineLibrary};
+    use crate::combat::runtime::{ExtRegistries, SignalBus, SignalTaxonomy, register_kernel_builtins};
     use crate::combat::rng::CombatRng;
     use crate::combat::{
         events::CombatEventKind,

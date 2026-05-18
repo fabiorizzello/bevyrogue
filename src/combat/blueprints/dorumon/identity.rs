@@ -8,7 +8,7 @@ use super::signals::{
     OWNER, SIGNAL_APPLY_PREY_LOCK, SIGNAL_BUILD_EXPLOIT, SIGNAL_CONSUME_PREY_LOCK_PAYOFF,
     SIGNAL_ENTER_BERSERK, SIGNAL_TICK,
 };
-use crate::combat::api::SignalPayload;
+use crate::combat::runtime::SignalPayload;
 use crate::combat::events::{CombatEvent, CombatEventKind};
 use crate::combat::kernel::{CombatKernelState, CombatKernelTransition};
 use crate::combat::types::UnitId;

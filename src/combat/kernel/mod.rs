@@ -35,7 +35,7 @@ pub fn register_combat_kernel_runtime(app: &mut App) {
     app.init_resource::<CombatKernelState>()
         .init_resource::<crate::combat::modifiers::DamageModifierLedger>()
         .init_resource::<crate::combat::rng::CombatRng>()
-        .init_resource::<crate::combat::api::ExtRegistries>()
+        .init_resource::<crate::combat::runtime::ExtRegistries>()
         .insert_resource(CombatKernelRegistry::new());
 }
 

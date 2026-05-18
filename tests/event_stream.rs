@@ -1,5 +1,5 @@
 use bevy::{ecs::message::MessageCursor, prelude::*};
-use bevyrogue::combat::api::SignalPayload;
+use bevyrogue::combat::runtime::SignalPayload;
 use bevyrogue::combat::{
     events::{ActionIntentKind, CombatEvent, CombatEventKind},
     kernel::{CombatBeatId, CombatKernelTransition, register_combat_kernel_runtime},
@@ -324,7 +324,7 @@ fn s09_event_stream_observes_all_variants() {
             source: UnitId(1),
             target: UnitId(2),
             follow_up_depth: 0,
-            cast_id: bevyrogue::combat::api::intent::CastId::ROOT,
+            cast_id: bevyrogue::combat::runtime::intent::CastId::ROOT,
         };
         let serialized = serde_json::to_string(&event).expect("serialize blueprint event");
         assert!(serialized.contains(owner), "{serialized}");

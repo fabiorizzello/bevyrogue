@@ -2,7 +2,7 @@ use std::{collections::HashSet, fmt};
 
 use serde::{Deserialize, Serialize};
 
-use crate::combat::api::{
+use crate::combat::runtime::{
     Beat, BeatEdge, BeatKind, CompiledTimeline, ExtRegistries, ValidationError,
     validate_timeline_refs,
 };

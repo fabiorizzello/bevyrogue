@@ -120,7 +120,7 @@ const BLUEPRINTS: &[BlueprintRegistration] = &[
 /// (like `"agumon/has_bouncing_fire"`) resolve correctly.
 // Consumed by tests/compiled_timeline_petit_thunder.rs and several other test files.
 #[allow(dead_code)]
-pub fn register_all_blueprint_exts(regs: &mut crate::combat::api::ExtRegistries) {
+pub fn register_all_blueprint_exts(regs: &mut crate::combat::runtime::ExtRegistries) {
     agumon::register_agumon_ext(regs);
     gabumon::register_gabumon_ext(regs);
     patamon::register_patamon_ext(regs);
@@ -129,7 +129,7 @@ pub fn register_all_blueprint_exts(regs: &mut crate::combat::api::ExtRegistries)
     dorumon::register_dorumon_ext(regs);
 }
 
-pub fn register_all_blueprint_validation_exts(regs: &mut crate::combat::api::ExtRegistries) {
+pub fn register_all_blueprint_validation_exts(regs: &mut crate::combat::runtime::ExtRegistries) {
     agumon::register_validation_ext(regs);
     gabumon::register_validation_ext(regs);
     twin_core::register_validation_ext(regs);
@@ -165,7 +165,7 @@ pub fn register_blueprints(app: &mut crate::combat::bevy_types::App) {
     {
         let mut regs = app
             .world_mut()
-            .resource_mut::<crate::combat::api::ExtRegistries>();
+            .resource_mut::<crate::combat::runtime::ExtRegistries>();
         register_all_blueprint_validation_exts(&mut regs);
     }
     register_canonical_passive_runners(app);

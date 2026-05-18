@@ -1,8 +1,8 @@
 use bevy::ecs::message::{MessageCursor, Messages};
 use bevy::prelude::*;
-use bevyrogue::combat::api::timeline::TimelineLibrary;
+use bevyrogue::combat::runtime::timeline::TimelineLibrary;
 use bevyrogue::combat::{
-    api::{ExtRegistries, SignalBus, SignalTaxonomy, register_kernel_builtins},
+    runtime::{ExtRegistries, SignalBus, SignalTaxonomy, register_kernel_builtins},
     av::{ActionValue, ActionValueUpdated, MAX_AV},
     blueprints::{agumon::TalentRanks, register_all_blueprint_exts},
     events::{CombatEvent, CombatEventKind},

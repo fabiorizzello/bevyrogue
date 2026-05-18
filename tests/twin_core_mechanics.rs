@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use bevyrogue::combat::api::intent::CastId;
+use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::blueprints::twin_core::{
     TwinCoreDesignTag, TwinCoreHook, TwinCoreSignal, TwinCoreState,
     apply_twin_core_transitions_system, twin_core_design_tag,

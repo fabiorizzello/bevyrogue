@@ -6,7 +6,7 @@
 use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::blueprints::register_all_blueprint_exts;
 use bevyrogue::combat::{
-    api::{
+    runtime::{
         ExtRegistries, SignalBus, SignalTaxonomy,
         intent::{CastId, CastIdGen},
         register_kernel_builtins,

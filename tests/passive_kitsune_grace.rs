@@ -1,6 +1,6 @@
 use bevy::{ecs::message::MessageCursor, ecs::system::RunSystemOnce, prelude::*};
 use bevyrogue::combat::{
-    api::{
+    runtime::{
         BlueprintState, CastId, CastIdGen, EventFilter, ExtRegistries, Intent, IntentQueue,
         PassiveListeners, PassiveRunner, SignalBus, SignalPayload, SignalTaxonomy, SkillCtx,
         applier::intent_applier,
@@ -135,17 +135,17 @@ fn build_kitsune_grace_timeline() -> Arc<CompiledTimeline> {
             },
         ],
         edges: vec![
-            bevyrogue::combat::api::timeline::BeatEdge {
+            bevyrogue::combat::runtime::timeline::BeatEdge {
                 from: "dormant",
                 to: "proc",
                 gate: Some("kitsune_grace/trigger"),
             },
-            bevyrogue::combat::api::timeline::BeatEdge {
+            bevyrogue::combat::runtime::timeline::BeatEdge {
                 from: "proc",
                 to: "resolve",
                 gate: None,
             },
-            bevyrogue::combat::api::timeline::BeatEdge {
+            bevyrogue::combat::runtime::timeline::BeatEdge {
                 from: "resolve",
                 to: "dormant",
                 gate: None,

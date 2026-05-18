@@ -3,7 +3,7 @@
 use bevy::prelude::*;
 
 use crate::combat::{
-    api::intent::CastId,
+    runtime::intent::CastId,
     events::{CombatEvent, CombatEventKind},
     team::Team,
     unit::Unit,

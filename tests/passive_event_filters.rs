@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use bevy::prelude::*;
 use bevyrogue::combat::{
-    api::{
+    runtime::{
         BlueprintState, CastId, CastIdGen, EventFilter, ExtRegistries, Intent, IntentQueue,
         PassiveListeners, PassiveRunner, Signal, SignalBus, SignalPayload, SignalTaxonomy,
         applier::intent_applier, combat_event_to_signal_system, passive_dispatch_system,
@@ -91,13 +91,13 @@ fn register_passives(app: &mut App) {
 fn build_single_beat_timeline(
     id: &'static str,
     hook: &'static str,
-) -> Arc<bevyrogue::combat::api::CompiledTimeline> {
-    Arc::new(bevyrogue::combat::api::CompiledTimeline {
+) -> Arc<bevyrogue::combat::runtime::CompiledTimeline> {
+    Arc::new(bevyrogue::combat::runtime::CompiledTimeline {
         id,
         entry: "start",
-        beats: vec![bevyrogue::combat::api::Beat {
+        beats: vec![bevyrogue::combat::runtime::Beat {
             id: "start",
-            kind: bevyrogue::combat::api::BeatKind::Impact,
+            kind: bevyrogue::combat::runtime::BeatKind::Impact,
             hook: Some(hook),
             selector: None,
             presentation: None,
@@ -107,16 +107,16 @@ fn build_single_beat_timeline(
     })
 }
 
-fn build_loop_timeline() -> Arc<bevyrogue::combat::api::CompiledTimeline> {
-    Arc::new(bevyrogue::combat::api::CompiledTimeline {
+fn build_loop_timeline() -> Arc<bevyrogue::combat::runtime::CompiledTimeline> {
+    Arc::new(bevyrogue::combat::runtime::CompiledTimeline {
         id: "trace/loop",
         entry: "loop",
-        beats: vec![bevyrogue::combat::api::Beat {
+        beats: vec![bevyrogue::combat::runtime::Beat {
             id: "loop",
-            kind: bevyrogue::combat::api::BeatKind::Loop {
-                body: vec![bevyrogue::combat::api::Beat {
+            kind: bevyrogue::combat::runtime::BeatKind::Loop {
+                body: vec![bevyrogue::combat::runtime::Beat {
                     id: "tick",
-                    kind: bevyrogue::combat::api::BeatKind::Impact,
+                    kind: bevyrogue::combat::runtime::BeatKind::Impact,
                     hook: Some("trace/loop_tick"),
                     selector: None,
                     presentation: None,
@@ -134,8 +134,8 @@ fn build_loop_timeline() -> Arc<bevyrogue::combat::api::CompiledTimeline> {
 }
 
 fn composite_hook(
-    evt: &bevyrogue::combat::api::BeatEvent,
-    ctx: &mut bevyrogue::combat::api::SkillCtx<'_>,
+    evt: &bevyrogue::combat::runtime::BeatEvent,
+    ctx: &mut bevyrogue::combat::runtime::SkillCtx<'_>,
 ) {
     ctx.enqueue(Intent::SetBlueprintState {
         actor: ctx.caster,
@@ -153,8 +153,8 @@ fn composite_hook(
 }
 
 fn ult_seen_hook(
-    evt: &bevyrogue::combat::api::BeatEvent,
-    ctx: &mut bevyrogue::combat::api::SkillCtx<'_>,
+    evt: &bevyrogue::combat::runtime::BeatEvent,
+    ctx: &mut bevyrogue::combat::runtime::SkillCtx<'_>,
 ) {
     ctx.enqueue(Intent::SetBlueprintState {
         actor: ctx.caster,
@@ -165,8 +165,8 @@ fn ult_seen_hook(
 }
 
 fn cascade_seen_hook(
-    evt: &bevyrogue::combat::api::BeatEvent,
-    ctx: &mut bevyrogue::combat::api::SkillCtx<'_>,
+    evt: &bevyrogue::combat::runtime::BeatEvent,
+    ctx: &mut bevyrogue::combat::runtime::SkillCtx<'_>,
 ) {
     ctx.enqueue(Intent::SetBlueprintState {
         actor: ctx.caster,
@@ -177,8 +177,8 @@ fn cascade_seen_hook(
 }
 
 fn loop_tick_hook(
-    evt: &bevyrogue::combat::api::BeatEvent,
-    ctx: &mut bevyrogue::combat::api::SkillCtx<'_>,
+    evt: &bevyrogue::combat::runtime::BeatEvent,
+    ctx: &mut bevyrogue::combat::runtime::SkillCtx<'_>,
 ) {
     use std::sync::atomic::{AtomicU32, Ordering};
 
@@ -194,8 +194,8 @@ fn loop_tick_hook(
 }
 
 fn never_exit(
-    _evt: &bevyrogue::combat::api::BeatEvent,
-    _ctx: &bevyrogue::combat::api::SkillCtx<'_>,
+    _evt: &bevyrogue::combat::runtime::BeatEvent,
+    _ctx: &bevyrogue::combat::runtime::SkillCtx<'_>,
 ) -> bool {
     false
 }

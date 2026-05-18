@@ -1,8 +1,8 @@
 use bevy::ecs::message::{MessageCursor, Messages};
 use bevy::prelude::*;
 use bevyrogue::combat::{
-    api::timeline::{Beat, BeatEdge, BeatKind, BeatPayload, TimelineLibrary},
-    api::{ExtRegistries, register_kernel_builtins},
+    runtime::timeline::{Beat, BeatEdge, BeatKind, BeatPayload, TimelineLibrary},
+    runtime::{ExtRegistries, register_kernel_builtins},
     av::{ActionValue, ActionValueUpdated, MAX_AV},
     events::{CombatEvent, CombatEventKind},
     kit::UnitSkills,

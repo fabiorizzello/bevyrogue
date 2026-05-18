@@ -13,7 +13,7 @@
 
 use bevy::prelude::*;
 use bevyrogue::combat::{
-    api::{
+    runtime::{
         CastId, CastIdGen, Intent, IntentQueue,
         applier::intent_applier,
         registry::ExtRegistries,

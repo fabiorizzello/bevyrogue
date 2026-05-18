@@ -12,7 +12,7 @@ use crate::combat::{
         TargetAffordance, TargetStatus,
         build_snapshot_from_ecs_with_sp, first_enabled_target_id, query_action_affordance,
     },
-    api::intent::CastIdGen,
+    runtime::intent::CastIdGen,
     counterplay::EnemyCounterplayKit,
     energy::{Energy, RoundEnergyTracker},
     floating::{FLOATING_LIFETIME_SECS, FloatingDamage},

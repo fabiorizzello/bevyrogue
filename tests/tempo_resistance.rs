@@ -97,7 +97,7 @@ fn advance_does_not_exceed_2x_max_av() {
 // ──────────────────────────────────────────────────────────────────────────────
 
 use bevy::ecs::message::Messages;
-use bevyrogue::combat::api::intent::CastId;
+use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::av::ActionValueUpdated;
 use bevyrogue::combat::bootstrap::spawn_unit_from_def;
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};

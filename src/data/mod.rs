@@ -6,7 +6,7 @@ pub mod units_ron;
 use bevy::prelude::*;
 use bevy_common_assets::ron::RonAssetPlugin;
 
-use crate::combat::api::{ExtRegistries, TimelineLibrary};
+use crate::combat::runtime::{ExtRegistries, TimelineLibrary};
 
 use self::party_ron::PartyConfig;
 use self::skill_timeline::compile_skill_book_timelines;
@@ -286,10 +286,10 @@ fn sync_skill_book_on_load(
     books: Res<Assets<SkillBook>>,
     regs: Res<ExtRegistries>,
     mut library: ResMut<TimelineLibrary<String>>,
-    mut taxonomy: ResMut<crate::combat::api::signal::SignalTaxonomy>,
+    mut taxonomy: ResMut<crate::combat::runtime::signal::SignalTaxonomy>,
     tracker: Res<PartialLoadTracker>,
 ) {
-    use crate::combat::api::timeline::{BeatKind, BeatPayload};
+    use crate::combat::runtime::timeline::{BeatKind, BeatPayload};
 
     // Only run once, after the skill book has been assembled and library is empty.
     if !tracker.skill_book_assembled || !library.timelines.is_empty() {

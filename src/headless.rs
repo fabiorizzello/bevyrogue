@@ -9,7 +9,7 @@ use bevy::app::ScheduleRunnerPlugin;
 use bevy::prelude::*;
 use moonshine_kind::Instance;
 
-use crate::combat::api::intent::CastId;
+use crate::combat::runtime::intent::CastId;
 use crate::combat::bootstrap::{
     EncounterPreset, SelectionRequest, apply_composition, bootstrap_encounter,
 };

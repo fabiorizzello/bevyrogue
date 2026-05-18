@@ -59,7 +59,7 @@ fn tentomon_blueprint_maps_static_charge() {
         CombatKernelTransition::Blueprint {
             owner: TENTOMON_OWNER.to_string(),
             name: SIG_BUILD_STATIC_CHARGE.to_string(),
-            payload: bevyrogue::combat::api::SignalPayload::Amount(1),
+            payload: bevyrogue::combat::runtime::SignalPayload::Amount(1),
         }
     );
 }
@@ -78,7 +78,7 @@ fn tentomon_blueprint_maps_circuit_charge() {
         CombatKernelTransition::Blueprint {
             owner: TENTOMON_OWNER.to_string(),
             name: SIG_BUILD_CIRCUIT_CHARGE.to_string(),
-            payload: bevyrogue::combat::api::SignalPayload::Amount(1),
+            payload: bevyrogue::combat::runtime::SignalPayload::Amount(1),
         }
     );
 }
@@ -97,7 +97,7 @@ fn tentomon_blueprint_maps_spend_circuit_charge() {
         CombatKernelTransition::Blueprint {
             owner: TENTOMON_OWNER.to_string(),
             name: SIG_SPEND_CIRCUIT_CHARGE.to_string(),
-            payload: bevyrogue::combat::api::SignalPayload::Amount(2),
+            payload: bevyrogue::combat::runtime::SignalPayload::Amount(2),
         }
     );
 }
@@ -121,7 +121,7 @@ fn integration_blueprint_to_kernel_state() {
         .push(signal("tentomon", "build_static_charge", 1));
 
     let transitions = blueprints::transitions_for_action(&action);
-    use bevyrogue::combat::api::intent::CastId;
+    use bevyrogue::combat::runtime::intent::CastId;
     use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
     for transition in transitions {
         app.world_mut().write_message(CombatEvent {

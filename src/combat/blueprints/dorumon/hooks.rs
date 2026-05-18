@@ -1,7 +1,7 @@
 use crate::combat::bevy_types::*;
 
 use crate::combat::{
-    api::applier::intent_applier,
+    runtime::applier::intent_applier,
     events::{CombatEvent, CombatEventKind},
     kernel::{
         CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition, TacticalCycleTransition,

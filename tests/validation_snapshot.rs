@@ -1,7 +1,7 @@
 use bevy::prelude::*;
-use bevyrogue::combat::api::intent::CastId;
+use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::{
-    api::{ExtRegistries, SignalPayload},
+    runtime::{ExtRegistries, SignalPayload},
     blueprints::{self, dorumon::PredatorLoopState, patamon::HolySupportState},
     blueprints::patamon::identity::HolySupportTransition,
     blueprints::renamon::{PrecisionMindGameState, PrecisionWindowKind},

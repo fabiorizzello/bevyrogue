@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevyrogue::combat::{
-    api::{
+    runtime::{
         CastIdGen,
         timeline::{Beat, BeatEdge, BeatKind, BeatPayload, CompiledTimeline, TimelineLibrary},
     },

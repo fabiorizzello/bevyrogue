@@ -16,8 +16,8 @@ use crate::combat::{
     ultimate::UltimateCharge,
     unit::{Ko, Unit},
 };
-pub use crate::combat::api::registry::ValidationSection;
-use crate::combat::api::ExtRegistries;
+pub use crate::combat::runtime::registry::ValidationSection;
+use crate::combat::runtime::ExtRegistries;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ValidationSnapshot {

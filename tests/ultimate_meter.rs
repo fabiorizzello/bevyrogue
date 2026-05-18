@@ -7,7 +7,7 @@
 /// - Turn-order front-insert on successful ultimate fire (via resolve_action_system)
 /// - Negative paths: ult not ready, commander defender
 use bevy::prelude::*;
-use bevyrogue::combat::api::intent::CastId;
+use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::{
     events::{CombatEvent, CombatEventKind},
     kit::UnitSkills,

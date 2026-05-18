@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-05-18T10:18:16Z | Files: 352 | Described: 0/352
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-18T10:18:16Z","fingerprint":"2bca6ef538d87da2a0b3538a619fe525388ea998","fileCount":352,"truncated":false} -->
+Generated: 2026-05-18T10:58:31Z | Files: 372 | Described: 0/372
+<!-- gsd:codebase-meta {"generatedAt":"2026-05-18T10:58:31Z","fingerprint":"d44070fefa12fb215313c433a5dee01bd579e7a2","fileCount":372,"truncated":false} -->
 
 ### (root)/
 - `.claudeignore`
@@ -18,8 +18,42 @@ Generated: 2026-05-18T10:18:16Z | Files: 352 | Described: 0/352
 
 ### assets/data/
 - `assets/data/party.ron`
-- `assets/data/skills.ron`
-- `assets/data/units.ron`
+
+### assets/data/digimon/agumon/
+- `assets/data/digimon/agumon/skills.ron`
+- `assets/data/digimon/agumon/unit.ron`
+
+### assets/data/digimon/dorumon/
+- `assets/data/digimon/dorumon/skills.ron`
+- `assets/data/digimon/dorumon/unit.ron`
+
+### assets/data/digimon/gabumon/
+- `assets/data/digimon/gabumon/skills.ron`
+- `assets/data/digimon/gabumon/unit.ron`
+
+### assets/data/digimon/patamon/
+- `assets/data/digimon/patamon/skills.ron`
+- `assets/data/digimon/patamon/unit.ron`
+
+### assets/data/digimon/renamon/
+- `assets/data/digimon/renamon/skills.ron`
+- `assets/data/digimon/renamon/unit.ron`
+
+### assets/data/digimon/tentomon/
+- `assets/data/digimon/tentomon/skills.ron`
+- `assets/data/digimon/tentomon/unit.ron`
+
+### assets/data/enemies/devimon/
+- `assets/data/enemies/devimon/skills.ron`
+- `assets/data/enemies/devimon/unit.ron`
+
+### assets/data/enemies/goblimon/
+- `assets/data/enemies/goblimon/skills.ron`
+- `assets/data/enemies/goblimon/unit.ron`
+
+### assets/data/enemies/ogremon/
+- `assets/data/enemies/ogremon/skills.ron`
+- `assets/data/enemies/ogremon/unit.ron`
 
 ### doc/
 - `doc/.lock`
@@ -155,7 +189,18 @@ Generated: 2026-05-18T10:18:16Z | Files: 352 | Described: 0/352
 - `src/bin/combat_cli.rs`
 
 ### src/combat/
-- *(37 files: 37 .rs)*
+- `src/combat/action_query.rs`
+- `src/combat/bevy_types.rs`
+- `src/combat/kit.rs`
+- `src/combat/mod.rs`
+- `src/combat/plugin.rs`
+- `src/combat/preview.rs`
+- `src/combat/resolution.rs`
+- `src/combat/rng.rs`
+- `src/combat/state.rs`
+- `src/combat/team.rs`
+- `src/combat/types.rs`
+- `src/combat/unit.rs`
 
 ### src/combat/api/
 - `src/combat/api/applier.rs`
@@ -202,10 +247,47 @@ Generated: 2026-05-18T10:18:16Z | Files: 352 | Described: 0/352
 ### src/combat/blueprints/twin_core/
 - `src/combat/blueprints/twin_core/mod.rs`
 
+### src/combat/encounter/
+- `src/combat/encounter/bootstrap.rs`
+- `src/combat/encounter/counterplay.rs`
+- `src/combat/encounter/enemy_ai.rs`
+- `src/combat/encounter/mod.rs`
+
+### src/combat/kernel/
+- `src/combat/kernel/mod.rs`
+- `src/combat/kernel/primitives.rs`
+
+### src/combat/mechanics/
+- `src/combat/mechanics/buffs.rs`
+- `src/combat/mechanics/damage.rs`
+- `src/combat/mechanics/energy.rs`
+- `src/combat/mechanics/follow_up.rs`
+- `src/combat/mechanics/mod.rs`
+- `src/combat/mechanics/modifiers.rs`
+- `src/combat/mechanics/round_flags.rs`
+- `src/combat/mechanics/sp.rs`
+- `src/combat/mechanics/status_effect.rs`
+- `src/combat/mechanics/stun.rs`
+- `src/combat/mechanics/toughness.rs`
+- `src/combat/mechanics/ultimate.rs`
+
+### src/combat/observability/
+- `src/combat/observability/events.rs`
+- `src/combat/observability/floating.rs`
+- `src/combat/observability/format.rs`
+- `src/combat/observability/jsonl_logger.rs`
+- `src/combat/observability/log.rs`
+- `src/combat/observability/mod.rs`
+- `src/combat/observability/snapshot.rs`
+
 ### src/combat/turn_system/
+- `src/combat/turn_system/av.rs`
 - `src/combat/turn_system/mod.rs`
 - `src/combat/turn_system/pipeline.rs`
+- `src/combat/turn_system/resistance.rs`
+- `src/combat/turn_system/speed.rs`
 - `src/combat/turn_system/tests.rs`
+- `src/combat/turn_system/turn_order.rs`
 
 ### src/data/
 - `src/data/mod.rs`

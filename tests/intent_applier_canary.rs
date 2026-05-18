@@ -9,7 +9,7 @@
 
 use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::{
-    api::{
+    runtime::{
         CastId, Intent,
         applier::{IntentQueue, intent_applier},
     },

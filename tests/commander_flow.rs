@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevyrogue::combat::api::intent::CastId;
+use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::types::{Attribute, EvoStage};
 use bevyrogue::combat::{
     events::{CombatEvent, CombatEventKind},

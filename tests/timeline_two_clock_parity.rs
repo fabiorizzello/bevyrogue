@@ -17,7 +17,7 @@
 
 use bevy::prelude::*;
 use bevyrogue::combat::{
-    api::{
+    runtime::{
         CastId, Intent,
         clock::Clock,
         registry::ExtRegistries,

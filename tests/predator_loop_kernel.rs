@@ -1,5 +1,5 @@
-use bevyrogue::combat::api::intent::CastId;
-use bevyrogue::combat::api::registry::ValidationField;
+use bevyrogue::combat::runtime::intent::CastId;
+use bevyrogue::combat::runtime::registry::ValidationField;
 use bevyrogue::combat::blueprints::dorumon::{
     PredatorLoopBlockedReason, PredatorLoopCapKind, PredatorLoopSignal, PredatorLoopSnapshot,
     PredatorLoopState, PredatorLoopStep, PredatorLoopTransition,
@@ -282,7 +282,7 @@ fn predator_loop_event_and_snapshot_surfaces_are_serializable_and_readable() {
             transition: bevyrogue::combat::kernel::CombatKernelTransition::Blueprint {
                 owner: "dorumon".to_string(),
                 name: "build_exploit".to_string(),
-                payload: bevyrogue::combat::api::SignalPayload::Amount(2),
+                payload: bevyrogue::combat::runtime::SignalPayload::Amount(2),
             },
         },
         source: target,

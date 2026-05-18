@@ -1,12 +1,12 @@
 use bevy::prelude::*;
 
-use crate::combat::api::{
+use crate::combat::runtime::{
     BlueprintState, Clock, ExtRegistries, IntentQueue, PassiveListeners, SignalBus,
     SignalTaxonomy, TimelineLibrary, combat_event_to_signal_system, passive_dispatch_system,
     register_kernel_builtins, validate_timeline_refs,
 };
-use crate::combat::api::applier::{IntentExecutionMeta, intent_applier};
-use crate::combat::api::intent::CastIdGen;
+use crate::combat::runtime::applier::{IntentExecutionMeta, intent_applier};
+use crate::combat::runtime::intent::CastIdGen;
 use crate::combat::kernel::register_combat_kernel_runtime;
 use crate::combat::modifiers::DamageModifierLedger;
 use crate::combat::rng::CombatRng;

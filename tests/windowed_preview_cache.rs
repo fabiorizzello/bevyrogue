@@ -2,7 +2,7 @@
 
 use bevy::prelude::*;
 use bevyrogue::combat::{
-    api::{CastIdGen, ExtRegistries, register_kernel_builtins},
+    runtime::{CastIdGen, ExtRegistries, register_kernel_builtins},
     kit::UnitSkills,
     preview::{query_skill_preview, summarize_preview_damage},
     sp::SpPool,
@@ -69,33 +69,33 @@ fn build_app() -> App {
         timeline: Some(SkillTimeline {
             entry: "cast".into(),
             beats: vec![
-                bevyrogue::combat::api::timeline::Beat {
+                bevyrogue::combat::runtime::timeline::Beat {
                     id: "cast".into(),
-                    kind: bevyrogue::combat::api::timeline::BeatKind::Cast,
+                    kind: bevyrogue::combat::runtime::timeline::BeatKind::Cast,
                     hook: None,
                     selector: None,
                     presentation: None,
                     payload: None,
                 },
-                bevyrogue::combat::api::timeline::Beat {
+                bevyrogue::combat::runtime::timeline::Beat {
                     id: "impact_1".into(),
-                    kind: bevyrogue::combat::api::timeline::BeatKind::Impact,
+                    kind: bevyrogue::combat::runtime::timeline::BeatKind::Impact,
                     hook: Some("core/deal_damage".into()),
                     selector: Some("core/primary".into()),
                     presentation: None,
-                    payload: Some(bevyrogue::combat::api::timeline::BeatPayload::DealDamage {
+                    payload: Some(bevyrogue::combat::runtime::timeline::BeatPayload::DealDamage {
                         amount: 11,
                         tag: DamageTag::Fire,
                         target: TargetShape::Single,
                     }),
                 },
-                bevyrogue::combat::api::timeline::Beat {
+                bevyrogue::combat::runtime::timeline::Beat {
                     id: "impact_2".into(),
-                    kind: bevyrogue::combat::api::timeline::BeatKind::Impact,
+                    kind: bevyrogue::combat::runtime::timeline::BeatKind::Impact,
                     hook: Some("core/deal_damage".into()),
                     selector: Some("core/primary".into()),
                     presentation: None,
-                    payload: Some(bevyrogue::combat::api::timeline::BeatPayload::DealDamage {
+                    payload: Some(bevyrogue::combat::runtime::timeline::BeatPayload::DealDamage {
                         amount: 13,
                         tag: DamageTag::Fire,
                         target: TargetShape::Single,
@@ -103,12 +103,12 @@ fn build_app() -> App {
                 },
             ],
             edges: vec![
-                bevyrogue::combat::api::timeline::BeatEdge {
+                bevyrogue::combat::runtime::timeline::BeatEdge {
                     from: "cast".into(),
                     to: "impact_1".into(),
                     gate: Some("core/always".into()),
                 },
-                bevyrogue::combat::api::timeline::BeatEdge {
+                bevyrogue::combat::runtime::timeline::BeatEdge {
                     from: "impact_1".into(),
                     to: "impact_2".into(),
                     gate: Some("core/always".into()),

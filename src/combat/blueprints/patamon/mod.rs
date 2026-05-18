@@ -8,10 +8,10 @@ use std::sync::Arc;
 
 use crate::combat::bevy_types::*;
 
-use crate::combat::api::registry::{ValidationField, ValidationSection};
+use crate::combat::runtime::registry::{ValidationField, ValidationSection};
 use crate::combat::blueprints::patamon::identity::format_holy_support_transition;
 use crate::combat::{
-    api::{
+    runtime::{
         Beat, BeatEvent, BeatKind, BlueprintState, CompiledTimeline, EventFilter, Intent,
         PassiveListeners, PassiveRunner, SignalPayload, SignalTaxonomy, SkillCtx,
     },
@@ -76,7 +76,7 @@ pub fn register_passive_runtime(app: &mut App) {
         ));
 }
 
-pub fn register_validation_ext(regs: &mut crate::combat::api::ExtRegistries) {
+pub fn register_validation_ext(regs: &mut crate::combat::runtime::ExtRegistries) {
     regs.validation
         .register("support/validation", support_validation_section);
 }
@@ -141,12 +141,12 @@ fn build_passive_timeline() -> Arc<CompiledTimeline> {
             },
         ],
         edges: vec![
-            crate::combat::api::timeline::BeatEdge {
+            crate::combat::runtime::timeline::BeatEdge {
                 from: "dormant",
                 to: "proc",
                 gate: Some("patamon/holy_support/passive_trigger"),
             },
-            crate::combat::api::timeline::BeatEdge {
+            crate::combat::runtime::timeline::BeatEdge {
                 from: "proc",
                 to: "resolve",
                 gate: None,
@@ -206,7 +206,7 @@ fn passive_proc(evt: &BeatEvent, ctx: &mut SkillCtx<'_>) {
     });
 }
 
-pub fn register_patamon_ext(regs: &mut crate::combat::api::ExtRegistries) {
+pub fn register_patamon_ext(regs: &mut crate::combat::runtime::ExtRegistries) {
     regs.predicates
         .register("patamon/holy_support/passive_trigger", passive_trigger);
     regs.hooks
@@ -216,6 +216,6 @@ pub fn register_patamon_ext(regs: &mut crate::combat::api::ExtRegistries) {
 fn register_passive_hooks(app: &mut App) {
     let mut regs = app
         .world_mut()
-        .resource_mut::<crate::combat::api::ExtRegistries>();
+        .resource_mut::<crate::combat::runtime::ExtRegistries>();
     register_patamon_ext(&mut regs);
 }

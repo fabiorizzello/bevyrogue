@@ -6,9 +6,9 @@
 
 use bevy::prelude::*;
 
-use crate::combat::api::applier::{IntentExecutionMeta, IntentQueue};
-use crate::combat::api::intent::CastId;
-use crate::combat::api::runner::{BeatRunner, StepOutcome};
+use crate::combat::runtime::applier::{IntentExecutionMeta, IntentQueue};
+use crate::combat::runtime::intent::CastId;
+use crate::combat::runtime::runner::{BeatRunner, StepOutcome};
 
 use crate::combat::damage::triangle_modifiers;
 use crate::combat::energy::{Energy, EnergyGainSource, RoundEnergyTracker};
@@ -155,9 +155,9 @@ fn intern_timeline_id(value: &str) -> &'static str {
 
 #[allow(dead_code)]
 fn intern_compiled_timeline(
-    timeline: &crate::combat::api::timeline::CompiledTimeline<String>,
-) -> crate::combat::api::timeline::CompiledTimeline<&'static str> {
-    use crate::combat::api::timeline::{
+    timeline: &crate::combat::runtime::timeline::CompiledTimeline<String>,
+) -> crate::combat::runtime::timeline::CompiledTimeline<&'static str> {
+    use crate::combat::runtime::timeline::{
         Beat, BeatEdge, BeatKind, BeatPayload, CompiledTimeline, Presentation,
     };
 
@@ -279,12 +279,12 @@ pub(crate) fn run_timeline_backed_action(
     cast_id: CastId,
 ) {
     let mut _fallback_regs = None;
-    let regs_ptr: *const crate::combat::api::registry::ExtRegistries =
-        if let Some(regs) = world.get_resource::<crate::combat::api::registry::ExtRegistries>() {
+    let regs_ptr: *const crate::combat::runtime::registry::ExtRegistries =
+        if let Some(regs) = world.get_resource::<crate::combat::runtime::registry::ExtRegistries>() {
             regs as *const _
         } else {
-            let mut regs = crate::combat::api::registry::ExtRegistries::default();
-            crate::combat::api::builtins::register_kernel_builtins(&mut regs);
+            let mut regs = crate::combat::runtime::registry::ExtRegistries::default();
+            crate::combat::runtime::builtins::register_kernel_builtins(&mut regs);
             _fallback_regs = Some(regs);
             _fallback_regs
                 .as_ref()
@@ -390,7 +390,7 @@ pub(crate) fn run_timeline_backed_action(
         runner.run_to_completion(
             world,
             &*regs_ptr,
-            crate::combat::api::SkillCtxMode::Execute,
+            crate::combat::runtime::SkillCtxMode::Execute,
             &mut pending,
             1024,
         )
@@ -415,9 +415,9 @@ pub(crate) fn run_timeline_backed_action(
 
     world.init_resource::<IntentQueue>();
     world.init_resource::<IntentExecutionMeta>();
-    world.init_resource::<crate::combat::api::signal::SignalBus>();
-    world.init_resource::<crate::combat::api::signal::SignalTaxonomy>();
-    world.init_resource::<crate::combat::api::blueprint_state::BlueprintState>();
+    world.init_resource::<crate::combat::runtime::signal::SignalBus>();
+    world.init_resource::<crate::combat::runtime::signal::SignalTaxonomy>();
+    world.init_resource::<crate::combat::runtime::blueprint_state::BlueprintState>();
     let fallback_signal_pairs: Vec<(String, String)> = world
         .get_resource::<bevy::prelude::Assets<crate::data::skills_ron::SkillBook>>()
         .and_then(|assets| {
@@ -438,7 +438,7 @@ pub(crate) fn run_timeline_backed_action(
         })
         .unwrap_or_default();
     {
-        let mut taxonomy = world.resource_mut::<crate::combat::api::signal::SignalTaxonomy>();
+        let mut taxonomy = world.resource_mut::<crate::combat::runtime::signal::SignalTaxonomy>();
         taxonomy.register("kernel", "ult_used");
         for (owner, signal) in fallback_signal_pairs {
             let owner: &'static str = Box::leak(owner.into_boxed_str());
@@ -451,7 +451,7 @@ pub(crate) fn run_timeline_backed_action(
         .follow_up_depths
         .insert(cast_id, inflight.follow_up_depth);
     world.resource_mut::<IntentQueue>().0.extend(pending);
-    crate::combat::api::applier::intent_applier(world);
+    crate::combat::runtime::applier::intent_applier(world);
     world
         .resource_mut::<IntentExecutionMeta>()
         .follow_up_depths

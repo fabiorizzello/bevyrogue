@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevyrogue::combat::api::intent::CastId;
+use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::{
     bootstrap::{EncounterPreset, SelectionRequest, apply_composition, bootstrap_encounter},
     events::{CombatEvent, CombatEventKind},

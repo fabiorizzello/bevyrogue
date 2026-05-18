@@ -1,6 +1,6 @@
 use bevy::prelude::*;
-use bevyrogue::combat::api::ExtRegistries;
-use bevyrogue::combat::api::{SignalPayload, intent::CastId};
+use bevyrogue::combat::runtime::ExtRegistries;
+use bevyrogue::combat::runtime::{SignalPayload, intent::CastId};
 use bevyrogue::combat::blueprints::twin_core::TwinCoreState;
 use bevyrogue::combat::blueprints::patamon::{
     HolySupportState, HolySupportTransition, apply_holy_support_transitions_system,
@@ -102,7 +102,7 @@ fn holy_support_snapshot_surfaces_grace_capacity_and_martyr_state() {
     );
 }
 
-fn holy_support_section<'a>(snapshot: &'a bevyrogue::combat::observability::ValidationSnapshot) -> &'a bevyrogue::combat::api::ValidationSection {
+fn holy_support_section<'a>(snapshot: &'a bevyrogue::combat::observability::ValidationSnapshot) -> &'a bevyrogue::combat::runtime::ValidationSection {
     snapshot
         .section("support")
         .expect("support section should be present when HolySupportState is registered")

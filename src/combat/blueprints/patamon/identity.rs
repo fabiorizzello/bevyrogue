@@ -1,7 +1,7 @@
 use crate::combat::bevy_types::*;
 use serde::{Deserialize, Serialize};
 
-use crate::combat::api::SignalPayload;
+use crate::combat::runtime::SignalPayload;
 use crate::combat::events::{CombatEvent, CombatEventKind};
 use crate::combat::kernel::{
     CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition, CombatTagChangeKind,

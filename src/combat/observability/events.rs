@@ -2,7 +2,7 @@ use bevy::prelude::Message;
 
 use crate::combat::{
     StatusEffectKind,
-    api::intent::CastId,
+    runtime::intent::CastId,
     toughness::DamageKind,
     types::{DamageTag, SkillId, UnitId},
 };

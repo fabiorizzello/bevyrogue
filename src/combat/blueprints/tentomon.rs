@@ -2,8 +2,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::combat::bevy_types::*;
 
-use crate::combat::api::{SignalPayload, intent::CastId};
-use crate::combat::api::registry::{ValidationField, ValidationSection};
+use crate::combat::runtime::{SignalPayload, intent::CastId};
+use crate::combat::runtime::registry::{ValidationField, ValidationSection};
 use crate::combat::events::{CombatEvent, CombatEventKind};
 use crate::combat::kernel::{
     CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition, TacticalCycleTransition,
@@ -311,13 +311,13 @@ impl Plugin for TentomonPlugin {
             .register(BatteryLoopHook);
 
         app.world_mut()
-            .resource_mut::<crate::combat::api::ExtRegistries>()
+            .resource_mut::<crate::combat::runtime::ExtRegistries>()
             .pre_damage_reactions
             .register("tentomon/block_reaction", resolve_block_reaction_in_world);
     }
 }
 
-pub fn register_tentomon_ext(regs: &mut crate::combat::api::ExtRegistries) {
+pub fn register_tentomon_ext(regs: &mut crate::combat::runtime::ExtRegistries) {
     regs.validation
         .register("battery/validation", battery_validation_section);
     regs.pre_damage_reactions
@@ -608,7 +608,7 @@ pub struct BatteryLoopSnapshot {
     pub static_charge_threshold: u8,
     pub threshold_grant_emitted_this_cycle: bool,
     pub block_reaction_armed: bool,
-    pub last_block_reaction_cast_id: Option<crate::combat::api::intent::CastId>,
+    pub last_block_reaction_cast_id: Option<crate::combat::runtime::intent::CastId>,
     pub last_transition: Option<BatteryLoopTransition>,
     pub last_blocked_reason: Option<BatteryLoopBlockedReason>,
 }

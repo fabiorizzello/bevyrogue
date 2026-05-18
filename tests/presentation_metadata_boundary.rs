@@ -179,7 +179,7 @@ fn app_with_skill_book(book: SkillBook, skill_id: &SkillId) -> App {
     {
         let mut regs = app
             .world_mut()
-            .resource_mut::<bevyrogue::combat::api::ExtRegistries>();
+            .resource_mut::<bevyrogue::combat::runtime::ExtRegistries>();
         bevyrogue::combat::blueprints::register_all_blueprint_validation_exts(&mut regs);
     }
     app.init_resource::<CombatState>()

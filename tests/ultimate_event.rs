@@ -6,7 +6,7 @@
 /// - No `UltimateUsed` event is emitted for a Basic intent.
 /// - No `UltimateUsed` event is emitted for a Skill (non-Reset) intent.
 use bevy::{ecs::message::MessageCursor, prelude::*};
-use bevyrogue::combat::api::CastId;
+use bevyrogue::combat::runtime::CastId;
 use bevyrogue::combat::{
     events::{CombatEvent, CombatEventKind},
     kit::UnitSkills,
