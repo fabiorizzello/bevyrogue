@@ -26,7 +26,8 @@ pub fn verify_required_data_assets() -> Result<(), String> {
 }
 
 pub fn load_ally_roster() -> Result<Vec<UnitDef>, String> {
-    let roster = bevyrogue::data::aggregate_unit_roster();
+    let roster =
+        bevyrogue::data::try_aggregate_unit_roster().map_err(|e| e.to_string())?;
     Ok(roster
         .0
         .into_iter()

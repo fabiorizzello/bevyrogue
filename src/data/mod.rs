@@ -341,7 +341,23 @@ fn sync_skill_book_on_load(
 
 // ── Compile-time aggregate helpers (for tests and CLI) ──────────────────────
 
-pub fn aggregate_unit_roster() -> UnitRoster {
+/// Parse a typed RON list from each embedded `(path, fragment)` pair and
+/// concatenate them, attaching the asset path to any spanned parse failure.
+fn aggregate_ron_fragments<T>(fragments: &[(&'static str, &str)]) -> Result<Vec<T>, DataError>
+where
+    T: serde::de::DeserializeOwned,
+{
+    let mut merged = Vec::new();
+    for (path, fragment) in fragments {
+        let partial: Vec<T> = ron::from_str(fragment)
+            .map_err(|source| DataError::RonParse { path, source })?;
+        merged.extend(partial);
+    }
+    Ok(merged)
+}
+
+/// Fallible compile-time roster aggregation — the typed-error seam.
+pub fn try_aggregate_unit_roster() -> Result<UnitRoster, DataError> {
     let fragments: &[(&str, &str)] = &[
         (
             "assets/data/digimon/agumon/unit.ron",
@@ -380,16 +396,19 @@ pub fn aggregate_unit_roster() -> UnitRoster {
             include_str!("../../assets/data/enemies/ogremon/unit.ron"),
         ),
     ];
-    let mut merged = Vec::new();
-    for (path, fragment) in fragments {
-        let partial: UnitRoster =
-            ron::from_str(fragment).unwrap_or_else(|e| panic!("failed to parse `{path}`: {e}"));
-        merged.extend(partial.0);
-    }
-    UnitRoster(merged)
+    aggregate_ron_fragments(fragments).map(UnitRoster)
 }
 
-pub fn aggregate_skill_book() -> SkillBook {
+/// Infallible adapter over [`try_aggregate_unit_roster`] for the many test
+/// call sites that treat the `include_str!`-embedded roster as build-time
+/// constant data. A failure here is an unrecoverable build defect, surfaced
+/// with the full typed [`DataError`] (path + `ron` span), not an opaque panic.
+pub fn aggregate_unit_roster() -> UnitRoster {
+    try_aggregate_unit_roster().unwrap_or_else(|e| panic!("{e}"))
+}
+
+/// Fallible compile-time skill-book aggregation — the typed-error seam.
+pub fn try_aggregate_skill_book() -> Result<SkillBook, DataError> {
     let fragments: &[(&str, &str)] = &[
         (
             "assets/data/digimon/agumon/skills.ron",
@@ -428,13 +447,15 @@ pub fn aggregate_skill_book() -> SkillBook {
             include_str!("../../assets/data/enemies/ogremon/skills.ron"),
         ),
     ];
-    let mut merged = Vec::new();
-    for (path, fragment) in fragments {
-        let partial: SkillBook =
-            ron::from_str(fragment).unwrap_or_else(|e| panic!("failed to parse `{path}`: {e}"));
-        merged.extend(partial.0);
-    }
-    SkillBook(merged)
+    aggregate_ron_fragments(fragments).map(SkillBook)
+}
+
+/// Infallible adapter over [`try_aggregate_skill_book`] for the many test
+/// call sites that treat the `include_str!`-embedded skill book as build-time
+/// constant data. A failure here is an unrecoverable build defect, surfaced
+/// with the full typed [`DataError`] (path + `ron` span), not an opaque panic.
+pub fn aggregate_skill_book() -> SkillBook {
+    try_aggregate_skill_book().unwrap_or_else(|e| panic!("{e}"))
 }
 
 pub fn aggregate_skill_book_ron_text() -> String {
