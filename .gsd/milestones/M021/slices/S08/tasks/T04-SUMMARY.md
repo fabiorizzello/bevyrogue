@@ -8,7 +8,7 @@ key_decisions:
   - Used Attribute::Free for enemy units to get neutral triangle modifier so OnDamageDealt amounts are deterministic (18 primary, 9 bounce) without hard-coding post-modifier values.
   - Registered 'agumon'/'apply_heated' in SignalTaxonomy before firing the skill — omitting this causes a debug_assert panic in apply_blueprint_signal when the signal is unrecognized.
   - Asserted by target UnitId rather than damage amount to avoid fragility against future modifier changes while still distinguishing primary vs bounce hits.
-  - Pre-existing combat_coherence failure (s_m008_s06_break_follow_up_and_ult_timing_trace) noted but not fixed — out of scope for T04.
+  - Pre-existing combat_coherence failure (break_follow_up_and_ult_timing_trace) noted but not fixed — out of scope for T04.
 duration: 
 verification_result: passed
 completed_at: 2026-05-16T21:58:17.641Z
@@ -35,11 +35,11 @@ Test 1 (OFF=baseline, rank 0): fires baby_flame at a single enemy, asserts exact
 
 Test 2 (ON, rank 1): sets TalentRanks "agumon::bouncing_fire" = 1, spawns two enemies. baby_flame fires, bounce_pick_next selector picks ENEMY_B_ID (not in cast_hit_set), on_bounce_hop enqueues DealDamage(9). After the first body pass both enemies are in cast_hit_set, bounce_exit returns true, loop terminates. Asserts exactly 2 OnDamageDealt events targeting ENEMY_A_ID and ENEMY_B_ID respectively, plus apply_heated signal.
 
-The only failure in cargo test is s_m008_s06_break_follow_up_and_ult_timing_trace in combat_coherence, confirmed pre-existing (git stash found no local tracked changes, test already fails on HEAD before this task's file was written).
+The only failure in cargo test is break_follow_up_and_ult_timing_trace in combat_coherence, confirmed pre-existing (git stash found no local tracked changes, test already fails on HEAD before this task's file was written).
 
 ## Verification
 
-cargo test --test bouncing_fire_off_baseline: 2 passed. cargo test twin_core: 3 passed (2 integration + 1 mechanics). cargo test full suite: only pre-existing combat_coherence failure (s_m008_s06_break_follow_up_and_ult_timing_trace), all other tests green.
+cargo test --test bouncing_fire_off_baseline: 2 passed. cargo test twin_core: 3 passed (2 integration + 1 mechanics). cargo test full suite: only pre-existing combat_coherence failure (break_follow_up_and_ult_timing_trace), all other tests green.
 
 ## Verification Evidence
 
@@ -55,7 +55,7 @@ none — task plan executed as written. twin_core_integration.rs and twin_core_m
 
 ## Known Issues
 
-s_m008_s06_break_follow_up_and_ult_timing_trace in combat_coherence.rs is a pre-existing failure (confirmed: fails on HEAD before T04 file was created). Not introduced by this task.
+break_follow_up_and_ult_timing_trace in combat_coherence.rs is a pre-existing failure (confirmed: fails on HEAD before T04 file was created). Not introduced by this task.
 
 ## Files Created/Modified
 

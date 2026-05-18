@@ -30,7 +30,7 @@ fn sync_events(app: &App, collected: &mut Vec<LogEntry>) {
 }
 
 #[test]
-fn s06_encounter_e2e_2v2_victory() {
+fn encounter_e2e_2v2_victory() {
     let mut app = App::new();
     app.init_resource::<CombatState>()
         .init_resource::<bevyrogue::combat::turn_order::TurnOrder>()

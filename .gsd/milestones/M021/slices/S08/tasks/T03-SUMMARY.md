@@ -48,18 +48,18 @@ T03 introduced the Bouncing Fire talent gate on baby_flame's timeline. The imple
 
 5. **Test infrastructure**: Exposed `pub fn register_agumon_ext(regs: &mut ExtRegistries)` for bare-registry timeline validation tests. Added `pub fn register_all_blueprint_exts(regs: &mut ExtRegistries)` to `blueprints/mod.rs` as the central registration point. Updated all 8 test files that call `compile_skill_book_timelines` with the canonical skills.ron to also call `register_all_blueprint_exts`.
 
-One pre-existing test failure: `s_m008_s06_break_follow_up_and_ult_timing_trace` in `tests/combat_coherence.rs` — this test uses the full combat coherence stack, not timeline compilation, and was failing before T03 work began (the pre-T03 state doesn't even compile due to the gabumon.rs deletion from T02).
+One pre-existing test failure: `break_follow_up_and_ult_timing_trace` in `tests/combat_coherence.rs` — this test uses the full combat coherence stack, not timeline compilation, and was failing before T03 work began (the pre-T03 state doesn't even compile due to the gabumon.rs deletion from T02).
 
 ## Verification
 
-cargo check exits 0 (no errors, only pre-existing warnings). Full test suite with `cargo test -- --skip s_m008_s06_break_follow_up` shows all 300+ tests passing across all integration test files including the previously-failing inspect, cast_id_propagation, compiled_timeline_boot_validation, compiled_timeline_active_canon, compiled_timeline_petit_thunder, compiled_timeline_tohakken, and compiled_timeline_builtin_validation tests.
+cargo check exits 0 (no errors, only pre-existing warnings). Full test suite with `cargo test -- --skip break_follow_up` shows all 300+ tests passing across all integration test files including the previously-failing inspect, cast_id_propagation, compiled_timeline_boot_validation, compiled_timeline_active_canon, compiled_timeline_petit_thunder, compiled_timeline_tohakken, and compiled_timeline_builtin_validation tests.
 
 ## Verification Evidence
 
 | # | Command | Exit Code | Verdict | Duration |
 |---|---------|-----------|---------|----------|
 | 1 | `cargo check` | 0 | pass | 2560ms |
-| 2 | `cargo test -- --skip s_m008_s06_break_follow_up` | 0 | pass — all 300+ tests pass (pre-existing s_m008_s06_break_follow_up failure excluded, pre-dates T03) | 6000ms |
+| 2 | `cargo test -- --skip break_follow_up` | 0 | pass — all 300+ tests pass (pre-existing break_follow_up failure excluded, pre-dates T03) | 6000ms |
 
 ## Deviations
 
@@ -67,7 +67,7 @@ Added register_all_blueprint_exts in blueprints/mod.rs (not mentioned in task pl
 
 ## Known Issues
 
-Pre-existing test failure: s_m008_s06_break_follow_up_and_ult_timing_trace in tests/combat_coherence.rs. Assertion about ult charge after a timeline-backed break. Pre-dates T03 — the pre-T02 state doesn't compile so isolation is not feasible here.
+Pre-existing test failure: break_follow_up_and_ult_timing_trace in tests/combat_coherence.rs. Assertion about ult charge after a timeline-backed break. Pre-dates T03 — the pre-T02 state doesn't compile so isolation is not feasible here.
 
 ## Files Created/Modified
 

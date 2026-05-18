@@ -52,11 +52,6 @@ fn enemy_does_not_target_commander() {
     app.world_mut()
         .spawn((make_unit(2, "Greymon"), Team::Enemy));
 
-    {
-        let mut order = app.world_mut().resource_mut::<TurnOrder>();
-        order.seed([UnitId(2), UnitId(0), UnitId(1)]);
-    }
-
     app.world_mut().write_message(TurnAdvanced::of(UnitId(2)));
     app.update();
 
@@ -100,11 +95,6 @@ fn enemy_emits_no_intent_when_only_commander_is_alive() {
 
     app.world_mut()
         .spawn((make_unit(2, "Greymon"), Team::Enemy));
-
-    {
-        let mut order = app.world_mut().resource_mut::<TurnOrder>();
-        order.seed([UnitId(2), UnitId(0), UnitId(1)]);
-    }
 
     app.world_mut().write_message(TurnAdvanced::of(UnitId(2)));
     app.update();

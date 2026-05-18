@@ -47,7 +47,7 @@ fn drain(cursor: &mut MessageCursor<CombatEvent>, app: &App, out: &mut Vec<Comba
 }
 
 #[test]
-fn s09_event_stream_observes_all_variants() {
+fn event_stream_observes_all_variants() {
     let mut app = App::new();
     register_combat_kernel_runtime(&mut app);
 

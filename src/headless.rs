@@ -243,7 +243,7 @@ fn headless_smoke_tick(
 
         match bootstrap_encounter(roster, &request, EncounterPreset::BossEncounter) {
             Ok(composition) => {
-                apply_composition(&mut commands, &composition, &mut order);
+                let seeded_ids = apply_composition(&mut commands, &composition);
                 info!(
                     "bootstrap: success, selected_party={:?}",
                     request.rookie_ids
@@ -262,7 +262,7 @@ fn headless_smoke_tick(
                     source: UnitId(0),
                     target: UnitId(0),
                     kind: CombatEventKind::TurnOrderSeeded {
-                        unit_ids: order.next_unit.map(|id| vec![id]).unwrap_or_default(),
+                        unit_ids: seeded_ids,
                     },
                     follow_up_depth: 0,
                     cast_id: CastId::ROOT,
@@ -315,10 +315,7 @@ fn headless_smoke_tick(
         }
     }
     if counter.0 == 2 {
-        info!(
-            "turn order seeded: active={:?} next={:?}",
-            order.active_unit, order.next_unit
-        );
+        info!("turn order seeded: active={:?}", order.active_unit);
     }
 
     if counter.0 >= 5 {

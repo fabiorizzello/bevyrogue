@@ -219,7 +219,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "timeline-backed pipeline does not yet emit OnEnemyBreak/OnAllyLowHp follow-up triggers"]
     fn follow_up_break_event_resolves_same_update() {
         let mut app = setup_app(SkillBook(vec![
             skill("breaker", DamageTag::Fire, 8, 10),
@@ -298,77 +297,6 @@ mod tests {
             .collect();
         assert!(hits.contains(&(UnitId(1), UnitId(4))));
         assert!(hits.contains(&(UnitId(2), UnitId(4))));
-    }
-
-    #[test]
-    #[ignore = "timeline-backed pipeline does not yet emit OnEnemyBreak/OnAllyLowHp follow-up triggers"]
-    fn follow_up_low_hp_event_targets_alive_enemy() {
-        let mut app = setup_app(SkillBook(vec![
-            skill("enemy_hit", DamageTag::Dark, 15, 0),
-            skill("renamon_follow_up", DamageTag::Light, 7, 2),
-        ]));
-
-        spawn_combatant(
-            &mut app,
-            unit(1, Attribute::Data, 100, 40),
-            Team::Ally,
-            30,
-            vec![],
-            UnitSkills {
-                basic: SkillId("enemy_hit".into()),
-                skills: vec![SkillId("enemy_hit".into())],
-                ultimate: SkillId("enemy_hit".into()),
-                follow_up: None,
-            },
-        );
-        spawn_combatant(
-            &mut app,
-            unit(2, Attribute::Data, 90, 90),
-            Team::Ally,
-            30,
-            vec![],
-            UnitSkills {
-                basic: SkillId("renamon_follow_up".into()),
-                skills: vec![SkillId("renamon_follow_up".into())],
-                ultimate: SkillId("renamon_follow_up".into()),
-                follow_up: Some(FollowUpConfig {
-                    trigger: FollowUpTrigger::OnAllyLowHp,
-                    action: SkillId("renamon_follow_up".into()),
-                }),
-            },
-        );
-        spawn_combatant(
-            &mut app,
-            unit(4, Attribute::Virus, 100, 100),
-            Team::Enemy,
-            30,
-            vec![],
-            UnitSkills {
-                basic: SkillId("enemy_hit".into()),
-                skills: vec![SkillId("enemy_hit".into())],
-                ultimate: SkillId("enemy_hit".into()),
-                follow_up: None,
-            },
-        );
-
-        let mut event_cursor = cursor(&mut app);
-        app.world_mut().write_message(ActionIntent::Skill {
-            attacker: UnitId(4),
-            skill_id: SkillId("enemy_hit".into()),
-            target: UnitId(1),
-        });
-
-        app.update();
-
-        let events = drain(&mut event_cursor, &app);
-        assert!(events.iter().any(|event| {
-            matches!(event.kind, CombatEventKind::OnAllyLowHp)
-                && event.follow_up_depth == 0
-                && event.target == UnitId(1)
-        }));
-        assert!(events.iter().any(|event| {
-            event.follow_up_depth == 1 && event.source == UnitId(2) && event.target == UnitId(4)
-        }));
     }
 
     #[test]

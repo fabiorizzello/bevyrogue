@@ -344,9 +344,6 @@ fn explicit_sp_snapshot_blocks_revive_but_bypass_snapshot_remains_separate() {
         },
         &bevyrogue::combat::turn_order::TurnOrder {
             active_unit: Some(UnitId(1)),
-            next_unit: None,
-            future_preview: vec![],
-            queue: Default::default(),
         },
         &SpPool::default(),
         UnitId(1),
@@ -730,10 +727,50 @@ fn deferred_actions_are_excluded_from_enabled_selection() {
     ));
 }
 
+/// Reads and concatenates every `.rs` file at `path`, recursing if it is a
+/// directory. Used by the source-hardcoding guards so they cover the whole
+/// module tree (the modules were split into directory modules), not just one
+/// file — splitting a file must never weaken these guards.
+fn read_module_source(path: &str) -> String {
+    fn collect(path: &std::path::Path, out: &mut String) {
+        if path.is_dir() {
+            let mut entries: Vec<_> = std::fs::read_dir(path)
+                .unwrap_or_else(|e| panic!("cannot read dir {}: {e}", path.display()))
+                .map(|e| e.expect("dir entry").path())
+                .collect();
+            entries.sort();
+            for entry in entries {
+                collect(&entry, out);
+            }
+        } else if path.extension().is_some_and(|ext| ext == "rs") {
+            out.push_str(
+                &std::fs::read_to_string(path)
+                    .unwrap_or_else(|e| panic!("cannot read {}: {e}", path.display())),
+            );
+            out.push('\n');
+        }
+    }
+
+    let root = std::path::Path::new(path);
+    let mut out = String::new();
+    // A module may be either `foo.rs` or the directory `foo/`; scan whichever exists.
+    let file = root.with_extension("rs");
+    if file.is_file() {
+        collect(&file, &mut out);
+    }
+    if root.is_dir() {
+        collect(root, &mut out);
+    }
+    assert!(
+        !out.is_empty(),
+        "no source found for module at {path} (.rs or directory)"
+    );
+    out
+}
+
 #[test]
 fn combat_cli_source_does_not_reintroduce_ko_or_skill_id_hardcoding() {
-    let source = std::fs::read_to_string("src/bin/combat_cli.rs")
-        .expect("combat_cli source should be readable");
+    let source = read_module_source("src/bin/combat_cli");
 
     assert!(!source.contains("patamon_revive"));
     assert!(!source.contains("ko.is_none()"));
@@ -741,8 +778,7 @@ fn combat_cli_source_does_not_reintroduce_ko_or_skill_id_hardcoding() {
 
 #[test]
 fn combat_windowed_source_does_not_reintroduce_ko_or_skill_id_hardcoding() {
-    let source = std::fs::read_to_string("src/ui/combat_panel.rs")
-        .expect("combat_panel source should be readable");
+    let source = read_module_source("src/ui/combat_panel");
 
     assert!(!source.contains("patamon_revive"));
     assert!(!source.contains("ko.is_none()"));
@@ -763,8 +799,7 @@ fn combat_windowed_source_does_not_reintroduce_ko_or_skill_id_hardcoding() {
 
 #[test]
 fn combat_cli_source_does_not_hardcode_counterplay_names() {
-    let source = std::fs::read_to_string("src/bin/combat_cli.rs")
-        .expect("combat_cli source should be readable");
+    let source = read_module_source("src/bin/combat_cli");
 
     assert!(
         !source.contains("\"devimon\""),

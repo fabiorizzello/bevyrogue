@@ -70,8 +70,7 @@ fn snapshot_contract_covers_promised_fields_and_shape() {
         .into_iter()
         .collect(),
     });
-    let mut order = TurnOrder::default();
-    order.seed([UnitId(1), UnitId(4), UnitId(2)]);
+    let order = TurnOrder::default();
     world.insert_resource(order);
     world.insert_resource(TwinCoreState {
         active_thermal_spark_targets: vec![UnitId(4)],
@@ -158,8 +157,7 @@ fn snapshot_defaults_empty_optional_surfaces() {
     world.insert_resource(CombatState::default());
     world.insert_resource(SpPool::default());
     world.insert_resource(ActionLog::default());
-    let mut order = TurnOrder::default();
-    order.seed([UnitId(7)]);
+    let order = TurnOrder::default();
     world.insert_resource(order);
     world.insert_resource(TwinCoreState::default());
     install_validation_exts(&mut world);
@@ -248,8 +246,7 @@ fn runtime_registration_populates_snapshot_kernel_resources() {
     app.world_mut().insert_resource(CombatState::default());
     app.world_mut().insert_resource(SpPool::default());
     app.world_mut().insert_resource(ActionLog::default());
-    let mut order = TurnOrder::default();
-    order.seed([UnitId(21)]);
+    let order = TurnOrder::default();
     app.world_mut().insert_resource(order);
     app.world_mut().spawn((
         unit(21, 70, 70, Attribute::Free),
@@ -287,8 +284,7 @@ fn snapshot_hides_ally_missing_toughness_and_zero_max_enemy_bars() {
     world.insert_resource(CombatState::default());
     world.insert_resource(SpPool::default());
     world.insert_resource(ActionLog::default());
-    let mut order = TurnOrder::default();
-    order.seed([UnitId(11), UnitId(12), UnitId(13)]);
+    let order = TurnOrder::default();
     world.insert_resource(order);
     world.insert_resource(TwinCoreState::default());
     install_validation_exts(&mut world);
@@ -344,8 +340,7 @@ fn per_unit_statuses_populated_deterministically() {
     world.insert_resource(CombatState::default());
     world.insert_resource(SpPool::default());
     world.insert_resource(ActionLog::default());
-    let mut order = TurnOrder::default();
-    order.seed([UnitId(99)]);
+    let order = TurnOrder::default();
     world.insert_resource(order);
     world.insert_resource(TwinCoreState::default());
 

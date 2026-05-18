@@ -298,7 +298,7 @@ fn taichi_still_charges_on_offensive_party_events() {
 /// Turn-order interruption: after a successful ultimate fire, the attacker is front-inserted
 /// into the queue so their next turn arrives before any unit that was ahead of them.
 #[test]
-fn ultimate_fire_injects_attacker_front_of_queue() {
+fn ultimate_fire_resets_meter_and_damages_target() {
     let mut app = setup_resolve_app(SkillBook(vec![ult_skill(), basic_skill()]));
 
     // unit 1: the attacker — ult ready
@@ -315,15 +315,6 @@ fn ultimate_fire_injects_attacker_front_of_queue() {
         Team::Enemy,
         Toughness::new(200, vec![]),
     ));
-    // unit 3: another unit in the queue ahead of the attacker
-    app.world_mut()
-        .spawn((make_unit(3, "Other", 100), Team::Enemy));
-
-    // Seed queue so "Other" is in front and "Attacker" is behind
-    app.world_mut()
-        .resource_mut::<TurnOrder>()
-        .seed([UnitId(3), UnitId(1), UnitId(2)]);
-
     // Fire the ultimate
     app.world_mut().write_message(ActionIntent::Ultimate {
         attacker: UnitId(1),
@@ -331,7 +322,6 @@ fn ultimate_fire_injects_attacker_front_of_queue() {
     });
     app.update();
 
-    // In the AV system, there is no queue front-insert; verify ult resolved correctly.
     let mut q = app.world_mut().query::<(&Unit, &UltimateCharge)>();
     for (unit, ult) in q.iter(app.world()) {
         if unit.id == UnitId(1) {
@@ -349,9 +339,10 @@ fn ultimate_fire_injects_attacker_front_of_queue() {
     }
 }
 
-/// Negative: when the ultimate meter is not ready, no front-insert occurs.
+/// Negative: when the ultimate meter is not ready, the ult is rejected and the
+/// target takes no damage.
 #[test]
-fn ult_not_ready_does_not_front_insert() {
+fn ult_not_ready_is_rejected() {
     let mut app = setup_resolve_app(SkillBook(vec![ult_skill(), basic_skill()]));
 
     app.world_mut().spawn((
@@ -367,20 +358,13 @@ fn ult_not_ready_does_not_front_insert() {
         Team::Enemy,
         Toughness::new(200, vec![]),
     ));
-    app.world_mut()
-        .spawn((make_unit(3, "Other", 100), Team::Enemy));
-
-    app.world_mut()
-        .resource_mut::<TurnOrder>()
-        .seed([UnitId(3), UnitId(1), UnitId(2)]);
-
     app.world_mut().write_message(ActionIntent::Ultimate {
         attacker: UnitId(1),
         target: UnitId(2),
     });
     app.update();
 
-    // In the AV system, there is no queue; verify ult was rejected (defender HP unchanged).
+    // Ult not ready → rejected, defender HP unchanged.
     let mut q = app.world_mut().query::<&Unit>();
     let defender_hp = q
         .iter(app.world())
@@ -393,10 +377,10 @@ fn ult_not_ready_does_not_front_insert() {
     );
 }
 
-/// Negative: when the target is a Commander, apply_legacy_ops rejects the action without
-/// consuming the ult meter, so no front-insert occurs.
+/// Negative: when the target is a Commander, apply_legacy_ops rejects the action
+/// without consuming the ult meter.
 #[test]
-fn commander_defender_does_not_front_insert() {
+fn ult_targeting_commander_does_not_consume_meter() {
     let mut app = setup_resolve_app(SkillBook(vec![ult_skill(), basic_skill()]));
 
     app.world_mut().spawn((
@@ -414,29 +398,13 @@ fn commander_defender_does_not_front_insert() {
         Commander,
         Toughness::new(200, vec![]),
     ));
-    app.world_mut()
-        .spawn((make_unit(3, "Other", 100), Team::Enemy));
-
-    app.world_mut()
-        .resource_mut::<TurnOrder>()
-        .seed([UnitId(3), UnitId(1)]);
-
     app.world_mut().write_message(ActionIntent::Ultimate {
         attacker: UnitId(1),
         target: UnitId(2),
     });
     app.update();
 
-    // Commander rejection means meter is not consumed → no front-insert
-    let order = app.world().resource::<TurnOrder>();
-    assert_ne!(
-        order.queue.front().copied(),
-        Some(UnitId(1)),
-        "attacker should NOT be front-inserted when defender is Commander (queue: {:?})",
-        order.queue
-    );
-
-    // Verify ult meter was NOT consumed
+    // Commander rejection means the ult meter is not consumed.
     let mut q = app.world_mut().query::<(&Unit, &UltimateCharge)>();
     for (unit, ult) in q.iter(app.world()) {
         if unit.id == UnitId(1) {

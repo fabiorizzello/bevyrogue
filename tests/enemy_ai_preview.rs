@@ -198,9 +198,6 @@ fn runtime_bridge_uses_preview_scoring_and_emits_one_stable_intent() {
         enemy_skills(),
     ));
 
-    app.world_mut()
-        .resource_mut::<TurnOrder>()
-        .seed([UnitId(101)]);
     let mut intent_cursor = action_cursor(&mut app);
 
     app.world_mut().write_message(TurnAdvanced::of(UnitId(101)));

@@ -185,17 +185,12 @@ fn spawn_unit(app: &mut App, id: u32, name: &str, hp_max: i32, team: Team, skill
 /// Asserts: KO component removed, LogEntry::Revive hp_after == floor(hp_max * 0.25),
 /// and the revived unit is back in the turn order.
 #[test]
-fn s14_patamon_revive_e2e() {
+fn patamon_revive_e2e() {
     let mut app = build_app();
 
     let victim_entity = spawn_unit(&mut app, 1, "Ally1", 100, Team::Ally, "attack_skill");
     let _patamon_entity = spawn_unit(&mut app, 9, "Patamon", 88, Team::Ally, "patamon_revive");
     let _enemy_entity = spawn_unit(&mut app, 99, "Enemy", 100, Team::Enemy, "attack_skill");
-
-    {
-        let mut turn_order = app.world_mut().resource_mut::<TurnOrder>();
-        turn_order.seed(vec![UnitId(1), UnitId(9), UnitId(99)]);
-    }
 
     app.world_mut().write_message(ActionIntent::Basic {
         attacker: UnitId(99),

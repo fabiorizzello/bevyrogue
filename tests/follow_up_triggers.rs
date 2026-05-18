@@ -341,7 +341,7 @@ fn unit_hp(app: &mut App, unit_id: UnitId) -> i32 {
 }
 
 #[test]
-fn s10_agumon_break_follow_up_uses_real_pilot_config() {
+fn agumon_break_follow_up_uses_real_pilot_config() {
     let roster = load_roster();
     let mut app = setup_app(load_skill_book());
 
@@ -431,7 +431,7 @@ fn s10_agumon_break_follow_up_uses_real_pilot_config() {
 }
 
 #[test]
-fn s10_renamon_low_hp_follow_up_targets_the_attacker() {
+fn renamon_low_hp_follow_up_targets_the_attacker() {
     let roster = load_roster();
     let mut app = setup_app(load_skill_book());
 
@@ -527,7 +527,7 @@ fn s10_renamon_low_hp_follow_up_targets_the_attacker() {
 }
 
 #[test]
-fn s10_control_scenario_without_matching_trigger_has_no_follow_up_action() {
+fn control_scenario_without_matching_trigger_has_no_follow_up_action() {
     let roster = load_roster();
     let mut app = setup_app(load_skill_book());
 

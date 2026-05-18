@@ -10,7 +10,6 @@ Tutti i test girano headless (no `windowed`). Naming **funzionale** — un file 
 | `party_config_validation.rs` | Deserializzazione `PartyConfig` + validazione end-to-end |
 | `party_selection_validation.rs` | Regole selezione 4 rookies (count, duplicati, IDs validi) |
 | `roster_catalog.rs` | Roster canonico (D039) caricato da RON |
-| `roster_smoke.rs` | Smoke run con roster completo (M006) |
 
 ## Turn / action pipeline
 

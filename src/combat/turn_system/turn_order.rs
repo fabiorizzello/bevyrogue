@@ -1,29 +1,13 @@
 use bevy::prelude::*;
-use std::collections::VecDeque;
 
 use crate::combat::types::UnitId;
 
-/// Resource to track the current active unit and the next unit in the turn order.
-/// This resource will be managed by the Action Value system.
+/// Tracks the unit currently entitled to act. Turn ordering itself is owned by
+/// the Action Value system (`advance_turn_system`), which writes `active_unit`
+/// when a unit's AV crosses the ready threshold.
 #[derive(Resource, Debug, Default, Clone)]
 pub struct TurnOrder {
     pub active_unit: Option<UnitId>,
-    pub next_unit: Option<UnitId>,
-    /// Compat shim for pre-AV tests: always empty in the AV system.
-    // Compat shim field; only referenced in test comments, not actual test code.
-    pub future_preview: Vec<UnitId>,
-    /// Compat shim for pre-AV tests: always empty in the AV system.
-    // Consumed by tests/ultimate_meter.rs via order.queue.front().
-    pub queue: VecDeque<UnitId>,
-}
-
-// seed/insert_out_of_queue consumed by many tests as compat shims.
-impl TurnOrder {
-    /// No-op in the AV system; seeds were needed only for the old VecDeque order.
-    pub fn seed(&mut self, _units: impl IntoIterator<Item = UnitId>) {}
-
-    /// No-op in the AV system; out-of-queue insertion is superseded by AV manipulation.
-    pub fn insert_out_of_queue(&mut self, _unit_id: UnitId) {}
 }
 
 #[derive(Message, Debug, Clone, Copy, PartialEq, Eq)]

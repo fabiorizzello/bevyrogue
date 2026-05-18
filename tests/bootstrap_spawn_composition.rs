@@ -236,10 +236,9 @@ fn test_bootstrap_spawn_composition() {
 
     // 3. Apply composition
     {
-        let mut system_state: SystemState<(Commands, ResMut<TurnOrder>)> =
-            SystemState::new(app.world_mut());
-        let (mut commands, mut order) = system_state.get_mut(app.world_mut());
-        apply_composition(&mut commands, &composition, &mut order);
+        let mut system_state: SystemState<Commands> = SystemState::new(app.world_mut());
+        let mut commands = system_state.get_mut(app.world_mut());
+        apply_composition(&mut commands, &composition);
         system_state.apply(app.world_mut());
     }
 

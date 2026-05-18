@@ -6,12 +6,12 @@
 use bevy::prelude::*;
 use bevy_egui::{EguiContexts, EguiPlugin, EguiPrimaryContextPass, egui};
 
-use bevyrogue::combat::events::CombatEvent;
 use bevyrogue::combat::follow_up::{
     follow_up_listener_system, form_identity_listener_system, resolve_follow_up_action_system,
 };
 use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
-use bevyrogue::combat::turn_order::{TurnAdvanced, TurnOrder};
+use bevyrogue::combat::av::ActionValue;
+use bevyrogue::combat::turn_order::TurnAdvanced;
 use bevyrogue::combat::turn_system::{
     advance_turn_system, check_victory_system, resolve_action_system,
     resolve_enemy_turn_action_system,
@@ -215,17 +215,27 @@ fn roster_panel(
     Ok(())
 }
 
+/// Computes the upcoming turn order from live Action Values: units closest to
+/// acting (highest AV) first, ties broken by ascending `UnitId` to match
+/// `advance_turn_system`.
+fn av_preview(units: &Query<(&Unit, &ActionValue)>, limit: usize) -> Vec<UnitId> {
+    let mut ranked: Vec<(UnitId, i32)> = units.iter().map(|(u, av)| (u.id, av.0)).collect();
+    ranked.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.0.cmp(&b.0.0)));
+    ranked.into_iter().take(limit).map(|(id, _)| id).collect()
+}
+
 fn turn_order_panel(
     mut contexts: EguiContexts,
-    mut order: ResMut<TurnOrder>,
+    av_units: Query<(&Unit, &ActionValue)>,
     units: Query<&Unit>,
     mut turn_advanced: MessageWriter<TurnAdvanced>,
 ) -> Result {
     let ctx = contexts.ctx_mut()?;
+    let preview = av_preview(&av_units, 5);
     egui::TopBottomPanel::top("av_bar").show(ctx, |ui| {
         ui.heading("AV Bar (next 5)");
         ui.horizontal(|ui| {
-            for id in &order.future_preview.clone() {
+            for id in &preview {
                 let (label, color) = unit_chip(*id, &units);
                 let bg = egui::Frame::default()
                     .fill(color)
@@ -237,7 +247,7 @@ fn turn_order_panel(
         });
         ui.horizontal(|ui| {
             if ui.button("Advance").clicked() {
-                if let Some(id) = order.future_preview.first().copied() {
+                if let Some(id) = preview.first().copied() {
                     turn_advanced.write(TurnAdvanced::of(id));
                 }
             }

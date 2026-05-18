@@ -95,5 +95,4 @@ pub mod plugin;
 
 pub use plugin::CombatPlugin;
 pub use preview::query_skill_preview;
-#[allow(deprecated)]
 pub use status_effect::{StatusBag, StatusEffectKind};

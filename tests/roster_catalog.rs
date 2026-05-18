@@ -1,65 +1,34 @@
-use std::collections::HashSet;
+//! Canonical enemy-counterplay catalog assertions over the aggregated roster.
+//!
+//! Roster size / name order / id uniqueness / skill-ref resolution are already
+//! covered by `src/data/units_ron/tests.rs` (`parse_canonical_units_ron` and
+//! `rookie_skill_references_resolve_in_skill_book`); this file deliberately
+//! asserts only what those do not: the exact id mapping and the per-enemy
+//! counterplay / charged-attack declarations.
 
 use bevyrogue::combat::team::Team;
 use bevyrogue::combat::toughness::ToughnessCategory;
 use bevyrogue::combat::types::SkillId;
-use bevyrogue::data::{skills_ron::SkillBook, units_ron::UnitRoster};
+use bevyrogue::data::units_ron::UnitRoster;
 
 fn load_roster() -> UnitRoster {
     bevyrogue::data::aggregate_unit_roster()
 }
 
-fn load_skill_book() -> SkillBook {
-    bevyrogue::data::aggregate_skill_book()
-}
-
 #[test]
-fn s11_roster_catalog_is_the_canonical_roster() {
+fn canonical_unit_ids_keep_their_fixed_mapping() {
     let roster = load_roster();
-    let expected_names = [
-        // Per-evo-line order: each evo line lists Child then Adult
-        "Agumon",
-        "Greymon",
-        "Gabumon",
-        "Garurumon",
-        "Dorumon",
-        "DORUgamon",
-        "Renamon",
-        "Kyubimon",
-        "Patamon",
-        "Angemon",
-        "Tentomon",
-        "Kabuterimon",
-        // Enemies
-        "Devimon",
-        "Goblimon",
-        "Ogremon",
-    ];
-
-    assert_eq!(
-        roster.0.len(),
-        expected_names.len(),
-        "unexpected roster size"
-    );
-
-    let names: Vec<_> = roster.0.iter().map(|unit| unit.name.as_str()).collect();
-    assert_eq!(names, expected_names, "roster order drifted");
-
     let ids: Vec<_> = roster.0.iter().map(|unit| unit.id.0).collect();
     assert_eq!(
         ids,
         vec![1, 12, 2, 13, 5, 16, 7, 15, 9, 17, 11, 14, 101, 102, 103],
-        "unexpected unit ids"
+        "unit id mapping drifted — downstream encounters pin these ids"
     );
+}
 
-    let unique_ids: HashSet<_> = roster.0.iter().map(|unit| unit.id).collect();
-    assert_eq!(
-        unique_ids.len(),
-        roster.0.len(),
-        "duplicate unit ids detected"
-    );
-
-    // Boss enemies (role_tag "boss") must be tempo_resistant; minion/mini-boss enemies are not.
+#[test]
+fn boss_tagged_enemies_are_tempo_resistant() {
+    let roster = load_roster();
     assert!(
         roster
             .0
@@ -68,17 +37,11 @@ fn s11_roster_catalog_is_the_canonical_roster() {
             .all(|unit| unit.tempo_resistant),
         "boss-tagged enemy units in units.ron must be tempo_resistant"
     );
-    assert!(
-        roster
-            .0
-            .iter()
-            .all(|unit| !unit.role_tags.is_empty() && !unit.signature_traits.is_empty()),
-        "every unit must carry catalog metadata for bootstrap selection"
-    );
-    assert!(
-        roster.0.iter().all(|unit| !unit.skill_ids.is_empty()),
-        "every unit must have at least one active skill"
-    );
+}
+
+#[test]
+fn enemy_counterplay_declarations_match_canonical_units_ron() {
+    let roster = load_roster();
 
     let devimon = roster.0.iter().find(|unit| unit.name == "Devimon").unwrap();
     assert_eq!(devimon.toughness_category, ToughnessCategory::Armored);
@@ -154,43 +117,4 @@ fn s11_roster_catalog_is_the_canonical_roster() {
             reason: bevyrogue::data::skills_ron::LegalityReasonCode::ChargedTelegraphDeferred
         }
     ));
-}
-
-#[test]
-fn s11_rookie_skill_refs_resolve_against_the_skill_book() {
-    let roster = load_roster();
-    let book = load_skill_book();
-    let skills: HashSet<_> = book.0.iter().map(|skill| skill.id.clone()).collect();
-
-    for unit in &roster.0 {
-        for skill_id in unit
-            .skill_ids
-            .iter()
-            .chain(std::iter::once(&unit.basic_skill))
-            .chain(std::iter::once(&unit.ultimate_skill))
-        {
-            assert!(
-                skills.contains(skill_id),
-                "missing tracked skill {:?} for {}",
-                skill_id,
-                unit.name
-            );
-        }
-
-        if let Some(follow_up) = &unit.follow_up {
-            assert!(
-                skills.contains(&follow_up.action),
-                "missing follow-up skill {:?} for {}",
-                follow_up.action,
-                unit.name
-            );
-        }
-    }
-
-    assert!(
-        skills.contains(&SkillId("agumon_follow_up".into()))
-            && skills.contains(&SkillId("renamon_follow_up".into()))
-            && skills.contains(&SkillId("dorumon_follow_up".into())),
-        "pilot follow-up kits must remain tracked in the book"
-    );
 }

@@ -46,7 +46,11 @@ fn assert_not_contains(output: &str, needle: &str) {
     );
 }
 
+// Spawna il binario combat_cli come sottoprocesso (~0.3s di startup): è
+// l'unico test non trascurabile della suite. Escluso dall'esecuzione
+// standard; runnalo esplicitamente con `cargo test -- --ignored`.
 #[test]
+#[ignore = "spawns combat_cli subprocess (~0.3s); run with --ignored"]
 fn combat_cli_binary_emits_shared_combat_surfaces_from_non_root_cwd() {
     let run = run_combat_cli_proof();
 
@@ -75,11 +79,44 @@ fn combat_cli_binary_emits_shared_combat_surfaces_from_non_root_cwd() {
     assert_not_contains(&run.output, "[CLI_PROOF] failure");
 }
 
+/// Concatenates `src/bin/combat_cli.rs` plus every `.rs` under the
+/// `src/bin/combat_cli/` directory module. The binary was split into a
+/// directory module; the guard must cover the whole tree so splitting a file
+/// can never hide a shared surface or smuggle in presentation metadata.
+fn combat_cli_module_source(manifest_dir: &Path) -> String {
+    fn collect(path: &Path, out: &mut String) {
+        if path.is_dir() {
+            let mut entries: Vec<_> = fs::read_dir(path)
+                .unwrap_or_else(|e| panic!("cannot read dir {}: {e}", path.display()))
+                .map(|e| e.expect("dir entry").path())
+                .collect();
+            entries.sort();
+            for entry in entries {
+                collect(&entry, out);
+            }
+        } else if path.extension().is_some_and(|ext| ext == "rs") {
+            out.push_str(
+                &fs::read_to_string(path)
+                    .unwrap_or_else(|e| panic!("cannot read {}: {e}", path.display())),
+            );
+            out.push('\n');
+        }
+    }
+
+    let mut source = String::new();
+    collect(&manifest_dir.join("src/bin/combat_cli.rs"), &mut source);
+    let dir = manifest_dir.join("src/bin/combat_cli");
+    if dir.is_dir() {
+        collect(&dir, &mut source);
+    }
+    assert!(!source.is_empty(), "combat_cli source should be readable");
+    source
+}
+
 #[test]
 fn combat_cli_source_stays_on_shared_surfaces_not_presentation_metadata() {
     let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let source_path = manifest_dir.join("src/bin/combat_cli.rs");
-    let source = fs::read_to_string(&source_path).expect("combat_cli source should be readable");
+    let source = combat_cli_module_source(manifest_dir);
 
     for shared_surface in [
         "build_snapshot_from_ecs_with_sp",
@@ -89,8 +126,7 @@ fn combat_cli_source_stays_on_shared_surfaces_not_presentation_metadata() {
     ] {
         assert!(
             source.contains(shared_surface),
-            "combat_cli should name shared surface `{shared_surface}` in {}",
-            source_path.display()
+            "combat_cli should name shared surface `{shared_surface}` somewhere in its module tree"
         );
     }
 

@@ -2,7 +2,6 @@ use bevy::prelude::*;
 use bevyrogue::combat::{
     bootstrap::{EncounterComposition, apply_composition},
     team::Team,
-    turn_order::TurnOrder,
     unit::SlotIndex,
 };
 use bevyrogue::data::units_ron::UnitRoster;
@@ -49,8 +48,7 @@ fn slot_indices_are_0_1_2_per_team() {
     let composition = make_3v3(&roster);
 
     let mut app = App::new();
-    let mut order = TurnOrder::default();
-    apply_composition(&mut app.world_mut().commands(), &composition, &mut order);
+    apply_composition(&mut app.world_mut().commands(), &composition);
     app.update();
 
     let ally_slots: HashSet<u8> = collect_slots(&mut app, Team::Ally).into_iter().collect();
@@ -75,8 +73,7 @@ fn slot_indices_unique_per_team() {
     let composition = make_3v3(&roster);
 
     let mut app = App::new();
-    let mut order = TurnOrder::default();
-    apply_composition(&mut app.world_mut().commands(), &composition, &mut order);
+    apply_composition(&mut app.world_mut().commands(), &composition);
     app.update();
 
     let ally_slots = collect_slots(&mut app, Team::Ally);

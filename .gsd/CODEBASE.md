@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-05-18T12:13:41Z | Files: 387 | Described: 0/387
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-18T12:13:41Z","fingerprint":"58a699e747a889aab8bf6c29eae359ffffb7224f","fileCount":387,"truncated":false} -->
+Generated: 2026-05-18T14:00:33Z | Files: 396 | Described: 0/396
+<!-- gsd:codebase-meta {"generatedAt":"2026-05-18T14:00:33Z","fingerprint":"55e301d6a6235f0a2b21eeca0274d487a1ff531d","fileCount":396,"truncated":false} -->
 
 ### (root)/
 - `.claudeignore`
@@ -124,6 +124,7 @@ Generated: 2026-05-18T12:13:41Z | Files: 387 | Described: 0/387
 
 ### docs/
 - `docs/combat_current.md`
+- `docs/promptcheck.md`
 - `docs/setup.md`
 
 ### docs/future_design_draft/
@@ -201,14 +202,14 @@ Generated: 2026-05-18T12:13:41Z | Files: 387 | Described: 0/387
 - `src/combat/unit.rs`
 
 ### src/combat/action_query/
-- `src/combat/action_query/legality.rs`
 - `src/combat/action_query/mod.rs`
 - `src/combat/action_query/types.rs`
 
+### src/combat/action_query/legality/
+- `src/combat/action_query/legality/mod.rs`
+
 ### src/combat/blueprints/
 - `src/combat/blueprints/mod.rs`
-- `src/combat/blueprints/renamon.rs`
-- `src/combat/blueprints/tentomon.rs`
 
 ### src/combat/blueprints/agumon/
 - `src/combat/blueprints/agumon/mod.rs`
@@ -255,6 +256,9 @@ Generated: 2026-05-18T12:13:41Z | Files: 387 | Described: 0/387
 - `src/combat/mechanics/toughness.rs`
 - `src/combat/mechanics/ultimate.rs`
 
+### src/combat/mechanics/damage/
+- `src/combat/mechanics/damage/tests.rs`
+
 ### src/combat/mechanics/follow_up/
 - `src/combat/mechanics/follow_up/form_identity.rs`
 - `src/combat/mechanics/follow_up/mod.rs`
@@ -275,6 +279,7 @@ Generated: 2026-05-18T12:13:41Z | Files: 387 | Described: 0/387
 - `src/combat/resolution/apply.rs`
 - `src/combat/resolution/mod.rs`
 - `src/combat/resolution/skill_extract.rs`
+- `src/combat/resolution/tests.rs`
 - `src/combat/resolution/types.rs`
 
 ### src/combat/runtime/
@@ -295,14 +300,26 @@ Generated: 2026-05-18T12:13:41Z | Files: 387 | Described: 0/387
 - `src/combat/runtime/timeline.rs`
 
 ### src/combat/runtime/applier/
-- `src/combat/runtime/applier/effects.rs`
 - `src/combat/runtime/applier/mod.rs`
 
+### src/combat/runtime/applier/effects/
+- `src/combat/runtime/applier/effects/mod.rs`
+
+### src/combat/runtime/builtins/
+- `src/combat/runtime/builtins/tests.rs`
+
+### src/combat/runtime/runner/
+- `src/combat/runtime/runner/tests.rs`
+
 ### src/combat/turn_system/
+- `src/combat/turn_system/advance.rs`
 - `src/combat/turn_system/av.rs`
+- `src/combat/turn_system/enemy_turn.rs`
+- `src/combat/turn_system/finalize.rs`
 - `src/combat/turn_system/helpers.rs`
 - `src/combat/turn_system/mod.rs`
 - `src/combat/turn_system/resistance.rs`
+- `src/combat/turn_system/resolve.rs`
 - `src/combat/turn_system/speed.rs`
 - `src/combat/turn_system/tests.rs`
 - `src/combat/turn_system/turn_order.rs`
@@ -321,9 +338,17 @@ Generated: 2026-05-18T12:13:41Z | Files: 387 | Described: 0/387
 - `src/data/skills_ron.rs`
 - `src/data/units_ron.rs`
 
+### src/data/skills_ron/
+- `src/data/skills_ron/tests.rs`
+
+### src/data/units_ron/
+- `src/data/units_ron/tests.rs`
+
 ### src/ui/
-- `src/ui/combat_panel.rs`
 - `src/ui/mod.rs`
+
+### src/ui/combat_panel/
+- `src/ui/combat_panel/mod.rs`
 
 ### tests/
 - *(99 files: 98 .rs, 1 .md)*

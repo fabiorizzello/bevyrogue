@@ -609,7 +609,7 @@ fn cast(app: &mut App, intent: ActionIntent, sp_history: &mut Vec<i32>) {
 }
 
 #[test]
-fn s_m008_s06_break_follow_up_and_ult_timing_trace() {
+fn break_follow_up_and_ult_timing_trace() {
     let roster = canonical_roster();
     let mut app = build_follow_up_app(canonical_skill_book());
 
@@ -712,7 +712,7 @@ fn s_m008_s06_break_follow_up_and_ult_timing_trace() {
 }
 
 #[test]
-fn s_m008_s06_shared_sp_history_blocks_and_then_unlocks_a_revive() {
+fn shared_sp_history_blocks_and_then_unlocks_a_revive() {
     let mut app = build_sp_app(sp_fixture_skill_book());
 
     app.world_mut().spawn((
@@ -905,7 +905,7 @@ fn s_m008_s06_shared_sp_history_blocks_and_then_unlocks_a_revive() {
 }
 
 #[test]
-fn s_m008_s06_status_pressure_turns_low_hp_into_a_failed_action_and_a_follow_up_window() {
+fn status_pressure_turns_low_hp_into_a_failed_action_and_a_follow_up_window() {
     let roster = canonical_roster();
     let mut app = build_status_app(skill_book_with_shock_fixture());
 

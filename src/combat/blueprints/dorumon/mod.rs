@@ -11,6 +11,7 @@ use crate::combat::kernel::CombatKernelRegistry;
 use crate::combat::blueprints::dorumon::identity::format_predator_loop_transition;
 pub mod hooks;
 pub mod identity;
+pub mod identity_apply;
 pub mod signals;
 
 // Public blueprint surface: lib-target sees no consumer, but `tests/` import these

@@ -1,11 +1,15 @@
-//! M010 action pipeline (WIP). Multi-phase action lifecycle:
-//! Declaration → PreApp → App → Resolution.
+//! Action pipeline: the multi-phase action lifecycle driven by
+//! `resolve_action_system` (see `../resolve.rs`).
 //!
-//! See `.gsd/M010-HANDOFF.md` for integration status. The functions here
-//! are the scaffolding; wire-up into the Bevy schedule is incomplete.
+//! - `declaration` — declaration phase (`step_declaration`).
+//! - `application` — application phase dispatcher (`step_app`); routes to the
+//!   per-target-shape handlers in `paths` (multi-target, bounce, self, single).
+//! - `timeline_exec` — execution path for compiled-timeline skills
+//!   (`run_timeline_backed_action`).
 
 mod application;
 mod declaration;
+mod paths;
 mod timeline_exec;
 
 pub(crate) use application::step_app;

@@ -192,7 +192,7 @@ fn cast(app: &mut App, intent: ActionIntent, history: &mut Vec<i32>) {
 }
 
 #[test]
-fn s_m008_s05_sp_economy_20_turn_regression() {
+fn sp_economy_20_turn_regression() {
     let mut app = build_app();
     let ally = app
         .world_mut()

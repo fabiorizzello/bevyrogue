@@ -176,9 +176,6 @@ pub fn status_amp_pct(bag: &StatusBag, tag: DamageTag) -> i32 {
     }
 }
 
-/// Backward-compat shim. Single-instance Component superseded by `StatusBag + StatusInstance`.
-/// Remove after T02 migrates all call sites.
-#[allow(deprecated)]
 #[cfg(test)]
 mod tests {
     use super::*;

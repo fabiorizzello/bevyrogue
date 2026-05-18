@@ -30,7 +30,7 @@ fn sync_events(app: &App, collected: &mut Vec<LogEntry>) {
 }
 
 #[test]
-fn s12_revive_semantics() {
+fn revive_semantics() {
     let mut app = App::new();
     app.init_resource::<CombatState>()
         .init_resource::<bevyrogue::combat::turn_order::TurnOrder>()

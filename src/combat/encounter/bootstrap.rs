@@ -15,7 +15,6 @@ use crate::combat::round_flags::RoundFlags;
 use crate::combat::speed::{Speed, SpeedModifier};
 use crate::combat::status_effect::StatusBag;
 use crate::combat::toughness::{Toughness, ToughnessCategory};
-use crate::combat::turn_order::TurnOrder;
 use crate::combat::ultimate::{UltAccumulationTrigger, UltimateCharge};
 use crate::combat::unit::{BasicStreak, Commander, SlotIndex, Unit};
 
@@ -198,20 +197,26 @@ pub fn spawn_unit_from_def(commands: &mut Commands, def: &UnitDef) -> Entity {
     entity.id()
 }
 
+/// Returns the spawned unit ids in turn-seed order (allies then enemies).
 pub fn apply_composition(
     commands: &mut Commands,
     composition: &EncounterComposition,
-    _order: &mut TurnOrder, // TurnOrder is now managed by AV system
-) {
+) -> Vec<UnitId> {
+    let mut seeded = Vec::with_capacity(composition.allies.len() + composition.enemies.len());
+
     for (idx, def) in composition.allies.iter().enumerate() {
         let entity = spawn_unit_from_def(commands, def);
         commands.entity(entity).insert(SlotIndex(idx as u8));
+        seeded.push(def.id);
     }
 
     for (idx, def) in composition.enemies.iter().enumerate() {
         let entity = spawn_unit_from_def(commands, def);
         commands.entity(entity).insert(SlotIndex(idx as u8));
+        seeded.push(def.id);
     }
+
+    seeded
 }
 
 pub fn taichi_def() -> UnitDef {

@@ -102,9 +102,6 @@ fn enemy_uses_ultimate_when_charge_ready() {
         enemy_skills(),
     ));
 
-    app.world_mut()
-        .resource_mut::<TurnOrder>()
-        .seed([UnitId(101)]);
     let mut intent_cursor = message_cursor::<ActionIntent>(&mut app);
 
     app.world_mut().write_message(TurnAdvanced::of(UnitId(101)));
@@ -154,9 +151,6 @@ fn enemy_uses_skill_when_ult_not_ready() {
         enemy_skills(),
     ));
 
-    app.world_mut()
-        .resource_mut::<TurnOrder>()
-        .seed([UnitId(101)]);
     let mut intent_cursor = message_cursor::<ActionIntent>(&mut app);
 
     app.world_mut().write_message(TurnAdvanced::of(UnitId(101)));
@@ -223,9 +217,6 @@ fn enemy_targets_lowest_toughness_ratio() {
         enemy_skills(),
     ));
 
-    app.world_mut()
-        .resource_mut::<TurnOrder>()
-        .seed([UnitId(101)]);
     let mut intent_cursor = message_cursor::<ActionIntent>(&mut app);
 
     app.world_mut().write_message(TurnAdvanced::of(UnitId(101)));
