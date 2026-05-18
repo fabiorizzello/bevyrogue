@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-05-18T16:36:59Z | Files: 451 | Described: 0/451
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-18T16:36:59Z","fingerprint":"910c480a0503ed1acbd1b58ace1bbc0be55c0c51","fileCount":451,"truncated":false} -->
+Generated: 2026-05-18T16:46:21Z | Files: 451 | Described: 0/451
+<!-- gsd:codebase-meta {"generatedAt":"2026-05-18T16:46:21Z","fingerprint":"b2fa706e14ea7376cb29e82362560bf02f390fa7","fileCount":451,"truncated":false} -->
 
 ### (root)/
 - `.claudeignore`
@@ -127,7 +127,7 @@ Generated: 2026-05-18T16:36:59Z | Files: 451 | Described: 0/451
 ### docs/
 - `docs/agent-testing.md`
 - `docs/combat_current.md`
-- `docs/promptcheck.md`
+- `docs/refactor-validation-prompt.md`
 - `docs/setup.md`
 
 ### docs/future_design_draft/
