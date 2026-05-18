@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-05-18T14:00:33Z | Files: 396 | Described: 0/396
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-18T14:00:33Z","fingerprint":"55e301d6a6235f0a2b21eeca0274d487a1ff531d","fileCount":396,"truncated":false} -->
+Generated: 2026-05-18T14:07:20Z | Files: 446 | Described: 0/446
+<!-- gsd:codebase-meta {"generatedAt":"2026-05-18T14:07:20Z","fingerprint":"229826f8e5d1c71348beb7bd06e02d19acbc3512","fileCount":446,"truncated":false} -->
 
 ### (root)/
 - `.claudeignore`
@@ -189,6 +189,16 @@ Generated: 2026-05-18T14:00:33Z | Files: 396 | Described: 0/396
 ### src/bin/
 - `src/bin/combat_cli.rs`
 
+### src/bin/combat_cli/
+- `src/bin/combat_cli/assets.rs`
+- `src/bin/combat_cli/bootstrap.rs`
+- `src/bin/combat_cli/config.rs`
+- `src/bin/combat_cli/dashboard.rs`
+- `src/bin/combat_cli/menu.rs`
+- `src/bin/combat_cli/player.rs`
+- `src/bin/combat_cli/proof.rs`
+- `src/bin/combat_cli/scenarios.rs`
+
 ### src/combat/
 - `src/combat/bevy_types.rs`
 - `src/combat/kit.rs`
@@ -206,7 +216,11 @@ Generated: 2026-05-18T14:00:33Z | Files: 396 | Described: 0/396
 - `src/combat/action_query/types.rs`
 
 ### src/combat/action_query/legality/
+- `src/combat/action_query/legality/action.rs`
 - `src/combat/action_query/legality/mod.rs`
+- `src/combat/action_query/legality/resources.rs`
+- `src/combat/action_query/legality/shared.rs`
+- `src/combat/action_query/legality/targeting.rs`
 
 ### src/combat/blueprints/
 - `src/combat/blueprints/mod.rs`
@@ -217,6 +231,7 @@ Generated: 2026-05-18T14:00:33Z | Files: 396 | Described: 0/396
 
 ### src/combat/blueprints/dorumon/
 - `src/combat/blueprints/dorumon/hooks.rs`
+- `src/combat/blueprints/dorumon/identity_apply.rs`
 - `src/combat/blueprints/dorumon/identity.rs`
 - `src/combat/blueprints/dorumon/mod.rs`
 - `src/combat/blueprints/dorumon/signals.rs`
@@ -229,6 +244,17 @@ Generated: 2026-05-18T14:00:33Z | Files: 396 | Described: 0/396
 - `src/combat/blueprints/patamon/identity.rs`
 - `src/combat/blueprints/patamon/mod.rs`
 - `src/combat/blueprints/patamon/signals.rs`
+
+### src/combat/blueprints/renamon/
+- `src/combat/blueprints/renamon/apply.rs`
+- `src/combat/blueprints/renamon/identity.rs`
+- `src/combat/blueprints/renamon/mod.rs`
+- `src/combat/blueprints/renamon/passive.rs`
+
+### src/combat/blueprints/tentomon/
+- `src/combat/blueprints/tentomon/apply.rs`
+- `src/combat/blueprints/tentomon/identity.rs`
+- `src/combat/blueprints/tentomon/mod.rs`
 
 ### src/combat/blueprints/twin_core/
 - `src/combat/blueprints/twin_core/mod.rs`
@@ -256,8 +282,10 @@ Generated: 2026-05-18T14:00:33Z | Files: 396 | Described: 0/396
 - `src/combat/mechanics/toughness.rs`
 - `src/combat/mechanics/ultimate.rs`
 
-### src/combat/mechanics/damage/
-- `src/combat/mechanics/damage/tests.rs`
+### src/combat/mechanics/damage/tests/
+- `src/combat/mechanics/damage/tests/edge.rs`
+- `src/combat/mechanics/damage/tests/matrix.rs`
+- `src/combat/mechanics/damage/tests/mod.rs`
 
 ### src/combat/mechanics/follow_up/
 - `src/combat/mechanics/follow_up/form_identity.rs`
@@ -279,8 +307,14 @@ Generated: 2026-05-18T14:00:33Z | Files: 396 | Described: 0/396
 - `src/combat/resolution/apply.rs`
 - `src/combat/resolution/mod.rs`
 - `src/combat/resolution/skill_extract.rs`
-- `src/combat/resolution/tests.rs`
 - `src/combat/resolution/types.rs`
+
+### src/combat/resolution/tests/
+- `src/combat/resolution/tests/bounce.rs`
+- `src/combat/resolution/tests/mod.rs`
+- `src/combat/resolution/tests/resolve_apply.rs`
+- `src/combat/resolution/tests/streak.rs`
+- `src/combat/resolution/tests/targets.rs`
 
 ### src/combat/runtime/
 - `src/combat/runtime/blueprint_state.rs`
@@ -303,7 +337,11 @@ Generated: 2026-05-18T14:00:33Z | Files: 396 | Described: 0/396
 - `src/combat/runtime/applier/mod.rs`
 
 ### src/combat/runtime/applier/effects/
+- `src/combat/runtime/applier/effects/blueprint.rs`
+- `src/combat/runtime/applier/effects/damage.rs`
 - `src/combat/runtime/applier/effects/mod.rs`
+- `src/combat/runtime/applier/effects/status.rs`
+- `src/combat/runtime/applier/effects/turn.rs`
 
 ### src/combat/runtime/builtins/
 - `src/combat/runtime/builtins/tests.rs`
@@ -331,6 +369,21 @@ Generated: 2026-05-18T14:00:33Z | Files: 396 | Described: 0/396
 - `src/combat/turn_system/pipeline/mod.rs`
 - `src/combat/turn_system/pipeline/timeline_exec.rs`
 
+### src/combat/turn_system/pipeline/paths/
+- `src/combat/turn_system/pipeline/paths/mod.rs`
+- `src/combat/turn_system/pipeline/paths/self_target.rs`
+- `src/combat/turn_system/pipeline/paths/single_target.rs`
+
+### src/combat/turn_system/pipeline/paths/bounce/
+- `src/combat/turn_system/pipeline/paths/bounce/finalize.rs`
+- `src/combat/turn_system/pipeline/paths/bounce/hops.rs`
+- `src/combat/turn_system/pipeline/paths/bounce/mod.rs`
+
+### src/combat/turn_system/pipeline/paths/multi_target/
+- `src/combat/turn_system/pipeline/paths/multi_target/finalize.rs`
+- `src/combat/turn_system/pipeline/paths/multi_target/loops.rs`
+- `src/combat/turn_system/pipeline/paths/multi_target/mod.rs`
+
 ### src/data/
 - `src/data/mod.rs`
 - `src/data/party_ron.rs`
@@ -339,19 +392,33 @@ Generated: 2026-05-18T14:00:33Z | Files: 396 | Described: 0/396
 - `src/data/units_ron.rs`
 
 ### src/data/skills_ron/
-- `src/data/skills_ron/tests.rs`
+- `src/data/skills_ron/types.rs`
+- `src/data/skills_ron/validation.rs`
 
-### src/data/units_ron/
-- `src/data/units_ron/tests.rs`
+### src/data/skills_ron/tests/
+- `src/data/skills_ron/tests/bounce.rs`
+- `src/data/skills_ron/tests/mod.rs`
+- `src/data/skills_ron/tests/roundtrip.rs`
+- `src/data/skills_ron/tests/validation.rs`
+
+### src/data/units_ron/tests/
+- `src/data/units_ron/tests/canonical.rs`
+- `src/data/units_ron/tests/mod.rs`
+- `src/data/units_ron/tests/roundtrip.rs`
 
 ### src/ui/
 - `src/ui/mod.rs`
 
 ### src/ui/combat_panel/
+- `src/ui/combat_panel/display.rs`
+- `src/ui/combat_panel/labels.rs`
 - `src/ui/combat_panel/mod.rs`
+- `src/ui/combat_panel/preview_cache.rs`
+- `src/ui/combat_panel/render.rs`
+- `src/ui/combat_panel/widgets.rs`
 
 ### tests/
-- *(99 files: 98 .rs, 1 .md)*
+- *(98 files: 97 .rs, 1 .md)*
 
 ### tests/common/
 - `tests/common/mod.rs`
