@@ -4,9 +4,11 @@ use bevyrogue::animation::{
     AnimEdge, AnimGraph, AnimNode, AnimationValidationCatalogs, AnimationValidationCheck,
     AnimationValidationDiagnostic, AnimationValidationReason, Clip, ClipId, ClipMeta, ClipRange,
     Command, FrameRange, FrameSize, KernelEventFilter, NodeId, ParamKey, ParamRef, ParticleId,
-    Predicate, StatusId, TargetShape, TransitionTarget, VfxLocus, VfxMotion,
+    Predicate, SkillIdRef, StatusId, TargetShape, TransitionTarget, VfxLocus, VfxMotion,
     validate_anim_graph,
 };
+use bevyrogue::data::aggregate_skill_book;
+use bevyrogue::data::skills_ron::Effect;
 
 fn mini_clip() -> Clip {
     Clip {
@@ -90,6 +92,67 @@ fn valid_graph() -> AnimGraph {
                 priority: None,
             },
         ],
+    }
+}
+
+fn load_agumon_anim_graph() -> AnimGraph {
+    ron::from_str(include_str!("../assets/digimon/agumon/anim_graph.ron"))
+        .expect("agumon anim_graph.ron should deserialize")
+}
+
+fn load_agumon_clip() -> Clip {
+    ron::from_str(include_str!("../assets/digimon/agumon/clip.ron"))
+        .expect("agumon clip.ron should deserialize")
+}
+
+fn project_status_vocabulary() -> BTreeSet<StatusId> {
+    [
+        "Heated",
+        "Chilled",
+        "Paralyzed",
+        "Slowed",
+        "Blessed",
+        "Burn",
+        "Shock",
+    ]
+    .into_iter()
+    .map(|status| StatusId(status.into()))
+    .collect()
+}
+
+fn status_id_from_effect(effect: &Effect) -> Option<StatusId> {
+    match effect {
+        Effect::ApplyStatus { kind, .. } => Some(StatusId(format!("{kind:?}"))),
+        _ => None,
+    }
+}
+
+fn adapter_catalogs_from_project_data() -> AnimationValidationCatalogs {
+    let skill_book = aggregate_skill_book();
+    let skills = skill_book
+        .0
+        .iter()
+        .map(|skill| SkillIdRef(skill.id.0.clone()))
+        .collect();
+    let particles = skill_book
+        .0
+        .iter()
+        .map(|skill| ParticleId(skill.id.0.clone()))
+        .collect();
+    let mut statuses = project_status_vocabulary();
+    statuses.extend(
+        skill_book
+            .0
+            .iter()
+            .flat_map(|skill| skill.legacy_ops.iter())
+            .filter_map(status_id_from_effect),
+    );
+
+    AnimationValidationCatalogs {
+        params: BTreeSet::new(),
+        statuses,
+        particles,
+        skills,
     }
 }
 
@@ -253,4 +316,79 @@ fn unknown_catalog_and_graph_refs_are_reported_with_context() {
     assert_eq!(command_diag.context.node_id, Some(NodeId("impact".into())));
     assert_eq!(command_diag.context.command_index, Some(0));
     assert_eq!(command_diag.context.command_field.as_deref(), Some("hits"));
+}
+
+#[test]
+fn real_agumon_graph_passes_via_project_data_adapter_catalogs() {
+    let graph = load_agumon_anim_graph();
+    let clip = load_agumon_clip();
+    let catalogs = adapter_catalogs_from_project_data();
+
+    assert!(catalogs.particles.contains(&ParticleId("baby_flame".into())));
+    assert!(catalogs.statuses.contains(&StatusId("Heated".into())));
+    assert!(catalogs.skills.contains(&SkillIdRef("baby_flame".into())));
+
+    let report = validate_anim_graph(&graph, &clip, &catalogs);
+
+    assert!(report.is_valid(), "unexpected diagnostics: {report:#?}");
+    assert!(report.diagnostics.is_empty());
+}
+
+#[test]
+fn missing_adapter_particle_catalog_value_returns_typed_diagnostic() {
+    let graph = load_agumon_anim_graph();
+    let clip = load_agumon_clip();
+    let mut catalogs = adapter_catalogs_from_project_data();
+    catalogs.particles.remove(&ParticleId("baby_flame".into()));
+
+    let report = validate_anim_graph(&graph, &clip, &catalogs);
+
+    assert!(!report.is_valid());
+    let diag = report
+        .diagnostics
+        .iter()
+        .find(|diag| {
+            diag.check == AnimationValidationCheck::CommandParticle
+                && diag.reason == AnimationValidationReason::UnknownParticleReference
+        })
+        .expect("missing particle diagnostic");
+
+    assert_eq!(diag.context.node_id, Some(NodeId("baby_flame_cast".into())));
+    assert_eq!(diag.context.command_index, Some(0));
+    assert_eq!(diag.context.command_field.as_deref(), Some("name"));
+    assert!(diag.detail.contains("baby_flame"));
+}
+
+#[test]
+fn missing_adapter_status_catalog_value_returns_typed_diagnostic() {
+    let graph = load_agumon_anim_graph();
+    let clip = load_agumon_clip();
+    let mut catalogs = adapter_catalogs_from_project_data();
+    catalogs.statuses.remove(&StatusId("Heated".into()));
+
+    let report = validate_anim_graph(&graph, &clip, &catalogs);
+
+    assert!(!report.is_valid());
+    let diag = report
+        .diagnostics
+        .iter()
+        .find(|diag| {
+            diag.check == AnimationValidationCheck::CommandStatus
+                && diag.reason == AnimationValidationReason::UnknownStatusReference
+        })
+        .expect("missing status diagnostic");
+
+    assert_eq!(diag.context.node_id, Some(NodeId("baby_flame_impact".into())));
+    assert_eq!(diag.context.command_index, Some(0));
+    assert_eq!(diag.context.command_field.as_deref(), Some("status"));
+    assert!(diag.detail.contains("Heated"));
+}
+
+#[test]
+fn validation_module_stays_decoupled_from_project_data_and_digimon_assets() {
+    let validation_source = include_str!("../src/animation/validation.rs");
+
+    assert!(!validation_source.contains("crate::data"));
+    assert!(!validation_source.contains("crate::combat"));
+    assert!(!validation_source.contains("digimon"));
 }
