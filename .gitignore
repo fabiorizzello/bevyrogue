@@ -33,6 +33,7 @@ tmp/
 # Shared artifacts (tracked): PROJECT.md, REQUIREMENTS.md, DECISIONS.md,
 # KNOWLEDGE.md, CONTEXT.md, OVERRIDES.md, PREFERENCES.md, CODEBASE.md,
 # milestones/**
+.gsd/CODEBASE.md
 .gsd/exec
 .gsd/auto.lock
 .gsd/completed-units*.json
