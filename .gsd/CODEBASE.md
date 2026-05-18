@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-05-18T16:46:21Z | Files: 451 | Described: 0/451
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-18T16:46:21Z","fingerprint":"b2fa706e14ea7376cb29e82362560bf02f390fa7","fileCount":451,"truncated":false} -->
+Generated: 2026-05-18T17:20:55Z | Files: 451 | Described: 0/451
+<!-- gsd:codebase-meta {"generatedAt":"2026-05-18T17:20:55Z","fingerprint":"b2fa706e14ea7376cb29e82362560bf02f390fa7","fileCount":451,"truncated":false} -->
 
 ### (root)/
 - `.claudeignore`

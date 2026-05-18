@@ -1,75 +1,30 @@
-# INTEGRATIONS
+# External Integrations
 
-## Runtime integrations observed
+This document summarizes the external systems and data sources the `bevyrogue` codebase interacts with.
 
-## Third-party APIs and services
+## Data Assets
 
-- **None observed in the game runtime.**
-  - The Rust codebase does not show HTTP clients, SaaS SDKs, or remote API integrations in `Cargo.toml`.
+- **Local File System**: 
+  - All game content (Digimon units, skills, party configurations) is stored as [RON](https://github.com/ron-rs/ron) files in the `assets/data/` directory.
+  - Assets are loaded asynchronously using Bevy's `AssetServer`, with custom merging logic to aggregate partial definitions (e.g., merging unit definitions from multiple subdirectories).
 
-## Databases
+## User Interfaces
 
-- **None observed.**
-  - No database crates, migrations, or connection configuration were found.
+- **CLI (Terminal)**: 
+  - The `combat_cli` binary uses standard input/output for interaction.
+  - Integrated with the `inquire` library for interactive party selection and encounter setup.
+- **Windowed GUI**:
+  - Optional integration with `winit` and `wgpu` via the `windowed` feature.
+  - Uses `egui` for debugging and visual inspection overlays.
 
-## Authentication providers
+## Observability
 
-- **None observed.**
-  - No auth/OAuth/session provider integration is present.
+- **JSONL Logging**:
+  - Combat events can be captured and written as JSONL (JSON Lines) files for post-mortem analysis and validation.
+- **Tracing**:
+  - Integrated with the `tracing` ecosystem for structured logging to the terminal or diagnostic files.
 
-## Infrastructure and deployment
+## Infrastructure
 
-- **Local filesystem assets**
-  - Bevy loads gameplay data from `assets/data/*.ron`
-  - Windowed and headless modes both rely on Bevy `AssetServer`
-- **Local development toolchain**
-  - Rust nightly + Cargo
-  - Linux linker/toolchain tuning in `.cargo/config.toml`
-- **No deployment platform configuration observed**
-  - No Dockerfile, Vercel, Fly, Render, Netlify, Terraform, or Kubernetes manifests were visible in the scanned top-level tree.
-
-## UI / platform integrations
-
-- **Bevy windowed mode**
-  - Optional desktop UI via `bevy_egui`
-  - Enabled only through the `windowed` feature
-- **Terminal CLI integration**
-  - `src/bin/combat_cli.rs` uses `inquire` for interactive terminal menus
-
-## Data and content integrations
-
-- **RON asset integration**
-  - `src/data/mod.rs` wires `bevy_common_assets::ron::RonAssetPlugin` for:
-    - `UnitRoster`
-    - `SkillBook`
-    - `PartyConfig`
-- **Sprite pipeline integration**
-  - `tools/sprite_pipeline/` integrates local Python scripts, Blender assets, palettes, and model files to generate sprite atlases consumed from `assets/digimon/`
-
-## Observability and file-based outputs
-
-- **JSONL logging**
-  - `src/combat/jsonl_logger.rs` is referenced by the headless runtime and CLI
-  - Logging is env-gated via `BEVYROGUE_JSONL` per code comments and docs
-- **Schedule graph dumping**
-  - `examples/dump_schedule.rs` + `bevy_mod_debugdump` support schedule output into `.gsd/schedules/` per `Cargo.toml` comments
-
-## Development-environment integrations
-
-- **MCP / GSD workflow config**
-  - `.mcp.json` defines a local `gsd-workflow` MCP server for project workflow tooling
-  - This appears to be a development/agent integration, not an in-game runtime dependency
-
-## External native/tool dependencies documented
-
-From `docs/setup.md`, local builds may depend on:
-
-- `mold`
-- `pkg-config`
-- `libasound2-dev`
-- `libudev-dev`
-- `libwayland-dev`
-- `libxkbcommon-dev`
-- **Blender 5.x** for sprite generation
-- **Pillow** for Python image-processing scripts
-- **ImageMagick** as an optional helper for the sprite pipeline
+- **Headless-First Design**:
+  - The architecture is designed to run in CI/CD environments without a GPU or display, facilitating automated integration testing and simulation.

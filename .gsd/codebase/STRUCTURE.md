@@ -1,142 +1,45 @@
-# STRUCTURE
+# Directory Structure
 
-## Top-level layout
+This document outlines the organization of the `bevyrogue` codebase.
 
-```text
-.
-├── src/                  Rust application/library code
-├── tests/                Rust integration tests
-├── assets/               Runtime data assets and sprite atlases
-├── docs/                 Project documentation
-├── examples/             Example/dev utilities
-├── tools/                Ancillary tooling (notably sprite pipeline)
-├── .cargo/               Cargo config and aliases
-├── .gsd/                 GSD workflow/project metadata
-├── Cargo.toml            Rust package manifest
-├── Cargo.lock            Cargo lockfile
-├── rust-toolchain.toml   Pinned Rust toolchain
-├── CLAUDE.md             Repo-specific agent onboarding
-└── .mcp.json             Local MCP server config
-```
+## Top-Level Layout
 
-## Source code organization
+| Directory | Purpose |
+|---|---|
+| `assets/` | Game data (RON) and visual assets (atlases, sprites). |
+| `docs/` | Project documentation and design drafts. |
+| `examples/` | Standalone scripts (e.g., schedule graph generation). |
+| `src/` | Primary source code. |
+| `tests/` | Integration test suite. |
+| `tools/` | Utility scripts and automation. |
+| `.gsd/` | GSD metadata, decisions, and codebase scans. |
 
-## `src/`
+## Source Code Organization (`src/`)
 
-- `lib.rs` — public module exports
-- `main.rs` — primary app entrypoint
-- `headless.rs` — default headless app wiring
-- `windowed.rs` — optional egui/windowed wiring
-- `party_validation.rs` — party config validation logic
-- `bin/combat_cli.rs` — separate CLI harness binary
+- `main.rs`: Entry point for the game application.
+- `lib.rs`: Library root, exposing public modules.
+- `combat/`: The core gameplay logic.
+  - `blueprints/`: Content-specific logic (per-Digimon/Enemy).
+  - `kernel/`: Low-level combat primitives (Strain, Flow, Fatigue).
+  - `runtime/`: Execution engine for skills and intents.
+  - `turn_system/`: Turn order, AV gauge, and speed logic.
+  - `mechanics/`: Specific combat rules (Damage, Status Effects, Toughness).
+  - `observability/`: Logging, events, and validation snapshots.
+- `data/`: Asset loading, validation, and data merging logic.
+- `ui/`: UI components and rendering (gated behind the `windowed` feature).
+- `bin/`: Additional executables.
+  - `combat_cli.rs`: The CLI developer harness for combat simulation.
 
-## `src/combat/`
+## Asset Organization (`assets/`)
 
-Primary gameplay package. Key subareas:
+- `assets/data/`:
+  - `digimon/`: Skill and unit definitions for player-controlled units.
+  - `enemies/`: Definitions for enemy units.
+  - `party.ron`: Default starting party configuration.
+- `assets/digimon/`: Sprite sheets and texture atlases.
 
-- `api/` — framework/runtime extension points, registries, intent/signal/timeline infrastructure
-- `blueprints/` — per-identity combat behavior modules
-- `turn_system/` — turn-pipeline implementation split across files
-- flat modules for mechanics and state such as:
-  - `state.rs`
-  - `turn_order.rs`
-  - `resolution.rs`
-  - `damage.rs`
-  - `toughness.rs`
-  - `status_effect.rs`
-  - `events.rs`
-  - `observability.rs`
-  - `plugin.rs`
+## Test Organization (`tests/`)
 
-## `src/data/`
-
-Typed asset schemas and load-time compilation:
-
-- `mod.rs` — data plugin / asset loading orchestration
-- `party_ron.rs` — party config schema
-- `skills_ron.rs` — skill schema and validation
-- `skill_timeline.rs` — timeline compilation logic
-- `units_ron.rs` — roster/unit schema
-
-## `src/ui/`
-
-- `mod.rs`
-- `combat_panel.rs`
-
-This module is only relevant in `windowed` builds.
-
-## Test organization
-
-## `tests/`
-
-- Large integration-test suite with one file per behavior/capability
-- Naming is functional rather than milestone-based, per `CLAUDE.md` and `tests/README.md`
-- `tests/common/mod.rs` provides shared helpers/fixtures
-
-Examples of test groupings present:
-
-- roster/bootstrap validation
-- action/turn pipeline behavior
-- status effects and follow-ups
-- blueprint runtime proofs
-- scenario balance/TTK checks
-- boundary and observability contracts
-
-## Asset organization
-
-## `assets/data/`
-
-Canonical gameplay content:
-
-- `units.ron`
-- `skills.ron`
-- `party.ron`
-
-## `assets/digimon/`
-
-Generated/consumed sprite atlases:
-
-- `*_atlas.png`
-- `*_atlas.json`
-
-## Tooling organization
-
-## `tools/sprite_pipeline/`
-
-Contains a separate local asset-production toolchain:
-
-- `scripts/` — Python and shell scripts
-- `configs/` — per-character pipeline configs
-- `palettes/` — palette files
-- `plugins/` — Blender plugin assets
-- `raw_models/` — source 3D models
-- `references/` — visual references
-- `standards/` — per-character standards/scoring docs
-- `output/` — generated pipeline output
-
-## Documentation locations
-
-- `CLAUDE.md` — working conventions for coding agents
-- `docs/combat_current.md` — current combat architecture entrypoint
-- `docs/setup.md` — environment and tooling setup
-- `docs/research/`, `docs/future_design_draft/` — longer-form supporting docs
-- `doc/` and `target/doc/` — generated Rust documentation artifacts
-
-## Configuration file locations
-
-- `Cargo.toml` — package/dependency/features/profiles
-- `Cargo.lock` — locked dependency versions
-- `rust-toolchain.toml` — pinned nightly toolchain + component
-- `.cargo/config.toml` — env, linker, rustflags, unstable flags, Cargo aliases
-- `.mcp.json` — local MCP server wiring
-- `.claude/` — agent-related local configuration
-- `.gsd/` — project workflow state and generated planning artifacts
-
-## Library vs binary structure
-
-This repository is organized as:
-
-- **one primary library crate surface** (`src/lib.rs`)
-- **one main binary** (`src/main.rs`)
-- **one additional binary** (`src/bin/combat_cli.rs`)
-- **one example** (`examples/dump_schedule.rs`)
+- Functional integration tests are located in `tests/`.
+- Naming convention: functional names (e.g., `twin_core_integration.rs`) rather than milestone-based IDs.
+- Unit tests are typically inline within `src/` modules gated by `#[cfg(test)]`.

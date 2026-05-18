@@ -1,7 +1,8 @@
 # Milestone Portfolio — M022 → M029
 
-**Status:** foundation kernel chiuso. Prossimo da pianificare: **M022**.
+**Status:** foundation kernel chiuso. **M022 pianificato** (CONTEXT + ROADMAP, 4 slice). Prossimo da pianificare: **M023**.
 **Ultimo update:** 2026-05-18.
+**Nota canon:** lo scope M022 sotto usa il label "animation_fsm.ron" — il nome normativo è `clipmontage.ron` (§2.2b), vedi `M022-CONTEXT` decisione di naming.
 **Scopo:** allineare il codice (`src/combat/`, `src/data/`, `src/ui/`) al canon design `docs/future_design_draft/` (round-3). Visual tracer end-to-end Agumon entro M023 — niente "headless first, visual last".
 
 **Vincoli generali:**
