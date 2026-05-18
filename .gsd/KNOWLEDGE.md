@@ -1,12 +1,28 @@
 # Project Knowledge
 
-Append-only register of project-specific rules, patterns, and lessons learned.
-Agents read this before every unit. Add entries when you discover something worth remembering.
+Append-only register. Agents read this before every unit.
+
+## Onboarding
+
+```bash
+cargo check                   # headless (default)
+cargo test                    # integration suite (tests/)
+cargo run                     # headless run
+cargo run --features windowed # egui UI
+```
+
+Toolchain: `rust-toolchain.toml`. Dev profile: cranelift (`Cargo.toml`).
+Test workflow (nextest `agent` profile, seeded `bevy_rand`, insta snapshots): `docs/agent-testing.md`.
 ## Rules
 
-| # | Scope | Rule | Why | Added |
-|---|-------|------|-----|-------|
-| R001 | Passive runtime bootstrap | Canonical passive listeners for each Digimon are bootstrapped from `CombatPlugin` after core resources are initialized, using fixed canonical `UnitId` owners and shared `kernel/ult_used` passive triggers with per-blueprint guard keys. | This avoids per-test scaffolding and keeps passive wiring declarative at plugin boot. | 2026-05-17 |
+| # | Scope | Rule | Added |
+|---|-------|------|-------|
+| R001 | Passive bootstrap | Per-Digimon passive listeners bootstrapped from `CombatPlugin` post core-init: fixed canonical `UnitId` owners, shared `kernel/ult_used` triggers, per-blueprint guard keys. Declarative, no per-test scaffolding. | 2026-05-17 |
+| R002 | Headless-first | Every system runs without `windowed`. Gate egui/winit only via `#[cfg(feature = "windowed")]`. | 2026-05-18 |
+| R003 | Test layout | Integration tests in `tests/`, functional names (`follow_up_triggers.rs`, not `s10_…`). No `src/` unit tests except short `#[cfg(test)] mod tests`. | 2026-05-18 |
+| R004 | Determinism | No wall-clock, no unseeded RNG. Seeded `bevy_rand` + insta depend on it. | 2026-05-18 |
+| R005 | Dep gating | No winit/wgpu/egui deps outside `windowed`. | 2026-05-18 |
+| R006 | Repo hygiene | No `.md` in repo root — use `docs/` or `.gsd/`. | 2026-05-18 |
 
 ## Patterns
 

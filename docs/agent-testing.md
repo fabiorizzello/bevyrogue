@@ -2,79 +2,66 @@
 
 ## Snapshot tests (`insta`)
 
-Snapshot files are committed text artifacts under `tests/snapshots/`. Each `.snap` file records the expected observable output for a regression test. Read the `source` and `expression` metadata first, then inspect the body after the `---` separator; that body is the contract the test compares against.
-
-Run the normal suite with snapshots checked:
+`.snap` files under `tests/snapshots/` are committed contracts. Read the `source`/`expression` metadata, then the body after `---` — that body is what the test compares against.
 
 ```bash
-cargo test
+cargo test                                                    # run with snapshots checked
+INSTA_UPDATE=always cargo test --test follow_up_triggers agumon_break_follow_up_uses_real_pilot_config   # regenerate on intentional change
+diff -u tests/snapshots/<name>.snap tests/snapshots/<name>.snap.new   # review pending
+mv  tests/snapshots/<name>.snap.new tests/snapshots/<name>.snap       # accept
+rm  tests/snapshots/<name>.snap.new                                   # reject
 ```
 
-Regenerate snapshots non-interactively when an intentional behavior change updates the contract:
+A `.snap` diff is a product diff. Never auto-accept: verify every changed line is intended behavior, not drift in logging, ordering, targeting, damage, or follow-up scheduling.
+
+## Machine-readable output (`cargo-nextest`)
+
+Config: `.config/nextest.toml`. The `agent` profile sets `fail-fast = false` — one panic = one failed case, the rest still run. Each case runs as an isolated process.
 
 ```bash
-INSTA_UPDATE=always cargo test --test follow_up_triggers agumon_break_follow_up_uses_real_pilot_config
-```
+cargo install cargo-nextest --locked            # if missing (install outside the project)
 
-Review pending snapshots without interactive tooling:
-
-```bash
-# Compare generated pending output against the committed contract.
-diff -u tests/snapshots/<name>.snap tests/snapshots/<name>.snap.new
-
-# Accept after review by replacing the committed snapshot.
-mv tests/snapshots/<name>.snap.new tests/snapshots/<name>.snap
-
-# Reject by deleting the pending snapshot.
-rm tests/snapshots/<name>.snap.new
-```
-
-Do not accept a snapshot just because the test changed. The `.snap` diff is a product diff: verify that every changed line is an intended behavior change, not a drift in logging, ordering, targeting, damage, or follow-up scheduling.
-
-## Machine-readable test output (`cargo-nextest`)
-
-The repository keeps nextest configuration in `.config/nextest.toml`. The `agent` profile sets `fail-fast = false`, so a panic in one test is reported as one failed case while the remaining discovered tests still run.
-
-Install the runner outside the project if the command is missing:
-
-```bash
-cargo install cargo-nextest --locked
-```
-
-Produce newline-delimited libtest-style JSON for an agent parser:
-
-```bash
 mkdir -p target/nextest/agent
 NEXTEST_EXPERIMENTAL_LIBTEST_JSON=1 \
   cargo nextest run --profile agent --message-format libtest-json-plus \
-  > target/nextest/agent/libtest-json-plus.ndjson
+  > target/nextest/agent/libtest-json-plus.ndjson   # newline-delimited JSON
+
+cargo nextest run --profile agent               # JUnit XML → target/nextest/agent/junit.xml
 ```
 
-Produce JUnit XML using the committed profile:
-
-```bash
-cargo nextest run --profile agent
-# writes target/nextest/agent/junit.xml
-```
-
-Nextest runs each test case as an isolated process by default. Keep `fail-fast = false` in the agent profile: parsers should see all pass/fail/ignored outcomes from the run, not just the first panic.
+Keep `fail-fast = false`: parsers must see all outcomes, not just the first panic.
 
 ## Structured headless tracing
 
-Headless entry points use Bevy's `LogPlugin`, but route its formatter through `BEVYROGUE_TRACE_FORMAT` for agent-readable output. This avoids installing a second global tracing subscriber, which would fail after Bevy's logger is initialized.
-
-Emit JSON logs with span metadata:
+Headless entry points route Bevy's `LogPlugin` formatter through `BEVYROGUE_TRACE_FORMAT` (avoids a second global subscriber, which fails after Bevy's logger inits).
 
 ```bash
 BEVYROGUE_TRACE_FORMAT=json cargo run --quiet --bin bevyrogue 2> target/headless-trace.jsonl
 ```
 
-The JSON formatter includes current span data and explicit span enter/close events. Combat spans currently cover:
+JSON output carries span data + explicit enter/close. Combat spans:
 
-- `combat.resolution` — root action resolution and legality checks.
-- `combat.apply` — legacy `step_app` application paths.
-- `combat.apply.intent_queue` — timeline-backed intent queue application.
-- `combat.follow_up.evaluate` — follow-up trigger evaluation per combat event.
-- `combat.follow_up.resolve` — scheduled follow-up action resolution.
+- `combat.resolution` — root action resolution and legality.
+- `combat.apply` — legacy `step_app` paths.
+- `combat.apply.intent_queue` — timeline-backed intent queue.
+- `combat.follow_up.evaluate` — follow-up trigger evaluation per event.
+- `combat.follow_up.resolve` — scheduled follow-up resolution.
 
-The span instrumentation is compiled only for debug builds (`debug_assertions`) so release builds do not pay runtime overhead for agent diagnostics.
+Spans compile only under `debug_assertions`; release pays no overhead.
+
+## Deterministic RNG (`bevy_rand`)
+
+No unseeded RNG in the game path. `CombatRng` wraps `bevy_rand`'s `WyRand` (`CombatEntropy`); `seed_unit_rngs` forks it into a per-entity `UnitRng`. Each random decision is rolled by the entity that owns it from its own stream:
+
+- Timeline accuracy + legacy `single_target` → `roll_pct_for_unit_in_world(world, unit, threshold)`. `roll_accuracy_in_world` is a thin self-documenting alias.
+- Tentomon block reaction rolls from the **defending** Tentomon's own `CombatEntropy` stream (reacting defender owns the decision), same primitive as accuracy.
+
+Fixed seed → identical replay (accuracy, block procs, follow-up scheduling), so snapshots stay stable.
+
+Contract: `cargo test --test deterministic_rng_contract`
+
+- `seeded_combat_rng_replays_same_roll_sequence` — pins the exact `WyRand` sequence for a fixed seed; drift = a behavior/library change.
+- `seeded_combat_rng_forks_replayable_entity_streams` — forked streams replay from the root seed yet diverge from each other.
+- `unit_rng_streams_are_seeded_from_bevy_rand_global_entropy` — `seed_unit_rngs` attaches `UnitRng` + `CombatRngSeed` + `CombatEntropy` to every spawned `Unit`.
+
+On an intentional sequence shift, update the expected vector deliberately — treat as a snapshot diff, not auto-accept. Default seed `DEFAULT_COMBAT_RNG_SEED`; fixed-combat tests insert `CombatRngSeed` before the entropy plugin runs.
