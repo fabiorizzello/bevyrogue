@@ -338,6 +338,40 @@ fn trace_jsonl(events: &[CombatEvent], traces: &[FollowUpTrace], log: &[LogEntry
     lines.join("\n")
 }
 
+fn agumon_follow_up_snapshot(
+    events: &[CombatEvent],
+    traces: &[FollowUpTrace],
+    log: &[LogEntry],
+    enemy_hp: i32,
+) -> String {
+    let salient_events = events
+        .iter()
+        .filter(|event| {
+            matches!(
+                event.kind,
+                CombatEventKind::OnDamageDealt { .. }
+                    | CombatEventKind::OnBreak { .. }
+                    | CombatEventKind::OnSkillCast { .. }
+                    | CombatEventKind::OnHitTaken { .. }
+            )
+        })
+        .cloned()
+        .collect::<Vec<_>>();
+    let salient_traces = traces
+        .iter()
+        .filter(|trace| {
+            trace.decision == FollowUpDecision::Scheduled
+                || matches!(trace.origin_kind, CombatEventKind::OnBreak { .. })
+        })
+        .cloned()
+        .collect::<Vec<_>>();
+    let mut snapshot = trace_jsonl(&salient_events, &salient_traces, log);
+    snapshot.push_str(&format!(
+        "\n{{\"type\":\"unit_hp\",\"unit_id\":4,\"hp\":{enemy_hp}}}"
+    ));
+    snapshot
+}
+
 fn unit_hp(app: &mut App, unit_id: UnitId) -> i32 {
     let mut query = app.world_mut().query::<&Unit>();
     query
@@ -382,6 +416,10 @@ fn agumon_break_follow_up_uses_real_pilot_config() {
     let traces = drain_messages(&mut trace_cursor, &app);
     let log = action_log_entries(&app);
     let trace = trace_jsonl(&events, &traces, &log);
+    let enemy_hp = unit_hp(&mut app, UnitId(4));
+    let snapshot = agumon_follow_up_snapshot(&events, &traces, &log, enemy_hp);
+
+    insta::assert_snapshot!("agumon_break_follow_up_uses_real_pilot_config", snapshot);
 
     assert!(
         events.iter().any(|event| {
@@ -431,7 +469,7 @@ fn agumon_break_follow_up_uses_real_pilot_config() {
         "expected root hit plus Agumon follow-up\n{trace}"
     );
     assert_eq!(
-        unit_hp(&mut app, UnitId(4)),
+        enemy_hp,
         49,
         "follow-up should leave the enemy at the expected deterministic HP\n{trace}"
     );

@@ -31,6 +31,8 @@ windowed = ["dep:bevy_egui", "bevy/2d"]
 dev = ["bevy/dynamic_linking"]
 
 [dev-dependencies]
+insta = "1"
+
 # Agent-first observability: dump Bevy `Schedule` graphs to .gsd/schedules/*.dot
 # so future agents can read the system ordering without grepping `add_systems` /
 # `.before()` / `.after()` across the codebase. Run with:
