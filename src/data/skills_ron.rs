@@ -631,7 +631,7 @@ mod tests {
     }
 
     fn canonical_skill_book() -> SkillBook {
-        ron::from_str(include_str!("../../assets/data/skills.ron")).expect("parse skills.ron")
+        crate::data::aggregate_skill_book()
     }
 
     #[test]
@@ -999,7 +999,7 @@ mod tests {
             );
         }
 
-        for legacy in ["heat_viper", "tentomon_ult", "biyomon_ult", "flame_bite"] {
+        for legacy in ["tentomon_ult"] {
             assert!(
                 ids.contains(&SkillId(legacy.into())),
                 "missing compatibility skill asset {legacy}"

@@ -98,7 +98,7 @@ type ResolveActorsQuery<'w, 's> = Query<
         Option<&'static UnitSkills>,
         Option<&'static mut UltimateCharge>,
         Option<&'static mut Toughness>,
-        Option<&'static crate::combat::enemy_counterplay::EnemyCounterplayKit>,
+        Option<&'static crate::combat::counterplay::EnemyCounterplayKit>,
         Option<&'static Ko>,
         Option<&'static Stunned>,
         Option<&'static Commander>,

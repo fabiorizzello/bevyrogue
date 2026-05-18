@@ -6,31 +6,31 @@ use bevyrogue::combat::types::SkillId;
 use bevyrogue::data::{skills_ron::SkillBook, units_ron::UnitRoster};
 
 fn load_roster() -> UnitRoster {
-    ron::from_str(include_str!("../assets/data/units.ron")).expect("parse units.ron")
+    bevyrogue::data::aggregate_unit_roster()
 }
 
 fn load_skill_book() -> SkillBook {
-    ron::from_str(include_str!("../assets/data/skills.ron")).expect("parse skills.ron")
+    bevyrogue::data::aggregate_skill_book()
 }
 
 #[test]
 fn s11_roster_catalog_is_the_canonical_roster() {
     let roster = load_roster();
     let expected_names = [
-        // MVP v5.3 roster (D039) — 6 Child + 6 Adult
+        // Per-evo-line order: each evo line lists Child then Adult
         "Agumon",
-        "Gabumon",
-        "Dorumon",
-        "Renamon",
-        "Patamon",
-        "Tentomon",
         "Greymon",
+        "Gabumon",
         "Garurumon",
-        "Kabuterimon",
-        "Kyubimon",
+        "Dorumon",
         "DORUgamon",
+        "Renamon",
+        "Kyubimon",
+        "Patamon",
         "Angemon",
-        // Enemies — boss is tempo_resistant; minions/mini-bosses are not
+        "Tentomon",
+        "Kabuterimon",
+        // Enemies
         "Devimon",
         "Goblimon",
         "Ogremon",
@@ -48,7 +48,7 @@ fn s11_roster_catalog_is_the_canonical_roster() {
     let ids: Vec<_> = roster.0.iter().map(|unit| unit.id.0).collect();
     assert_eq!(
         ids,
-        vec![1, 2, 5, 7, 9, 11, 12, 13, 14, 15, 16, 17, 101, 102, 103],
+        vec![1, 12, 2, 13, 5, 16, 7, 15, 9, 17, 11, 14, 101, 102, 103],
         "unexpected unit ids"
     );
 

@@ -9,8 +9,6 @@ use crate::combat::bevy_types::*;
 use crate::combat::api::registry::{ValidationField, ValidationSection};
 use crate::combat::kernel::CombatKernelRegistry;
 use crate::combat::blueprints::dorumon::identity::format_predator_loop_transition;
-use crate::combat::observability::format_predator_targets;
-
 pub mod hooks;
 pub mod identity;
 pub mod signals;
@@ -28,6 +26,29 @@ pub use signals::{OWNER, dispatch};
 pub fn register_validation_ext(regs: &mut crate::combat::api::ExtRegistries) {
     regs.validation
         .register("predator/validation", predator_validation_section);
+}
+
+fn format_predator_targets(targets: &[identity::PredatorTargetSnapshot]) -> String {
+    let joined = targets
+        .iter()
+        .map(|target| {
+            format!(
+                "{}:e{}:p{}",
+                target.unit_id.0,
+                target.exploit_stacks,
+                target
+                    .prey_lock
+                    .map(|lock| format!(
+                        "{}{}",
+                        lock.turns_left,
+                        if lock.consumed { "c" } else { "" }
+                    ))
+                    .unwrap_or_else(|| "none".to_string())
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
 }
 
 fn predator_validation_section(world: &World) -> Option<ValidationSection> {

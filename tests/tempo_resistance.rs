@@ -466,7 +466,7 @@ fn boss_scenario_three_slow_hits_show_resistance_curve() {
 #[test]
 fn canonical_units_ron_contains_tempo_resistant_boss() {
     let roster: bevyrogue::data::units_ron::UnitRoster =
-        ron::from_str(include_str!("../assets/data/units.ron")).expect("parse units.ron");
+        bevyrogue::data::aggregate_unit_roster();
 
     let devimon = roster
         .0

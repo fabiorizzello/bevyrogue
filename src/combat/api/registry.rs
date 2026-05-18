@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use bevy::prelude::{Resource, World};
 
+use super::intent::CastId;
 use super::skill_ctx::SkillCtx;
 use super::timeline::{BeatEvent, CueCtx, SelectorCtx};
 use crate::combat::types::UnitId;
@@ -116,6 +117,15 @@ impl ExtPoint for CueExt {
     type Fn = for<'a> fn(&CueCtx<'a>) -> &'static str;
 }
 
+/// Pre-damage reaction: blueprint-specific logic that may mitigate incoming
+/// damage (e.g. Tentomon block reaction). Each registered function receives the
+/// `World`, the target `UnitId`, and the `CastId`; it returns `Some(mitigation_pct)`
+/// if the reaction triggered, `None` otherwise.
+pub struct PreDamageReactionExt;
+impl ExtPoint for PreDamageReactionExt {
+    type Fn = fn(&mut World, UnitId, CastId) -> Option<i32>;
+}
+
 /// One key/value captured from a validation contributor.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ValidationField {
@@ -175,6 +185,7 @@ pub struct ExtRegistries {
     pub ticks: Registry<TickExt>,
     pub ai_utilities: Registry<AiUtilityExt>,
     pub cues: Registry<CueExt>,
+    pub pre_damage_reactions: Registry<PreDamageReactionExt>,
     pub validation: Registry<ValidationExt>,
 }
 
@@ -221,6 +232,7 @@ mod tests {
         assert!(r.ticks.is_empty());
         assert!(r.ai_utilities.is_empty());
         assert!(r.cues.is_empty());
+        assert!(r.pre_damage_reactions.is_empty());
         assert!(r.validation.is_empty());
     }
 }

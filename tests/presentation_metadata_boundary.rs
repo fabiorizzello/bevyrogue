@@ -32,7 +32,7 @@ const ACTOR: UnitId = UnitId(1);
 const TARGET: UnitId = UnitId(2);
 
 fn canonical_skill_book() -> SkillBook {
-    ron::from_str(include_str!("../assets/data/skills.ron")).expect("parse tracked skills.ron")
+    bevyrogue::data::aggregate_skill_book()
 }
 
 fn find_skill<'a>(book: &'a SkillBook, id: &str) -> &'a SkillDef {

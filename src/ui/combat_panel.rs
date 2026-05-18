@@ -13,7 +13,7 @@ use crate::combat::{
         build_snapshot_from_ecs_with_sp, first_enabled_target_id, query_action_affordance,
     },
     api::intent::CastIdGen,
-    enemy_counterplay::EnemyCounterplayKit,
+    counterplay::EnemyCounterplayKit,
     energy::{Energy, RoundEnergyTracker},
     floating::{FLOATING_LIFETIME_SECS, FloatingDamage},
     kit::UnitSkills,
@@ -1036,7 +1036,13 @@ HP: {}/{}
         for unit in &unit_entities {
             commands.entity(unit.entity()).despawn();
         }
-        asset_server.reload("data/units.ron");
+        // Reload per-digimon unit sources to trigger re-assembly.
+        for path in crate::data::DIGIMON_UNIT_PATHS
+            .iter()
+            .chain(crate::data::ENEMY_UNIT_PATHS.iter())
+        {
+            asset_server.reload(*path);
+        }
         info!("restart: roster reloaded");
     }
 

@@ -1,0 +1,48 @@
+[
+    (
+        id: UnitId(101),
+        name: "Devimon",
+        role_tags: ["boss", "dark"],
+        signature_traits: ["evil", "dark"],
+        hp_max: 300,
+        attribute: Virus,
+        team: Enemy,
+        basic_damage_tag: Dark,
+        basic_skill: SkillId("enemy_skill_fire"),
+        skill_ids: [SkillId("enemy_skill_fire")],
+        ultimate_skill: SkillId("enemy_ult_fire"),
+        follow_up: None,
+        enemy_traits: [
+            (
+                kind: TempoAnchor,
+                status: Implemented,
+            ),
+            (
+                kind: TypeTrap,
+                status: Deferred(reason: EnemyTraitDeferred),
+            ),
+            (
+                kind: ReactiveArmor,
+                status: Deferred(reason: EnemyTraitDeferred),
+            ),
+        ],
+        charged_attack: Some((
+            skill_id: SkillId("enemy_ult_fire"),
+            lead_turns: 2,
+            status: Deferred(reason: ChargedTelegraphDeferred),
+        )),
+        resists: [Fire, Ice],
+        toughness_max: 35,
+        weaknesses: [Fire, Light],
+        ultimate_trigger: 100,
+        ultimate_cap: 150,
+        ultimate_accumulation_trigger: OnBasicAttack,
+        ultimate_charge_per_event: 25,
+        speed: 80,
+        evo_stage: Child,
+        evo_line: EvoLineId("devimon_line"),
+        evolves_to: [],
+        tempo_resistant: true,
+        toughness_category: Armored,
+    ),
+]

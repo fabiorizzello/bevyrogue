@@ -1,6 +1,8 @@
+use bevy::prelude::Component;
 use serde::{Deserialize, Serialize};
 
 use crate::combat::types::SkillId;
+use crate::data::units_ron::UnitDef;
 pub use crate::data::skills_ron::LegalityReasonCode;
 // Consumed by integration tests via `bevyrogue::combat::counterplay::EnemyCounterplayStatus`;
 // the lib target alone does not see the usage, hence the explicit allow.
@@ -43,4 +45,23 @@ pub struct ChargedAttackDeclaration {
     pub lead_turns: u8,
     #[serde(default)]
     pub status: ImplementationStatus,
+}
+
+#[derive(Component, Debug, Clone, PartialEq, Eq, Default)]
+pub struct EnemyCounterplayKit {
+    pub enemy_traits: Vec<EnemyTraitDeclaration>,
+    pub charged_attack: Option<ChargedAttackDeclaration>,
+}
+
+impl EnemyCounterplayKit {
+    pub fn from_def(def: &UnitDef) -> Option<Self> {
+        if def.enemy_traits.is_empty() && def.charged_attack.is_none() {
+            None
+        } else {
+            Some(Self {
+                enemy_traits: def.enemy_traits.clone(),
+                charged_attack: def.charged_attack.clone(),
+            })
+        }
+    }
 }

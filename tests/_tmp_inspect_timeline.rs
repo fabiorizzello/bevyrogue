@@ -11,7 +11,7 @@ use bevyrogue::{
 
 #[test]
 fn inspect() {
-    let book: SkillBook = ron::from_str(include_str!("../assets/data/skills.ron")).unwrap();
+    let book: SkillBook = bevyrogue::data::aggregate_skill_book();
     validate_skill_book(&book).unwrap();
     let mut regs = ExtRegistries::default();
     register_kernel_builtins(&mut regs);

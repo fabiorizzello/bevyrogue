@@ -90,8 +90,6 @@ pub mod bootstrap;
 pub mod counterplay;
 /// AI nemica: routing decisioni → `ActionIntent`.
 pub mod enemy_ai;
-/// Typed enemy counterplay declarations mirrored into runtime snapshots.
-pub mod enemy_counterplay;
 
 // ─── Observability ───────────────────────────────────────────────────────────
 // Event bus, structured logs, JSONL dump, validation snapshots, UI signals.

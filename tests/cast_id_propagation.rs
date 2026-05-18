@@ -28,7 +28,7 @@ use bevyrogue::data::{
 };
 
 fn load_skill_book() -> SkillBook {
-    ron::from_str(include_str!("../assets/data/skills.ron")).expect("parse skills.ron")
+    bevyrogue::data::aggregate_skill_book()
 }
 
 fn build_app() -> App {

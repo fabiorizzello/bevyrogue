@@ -2,7 +2,7 @@ use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::action_query::{
     ActionQueryKind, CombatQuerySnapshot, UnitQuerySnapshot, query_intent_legality,
 };
-use bevyrogue::combat::enemy_counterplay::EnemyCounterplayKit;
+use bevyrogue::combat::counterplay::EnemyCounterplayKit;
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::kit::UnitSkills;
 use bevyrogue::combat::log::ActionLog;

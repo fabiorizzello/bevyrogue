@@ -3,7 +3,7 @@ use bevyrogue::combat::action_query::{
     TargetStatus, build_snapshot_from_ecs, build_snapshot_from_ecs_with_sp, enabled_target_ids,
     first_enabled_target_id, query_action_affordance,
 };
-use bevyrogue::combat::enemy_counterplay::EnemyCounterplayKit;
+use bevyrogue::combat::counterplay::EnemyCounterplayKit;
 use bevyrogue::combat::energy::{Energy, RoundEnergyTracker};
 use bevyrogue::combat::kit::UnitSkills;
 use bevyrogue::combat::sp::SpPool;

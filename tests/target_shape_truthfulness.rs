@@ -19,7 +19,7 @@ use bevyrogue::data::{
 };
 
 fn load_skill_book() -> SkillBook {
-    ron::from_str(include_str!("../assets/data/skills.ron")).expect("parse skills.ron")
+    bevyrogue::data::aggregate_skill_book()
 }
 
 fn build_app(book: SkillBook) -> App {
@@ -142,16 +142,37 @@ fn log_entries(app: &App) -> Vec<LogEntry> {
 
 #[test]
 fn row_skill_is_rejected_before_mutation_or_lifecycle() {
-    let mut app = setup_app_with_canonical_book();
+    let row_skill = SkillDef {
+        id: SkillId("test_row_skill".into()),
+        name: "Test Row Skill".into(),
+        damage_tag: DamageTag::Fire,
+        sp_cost: 0,
+        targeting: SkillTargeting {
+            shape: TargetShape::Row,
+            side: TargetSide::Enemy,
+            life: TargetLife::Alive,
+            self_rule: SelfTargetRule::Forbid,
+            target_hp_rule: Default::default(),
+        },
+        implementation: SkillImplementation::Deferred {
+            reason: LegalityReasonCode::UnimplementedTargetShape,
+        },
+        legacy_ops: vec![],
+        custom_signals: vec![],
+        animation_sequence: None,
+        qte: None,
+        timeline: None,
+    };
+    let mut app = setup_app_with_inline_book(SkillBook(vec![row_skill]));
     app.world_mut()
-        .spawn(actor(1, vec![SkillId("heat_viper".into())]));
+        .spawn(actor(1, vec![SkillId("test_row_skill".into())]));
     app.world_mut().spawn(target(2));
 
     let mut cursor = message_cursor::<bevyrogue::combat::events::CombatEvent>(&mut app);
 
     app.world_mut().write_message(ActionIntent::Skill {
         attacker: UnitId(1),
-        skill_id: SkillId("heat_viper".into()),
+        skill_id: SkillId("test_row_skill".into()),
         target: UnitId(2),
     });
     app.update();

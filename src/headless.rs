@@ -338,7 +338,13 @@ fn headless_smoke_tick(
                     Some(ScriptStep::ReloadAssets) => {
                         let _ = script.pop();
                         debug!("script step: ReloadAssets");
-                        asset_server.reload("data/units.ron");
+                        // Reload per-digimon unit sources to trigger re-assembly.
+                        for path in crate::data::DIGIMON_UNIT_PATHS
+                            .iter()
+                            .chain(crate::data::ENEMY_UNIT_PATHS.iter())
+                        {
+                            asset_server.reload(*path);
+                        }
                         for unit in &unit_entities {
                             commands.entity(unit.entity()).despawn();
                         }

@@ -1,15 +1,23 @@
-//! Framework primitives for M021: Intent, Registry, SignalBus, Clock, CastRng.
+//! Gameplay-ability execution runtime: Intent routing, Registry extension points,
+//! SignalBus, Clock, CastRng, and the timeline-backed skill resolution pipeline.
 //!
-//! This module contains the generic kernel API surface. No Digimon-specific names
-//! or logic appear here (K001 / P001). All mutations must go through `Intent`;
-//! all extension points must use `ExtPoint + Registry<E>`.
+//! **Naming note:** `api` is a historical module name. This is *not* an external
+//! API surface — it is the internal combat execution kernel. A future rename to
+//! `runtime` or `engine` is desirable but deferred to avoid churn while the
+//! refactor stabilises.
+//!
+//! No Digimon-specific names or logic appear here (K001 / P001). All mutations
+//! must go through `Intent`; all extension points use `ExtPoint + Registry<E>`.
 //!
 //! ## Module map
-//! - `intent`   — `CastId` + closed `Intent` enum (~18 variants).
-//! - `registry` — `ExtPoint` trait + `Registry<E>` + `ExtRegistries` Resource (8 axes).
-//! - `signal`   — `SignalBus` Resource scaffold (full impl in S04).
+//! - `intent`       — `CastId` + closed `Intent` enum (~18 variants).
+//! - `registry`     — `ExtPoint` trait + `Registry<E>` + `ExtRegistries` Resource (8 axes).
+//! - `signal`       — `SignalBus` + `SignalTaxonomy` for blueprint-owned custom signals.
 //! - `event_filter` — typed runtime filters for passive subscriptions.
-//! - `rng`      — `CastRng` SplitMix64 deterministic per-cast RNG.
+//! - `rng`          — `CastRng` SplitMix64 deterministic per-cast RNG.
+//! - `applier`      — exclusive `intent_applier` system that drains `IntentQueue`.
+//! - `runner`       — timeline-backed skill execution (FSM stepping, beat evaluation).
+//! - `timeline`     — compiled timeline schema and evaluation helpers.
 //!
 //! ## Import constraints
 //! No `use bevy::winit`, `use bevy::render`, or `use bevy_egui` in this module

@@ -368,8 +368,17 @@ fn apply_deal_damage(
         cast_id,
     );
 
-    let tentomon_block_triggered =
-        crate::combat::blueprints::tentomon::resolve_block_reaction_in_world(world, target, cast_id);
+    // Run all registered pre-damage reactions (e.g. Tentomon block reaction).
+    // Each may arm modifiers in the DamageModifierLedger and return a mitigation %.
+    let pre_damage_mitigation: Option<i32> = {
+        let fns: Vec<_> = world
+            .get_resource::<super::ExtRegistries>()
+            .map(|regs| regs.pre_damage_reactions.iter().map(|(_, f)| *f).collect())
+            .unwrap_or_default();
+        fns.iter()
+            .filter_map(|f| f(world, target, cast_id))
+            .next()
+    };
 
     let reaction_chain = world
         .get_resource_mut::<DamageModifierLedger>()
@@ -433,7 +442,7 @@ fn apply_deal_damage(
     );
 
     if let Some(mitigated_pct) =
-        block_reaction_mitigated_pct.or_else(|| tentomon_block_triggered.map(|p| p as u8))
+        block_reaction_mitigated_pct.or_else(|| pre_damage_mitigation.map(|p| p as u8))
     {
         emit_event(
             world,

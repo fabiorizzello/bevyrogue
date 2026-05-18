@@ -399,7 +399,7 @@ fn player_action_system(
         Option<&Ko>,
         Option<&Commander>,
         Option<&Toughness>,
-        Option<&bevyrogue::combat::enemy_counterplay::EnemyCounterplayKit>,
+        Option<&bevyrogue::combat::counterplay::EnemyCounterplayKit>,
         Option<&Stunned>,
         Option<&Energy>,
         Option<&RoundEnergyTracker>,
@@ -770,7 +770,12 @@ fn manifest_asset_path(relative_path: &str) -> PathBuf {
 }
 
 fn verify_required_data_assets() -> Result<(), String> {
-    for relative_path in ["data/units.ron", "data/skills.ron", "data/party.ron"] {
+    // Check that per-digimon asset directories exist instead of monolithic files.
+    for relative_path in [
+        "data/digimon/agumon/unit.ron",
+        "data/digimon/gabumon/unit.ron",
+        "data/party.ron",
+    ] {
         let path = manifest_asset_path(relative_path);
         if !path.is_file() {
             return Err(format!("required data asset missing: {}", path.display()));
@@ -780,11 +785,7 @@ fn verify_required_data_assets() -> Result<(), String> {
 }
 
 fn load_ally_roster() -> Result<Vec<UnitDef>, String> {
-    let units_path = manifest_asset_path("data/units.ron");
-    let ron_text = std::fs::read_to_string(&units_path)
-        .map_err(|err| format!("failed to read {}: {err}", units_path.display()))?;
-    let roster: UnitRoster = ron::from_str(&ron_text)
-        .map_err(|err| format!("failed to parse {}: {err}", units_path.display()))?;
+    let roster = bevyrogue::data::aggregate_unit_roster();
     Ok(roster
         .0
         .into_iter()

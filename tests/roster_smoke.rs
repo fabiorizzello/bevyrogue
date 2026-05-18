@@ -24,11 +24,11 @@ use bevyrogue::data::{SkillBookHandle, skills_ron::SkillBook, units_ron::UnitRos
 const TICK_BUDGET: u32 = 300;
 
 fn canonical_roster() -> UnitRoster {
-    ron::from_str(include_str!("../assets/data/units.ron")).expect("parse units.ron")
+    bevyrogue::data::aggregate_unit_roster()
 }
 
 fn canonical_skill_book() -> SkillBook {
-    ron::from_str(include_str!("../assets/data/skills.ron")).expect("parse skills.ron")
+    bevyrogue::data::aggregate_skill_book()
 }
 
 /// Recording resource: every CombatEvent emitted by the bus is appended here.

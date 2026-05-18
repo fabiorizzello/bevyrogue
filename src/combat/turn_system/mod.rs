@@ -7,7 +7,7 @@ use crate::combat::rng::CombatRng;
 use crate::combat::{
     StatusBag,
     action_query::{ActionQueryKind, build_snapshot_from_ecs, query_intent_legality},
-    enemy_counterplay::EnemyCounterplayKit,
+    counterplay::EnemyCounterplayKit,
     energy::{Energy, RoundEnergyTracker},
     events::{ActionIntentKind, CombatEvent, CombatEventKind},
     kernel::{CombatBeatId, CombatKernelRegistry, CombatKernelTransition},

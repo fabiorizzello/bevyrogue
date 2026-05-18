@@ -22,7 +22,7 @@ fn canonical_regs() -> ExtRegistries {
 }
 
 fn canonical_book() -> SkillBook {
-    ron::from_str(include_str!("../assets/data/skills.ron")).expect("parse canonical skills.ron")
+    bevyrogue::data::aggregate_skill_book()
 }
 
 #[test]
@@ -89,7 +89,7 @@ fn canonical_asset_compiles_timeline_backed_skills_into_library_shape() {
 
 #[test]
 fn asset_typo_in_hook_id_fails_with_skill_and_beat_site() {
-    let bad_ron = include_str!("../assets/data/skills.ron").replacen(
+    let bad_ron = bevyrogue::data::aggregate_skill_book_ron_text().replacen(
         "core/deal_damage",
         "core/deal_damge",
         1,

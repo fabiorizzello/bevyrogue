@@ -82,32 +82,24 @@ mod tests {
     use std::collections::{BTreeMap, HashSet};
 
     fn canonical_roster() -> UnitRoster {
-        ron::from_str(include_str!("../../assets/data/units.ron")).expect("parse units.ron")
+        crate::data::aggregate_unit_roster()
     }
 
     fn canonical_skill_book() -> SkillBook {
-        ron::from_str(include_str!("../../assets/data/skills.ron")).expect("parse skills.ron")
+        crate::data::aggregate_skill_book()
     }
 
     fn expected_unit_names() -> [&'static str; 15] {
         [
-            // MVP v5.3 roster (D039) — 6 Child + 6 Adult
-            "Agumon",
-            "Gabumon",
-            "Dorumon",
-            "Renamon",
-            "Patamon",
-            "Tentomon",
-            "Greymon",
-            "Garurumon",
-            "Kabuterimon",
-            "Kyubimon",
-            "DORUgamon",
-            "Angemon",
+            // Per-digimon file order: each evo line lists Child then Adult
+            "Agumon", "Greymon",
+            "Gabumon", "Garurumon",
+            "Dorumon", "DORUgamon",
+            "Renamon", "Kyubimon",
+            "Patamon", "Angemon",
+            "Tentomon", "Kabuterimon",
             // Enemies
-            "Devimon",
-            "Goblimon",
-            "Ogremon",
+            "Devimon", "Goblimon", "Ogremon",
         ]
     }
 

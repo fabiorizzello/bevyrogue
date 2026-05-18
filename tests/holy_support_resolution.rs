@@ -21,7 +21,7 @@ use bevyrogue::combat::unit::{BasicStreak, Unit};
 use bevyrogue::data::skills_ron::SkillBook;
 
 fn load_skill_book() -> SkillBook {
-    ron::from_str(include_str!("../assets/data/skills.ron")).expect("parse skills.ron")
+    bevyrogue::data::aggregate_skill_book()
 }
 
 fn unit(id: u32, hp_current: i32) -> Unit {

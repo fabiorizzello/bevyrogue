@@ -7,7 +7,7 @@ use std::collections::HashSet;
 
 use super::av::ActionValue;
 use super::buffs::DrBag;
-use super::enemy_counterplay::EnemyCounterplayKit;
+use super::counterplay::EnemyCounterplayKit;
 use super::energy::{Energy, RoundEnergyTracker};
 use super::kit::{FormIdentityKit, UnitSkills};
 use super::resistance::TempoResistance;

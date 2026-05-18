@@ -27,7 +27,7 @@ use bevyrogue::data::{
 };
 
 fn canonical_book() -> SkillBook {
-    ron::from_str(include_str!("../assets/data/skills.ron")).expect("parse canonical skills.ron")
+    bevyrogue::data::aggregate_skill_book()
 }
 
 fn canonical_regs() -> ExtRegistries {

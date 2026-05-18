@@ -198,8 +198,19 @@ fn roster_panel(
             ));
         }
         if ui.button("reload combat").clicked() {
-            asset_server.reload("data/units.ron");
-            asset_server.reload("data/skills.ron");
+            for path in crate::data::DIGIMON_UNIT_PATHS
+                .iter()
+                .chain(crate::data::ENEMY_UNIT_PATHS.iter())
+            {
+                asset_server.reload(*path);
+            }
+            for path in crate::data::DIGIMON_SKILL_PATHS
+                .iter()
+                .chain(crate::data::ENEMY_SKILL_PATHS.iter())
+                .chain(crate::data::SHARED_SKILL_PATHS.iter())
+            {
+                asset_server.reload(*path);
+            }
         }
     });
     Ok(())

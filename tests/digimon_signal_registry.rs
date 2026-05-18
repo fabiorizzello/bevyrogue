@@ -11,7 +11,7 @@ use bevyrogue::data::skills_ron::{
 };
 
 fn canonical_skill_book() -> SkillBook {
-    ron::from_str(include_str!("../assets/data/skills.ron")).expect("parse skills.ron")
+    bevyrogue::data::aggregate_skill_book()
 }
 
 fn find_skill<'a>(book: &'a SkillBook, id: &str) -> &'a SkillDef {

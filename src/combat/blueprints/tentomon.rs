@@ -309,12 +309,19 @@ impl Plugin for TentomonPlugin {
         app.world_mut()
             .resource_mut::<crate::combat::kernel::CombatKernelRegistry>()
             .register(BatteryLoopHook);
+
+        app.world_mut()
+            .resource_mut::<crate::combat::api::ExtRegistries>()
+            .pre_damage_reactions
+            .register("tentomon/block_reaction", resolve_block_reaction_in_world);
     }
 }
 
 pub fn register_tentomon_ext(regs: &mut crate::combat::api::ExtRegistries) {
     regs.validation
         .register("battery/validation", battery_validation_section);
+    regs.pre_damage_reactions
+        .register("tentomon/block_reaction", resolve_block_reaction_in_world);
 }
 
 fn battery_validation_section(world: &World) -> Option<ValidationSection> {

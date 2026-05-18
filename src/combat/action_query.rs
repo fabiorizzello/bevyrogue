@@ -82,7 +82,7 @@ pub fn build_snapshot_from_ecs(
         Option<&UnitSkills>,
         Option<&UltimateCharge>,
         Option<&Toughness>,
-        Option<&crate::combat::enemy_counterplay::EnemyCounterplayKit>,
+        Option<&crate::combat::counterplay::EnemyCounterplayKit>,
         bool, // is_ko
         bool, // is_stunned
         bool, // is_commander
@@ -111,7 +111,7 @@ pub fn build_snapshot_from_ecs_with_sp(
         Option<&UnitSkills>,
         Option<&UltimateCharge>,
         Option<&Toughness>,
-        Option<&crate::combat::enemy_counterplay::EnemyCounterplayKit>,
+        Option<&crate::combat::counterplay::EnemyCounterplayKit>,
         bool, // is_ko
         bool, // is_stunned
         bool, // is_commander

@@ -30,7 +30,7 @@ const ENEMY_A_ID: UnitId = UnitId(2);
 const ENEMY_B_ID: UnitId = UnitId(3);
 
 fn canonical_book() -> SkillBook {
-    ron::from_str(include_str!("../assets/data/skills.ron")).expect("parse canonical skills.ron")
+    bevyrogue::data::aggregate_skill_book()
 }
 
 fn build_app(book: &SkillBook) -> App {
