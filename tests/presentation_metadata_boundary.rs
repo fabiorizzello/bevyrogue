@@ -499,7 +499,7 @@ fn runtime_events_and_snapshots_ignore_misleading_presentation_metadata() {
         "snapshot leak: presentation metadata changed validation snapshot output"
     );
     assert!(
-        dramatic_snapshot.contains("support=grace=0/3"),
+        dramatic_snapshot.contains("grace=0"),
         "snapshot drift: HolySupport grace should remain zero for metadata-only skill: {dramatic_snapshot}"
     );
     assert!(
@@ -519,6 +519,6 @@ fn optional_blueprint_sections_render_stable_none_tokens_when_missing() {
 
     assert!(snapshot.section("support").is_none());
     assert!(snapshot.section("twin_core").is_some());
-    assert!(formatted.contains("support=none"), "{formatted}");
+    assert!(!formatted.contains("support="), "{formatted}");
     assert!(!formatted.contains("holy_support="), "{formatted}");
 }

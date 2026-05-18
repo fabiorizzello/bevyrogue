@@ -271,10 +271,10 @@ fn predator_loop_event_and_snapshot_surfaces_are_serializable_and_readable() {
         )],
     };
     let rendered = format_validation_snapshot(&validation);
-    assert!(rendered.contains("predator=exploit_cap=3"));
-    assert!(rendered.contains("battery=none"));
-    assert!(rendered.contains("exploit_cap=3"));
-    assert!(rendered.contains("targets=[7"));
+    assert!(rendered.contains("predator="), "missing predator section: {rendered}");
+    assert!(rendered.contains("exploit_cap=3"), "missing exploit_cap: {rendered}");
+    assert!(rendered.contains("targets=[7"), "missing targets: {rendered}");
+    assert!(!rendered.contains("battery="), "battery should not appear: {rendered}");
 
     let transition = PredatorLoopTransition::build_exploit(target, 2);
     let event = bevyrogue::combat::events::CombatEvent {

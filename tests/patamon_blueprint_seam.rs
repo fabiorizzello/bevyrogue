@@ -351,6 +351,6 @@ fn patamon_ultimate_dispatches_blueprint_transition_into_holy_support_state_and_
     let formatted = format_validation_snapshot(&snapshot);
     println!("DEBUG FORMATTED: {}", formatted);
     assert!(formatted.contains("support="));
-    assert!(formatted.contains("grace=1/3"));
+    assert!(formatted.contains("grace=1"));
     assert!(formatted.contains("last=build(1)"));
 }

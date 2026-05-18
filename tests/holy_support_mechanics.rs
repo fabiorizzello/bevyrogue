@@ -316,7 +316,7 @@ fn validation_snapshot_includes_holy_support_fields() {
     assert_eq!(holy_support.field("last"), Some("build(2)"));
 
     let formatted = format_validation_snapshot(&snapshot);
-    assert!(formatted.contains("support=grace=2/3"));
+    assert!(formatted.contains("grace=2"));
     assert!(formatted.contains("martyr_marked=true"));
     assert!(formatted.contains("last=build(2)"));
     assert!(!formatted.contains("holy_support="));

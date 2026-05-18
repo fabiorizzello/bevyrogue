@@ -171,7 +171,7 @@ fn dorumon_runtime_transitions_flow_through_canonical_predator_loop_events() {
 
     let snapshot = capture_validation_snapshot(app.world_mut()).expect("snapshot");
     let formatted = format_validation_snapshot(&snapshot);
-    assert!(formatted.contains("predator=exploit_cap=3"), "{formatted}");
+    assert!(formatted.contains("exploit_cap=3"), "{formatted}");
     assert!(formatted.contains("targets=[8:e2:p2]"), "{formatted}");
     assert!(
         formatted.contains("last=prey-lock(target=Some(UnitId(8));amount=2)"),

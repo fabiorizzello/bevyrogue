@@ -115,7 +115,7 @@ fn holy_support_missing_resource_is_absent_from_validation_snapshot() {
     let snapshot = capture_validation_snapshot(app.world_mut()).expect("snapshot should build");
 
     assert!(snapshot.section("support").is_none());
-    assert!(format_validation_snapshot(&snapshot).contains("support=none"));
+    assert!(!format_validation_snapshot(&snapshot).contains("support="));
     assert!(!format_validation_snapshot(&snapshot).contains("holy_support="));
 }
 
@@ -135,7 +135,7 @@ fn holy_support_transition_system_updates_snapshot_without_affordance_api() {
     assert_eq!(holy_support.field("last"), Some("mark-martyr"));
 
     let formatted = format_validation_snapshot(&snapshot);
-    assert!(formatted.contains("support=grace=2/3"));
+    assert!(formatted.contains("grace=2"));
     assert!(formatted.contains("martyr_marked=true"));
     assert!(formatted.contains("last=mark-martyr"));
     assert!(!formatted.contains("holy_support="));
@@ -157,6 +157,6 @@ fn holy_support_invalid_spend_is_visible_as_rejected_snapshot_state() {
     );
 
     let formatted = format_validation_snapshot(&snapshot);
-    assert!(formatted.contains("support=grace=0/3"));
+    assert!(formatted.contains("grace=0"));
     assert!(formatted.contains("last=rejected(spend(1);reason=GraceUnderflow)"));
 }

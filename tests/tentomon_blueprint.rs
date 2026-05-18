@@ -3,7 +3,8 @@ use bevyrogue::combat::blueprints::tentomon::{
     OWNER as TENTOMON_OWNER, SIG_BUILD_CIRCUIT_CHARGE, SIG_BUILD_STATIC_CHARGE,
     SIG_SPEND_CIRCUIT_CHARGE,
 };
-use bevyrogue::combat::kernel::{CombatKernelTransition, register_combat_kernel_runtime};
+use bevyrogue::combat::kernel::CombatKernelTransition;
+use bevyrogue::combat::plugin::CombatPlugin;
 use bevyrogue::combat::state::{ResolvedAction, UltEffect};
 use bevyrogue::combat::types::{DamageTag, SkillId, UnitId};
 use bevyrogue::combat::{battery_loop::BatteryLoopState, blueprints};
@@ -106,7 +107,7 @@ fn integration_blueprint_to_kernel_state() {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins);
     app.add_message::<CombatEvent>();
-    register_combat_kernel_runtime(&mut app);
+    app.add_plugins(CombatPlugin);
 
     {
         let state = app.world().resource::<BatteryLoopState>();

@@ -285,25 +285,38 @@ fn collect_validation_sections(world: &World) -> Vec<ValidationSection> {
 }
 
 pub fn format_validation_snapshot(snapshot: &ValidationSnapshot) -> String {
-    format!(
-        "phase={} winner={} sp={}/{} twin_core={} support={} predator={} mind_game={} battery={} turn_preview={} action_log_tail={} floating_live={} units={}",
-        format_phase(snapshot.phase),
-        format_winner(snapshot.winner),
-        snapshot.sp_current,
-        snapshot.sp_max,
-        format_twin_core_section(snapshot.section("twin_core")),
-        format_holy_support_section(snapshot.section("support")),
-        format_predator_loop_section(snapshot.section("predator")),
-        format_precision_mind_game_section(snapshot.section("mind_game")),
-        snapshot
-            .section("battery")
-            .map(format_battery_loop_section)
-            .unwrap_or_else(|| "none".to_string()),
-        format_unit_ids(&snapshot.turn_preview),
-        format_action_log_tail(&snapshot.action_log_tail),
-        snapshot.floating_live,
-        format_units(&snapshot.units),
-    )
+    let mut parts = vec![
+        format!("phase={}", format_phase(snapshot.phase)),
+        format!("winner={}", format_winner(snapshot.winner)),
+        format!("sp={}/{}", snapshot.sp_current, snapshot.sp_max),
+    ];
+
+    for section in &snapshot.owner_sections {
+        parts.push(format_section_generic(section));
+    }
+
+    parts.push(format!(
+        "turn_preview={}",
+        format_unit_ids(&snapshot.turn_preview)
+    ));
+    parts.push(format!(
+        "action_log_tail={}",
+        format_action_log_tail(&snapshot.action_log_tail)
+    ));
+    parts.push(format!("floating_live={}", snapshot.floating_live));
+    parts.push(format!("units={}", format_units(&snapshot.units)));
+
+    parts.join(" ")
+}
+
+fn format_section_generic(section: &ValidationSection) -> String {
+    let fields = section
+        .fields
+        .iter()
+        .map(|f| format!("{}={}", f.key, f.value))
+        .collect::<Vec<_>>()
+        .join(" ");
+    format!("{}={}", section.owner, fields)
 }
 
 fn format_phase(phase: CombatPhase) -> &'static str {
@@ -331,87 +344,6 @@ pub(crate) fn format_unit_ids(ids: &[UnitId]) -> String {
         .collect::<Vec<_>>()
         .join(",");
     format!("[{joined}]")
-}
-
-fn format_twin_core_section(section: Option<&ValidationSection>) -> String {
-    match section {
-        Some(section) => format!(
-            "cr={} spark_targets={} fire={} ice={} burst_guard={} shatter_guard={} last={}",
-            validation_field(section, "cr"),
-            validation_field(section, "spark_targets"),
-            validation_field(section, "fire"),
-            validation_field(section, "ice"),
-            validation_field(section, "burst_guard"),
-            validation_field(section, "shatter_guard"),
-            validation_field(section, "last"),
-        ),
-        None => "none".to_string(),
-    }
-}
-
-fn format_holy_support_section(section: Option<&ValidationSection>) -> String {
-    match section {
-        Some(section) => format!(
-            "grace={}/{} martyr_marked={} martyr_consumed={} last={}",
-            validation_field(section, "grace"),
-            validation_field(section, "grace_cap"),
-            validation_field(section, "martyr_marked"),
-            validation_field(section, "martyr_consumed"),
-            validation_field(section, "last"),
-        ),
-        None => "none".to_string(),
-    }
-}
-
-fn format_predator_loop_section(section: Option<&ValidationSection>) -> String {
-    match section {
-        Some(section) => format!(
-            "exploit_cap={} prey_lock_duration={} berserk_threshold={} targets={} last={} blocked={}",
-            validation_field(section, "exploit_cap"),
-            validation_field(section, "prey_lock_duration"),
-            validation_field(section, "berserk_threshold"),
-            validation_field(section, "targets"),
-            validation_field(section, "last"),
-            validation_field(section, "blocked"),
-        ),
-        None => "none".to_string(),
-    }
-}
-
-fn format_precision_mind_game_section(section: Option<&ValidationSection>) -> String {
-    match section {
-        Some(section) => format!(
-            "phase={},window_index={},window={},commitment={},reveal={},outcome={},last={}",
-            validation_field(section, "phase"),
-            validation_field(section, "window_index"),
-            validation_field(section, "window"),
-            validation_field(section, "commitment"),
-            validation_field(section, "reveal"),
-            validation_field(section, "outcome"),
-            validation_field(section, "last"),
-        ),
-        None => "none".to_string(),
-    }
-}
-
-fn format_battery_loop_section(section: &ValidationSection) -> String {
-    format!(
-        "static={}/{} circuit={}/{} threshold={} grant_guard={} block_ready={} last_block_cast={} last={} blocked={}",
-        validation_field(section, "static"),
-        validation_field(section, "static_cap"),
-        validation_field(section, "circuit"),
-        validation_field(section, "circuit_cap"),
-        validation_field(section, "threshold"),
-        validation_field(section, "grant_guard"),
-        validation_field(section, "block_ready"),
-        validation_field(section, "last_block_cast"),
-        validation_field(section, "last"),
-        validation_field(section, "blocked"),
-    )
-}
-
-fn validation_field<'a>(section: &'a ValidationSection, key: &str) -> &'a str {
-    section.field(key).unwrap_or("none")
 }
 
 pub(crate) fn format_predator_targets(

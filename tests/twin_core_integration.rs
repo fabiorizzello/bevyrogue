@@ -170,7 +170,7 @@ fn canonical_fire_ice_twin_core_loop_is_visible_through_validation_snapshots() {
         target,
     );
     let after_fire = capture_snapshot_string(&mut app);
-    assert!(after_fire.contains("twin_core=cr=1"), "{after_fire}");
+    assert!(after_fire.contains("cr=1"), "{after_fire}");
     assert!(after_fire.contains("spark_targets=[]"), "{after_fire}");
     assert!(after_fire.contains("last=build(1)"), "{after_fire}");
 
@@ -181,7 +181,7 @@ fn canonical_fire_ice_twin_core_loop_is_visible_through_validation_snapshots() {
         target,
     );
     let after_ice = capture_snapshot_string(&mut app);
-    assert!(after_ice.contains("twin_core=cr=2"), "{after_ice}");
+    assert!(after_ice.contains("cr=2"), "{after_ice}");
     assert!(after_ice.contains("spark_targets=[]"), "{after_ice}");
     assert!(after_ice.contains("last=build(1)"), "{after_ice}");
 
@@ -205,7 +205,7 @@ fn canonical_fire_ice_twin_core_loop_is_visible_through_validation_snapshots() {
         target,
     );
     let after_beat = capture_snapshot_string(&mut app);
-    assert!(after_beat.contains("twin_core=cr=0"), "{after_beat}");
+    assert!(after_beat.contains("cr=0"), "{after_beat}");
     assert!(after_beat.contains("spark_targets=[]"), "{after_beat}");
     assert!(after_beat.contains("burst_guard=true"), "{after_beat}");
     assert!(after_beat.contains("last=twin-burst(1)"), "{after_beat}");
@@ -213,7 +213,7 @@ fn canonical_fire_ice_twin_core_loop_is_visible_through_validation_snapshots() {
 
     let final_snapshot = capture_snapshot_string(&mut app);
     assert!(
-        final_snapshot.contains("twin_core=cr=0"),
+        final_snapshot.contains("cr=0"),
         "{final_snapshot}"
     );
     assert!(

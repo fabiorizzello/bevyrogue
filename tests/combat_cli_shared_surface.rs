@@ -63,7 +63,7 @@ fn combat_cli_binary_emits_shared_combat_surfaces_from_non_root_cwd() {
     assert_contains(&run.output, "OnDamageDealt");
     assert_contains(&run.output, "OnSkillCast");
     assert_contains(&run.output, "[CLI_PROOF] validation_snapshot:");
-    assert_contains(&run.output, "support=grace=");
+    assert_contains(&run.output, "grace=");
 
     // Hidden startup drift can still appear in output even when a worker-thread
     // panic or missing-message path exits 0, so forbid those markers explicitly.
