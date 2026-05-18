@@ -356,12 +356,17 @@ fn validate_animation_assets(
             clip_handles.0.len(),
             report.diagnostics.len()
         ),
-        AnimationValidationState::Failed(report) => warn!(
-            "animation validation failed: graphs={}, clips={}, diagnostics={}",
-            graph_handles.0.len(),
-            clip_handles.0.len(),
-            report.diagnostics.len()
-        ),
+        AnimationValidationState::Failed(report) => {
+            warn!(
+                "animation validation failed: graphs={}, clips={}, diagnostics={}",
+                graph_handles.0.len(),
+                clip_handles.0.len(),
+                report.diagnostics.len()
+            );
+            for diag in &report.diagnostics {
+                warn!("  - {:?}/{:?}: {}", diag.check, diag.reason, diag.detail);
+            }
+        }
     }
 
     *validation_state = next_state;
