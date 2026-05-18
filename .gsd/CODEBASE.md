@@ -1,17 +1,19 @@
 # Codebase Map
 
-Generated: 2026-05-18T14:07:20Z | Files: 446 | Described: 0/446
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-18T14:07:20Z","fingerprint":"229826f8e5d1c71348beb7bd06e02d19acbc3512","fileCount":446,"truncated":false} -->
+Generated: 2026-05-18T16:36:59Z | Files: 451 | Described: 0/451
+<!-- gsd:codebase-meta {"generatedAt":"2026-05-18T16:36:59Z","fingerprint":"910c480a0503ed1acbd1b58ace1bbc0be55c0c51","fileCount":451,"truncated":false} -->
 
 ### (root)/
 - `.claudeignore`
 - `.gitignore`
 - `Cargo.toml`
-- `CLAUDE.md`
 - `rust-toolchain.toml`
 
 ### .cargo/
 - `.cargo/config.toml`
+
+### .config/
+- `.config/nextest.toml`
 
 ### assets/
 - `assets/.gitkeep`
@@ -123,6 +125,7 @@ Generated: 2026-05-18T14:07:20Z | Files: 446 | Described: 0/446
 - `doc/static.files/stringdex-b897f86f.js`
 
 ### docs/
+- `docs/agent-testing.md`
 - `docs/combat_current.md`
 - `docs/promptcheck.md`
 - `docs/setup.md`
@@ -180,6 +183,7 @@ Generated: 2026-05-18T14:07:20Z | Files: 446 | Described: 0/446
 - `examples/dump_schedule.rs`
 
 ### src/
+- `src/agent_tracing.rs`
 - `src/headless.rs`
 - `src/lib.rs`
 - `src/main.rs`
@@ -385,6 +389,7 @@ Generated: 2026-05-18T14:07:20Z | Files: 446 | Described: 0/446
 - `src/combat/turn_system/pipeline/paths/multi_target/mod.rs`
 
 ### src/data/
+- `src/data/error.rs`
 - `src/data/mod.rs`
 - `src/data/party_ron.rs`
 - `src/data/skill_timeline.rs`
@@ -418,10 +423,13 @@ Generated: 2026-05-18T14:07:20Z | Files: 446 | Described: 0/446
 - `src/ui/combat_panel/widgets.rs`
 
 ### tests/
-- *(98 files: 97 .rs, 1 .md)*
+- *(99 files: 98 .rs, 1 .md)*
 
 ### tests/common/
 - `tests/common/mod.rs`
+
+### tests/snapshots/
+- `tests/snapshots/follow_up_triggers__agumon_break_follow_up_uses_real_pilot_config.snap`
 
 ### tools/
 - `tools/verify_m021_s06_t04.sh`

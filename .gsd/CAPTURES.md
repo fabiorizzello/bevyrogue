@@ -22,14 +22,6 @@
 **Completed:** 2026-05-18
 **Milestone:** M021
 
-### CAP-7c065a44 (pt.1 — Asset structure)
-**Text:** Decentrare il RON delle Skill: Il file monolitico assets/data/skills.ron va diviso. Sfrutta l'architettura di M021 per avere un file skills.ron globale solo per le mosse comuni, e sposta le skill specifiche nelle cartelle dei Digimon (es. assets/data/digimon/agumon/skills.ron).
-**Captured:** 2026-05-17T13:26:46.110Z
-**Status:** done
-**Resolution:** Completed: skill RON split into per-digimon files (assets/data/digimon/{name}/skills.ron + assets/data/enemies/{name}/skills.ron). Shared demo skills removed — no more monolithic skills.ron.
-**Completed:** 2026-05-18
-**Milestone:** M021
-
 ### CAP-7c065a44 (pt.2 — Visual architecture)
 **Text:** 1. Architettura Visiva (M023)
    * Niente Fisica/Collider per i VFX: In un RPG a turni deterministico, usare motori fisici (Rapier/Avian)
