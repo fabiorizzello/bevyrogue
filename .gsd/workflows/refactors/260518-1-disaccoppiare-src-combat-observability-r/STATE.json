@@ -17,16 +17,16 @@
     {
       "name": "migrate",
       "index": 2,
-      "status": "active"
+      "status": "complete"
     },
     {
       "name": "verify",
       "index": 3,
-      "status": "pending"
+      "status": "active"
     }
   ],
-  "currentPhase": 2,
+  "currentPhase": 3,
   "startedAt": "2026-05-18T06:10:22.354Z",
-  "updatedAt": "2026-05-18T08:10:00.000Z",
+  "updatedAt": "2026-05-18T11:05:00.000Z",
   "artifactDir": "/home/fabio/dev/bevyrogue/.gsd/workflows/refactors/260518-1-disaccoppiare-src-combat-observability-r"
 }

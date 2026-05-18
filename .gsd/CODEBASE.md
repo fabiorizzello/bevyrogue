@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-05-18T06:01:16Z | Files: 355 | Described: 0/355
-<!-- gsd:codebase-meta {"generatedAt":"2026-05-18T06:01:16Z","fingerprint":"834fa47ab70d782e34f43afbf882dcc2d754c68e","fileCount":355,"truncated":false} -->
+Generated: 2026-05-18T10:18:16Z | Files: 352 | Described: 0/352
+<!-- gsd:codebase-meta {"generatedAt":"2026-05-18T10:18:16Z","fingerprint":"2bca6ef538d87da2a0b3538a619fe525388ea998","fileCount":352,"truncated":false} -->
 
 ### (root)/
 - `.claudeignore`
@@ -155,7 +155,7 @@ Generated: 2026-05-18T06:01:16Z | Files: 355 | Described: 0/355
 - `src/bin/combat_cli.rs`
 
 ### src/combat/
-- *(39 files: 39 .rs)*
+- *(37 files: 37 .rs)*
 
 ### src/combat/api/
 - `src/combat/api/applier.rs`
@@ -290,7 +290,26 @@ Generated: 2026-05-18T06:01:16Z | Files: 355 | Described: 0/355
 - `tools/sprite_pipeline/references/tentomon/tentomon.webp`
 
 ### tools/sprite_pipeline/scripts/
-- *(21 files: 17 .py, 4 .sh)*
+- `tools/sprite_pipeline/scripts/_dbg_action_curves.py`
+- `tools/sprite_pipeline/scripts/_dbg_slots.py`
+- `tools/sprite_pipeline/scripts/_inspect_after_shader.py`
+- `tools/sprite_pipeline/scripts/_inspect_materials.py`
+- `tools/sprite_pipeline/scripts/_review_crop.py`
+- `tools/sprite_pipeline/scripts/atlas_to_doc_gifs.py`
+- `tools/sprite_pipeline/scripts/bake_picks.py`
+- `tools/sprite_pipeline/scripts/bevy_atlas_generator.py`
+- `tools/sprite_pipeline/scripts/blender_render.py`
+- `tools/sprite_pipeline/scripts/extract_palette.py`
+- `tools/sprite_pipeline/scripts/inspect_model.py`
+- `tools/sprite_pipeline/scripts/libresprite_wrap.sh`
+- `tools/sprite_pipeline/scripts/multi_shader.sh`
+- `tools/sprite_pipeline/scripts/multi_style.sh`
+- `tools/sprite_pipeline/scripts/pipeline_run.py`
+- `tools/sprite_pipeline/scripts/pipeline.sh`
+- `tools/sprite_pipeline/scripts/pixelify.py`
+- `tools/sprite_pipeline/scripts/quality_gate.py`
+- `tools/sprite_pipeline/scripts/sheet_assemble.py`
+- `tools/sprite_pipeline/scripts/strip_idle_tail.py`
 
 ### tools/sprite_pipeline/scripts/shaders/
 - `tools/sprite_pipeline/scripts/shaders/__init__.py`
