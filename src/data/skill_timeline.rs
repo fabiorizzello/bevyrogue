@@ -1,6 +1,7 @@
-use std::{collections::HashSet, fmt};
+use std::collections::HashSet;
 
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 use crate::combat::runtime::{
     Beat, BeatEdge, BeatKind, CompiledTimeline, ExtRegistries, ValidationError,
@@ -23,7 +24,8 @@ pub struct SkillTimeline {
     pub edges: Vec<BeatEdge<String>>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Error)]
+#[error("skill_id={} site={site} detail={detail}", self.skill_id.0)]
 pub struct SkillTimelineCompileError {
     pub skill_id: SkillId,
     pub site: String,
@@ -39,18 +41,6 @@ impl SkillTimelineCompileError {
         }
     }
 }
-
-impl fmt::Display for SkillTimelineCompileError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "skill_id={} site={} detail={}",
-            self.skill_id.0, self.site, self.detail
-        )
-    }
-}
-
-impl std::error::Error for SkillTimelineCompileError {}
 
 /// Compile every timeline-backed skill in `book` into the kernel representation.
 ///

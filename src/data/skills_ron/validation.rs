@@ -1,4 +1,4 @@
-use std::fmt;
+use thiserror::Error;
 
 use crate::combat::types::SkillId;
 
@@ -14,25 +14,14 @@ pub enum SkillBookValidationCategory {
     Semantic,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Error)]
+#[error("skill_id={} category={:?} reason={:?} detail={detail}", self.skill_id.0, self.category, self.reason)]
 pub struct SkillBookValidationError {
     pub skill_id: SkillId,
     pub category: SkillBookValidationCategory,
     pub reason: LegalityReasonCode,
     pub detail: String,
 }
-
-impl fmt::Display for SkillBookValidationError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "skill_id={} category={:?} reason={:?} detail={}",
-            self.skill_id.0, self.category, self.reason, self.detail
-        )
-    }
-}
-
-impl std::error::Error for SkillBookValidationError {}
 
 pub fn validate_skill_book(book: &SkillBook) -> Result<(), SkillBookValidationError> {
     for skill in &book.0 {

@@ -29,34 +29,17 @@ pub struct EncounterComposition {
     pub enemies: Vec<UnitDef>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, thiserror::Error)]
 pub enum SelectionError {
+    #[error("expected exactly {expected} picks, got {actual}")]
     WrongPickCount { expected: usize, actual: usize },
+    #[error("duplicate rookies selected: {duplicates:?}")]
     DuplicateRookies { duplicates: Vec<UnitId> },
+    #[error("unknown rookie id: {id:?}")]
     UnknownRookie { id: UnitId },
+    #[error("unselectable entry {id:?}: {reason}")]
     UnselectableEntry { id: UnitId, reason: String },
 }
-
-impl std::fmt::Display for SelectionError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            SelectionError::WrongPickCount { expected, actual } => {
-                write!(f, "expected exactly {} picks, got {}", expected, actual)
-            }
-            SelectionError::DuplicateRookies { duplicates } => {
-                write!(f, "duplicate rookies selected: {:?}", duplicates)
-            }
-            SelectionError::UnknownRookie { id } => {
-                write!(f, "unknown rookie id: {:?}", id)
-            }
-            SelectionError::UnselectableEntry { id, reason } => {
-                write!(f, "unselectable entry {:?}: {}", id, reason)
-            }
-        }
-    }
-}
-
-impl std::error::Error for SelectionError {}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum EncounterPreset {

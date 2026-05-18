@@ -1,4 +1,4 @@
-use std::fmt;
+use thiserror::Error;
 
 use bevy::prelude::World;
 
@@ -100,28 +100,17 @@ pub struct ValidationUnitSnapshot {
 }
 
 #[allow(clippy::enum_variant_names)]
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum ValidationSnapshotError {
+    #[error("missing resource {0}")]
     MissingResource(&'static str),
+    #[error("unit {unit:?} missing Team")]
     MissingTeam { unit: UnitId },
+    #[error("unit {unit:?} missing Toughness")]
     MissingToughness { unit: UnitId },
+    #[error("unit {unit:?} missing UltimateCharge")]
     MissingUltimateCharge { unit: UnitId },
 }
-
-impl fmt::Display for ValidationSnapshotError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::MissingResource(resource) => write!(f, "missing resource {resource}"),
-            Self::MissingTeam { unit } => write!(f, "unit {:?} missing Team", unit),
-            Self::MissingToughness { unit } => write!(f, "unit {:?} missing Toughness", unit),
-            Self::MissingUltimateCharge { unit } => {
-                write!(f, "unit {:?} missing UltimateCharge", unit)
-            }
-        }
-    }
-}
-
-impl std::error::Error for ValidationSnapshotError {}
 
 pub fn capture_validation_snapshot(
     world: &mut World,

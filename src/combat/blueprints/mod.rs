@@ -11,48 +11,29 @@ pub mod renamon;
 pub mod tentomon;
 pub mod twin_core;
 
-use std::fmt;
+use thiserror::Error;
 
 use crate::combat::{kernel::CombatKernelTransition, state::ResolvedAction};
 use crate::data::skills_ron::{CustomSignalPayload, SkillCustomSignal};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum CustomSignalDispatchError {
+    #[error("unknown blueprint owner '{owner}'")]
     UnknownOwner {
         owner: String,
     },
+    #[error("unknown signal '{signal}' for owner '{owner}'")]
     UnknownSignal {
         owner: String,
         signal: String,
     },
+    #[error("malformed payload for {owner}::{signal}: {detail}")]
     MalformedPayload {
         owner: String,
         signal: String,
         detail: String,
     },
 }
-
-impl fmt::Display for CustomSignalDispatchError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::UnknownOwner { owner } => {
-                write!(f, "unknown blueprint owner '{owner}'")
-            }
-            Self::UnknownSignal { owner, signal } => {
-                write!(f, "unknown signal '{signal}' for owner '{owner}'")
-            }
-            Self::MalformedPayload {
-                owner,
-                signal,
-                detail,
-            } => {
-                write!(f, "malformed payload for {owner}::{signal}: {detail}")
-            }
-        }
-    }
-}
-
-impl std::error::Error for CustomSignalDispatchError {}
 
 pub(crate) fn amount_payload(
     signal: &SkillCustomSignal,

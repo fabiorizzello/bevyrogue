@@ -1,7 +1,10 @@
+pub mod error;
 pub mod party_ron;
 pub mod skill_timeline;
 pub mod skills_ron;
 pub mod units_ron;
+
+pub use error::DataError;
 
 use bevy::prelude::*;
 use bevy_common_assets::ron::RonAssetPlugin;
@@ -288,24 +291,22 @@ fn sync_skill_book_on_load(
     mut library: ResMut<TimelineLibrary<String>>,
     mut taxonomy: ResMut<crate::combat::runtime::signal::SignalTaxonomy>,
     tracker: Res<PartialLoadTracker>,
-) {
+) -> Result<(), BevyError> {
     use crate::combat::runtime::timeline::{BeatKind, BeatPayload};
 
     // Only run once, after the skill book has been assembled and library is empty.
     if !tracker.skill_book_assembled || !library.timelines.is_empty() {
-        return;
+        return Ok(());
     }
 
     let Some(handle) = handle else {
-        return;
+        return Ok(());
     };
 
     if let Some(book) = books.get(&handle.0) {
-        if let Err(e) = validate_skill_book(book) {
-            panic!("SkillBook validation failed: {e}");
-        }
-        let compiled = compile_skill_book_timelines(book, &regs)
-            .unwrap_or_else(|e| panic!("SkillBook timeline compilation failed: {e}"));
+        validate_skill_book(book).map_err(DataError::Validation)?;
+        let compiled =
+            compile_skill_book_timelines(book, &regs).map_err(DataError::TimelineCompile)?;
 
         for timeline in &compiled {
             for beat in &timeline.beats {
@@ -336,6 +337,8 @@ fn sync_skill_book_on_load(
         );
         library.timelines = compiled;
     }
+
+    Ok(())
 }
 
 // ── Compile-time aggregate helpers (for tests and CLI) ──────────────────────
