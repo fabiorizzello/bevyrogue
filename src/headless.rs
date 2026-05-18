@@ -41,6 +41,7 @@ use bevyrogue::party_validation;
 /// asset loader init and first-frame ECS snapshots, short enough that
 /// `cargo run` exits cleanly without SIGTERM.
 const HEADLESS_TICK_BUDGET: u32 = 120;
+const HEADLESS_BOSS_ID: UnitId = UnitId(101);
 
 #[derive(Resource, Default)]
 struct TickCounter(u32);
@@ -87,17 +88,17 @@ fn default_headless_script() -> VecDeque<ScriptStep> {
     for _ in 0..5 {
         actions.push_back(EmitIntent(ActionIntent::Basic {
             attacker: UnitId(1),
-            target: UnitId(4),
+            target: HEADLESS_BOSS_ID,
         }));
     }
     actions.push_back(EmitIntent(ActionIntent::Ultimate {
         attacker: UnitId(1),
-        target: UnitId(4),
+        target: HEADLESS_BOSS_ID,
     }));
     for _ in 0..6 {
         actions.push_back(EmitIntent(ActionIntent::Basic {
             attacker: UnitId(1),
-            target: UnitId(5),
+            target: HEADLESS_BOSS_ID,
         }));
     }
     actions.push_back(ReloadAssets);
@@ -111,7 +112,7 @@ pub fn register(app: &mut App) {
             1.0 / 60.0,
         ))),
     )
-    .add_plugins(bevy::log::LogPlugin::default())
+    .add_plugins(bevyrogue::agent_tracing::log_plugin_from_env())
     .add_plugins(bevy::state::app::StatesPlugin)
     .add_plugins(AssetPlugin {
         watch_for_changes_override: Some(true),
@@ -248,6 +249,12 @@ fn headless_smoke_tick(
                     "bootstrap: success, selected_party={:?}",
                     request.rookie_ids
                 );
+                // The headless script is a deterministic observability smoke run, not a
+                // resource-economy scenario. Start capped SP high enough that scripted
+                // actions exercise resolution/apply/follow-up paths instead of only
+                // producing SP-shortfall failures.
+                sp.current = 999;
+                sp.max = 999;
                 bootstrap.combat_events.write(CombatEvent {
                     source: UnitId(0),
                     target: UnitId(0),

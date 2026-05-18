@@ -56,6 +56,18 @@ pub fn intent_applier(world: &mut World) {
         .map(|mut q| q.0.drain(..).collect())
         .unwrap_or_default();
 
+    if intents.is_empty() {
+        return;
+    }
+
+    #[cfg(debug_assertions)]
+    let _combat_apply_intents_span = bevy::log::info_span!(
+        target: "combat.apply",
+        "combat.apply.intent_queue",
+        intent_count = intents.len(),
+    )
+    .entered();
+
     for intent in intents {
         match intent {
             Intent::DealDamage {

@@ -46,6 +46,16 @@ pub fn resolve_action_system(
             }
         };
 
+        #[cfg(debug_assertions)]
+        let _combat_resolution_span = bevy::log::info_span!(
+            target: "combat.resolution",
+            "combat.resolution",
+            actor = ?actor_id,
+            defender = ?target_id,
+            intent = ?query_kind,
+        )
+        .entered();
+
         // Early Legality Validation
         if let Some(skill_book) = skill_book_handle
             .as_ref()

@@ -181,7 +181,7 @@ fn main() -> AppExit {
             1.0 / 10.0,
         ))),
     )
-    .add_plugins(bevy::log::LogPlugin::default())
+    .add_plugins(bevyrogue::agent_tracing::log_plugin_from_env())
     .add_plugins(bevy::state::app::StatesPlugin)
     .add_plugins(AssetPlugin {
         file_path: manifest_assets_dir().to_string_lossy().into_owned(),

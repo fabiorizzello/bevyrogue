@@ -167,6 +167,17 @@ pub fn follow_up_listener_system(
         .collect();
 
     for event in events.read() {
+        #[cfg(debug_assertions)]
+        let _combat_follow_up_span = bevy::log::info_span!(
+            target: "combat.follow_up",
+            "combat.follow_up.evaluate",
+            source = ?event.source,
+            defender = ?event.target,
+            kind = ?event.kind,
+            follow_up_depth = event.follow_up_depth,
+        )
+        .entered();
+
         for follower in &snapshots {
             let Some(config) = follower.follow_up.as_ref() else {
                 continue;

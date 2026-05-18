@@ -67,6 +67,19 @@ pub fn resolve_follow_up_action_system(
     mut cast_id_gen: Option<ResMut<crate::combat::runtime::intent::CastIdGen>>,
 ) {
     if let Some(intent) = intents.read().next() {
+        #[cfg(debug_assertions)]
+        let _combat_follow_up_span = bevy::log::info_span!(
+            target: "combat.follow_up",
+            "combat.follow_up.resolve",
+            follower = ?intent.attacker,
+            skill_id = ?intent.skill_id,
+            defender = ?intent.target,
+            origin_kind = ?intent.origin.kind,
+            origin_source = ?intent.origin.source,
+            origin_target = ?intent.origin.target,
+        )
+        .entered();
+
         debug!(
             target: "combat.follow_up",
             follower = ?intent.attacker,

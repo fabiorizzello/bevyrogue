@@ -36,6 +36,18 @@ pub(crate) fn step_app(
     let attacker_id = inflight.action.source;
     let target_id = inflight.action.target;
 
+    #[cfg(debug_assertions)]
+    let _combat_apply_span = bevy::log::info_span!(
+        target: "combat.apply",
+        "combat.apply",
+        source = ?attacker_id,
+        defender = ?target_id,
+        skill_id = ?inflight.action.skill_id,
+        follow_up_depth = inflight.follow_up_depth,
+        cast_id = ?cast_id,
+    )
+    .entered();
+
     let attacker_entity = actors.iter().find_map(|(entity, _, unit, ..)| {
         if unit.id == attacker_id {
             Some(entity)
