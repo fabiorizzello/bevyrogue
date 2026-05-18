@@ -443,13 +443,6 @@ pub fn register_combat_kernel_runtime(app: &mut App) {
         .insert_resource(CombatKernelRegistry::new());
 }
 
-pub fn register_canonical_passive_runners(app: &mut App) {
-    crate::combat::blueprints::agumon::register_passive_runtime(app);
-    crate::combat::blueprints::gabumon::register_passive_runtime(app);
-    crate::combat::blueprints::patamon::register_passive_runtime(app);
-    crate::combat::blueprints::renamon::register_passive_runtime(app);
-}
-
 pub trait CombatKernelHook: Send + Sync {
     fn domain(&self) -> CombatKernelHookDomain;
 

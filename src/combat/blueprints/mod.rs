@@ -156,6 +156,13 @@ pub fn register_all_blueprint_validation_exts(regs: &mut crate::combat::api::Ext
     renamon::register_renamon_ext(regs);
 }
 
+pub fn register_canonical_passive_runners(app: &mut crate::combat::bevy_types::App) {
+    agumon::register_passive_runtime(app);
+    gabumon::register_passive_runtime(app);
+    patamon::register_passive_runtime(app);
+    renamon::register_passive_runtime(app);
+}
+
 pub fn add_runtime_plugins(app: &mut crate::combat::bevy_types::App) {
     app.add_plugins((
         twin_core::TwinCorePlugin,

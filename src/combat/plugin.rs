@@ -7,7 +7,8 @@ use crate::combat::api::{
 };
 use crate::combat::api::applier::{IntentExecutionMeta, intent_applier};
 use crate::combat::api::intent::CastIdGen;
-use crate::combat::kernel::{register_canonical_passive_runners, register_combat_kernel_runtime};
+use crate::combat::blueprints::register_canonical_passive_runners;
+use crate::combat::kernel::register_combat_kernel_runtime;
 use crate::combat::modifiers::DamageModifierLedger;
 use crate::combat::rng::CombatRng;
 
