@@ -152,6 +152,8 @@ pub struct CompiledTimeline<Id = &'static str> {
 pub struct BeatEvent {
     pub cast_id: CastId,
     pub beat_id: BeatId,
+    // Consumed by tests/timeline_chain_bolt_port.rs and tests/passive_event_filters.rs.
+    #[allow(dead_code)]
     pub hop_index: u32,
     pub beat_targets: Vec<UnitId>,
 }
@@ -160,6 +162,8 @@ pub struct BeatEvent {
 pub struct SelectorCtx<'a, S = ()> {
     pub caster: UnitId,
     pub primary_target: UnitId,
+    // Consumed by tests/compiled_timeline_builtin_validation.rs (struct literal `state: &()`).
+    #[allow(dead_code)]
     pub state: &'a S,
     /// Read-only world access for complex selectors that need to query unit state.
     pub world: &'a World,
@@ -169,7 +173,11 @@ pub struct SelectorCtx<'a, S = ()> {
 
 /// Read context passed to cue resolver functions.
 pub struct CueCtx<'a, S = ()> {
+    // Reserved public API for cue resolver functions; not yet consumed.
+    #[allow(dead_code)]
     pub caster: UnitId,
+    // Reserved public API for cue resolver functions; not yet consumed.
+    #[allow(dead_code)]
     pub state: &'a S,
 }
 

@@ -76,6 +76,8 @@ pub enum Intent {
         duration_turns: u32,
         cast_id: CastId,
     },
+    // Consumed by tests/block_reaction_pipeline.rs.
+    #[allow(dead_code)]
     ApplyDamageModifier {
         target: UnitId,
         layer: ModifierLayer,

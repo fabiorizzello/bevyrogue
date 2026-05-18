@@ -7,8 +7,12 @@
 /// # Separation from `combat::rng::CombatRng`
 /// `CombatRng` (StdRng) handles legacy global rolls (status accuracy, etc.).
 /// `CastRng` is cast-scoped and seeded per invocation, enabling full replay.
+// Used in cfg(test) within this file; public API for future skill-hook callers.
+#[allow(dead_code)]
 pub struct CastRng(u64);
 
+// All methods consumed in cfg(test) within this file; public API surface for future use.
+#[allow(dead_code)]
 impl CastRng {
     /// Seed from a raw `u64`. Runs one warm-up step so that `seed=0` and
     /// `seed=1` diverge on the first `next_u64` call.

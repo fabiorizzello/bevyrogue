@@ -209,6 +209,8 @@ pub enum ActionQueryKind<'a> {
 
 macro_rules! status_enum {
     ($name:ident) => {
+        // Deferred/Hidden variants consumed by tests/action_affordance_query.rs and consumers.
+        #[allow(dead_code)]
         #[derive(Debug, Clone, PartialEq, Eq)]
         pub enum $name {
             Enabled,
@@ -223,6 +225,8 @@ status_enum!(ActionStatus);
 status_enum!(TargetStatus);
 status_enum!(ResourceStatus);
 
+// Deferred/Hidden consumed by tests/action_affordance_query.rs and action_affordance_consumers.rs.
+#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ImplementationStatus {
     Implemented,
@@ -230,6 +234,8 @@ pub enum ImplementationStatus {
     Hidden { reason: LegalityReasonCode },
 }
 
+// Hidden/Visible consumed by tests/action_affordance_query.rs.
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ToughnessAffordance {
     Hidden,
@@ -244,6 +250,8 @@ pub struct TargetAffordance {
     pub toughness_reason: Option<LegalityReasonCode>,
 }
 
+// Consumed by tests/action_affordance_consumers.rs and action_affordance_query.rs.
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ResourceKind {
     Sp,
@@ -251,6 +259,8 @@ pub enum ResourceKind {
     EnergyCap,
 }
 
+// Consumed by tests/action_affordance_query.rs.
+#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ResourceAffordanceDetail {
     pub kind: ResourceKind,
@@ -259,6 +269,8 @@ pub struct ResourceAffordanceDetail {
     pub required: Option<i32>,
 }
 
+// Consumed by tests/action_affordance_consumers.rs via the public surface.
+#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ActionAffordance<'a> {
     pub kind: ActionQueryKind<'a>,
@@ -271,6 +283,8 @@ pub struct ActionAffordance<'a> {
     pub toughness: ToughnessAffordance,
 }
 
+// Consumed by tests/action_affordance_query.rs.
+#[allow(dead_code)]
 pub fn query_energy_cap_affordance(
     unit: &UnitQuerySnapshot,
     source: EnergyGainSource,
@@ -434,6 +448,8 @@ fn target_status_for_unit(
     TargetStatus::Enabled
 }
 
+// Called from query_target_affordance which is consumed by tests/action_affordance_query.rs.
+#[allow(dead_code)]
 fn target_toughness_affordance(
     skill_def: &SkillDef,
     target: &UnitQuerySnapshot,
@@ -467,6 +483,8 @@ fn target_toughness_affordance(
     }
 }
 
+// Consumed by tests/action_affordance_query.rs.
+#[allow(dead_code)]
 pub fn query_target_affordance(
     snapshot: &CombatQuerySnapshot,
     actor_id: UnitId,
@@ -490,6 +508,8 @@ pub fn query_target_affordance(
     }
 }
 
+// Consumed by tests/action_affordance_query.rs.
+#[allow(dead_code)]
 pub fn query_all_target_affordances(
     snapshot: &CombatQuerySnapshot,
     actor_id: UnitId,
@@ -504,6 +524,8 @@ pub fn query_all_target_affordances(
         .collect()
 }
 
+// Consumed by tests/action_affordance_consumers.rs.
+#[allow(dead_code)]
 pub fn enabled_target_ids(affordance: &ActionAffordance<'_>) -> Vec<UnitId> {
     affordance
         .targets
@@ -512,6 +534,8 @@ pub fn enabled_target_ids(affordance: &ActionAffordance<'_>) -> Vec<UnitId> {
         .collect()
 }
 
+// Consumed by tests/action_affordance_consumers.rs.
+#[allow(dead_code)]
 pub fn first_enabled_target_id(affordance: &ActionAffordance<'_>) -> Option<UnitId> {
     enabled_target_ids(affordance).into_iter().next()
 }
@@ -558,6 +582,8 @@ fn resolve_action_skill<'a>(
     Ok((actor, skill_def))
 }
 
+// Called from build_resource_details → query_action_affordance which is consumed by tests.
+#[allow(dead_code)]
 fn resource_detail_status(
     kind: ResourceKind,
     current: i32,
@@ -583,6 +609,8 @@ fn resource_detail_status(
     }
 }
 
+// Called from query_action_affordance which is consumed by tests/action_affordance_query.rs.
+#[allow(dead_code)]
 fn build_resource_details(
     actor: &UnitQuerySnapshot,
     skill_def: &SkillDef,
@@ -773,6 +801,8 @@ fn action_and_resource_status_for_snapshot(
     (ActionStatus::Enabled, ResourceStatus::Enabled)
 }
 
+// Consumed by tests/action_affordance_query.rs and tests/action_affordance_consumers.rs.
+#[allow(dead_code)]
 pub fn query_action_affordance<'a>(
     snapshot: &CombatQuerySnapshot,
     skill_book: &SkillBook,

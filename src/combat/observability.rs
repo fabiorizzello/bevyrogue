@@ -33,6 +33,8 @@ pub struct ValidationSnapshot {
 }
 
 impl ValidationSnapshot {
+    // Consumed by tests/holy_support_mechanics.rs, holy_support_affordance.rs, holy_support_resolution.rs.
+    #[allow(dead_code)]
     pub fn section(&self, owner: &str) -> Option<&ValidationSection> {
         self.owner_sections.iter().find(|section| section.owner == owner)
     }

@@ -110,6 +110,8 @@ impl BeatRunner {
     }
 
     /// Override the clock mode (builder pattern — keeps `new` signature stable).
+    // Consumed by tests/timeline_two_clock_parity.rs.
+    #[allow(dead_code)]
     pub fn with_clock(mut self, clock: Clock) -> Self {
         self.clock = clock;
         self

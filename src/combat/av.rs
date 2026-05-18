@@ -14,6 +14,8 @@ pub const AV_PER_SPEED: i32 = 100;
 #[derive(Component, Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ActionValue(pub i32);
 
+// new/delay/self_advance are public API; not yet consumed outside internal use.
+#[allow(dead_code)]
 impl ActionValue {
     /// Creates a new ActionValue, ensuring it does not exceed MAX_AV.
     pub fn new(value: i32) -> Self {

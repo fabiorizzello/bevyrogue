@@ -161,6 +161,7 @@ pub struct SkillCustomSignal {
 }
 
 impl SkillCustomSignal {
+    #[allow(dead_code)] // consumed by integration tests
     pub fn blueprint(
         owner: impl Into<String>,
         signal: impl Into<String>,

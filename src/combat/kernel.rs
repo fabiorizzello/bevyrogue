@@ -9,6 +9,8 @@ pub enum TacticalCyclePhase {
     Applied,
 }
 
+// ALL/next/as_str used in cfg(test) in this file; public API surface for blueprint callers.
+#[allow(dead_code)]
 impl TacticalCyclePhase {
     pub const ALL: [Self; 4] = [Self::Declared, Self::PreApp, Self::Impact, Self::Applied];
 
@@ -104,6 +106,8 @@ impl Default for Strain {
     }
 }
 
+// gain/spend consumed in cfg(test) and via CombatKernelState delegation.
+#[allow(dead_code)]
 impl Strain {
     pub fn gain(&mut self, amount: u16, config: &CombatKernelConfig) -> StrainTransition {
         let before = self.current;
@@ -159,6 +163,8 @@ pub struct FlowTransition {
     pub kind: FlowChangeKind,
 }
 
+// enter/exit/momentum consumed in cfg(test) and via CombatKernelState delegation.
+#[allow(dead_code)]
 impl FlowState {
     pub fn enter(&mut self, config: &CombatKernelConfig) -> FlowTransition {
         let before = *self;
@@ -226,6 +232,8 @@ pub struct FatigueTransition {
     pub kind: FatigueChangeKind,
 }
 
+// gain consumed in cfg(test) and via CombatKernelState::gain_fatigue.
+#[allow(dead_code)]
 impl Fatigue {
     pub fn gain(&mut self, amount: u16, config: &CombatKernelConfig) -> FatigueTransition {
         let before = self.current;
@@ -272,6 +280,8 @@ pub struct CombatTagState {
     pub consumed: bool,
 }
 
+// is_active/tick/consume used in cfg(test) and CombatKernelState::consume_tag; public API.
+#[allow(dead_code)]
 impl CombatTagState {
     pub fn new(id: impl Into<CombatTagId>, turns_left: u8) -> Self {
         Self {
@@ -334,6 +344,8 @@ pub enum CombatBeatId {
     Resolved,
 }
 
+// ALL/as_str reserved public API; not yet consumed by tests or binary.
+#[allow(dead_code)]
 impl CombatBeatId {
     pub const ALL: [Self; 7] = [
         Self::Declared,
@@ -381,6 +393,8 @@ pub struct TacticalCycleTransition {
     pub wrapped_cycle: bool,
 }
 
+// advance consumed in cfg(test) and CombatKernelState::advance_tactical_cycle.
+#[allow(dead_code)]
 impl TacticalCycleStep {
     pub fn advance(self, config: &CombatKernelConfig) -> TacticalCycleTransition {
         let before = self;
@@ -444,6 +458,8 @@ pub fn register_combat_kernel_runtime(app: &mut App) {
 }
 
 pub trait CombatKernelHook: Send + Sync {
+    // domain() is part of the hook trait API; implemented by blueprint hooks.
+    #[allow(dead_code)]
     fn domain(&self) -> CombatKernelHookDomain;
 
     fn on_transition(
@@ -454,6 +470,8 @@ pub trait CombatKernelHook: Send + Sync {
     }
 }
 
+// Used by blueprint hook impls (dorumon, patamon, renamon, tentomon) to classify hooks.
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CombatKernelHookDomain {
     Digimon,
@@ -485,6 +503,8 @@ impl Default for CombatKernelState {
     }
 }
 
+// Methods consumed in cfg(test) within this file; public API for blueprint systems.
+#[allow(dead_code)]
 impl CombatKernelState {
     pub fn gain_strain(&mut self, amount: u16) -> StrainTransition {
         self.strain.gain(amount, &self.config)

@@ -77,6 +77,8 @@ impl ModifierChain {
         );
     }
 
+    // Public API for inspecting chain size; not yet consumed by tests.
+    #[allow(dead_code)]
     pub fn len(&self) -> usize {
         self.terms.len()
     }
@@ -138,6 +140,8 @@ impl DamageModifierLedger {
         ModifierChain { terms, next_seq }
     }
 
+    // Public API to check if a target has pending modifiers; not yet consumed.
+    #[allow(dead_code)]
     pub fn is_armed(&self, target: UnitId) -> bool {
         self.armed
             .get(&target)

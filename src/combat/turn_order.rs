@@ -10,11 +10,17 @@ pub struct TurnOrder {
     pub active_unit: Option<UnitId>,
     pub next_unit: Option<UnitId>,
     /// Compat shim for pre-AV tests: always empty in the AV system.
+    // Compat shim field; only referenced in test comments, not actual test code.
+    #[allow(dead_code)]
     pub future_preview: Vec<UnitId>,
     /// Compat shim for pre-AV tests: always empty in the AV system.
+    // Consumed by tests/ultimate_meter.rs via order.queue.front().
+    #[allow(dead_code)]
     pub queue: VecDeque<UnitId>,
 }
 
+// seed/insert_out_of_queue consumed by many tests as compat shims.
+#[allow(dead_code)]
 impl TurnOrder {
     /// No-op in the AV system; seeds were needed only for the old VecDeque order.
     pub fn seed(&mut self, _units: impl IntoIterator<Item = UnitId>) {}
@@ -34,6 +40,8 @@ pub struct TurnAdvanced {
 
 impl TurnAdvanced {
     /// Convenience constructor for tests and compatibility code; sets AV metadata to zero.
+    // Consumed by many integration tests via TurnAdvanced::of(unit_id).
+    #[allow(dead_code)]
     pub fn of(unit_id: UnitId) -> Self {
         TurnAdvanced {
             unit_id,
@@ -43,10 +51,3 @@ impl TurnAdvanced {
     }
 }
 
-/// Orders units by Speed DESC, tiebreak UnitId ASC. Used by seeding system (S03-T02) and tests.
-/// This function is likely to be adapted or replaced by an AV-based initial sort.
-pub fn order_from_speeds(pairs: &[(i32, UnitId)]) -> Vec<UnitId> {
-    let mut sorted = pairs.to_vec();
-    sorted.sort_by(|a, b| b.0.cmp(&a.0).then_with(|| a.1.0.cmp(&b.1.0)));
-    sorted.into_iter().map(|(_, id)| id).collect()
-}

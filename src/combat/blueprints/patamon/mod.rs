@@ -30,6 +30,9 @@ pub(crate) const SIGNAL_MARK_MARTYR_LIGHT: &str = "mark_martyr_light";
 pub(crate) const SIGNAL_CONSUME_MARTYR_LIGHT: &str = "consume_martyr_light";
 pub(crate) const SIGNAL_CYCLE_RESET: &str = "cycle_reset";
 
+// Public blueprint surface: lib-target sees no consumer, but `tests/` import these
+// via `bevyrogue::combat::blueprints::patamon::{...}`. Kept as the stable seam.
+#[allow(unused_imports)]
 pub use identity::{
     GRACE_CAP, HolySupportDesignTag, HolySupportHook, HolySupportRejectReason, HolySupportSnapshot,
     HolySupportState, HolySupportStep, HolySupportTransition, TAG_GRACE, TAG_MARTYR_LIGHT,

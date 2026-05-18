@@ -17,6 +17,8 @@ pub struct TriangleMods {
     /// Asymmetry is intentional (MEM022/D043): winning bonus ≠ losing penalty.
     pub dmg_modifier: f32,
     /// Multiplier applied to toughness damage (reserved; 1.0 for all matchups in v5.3).
+    // Consumed by tests/triangle_matchup.rs.
+    #[allow(dead_code)]
     pub tough_modifier: f32,
     /// Multiplier applied to status application accuracy rolls.
     /// Attacker wins → 1.1; defender wins → 0.9; neutral → 1.0.
@@ -74,6 +76,8 @@ pub struct DamageBreakdown {
     pub status_amp_pct: i32,
     /// DR mitigation as integer percentage: 0 = no DR, 30 = 30% reduction (0.70 multiplier).
     /// Derived from `sum_dr(defender_dr)` clamped to [0, 1] via `(1.0 - sum).max(0.0)`.
+    // Used in cfg(test) within damage.rs for DR assertions.
+    #[allow(dead_code)]
     pub dr_reduction_pct: i32,
 }
 

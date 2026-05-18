@@ -31,7 +31,9 @@ pub mod signal;
 pub mod skill_ctx;
 pub mod timeline;
 
-// Stable re-exports for the most-imported types.
+// Stable public API facade for the most-imported types. The lib target sees no
+// in-crate consumer for several of these, but `tests/` import them via
+// `bevyrogue::combat::api::{...}`; keep the facade and silence the false unused.
 #[allow(unused_imports)]
 pub use applier::{IntentExecutionMeta, IntentQueue, intent_applier};
 pub use blueprint_state::BlueprintState;
@@ -39,12 +41,17 @@ pub use builtins::register_kernel_builtins;
 pub use clock::Clock;
 pub use event_bridge::combat_event_to_signal_system;
 pub use event_filter::EventFilter;
+#[allow(unused_imports)]
 pub use intent::{CastId, CastIdGen, Intent};
 pub use passive_runner::{PassiveListeners, PassiveRunner, passive_dispatch_system};
+#[allow(unused_imports)]
 pub use registry::{ExtRegistries, Registry, ValidationSection};
+#[allow(unused_imports)]
 pub use runner::StepOutcome;
+#[allow(unused_imports)]
 pub use signal::{Signal, SignalBus, SignalPayload, SignalTaxonomy};
 pub use skill_ctx::{SkillCtx, SkillCtxMode};
+#[allow(unused_imports)]
 pub use timeline::{
     Beat, BeatEdge, BeatEvent, BeatId, BeatKind, BeatPayload, CompiledTimeline, Presentation,
     SelectorCtx, TimelineLibrary, ValidationError, validate_timeline_refs,

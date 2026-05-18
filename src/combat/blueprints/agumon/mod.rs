@@ -18,12 +18,7 @@ use crate::combat::{
 
 pub mod signals;
 
-use crate::combat::blueprints::twin_core::{
-    TAG_CHILLED, TAG_DEEP_CRACK, TAG_HEATED, TAG_MELTDOWN_CRACK, TAG_PRIMED, TAG_THERMAL_SPARK,
-    TwinCoreDesignTag, TwinCoreHook, TwinCoreState, apply_twin_core_transitions_system,
-    classify_twin_core_tag, twin_core_added_tag_transition, twin_core_design_tag,
-    twin_core_design_tag_name,
-};
+use crate::combat::blueprints::twin_core::{TwinCoreDesignTag, twin_core_added_tag_transition};
 pub use signals::{OWNER, dispatch};
 
 #[derive(Resource, Default)]

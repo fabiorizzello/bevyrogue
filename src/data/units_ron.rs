@@ -14,26 +14,6 @@ use crate::combat::toughness::ToughnessCategory;
 use crate::combat::types::{Attribute, DamageTag, EvoLineId, EvoStage, SkillId, UnitId};
 use crate::combat::ultimate::UltAccumulationTrigger;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum TwinCoreLine {
-    Fire,
-    Ice,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum TwinCoreRole {
-    Builder,
-    Spender,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum TwinCorePersonalLabel {
-    Heat,
-    HeatSink,
-    Echo,
-    PackVow,
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(transparent)]
 pub struct BlueprintRosterPayload(pub BTreeMap<String, String>);

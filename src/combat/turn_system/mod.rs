@@ -31,9 +31,6 @@ use crate::combat::{
 use crate::data::{SkillBookHandle, skills_ron::SkillBook};
 use bevy::prelude::*;
 
-pub const TICK_AV_AMOUNT: i32 = 1000; // Arbitrary tick amount for AV accumulation. For deterministic turns
-// this could be based on a fixed percentage or smallest speed denominator.
-// Using 1000 for now to ensure multiple units can cross MAX_AV without too many sub-ticks.
 
 #[derive(Message, Debug, Clone, PartialEq, Eq)]
 pub enum ActionIntent {

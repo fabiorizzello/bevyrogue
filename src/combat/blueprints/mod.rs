@@ -118,6 +118,8 @@ const BLUEPRINTS: &[BlueprintRegistration] = &[
 /// Call this alongside `register_kernel_builtins` whenever you compile the full
 /// `SkillBook` timeline set, so that blueprint-specific references in timelines
 /// (like `"agumon/has_bouncing_fire"`) resolve correctly.
+// Consumed by tests/compiled_timeline_petit_thunder.rs and several other test files.
+#[allow(dead_code)]
 pub fn register_all_blueprint_exts(regs: &mut crate::combat::api::ExtRegistries) {
     agumon::register_agumon_ext(regs);
     gabumon::register_gabumon_ext(regs);
@@ -185,6 +187,8 @@ pub fn dispatch_custom_signal(
     (blueprint.dispatch)(signal, action)
 }
 
+// Consumed by tests/dorumon_predator_runtime.rs, twin_core_integration.rs, and others.
+#[allow(dead_code)]
 pub fn transitions_for_action(action: &ResolvedAction) -> Vec<CombatKernelTransition> {
     action
         .custom_signals
