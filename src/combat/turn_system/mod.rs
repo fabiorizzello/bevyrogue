@@ -1,7 +1,16 @@
 pub mod av;
+pub mod helpers;
 pub mod resistance;
 pub mod speed;
 pub mod turn_order;
+pub mod types;
+
+// Re-export extracted types so external consumers keep working.
+pub use types::{ActionIntent, EnemyTurnRequestQueue};
+pub(crate) use types::ResolveActorsQuery;
+
+// Re-export extracted helpers so sibling modules (`pipeline`, `tests`) keep working.
+pub(crate) use helpers::{emit_combat_beat, emit_combat_event, emit_kernel_transition, set_phase};
 
 use crate::combat::runtime::intent::{CastId, CastIdGen};
 use av::{AV_PER_SPEED, ActionValue, ActionValueUpdated, MAX_AV};
@@ -12,10 +21,9 @@ use crate::combat::rng::CombatRng;
 use crate::combat::{
     StatusBag,
     action_query::{ActionQueryKind, build_snapshot_from_ecs, query_intent_legality},
-    counterplay::EnemyCounterplayKit,
     energy::{Energy, RoundEnergyTracker},
     events::{ActionIntentKind, CombatEvent, CombatEventKind},
-    kernel::{CombatBeatId, CombatKernelRegistry, CombatKernelTransition},
+    kernel::{CombatBeatId, CombatKernelRegistry},
     kit::UnitSkills,
     log::ActionLog,
     preview::{summarize_preview_damage, try_query_skill_preview},
@@ -31,138 +39,10 @@ use crate::combat::{
     turn_order::{TurnAdvanced, TurnOrder},
     types::{DamageTag, SkillId, UnitId},
     ultimate::UltimateCharge,
-    unit::{BasicStreak, Commander, Ko, SlotIndex, Unit},
+    unit::{Commander, Ko, Unit},
 };
 use crate::data::{SkillBookHandle, skills_ron::SkillBook};
 use bevy::prelude::*;
-
-
-#[derive(Message, Debug, Clone, PartialEq, Eq)]
-pub enum ActionIntent {
-    Basic {
-        attacker: UnitId,
-        target: UnitId,
-    },
-    Skill {
-        attacker: UnitId,
-        skill_id: SkillId,
-        target: UnitId,
-    },
-    Ultimate {
-        attacker: UnitId,
-        target: UnitId,
-    },
-}
-
-#[derive(Resource, Debug, Default, Clone)]
-pub struct EnemyTurnRequestQueue(pub Vec<UnitId>);
-
-pub(crate) type ResolveActorsQuery<'w, 's> = Query<
-    'w,
-    's,
-    (
-        Entity,
-        &'static Team,
-        &'static mut Unit,
-        Option<&'static UnitSkills>,
-        Option<&'static mut UltimateCharge>,
-        Option<&'static mut Toughness>,
-        Option<&'static EnemyCounterplayKit>,
-        Option<&'static Ko>,
-        Option<&'static Stunned>,
-        Option<&'static Commander>,
-        Option<&'static mut StatusBag>,
-        Option<&'static mut BasicStreak>,
-        Option<&'static mut RoundFlags>,
-        Option<&'static SlotIndex>,
-        Option<&'static mut DrBag>,
-    ),
->;
-
-pub(super) fn set_phase(state: &mut CombatState, next: CombatPhase) {
-    if state.phase != next {
-        debug!("phase: {:?} -> {:?}", state.phase, next);
-        state.phase = next;
-    }
-}
-
-pub(crate) fn emit_combat_event(
-    event_writer: &mut MessageWriter<CombatEvent>,
-    kind: CombatEventKind,
-    source: UnitId,
-    target: UnitId,
-    follow_up_depth: u8,
-    cast_id: CastId,
-) {
-    debug!(
-        target: "combat.events",
-        ?kind,
-        source = ?source,
-        target = ?target,
-        follow_up_depth,
-        "CombatEvent emitted"
-    );
-    event_writer.write(CombatEvent {
-        kind,
-        source,
-        target,
-        follow_up_depth,
-        cast_id,
-    });
-}
-
-pub(crate) fn emit_kernel_transition(
-    event_writer: &mut MessageWriter<CombatEvent>,
-    registry: Option<&CombatKernelRegistry>,
-    transition: CombatKernelTransition,
-    source: UnitId,
-    target: UnitId,
-    follow_up_depth: u8,
-    cast_id: CastId,
-) {
-    let transitions = registry
-        .map(|registry| registry.dispatch(transition.clone()))
-        .unwrap_or_else(|| vec![transition]);
-
-    for transition in transitions {
-        emit_combat_event(
-            event_writer,
-            CombatEventKind::OnKernelTransition { transition },
-            source,
-            target,
-            follow_up_depth,
-            cast_id,
-        );
-    }
-}
-
-pub(crate) fn emit_combat_beat(
-    event_writer: &mut MessageWriter<CombatEvent>,
-    registry: Option<&CombatKernelRegistry>,
-    beat: CombatBeatId,
-    source: UnitId,
-    target: UnitId,
-    follow_up_depth: u8,
-    cast_id: CastId,
-) {
-    emit_combat_event(
-        event_writer,
-        CombatEventKind::OnCombatBeat { beat },
-        source,
-        target,
-        follow_up_depth,
-        cast_id,
-    );
-    emit_kernel_transition(
-        event_writer,
-        registry,
-        CombatKernelTransition::Beat(beat),
-        source,
-        target,
-        follow_up_depth,
-        cast_id,
-    );
-}
 
 pub fn resolve_action_system(
     mut commands: Commands,
