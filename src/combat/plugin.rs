@@ -7,7 +7,6 @@ use crate::combat::api::{
 };
 use crate::combat::api::applier::{IntentExecutionMeta, intent_applier};
 use crate::combat::api::intent::CastIdGen;
-use crate::combat::blueprints::register_canonical_passive_runners;
 use crate::combat::kernel::register_combat_kernel_runtime;
 use crate::combat::modifiers::DamageModifierLedger;
 use crate::combat::rng::CombatRng;
@@ -44,15 +43,12 @@ impl Plugin for CombatPlugin {
                 ),
             );
 
-        crate::combat::blueprints::add_runtime_plugins(app);
-
         {
             let mut regs = app.world_mut().resource_mut::<ExtRegistries>();
             register_kernel_builtins(&mut regs);
-            crate::combat::blueprints::register_all_blueprint_validation_exts(&mut regs);
         }
 
-        register_canonical_passive_runners(app);
+        crate::combat::blueprints::register_blueprints(app);
 
         // Register kernel-side signals in SignalTaxonomy so ult-driven passive
         // activations pass the debug_assert! gate in intent_applier.

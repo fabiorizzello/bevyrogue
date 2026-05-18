@@ -75,25 +75,6 @@ pub(crate) fn amount_payload(
     }
 }
 
-// kept for: empty-payload custom signals (Tentomon Battery Loop M026 /
-// Renamon Kitsune Grace M027 reactive passives); sibling amount_payload
-// is already wired — keep dispatcher pattern symmetric.
-#[allow(dead_code)]
-pub(crate) fn no_payload(
-    signal: &SkillCustomSignal,
-    owner: &'static str,
-    signal_name: &'static str,
-) -> Result<(), CustomSignalDispatchError> {
-    match signal.payload() {
-        CustomSignalPayload::Empty => Ok(()),
-        CustomSignalPayload::Amount { .. } => Err(CustomSignalDispatchError::MalformedPayload {
-            owner: owner.to_string(),
-            signal: signal_name.to_string(),
-            detail: "expected empty payload".to_string(),
-        }),
-    }
-}
-
 type DispatchFn = fn(
     &SkillCustomSignal,
     &ResolvedAction,
@@ -171,6 +152,21 @@ pub fn add_runtime_plugins(app: &mut crate::combat::bevy_types::App) {
         tentomon::TentomonPlugin,
         renamon::RenamonPlugin,
     ));
+}
+
+/// Single composition seam: plugins + validation exts + passive runners.
+///
+/// `CombatPlugin` calls this once; tests that need granular control can
+/// still call the individual functions above.
+pub fn register_blueprints(app: &mut crate::combat::bevy_types::App) {
+    add_runtime_plugins(app);
+    {
+        let mut regs = app
+            .world_mut()
+            .resource_mut::<crate::combat::api::ExtRegistries>();
+        register_all_blueprint_validation_exts(&mut regs);
+    }
+    register_canonical_passive_runners(app);
 }
 
 pub fn dispatch_custom_signal(
