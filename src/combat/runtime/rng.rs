@@ -1,23 +1,24 @@
-/// Deterministic per-cast RNG using SplitMix64.
+use rand_core::{Rng, SeedableRng};
+
+use crate::combat::rng::{CombatEntropy, combat_seed_from_u64};
+
+/// Deterministic per-cast RNG using the same `bevy_prng` algorithm as combat ECS RNGs.
 ///
 /// Each (global_seed, cast_id, beat, hop, salt) tuple produces an independent,
-/// reproducible stream (invariant I1: same input ⇒ same Intent stream). No
-/// external crate dependency — the algorithm is five arithmetic operations.
+/// reproducible stream (invariant I1: same input -> same Intent stream).
 ///
 /// # Separation from `combat::rng::CombatRng`
-/// `CombatRng` (StdRng) handles legacy global rolls (status accuracy, etc.).
-/// `CastRng` is cast-scoped and seeded per invocation, enabling full replay.
+/// `CombatRng` (`bevy_prng::WyRand` via `bevy_rand`) handles legacy global and
+/// per-entity ECS rolls (status accuracy, etc.). `CastRng` is cast-scoped and
+/// seeded per invocation, enabling full replay with the same PRNG family.
 // Used in cfg(test) within this file; public API for future skill-hook callers.
-pub struct CastRng(u64);
+pub struct CastRng(CombatEntropy);
 
 // All methods consumed in cfg(test) within this file; public API surface for future use.
 impl CastRng {
-    /// Seed from a raw `u64`. Runs one warm-up step so that `seed=0` and
-    /// `seed=1` diverge on the first `next_u64` call.
+    /// Seed from a raw `u64` using the combat seed adapter shared with `CombatRng`.
     pub fn new(seed: u64) -> Self {
-        let mut rng = Self(seed);
-        let _ = rng.next_u64();
-        rng
+        Self(CombatEntropy::from_seed(combat_seed_from_u64(seed)))
     }
 
     /// Build from cast context parameters.
@@ -33,26 +34,26 @@ impl CastRng {
         Self::new(mixed)
     }
 
-    /// SplitMix64 step: advances state and returns the next 64-bit output.
+    /// Advances the per-cast PRNG and returns the next 64-bit output.
     pub fn next_u64(&mut self) -> u64 {
-        self.0 = self.0.wrapping_add(0x9e3779b97f4a7c15u64);
-        let mut z = self.0;
-        z = (z ^ (z >> 30)).wrapping_mul(0xbf58476d1ce4e5b9u64);
-        z = (z ^ (z >> 27)).wrapping_mul(0x94d049bb133111ebu64);
-        z ^ (z >> 31)
+        self.0.next_u64()
     }
 
-    /// Upper 32 bits of the next 64-bit output.
+    /// Advances the per-cast PRNG and returns the next 32-bit output.
     pub fn next_u32(&mut self) -> u32 {
-        (self.next_u64() >> 32) as u32
+        self.0.next_u32()
     }
 
     /// Uniform sample in `[0, n)`. Panics if `n == 0`.
-    ///
-    /// Uses modulo reduction — sufficient for small `n` values used in combat.
     pub fn next_below(&mut self, n: u32) -> u32 {
         assert!(n > 0, "CastRng::next_below: n must be > 0");
-        (self.next_u64() % n as u64) as u32
+        let rejection_zone = u32::MAX - (u32::MAX % n);
+        loop {
+            let value = self.next_u32();
+            if value < rejection_zone {
+                return value % n;
+            }
+        }
     }
 
     /// Returns `true` with probability `pct / 100`. Saturates at boundaries.
@@ -97,10 +98,11 @@ mod tests {
 
     #[test]
     fn from_params_determinism() {
-        let a = CastRng::from_params(999, 1, 2, 3, 42);
-        let b = CastRng::from_params(999, 1, 2, 3, 42);
-        // Internal state must match after construction.
-        assert_eq!(a.0, b.0);
+        let seq = |mut r: CastRng| -> Vec<u64> { (0..8).map(|_| r.next_u64()).collect() };
+        assert_eq!(
+            seq(CastRng::from_params(999, 1, 2, 3, 42)),
+            seq(CastRng::from_params(999, 1, 2, 3, 42))
+        );
     }
 
     #[test]

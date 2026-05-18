@@ -186,7 +186,7 @@ impl BeatRunner {
                 let lb = find_beat(&tl, enclosing);
                 match &lb.kind {
                     BeatKind::Loop { body, .. } => body[body_cursor].clone(),
-                    _ => panic!("loop_stack frame points at non-Loop beat `{enclosing}`"),
+                    _ => unreachable!("loop_stack frame points at non-Loop beat `{enclosing}`"),
                 }
             };
 
@@ -236,8 +236,11 @@ impl BeatRunner {
                 self.loop_stack.pop();
                 // F1: first passing edge from the enclosing Loop beat becomes the next cursor.
                 let mut params = self.make_params(world, regs, mode, pending);
-                let next =
-                    crate::combat::runtime::runner_common::next_beat(enclosing, &exit_evt, &mut params);
+                let next = crate::combat::runtime::runner_common::next_beat(
+                    enclosing,
+                    &exit_evt,
+                    &mut params,
+                );
                 self.cursor = next;
                 return StepOutcome::LoopExited;
             } else {
@@ -266,7 +269,9 @@ impl BeatRunner {
                     "BeatRunner: nested Loop is not supported in S02 (S05 lifts this restriction)"
                 );
                 if body.is_empty() {
-                    panic!("Loop beat `{beat_id}` has an empty body — invalid timeline");
+                    unreachable!(
+                        "Loop beat `{beat_id}` has an empty body — validate_timeline_structure catches this before runtime"
+                    );
                 }
                 self.loop_stack.push(LoopFrame {
                     enclosing_loop_beat: beat_id,
@@ -299,8 +304,11 @@ impl BeatRunner {
                     beat_targets: self.last_beat_targets.clone(),
                 };
                 let mut params = self.make_params(world, regs, mode, pending);
-                let next =
-                    crate::combat::runtime::runner_common::next_beat(beat_id, &gate_evt, &mut params);
+                let next = crate::combat::runtime::runner_common::next_beat(
+                    beat_id,
+                    &gate_evt,
+                    &mut params,
+                );
                 self.cursor = next;
                 if self.cursor.is_none() {
                     StepOutcome::Done

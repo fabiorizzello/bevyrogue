@@ -24,7 +24,7 @@ pub mod action_query;
 pub mod kernel;
 /// `UnitSkills` (basic / skill / ultimate IDs per Unit).
 pub mod kit;
-/// Deterministic RNG resource (`CombatRng`) — centralises all combat randomness (R019).
+/// Deterministic RNG seams (`CombatRng`, `bevy_rand` global entropy, per-entity seeds).
 pub mod rng;
 /// `CombatState`, `CombatPhase`, `InFlightAction`.
 pub mod state;

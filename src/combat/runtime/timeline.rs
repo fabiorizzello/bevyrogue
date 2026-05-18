@@ -2,6 +2,7 @@ use std::collections::HashSet;
 
 use bevy::prelude::{Resource, World};
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 use crate::combat::{
     runtime::{intent::CastId, registry::ExtRegistries, signal::SignalPayload},
@@ -178,14 +179,32 @@ pub struct CueCtx<'a, S = ()> {
 }
 
 /// A single dangling-reference error found by `validate_timeline_refs`.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Error)]
+#[error("[{axis}] missing '{missing_id}' at {site}")]
 pub struct ValidationError {
     /// Which registry axis the missing id belongs to: `"hook"`, `"selector"`, `"predicate"`.
     pub axis: &'static str,
     /// The unresolved id string.
     pub missing_id: String,
-    /// Human-readable location: `"beat <id>"` or `"edge <from>-><to>"`.
+    /// Human-readable location: `beat <id>` or `edge <from>-><to>`.
     pub site: String,
+}
+
+/// Aggregated dangling-reference report raised by `CombatPlugin::finish` when
+/// one or more registered timelines reference unknown hook/selector/predicate ids.
+///
+/// `Display` lists every offending site on its own line so the failure can be
+/// triaged from log text alone.
+#[derive(Debug, Error)]
+#[error("dangling timeline references ({} site{}):\n{}", .0.len(), if .0.len() == 1 { "" } else { "s" }, render_validation_errors(.0))]
+pub struct DanglingTimelineRefs(pub Vec<ValidationError>);
+
+fn render_validation_errors(errors: &[ValidationError]) -> String {
+    errors
+        .iter()
+        .map(|e| format!("  {e}"))
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 /// Validate all hook/selector/predicate references in `timeline` against `regs`.

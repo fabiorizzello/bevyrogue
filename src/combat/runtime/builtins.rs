@@ -1,12 +1,12 @@
 use bevy::prelude::World;
 
 use crate::combat::{
+    resolution::{TargetEntry, TargetableSnapshot, resolve_targets},
     runtime::{
         intent::Intent,
         registry::ExtRegistries,
         timeline::{BeatEvent, BeatPayload, SelectorCtx},
     },
-    resolution::{TargetEntry, TargetableSnapshot, resolve_targets},
     team::Team,
     types::UnitId,
     unit::{Ko, SlotIndex, Unit},
@@ -59,7 +59,7 @@ fn deal_damage(evt: &BeatEvent, ctx: &mut crate::combat::runtime::SkillCtx<'_>) 
         target,
     }) = ctx.beat_payload()
     else {
-        panic!(
+        unreachable!(
             "core/deal_damage requires BeatPayload::DealDamage at beat `{}`",
             evt.beat_id
         );
@@ -83,7 +83,7 @@ fn break_toughness(evt: &BeatEvent, ctx: &mut crate::combat::runtime::SkillCtx<'
         target,
     }) = ctx.beat_payload()
     else {
-        panic!(
+        unreachable!(
             "core/break_toughness requires BeatPayload::BreakToughness at beat `{}`",
             evt.beat_id
         );
@@ -107,7 +107,7 @@ fn apply_status(evt: &BeatEvent, ctx: &mut crate::combat::runtime::SkillCtx<'_>)
         target,
     }) = ctx.beat_payload()
     else {
-        panic!(
+        unreachable!(
             "core/apply_status requires BeatPayload::ApplyStatus at beat `{}`",
             evt.beat_id
         );
@@ -126,7 +126,7 @@ fn apply_status(evt: &BeatEvent, ctx: &mut crate::combat::runtime::SkillCtx<'_>)
 
 fn delay_turn(evt: &BeatEvent, ctx: &mut crate::combat::runtime::SkillCtx<'_>) {
     let Some(BeatPayload::DelayTurn { amount_pct, target }) = ctx.beat_payload() else {
-        panic!(
+        unreachable!(
             "core/delay_turn requires BeatPayload::DelayTurn at beat `{}`",
             evt.beat_id
         );
@@ -142,7 +142,7 @@ fn delay_turn(evt: &BeatEvent, ctx: &mut crate::combat::runtime::SkillCtx<'_>) {
 
 fn advance_turn(evt: &BeatEvent, ctx: &mut crate::combat::runtime::SkillCtx<'_>) {
     let Some(BeatPayload::AdvanceTurn { amount_pct, target }) = ctx.beat_payload() else {
-        panic!(
+        unreachable!(
             "core/advance_turn requires BeatPayload::AdvanceTurn at beat `{}`",
             evt.beat_id
         );
@@ -158,7 +158,7 @@ fn advance_turn(evt: &BeatEvent, ctx: &mut crate::combat::runtime::SkillCtx<'_>)
 
 fn revive(evt: &BeatEvent, ctx: &mut crate::combat::runtime::SkillCtx<'_>) {
     let Some(BeatPayload::Revive { pct, target }) = ctx.beat_payload() else {
-        panic!(
+        unreachable!(
             "core/revive requires BeatPayload::Revive at beat `{}`",
             evt.beat_id
         );
@@ -176,7 +176,7 @@ fn revive(evt: &BeatEvent, ctx: &mut crate::combat::runtime::SkillCtx<'_>) {
 
 fn grant_free_skill(evt: &BeatEvent, ctx: &mut crate::combat::runtime::SkillCtx<'_>) {
     let Some(BeatPayload::GrantFreeSkill { count }) = ctx.beat_payload() else {
-        panic!(
+        unreachable!(
             "core/grant_free_skill requires BeatPayload::GrantFreeSkill at beat `{}`",
             evt.beat_id
         );
@@ -195,7 +195,7 @@ fn grant_free_skill(evt: &BeatEvent, ctx: &mut crate::combat::runtime::SkillCtx<
 
 fn grant_energy(evt: &BeatEvent, ctx: &mut crate::combat::runtime::SkillCtx<'_>) {
     let Some(BeatPayload::GrantEnergy { amount }) = ctx.beat_payload() else {
-        panic!(
+        unreachable!(
             "core/grant_energy requires BeatPayload::GrantEnergy at beat `{}`",
             evt.beat_id
         );
@@ -214,7 +214,7 @@ fn grant_energy(evt: &BeatEvent, ctx: &mut crate::combat::runtime::SkillCtx<'_>)
 
 fn self_advance(evt: &BeatEvent, ctx: &mut crate::combat::runtime::SkillCtx<'_>) {
     let Some(BeatPayload::SelfAdvance { amount_pct }) = ctx.beat_payload() else {
-        panic!(
+        unreachable!(
             "core/self_advance requires BeatPayload::SelfAdvance at beat `{}`",
             evt.beat_id
         );
@@ -272,7 +272,7 @@ fn apply_effect(evt: &BeatEvent, ctx: &mut crate::combat::runtime::SkillCtx<'_>)
             });
         }
         None => {
-            panic!(
+            unreachable!(
                 "core/apply_effect requires a BeatPayload at beat `{}`",
                 evt.beat_id
             );

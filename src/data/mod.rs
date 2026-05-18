@@ -50,8 +50,6 @@ pub const ENEMY_SKILL_PATHS: &[&str] = &[
     "data/enemies/ogremon/skills.ron",
 ];
 
-
-
 #[derive(Resource)]
 pub struct UnitRosterHandles(pub Vec<Handle<UnitRoster>>);
 
@@ -344,42 +342,96 @@ fn sync_skill_book_on_load(
 // ── Compile-time aggregate helpers (for tests and CLI) ──────────────────────
 
 pub fn aggregate_unit_roster() -> UnitRoster {
-    let fragments: &[&str] = &[
-        include_str!("../../assets/data/digimon/agumon/unit.ron"),
-        include_str!("../../assets/data/digimon/gabumon/unit.ron"),
-        include_str!("../../assets/data/digimon/dorumon/unit.ron"),
-        include_str!("../../assets/data/digimon/renamon/unit.ron"),
-        include_str!("../../assets/data/digimon/patamon/unit.ron"),
-        include_str!("../../assets/data/digimon/tentomon/unit.ron"),
-        include_str!("../../assets/data/enemies/devimon/unit.ron"),
-        include_str!("../../assets/data/enemies/goblimon/unit.ron"),
-        include_str!("../../assets/data/enemies/ogremon/unit.ron"),
+    let fragments: &[(&str, &str)] = &[
+        (
+            "assets/data/digimon/agumon/unit.ron",
+            include_str!("../../assets/data/digimon/agumon/unit.ron"),
+        ),
+        (
+            "assets/data/digimon/gabumon/unit.ron",
+            include_str!("../../assets/data/digimon/gabumon/unit.ron"),
+        ),
+        (
+            "assets/data/digimon/dorumon/unit.ron",
+            include_str!("../../assets/data/digimon/dorumon/unit.ron"),
+        ),
+        (
+            "assets/data/digimon/renamon/unit.ron",
+            include_str!("../../assets/data/digimon/renamon/unit.ron"),
+        ),
+        (
+            "assets/data/digimon/patamon/unit.ron",
+            include_str!("../../assets/data/digimon/patamon/unit.ron"),
+        ),
+        (
+            "assets/data/digimon/tentomon/unit.ron",
+            include_str!("../../assets/data/digimon/tentomon/unit.ron"),
+        ),
+        (
+            "assets/data/enemies/devimon/unit.ron",
+            include_str!("../../assets/data/enemies/devimon/unit.ron"),
+        ),
+        (
+            "assets/data/enemies/goblimon/unit.ron",
+            include_str!("../../assets/data/enemies/goblimon/unit.ron"),
+        ),
+        (
+            "assets/data/enemies/ogremon/unit.ron",
+            include_str!("../../assets/data/enemies/ogremon/unit.ron"),
+        ),
     ];
     let mut merged = Vec::new();
-    for fragment in fragments {
+    for (path, fragment) in fragments {
         let partial: UnitRoster =
-            ron::from_str(fragment).expect("failed to parse per-digimon unit.ron");
+            ron::from_str(fragment).unwrap_or_else(|e| panic!("failed to parse `{path}`: {e}"));
         merged.extend(partial.0);
     }
     UnitRoster(merged)
 }
 
 pub fn aggregate_skill_book() -> SkillBook {
-    let fragments: &[&str] = &[
-        include_str!("../../assets/data/digimon/agumon/skills.ron"),
-        include_str!("../../assets/data/digimon/gabumon/skills.ron"),
-        include_str!("../../assets/data/digimon/dorumon/skills.ron"),
-        include_str!("../../assets/data/digimon/renamon/skills.ron"),
-        include_str!("../../assets/data/digimon/patamon/skills.ron"),
-        include_str!("../../assets/data/digimon/tentomon/skills.ron"),
-        include_str!("../../assets/data/enemies/devimon/skills.ron"),
-        include_str!("../../assets/data/enemies/goblimon/skills.ron"),
-        include_str!("../../assets/data/enemies/ogremon/skills.ron"),
+    let fragments: &[(&str, &str)] = &[
+        (
+            "assets/data/digimon/agumon/skills.ron",
+            include_str!("../../assets/data/digimon/agumon/skills.ron"),
+        ),
+        (
+            "assets/data/digimon/gabumon/skills.ron",
+            include_str!("../../assets/data/digimon/gabumon/skills.ron"),
+        ),
+        (
+            "assets/data/digimon/dorumon/skills.ron",
+            include_str!("../../assets/data/digimon/dorumon/skills.ron"),
+        ),
+        (
+            "assets/data/digimon/renamon/skills.ron",
+            include_str!("../../assets/data/digimon/renamon/skills.ron"),
+        ),
+        (
+            "assets/data/digimon/patamon/skills.ron",
+            include_str!("../../assets/data/digimon/patamon/skills.ron"),
+        ),
+        (
+            "assets/data/digimon/tentomon/skills.ron",
+            include_str!("../../assets/data/digimon/tentomon/skills.ron"),
+        ),
+        (
+            "assets/data/enemies/devimon/skills.ron",
+            include_str!("../../assets/data/enemies/devimon/skills.ron"),
+        ),
+        (
+            "assets/data/enemies/goblimon/skills.ron",
+            include_str!("../../assets/data/enemies/goblimon/skills.ron"),
+        ),
+        (
+            "assets/data/enemies/ogremon/skills.ron",
+            include_str!("../../assets/data/enemies/ogremon/skills.ron"),
+        ),
     ];
     let mut merged = Vec::new();
-    for fragment in fragments {
+    for (path, fragment) in fragments {
         let partial: SkillBook =
-            ron::from_str(fragment).expect("failed to parse per-digimon skills.ron");
+            ron::from_str(fragment).unwrap_or_else(|e| panic!("failed to parse `{path}`: {e}"));
         merged.extend(partial.0);
     }
     SkillBook(merged)

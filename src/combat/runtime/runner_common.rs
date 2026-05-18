@@ -18,7 +18,7 @@ pub(crate) fn find_beat<'t>(timeline: &'t CompiledTimeline, id: BeatId) -> &'t B
         .beats
         .iter()
         .find(|b| b.id == id)
-        .unwrap_or_else(|| panic!("beat `{id}` not found in timeline `{}`", timeline.id))
+        .unwrap_or_else(|| unreachable!("beat `{id}` not found in timeline `{}`", timeline.id))
 }
 
 pub struct RunnerParams<'a, 'w> {
@@ -43,7 +43,7 @@ pub(crate) fn fire_beat(beat: &Beat, hop_index: u32, params: RunnerParams) -> Ve
                 .selectors
                 .get(sel_id.as_ref())
                 .unwrap_or_else(|| {
-                    panic!(
+                    unreachable!(
                         "selector `{sel_id}` not registered \
                      (validate_timeline_refs catches this at App::finish)"
                     )
@@ -66,7 +66,7 @@ pub(crate) fn fire_beat(beat: &Beat, hop_index: u32, params: RunnerParams) -> Ve
     // Hook.
     if let Some(hook_id) = beat.hook.as_ref() {
         let f = *params.regs.hooks.get(hook_id.as_ref()).unwrap_or_else(|| {
-            panic!(
+            unreachable!(
                 "hook `{hook_id}` not registered \
                  (validate_timeline_refs catches this at App::finish)"
             )
@@ -112,7 +112,7 @@ pub(crate) fn eval_predicate(pred_id: &str, evt: &BeatEvent, params: &mut Runner
         .regs
         .predicates
         .get(pred_id)
-        .unwrap_or_else(|| panic!("predicate `{pred_id}` not registered"));
+        .unwrap_or_else(|| unreachable!("predicate `{pred_id}` not registered"));
     let mut dummy: VecDeque<Intent> = VecDeque::new();
     let ctx = SkillCtx::new(
         params.caster,

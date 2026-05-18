@@ -1,25 +1,29 @@
 use bevy::prelude::*;
 
-use crate::combat::runtime::{
-    BlueprintState, Clock, ExtRegistries, IntentQueue, PassiveListeners, SignalBus,
-    SignalTaxonomy, TimelineLibrary, combat_event_to_signal_system, passive_dispatch_system,
-    register_kernel_builtins, validate_timeline_refs,
+use crate::combat::kernel::register_combat_kernel_runtime;
+use crate::combat::modifiers::DamageModifierLedger;
+use crate::combat::rng::{
+    CombatRng, DEFAULT_COMBAT_RNG_SEED, combat_entropy_plugin_from_seed, seed_unit_rngs,
 };
 use crate::combat::runtime::applier::{IntentExecutionMeta, intent_applier};
 use crate::combat::runtime::intent::CastIdGen;
-use crate::combat::kernel::register_combat_kernel_runtime;
-use crate::combat::modifiers::DamageModifierLedger;
-use crate::combat::rng::CombatRng;
+use crate::combat::runtime::{
+    BlueprintState, Clock, DanglingTimelineRefs, ExtRegistries, IntentQueue, PassiveListeners,
+    SignalBus, SignalTaxonomy, TimelineLibrary, combat_event_to_signal_system,
+    passive_dispatch_system, register_kernel_builtins, validate_timeline_refs,
+};
 
 /// Bevy plugin that registers the full combat runtime.
 ///
 /// Mounts framework Resources (ExtRegistries, SignalBus, Clock, CombatRng,
-/// IntentQueue, CastIdGen), calls the combat kernel registration, and wires
-/// the `intent_applier` exclusive system. Add once in main/bin.
+/// IntentQueue, CastIdGen), registers Bevy-native seeded entropy for per-entity
+/// RNG streams, calls the combat kernel registration, and wires the
+/// `intent_applier` exclusive system. Add once in main/bin.
 pub struct CombatPlugin;
 
 impl Plugin for CombatPlugin {
     fn build(&self, app: &mut App) {
+        app.add_plugins(combat_entropy_plugin_from_seed(DEFAULT_COMBAT_RNG_SEED));
         register_combat_kernel_runtime(app);
 
         app.init_resource::<ExtRegistries>()
@@ -33,10 +37,11 @@ impl Plugin for CombatPlugin {
             .init_resource::<DamageModifierLedger>()
             .init_resource::<PassiveListeners>()
             .insert_resource(Clock::default())
-            .insert_resource(CombatRng::from_seed(0xDEAD_BEEF))
+            .insert_resource(CombatRng::from_seed(DEFAULT_COMBAT_RNG_SEED))
             .add_systems(
                 Update,
                 (
+                    seed_unit_rngs,
                     intent_applier,
                     combat_event_to_signal_system.after(intent_applier),
                     passive_dispatch_system.after(combat_event_to_signal_system),
@@ -74,13 +79,9 @@ impl Plugin for CombatPlugin {
         }
 
         if !all_errors.is_empty() {
-            let msg: Vec<String> = all_errors
-                .iter()
-                .map(|e| format!("[{}] missing '{}' at {}", e.axis, e.missing_id, e.site))
-                .collect();
             panic!(
-                "CombatPlugin::finish — dangling timeline references:\n{}",
-                msg.join("\n")
+                "CombatPlugin::finish — {}",
+                DanglingTimelineRefs(all_errors)
             );
         }
     }

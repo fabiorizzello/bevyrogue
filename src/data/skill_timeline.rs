@@ -148,6 +148,14 @@ fn validate_beat_tree(
     beat: &Beat<String>,
 ) -> Result<(), SkillTimelineCompileError> {
     if let BeatKind::Loop { body, .. } = &beat.kind {
+        if body.is_empty() {
+            return Err(SkillTimelineCompileError::new(
+                &skill.id,
+                format!("beat {}", beat.id),
+                "loop beat body must contain at least one nested beat",
+            ));
+        }
+
         let mut seen = HashSet::new();
         for nested in body {
             if !seen.insert(nested.id.as_str()) {

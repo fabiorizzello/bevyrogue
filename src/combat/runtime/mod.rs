@@ -10,7 +10,7 @@
 //! - `registry`     — `ExtPoint` trait + `Registry<E>` + `ExtRegistries` Resource (8 axes).
 //! - `signal`       — `SignalBus` + `SignalTaxonomy` for blueprint-owned custom signals.
 //! - `event_filter` — typed runtime filters for passive subscriptions.
-//! - `rng`          — `CastRng` SplitMix64 deterministic per-cast RNG.
+//! - `rng`          — `CastRng` deterministic per-cast RNG backed by `bevy_prng`.
 //! - `applier`      — exclusive `intent_applier` system that drains `IntentQueue`.
 //! - `runner`       — timeline-backed skill execution (FSM stepping, beat evaluation).
 //! - `timeline`     — compiled timeline schema and evaluation helpers.
@@ -51,6 +51,7 @@ pub use runner::StepOutcome;
 pub use signal::{Signal, SignalBus, SignalPayload, SignalTaxonomy};
 pub use skill_ctx::{SkillCtx, SkillCtxMode};
 pub use timeline::{
-    Beat, BeatEdge, BeatEvent, BeatId, BeatKind, BeatPayload, CompiledTimeline, Presentation,
-    SelectorCtx, TimelineLibrary, ValidationError, validate_timeline_refs,
+    Beat, BeatEdge, BeatEvent, BeatId, BeatKind, BeatPayload, CompiledTimeline,
+    DanglingTimelineRefs, Presentation, SelectorCtx, TimelineLibrary, ValidationError,
+    validate_timeline_refs,
 };
