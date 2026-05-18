@@ -1,0 +1,46 @@
+(
+    clip: "skill",
+    entry: "diamond_storm_cast",
+    nodes: {
+        "diamond_storm_cast": (
+            frames: (45, 49),
+            on_enter: [
+                SpawnParticle(
+                    name: "diamond_storm_leaf",
+                    origin: CasterCenter,
+                    motion: ArcToTarget,
+                ),
+            ],
+        ),
+        "diamond_storm_impact": (
+            frames: (50, 53),
+            on_enter: [
+                EmitDamage(
+                    hits: Literal(1),
+                    mul: Literal(16),
+                    target: Primary,
+                ),
+            ],
+        ),
+        "diamond_storm_recover": (
+            frames: (54, 56),
+        ),
+    },
+    transitions: [
+        (
+            from: "diamond_storm_cast",
+            to: Node("diamond_storm_impact"),
+            when: TimeInNode,
+        ),
+        (
+            from: "diamond_storm_impact",
+            to: Node("diamond_storm_recover"),
+            when: TimeInNode,
+        ),
+        (
+            from: "diamond_storm_recover",
+            to: Exit,
+            when: Always,
+        ),
+    ],
+)

@@ -1,12 +1,12 @@
 use bevy::prelude::*;
 use bevyrogue::combat::{
-    runtime::{Intent, IntentQueue, applier::intent_applier, intent::CastId},
     blueprints::dorumon::PredatorLoopState,
     blueprints::tentomon::BatteryLoopState,
     events::{CombatEvent, CombatEventKind},
     kernel::register_combat_kernel_runtime,
     modifiers::DamageModifierLedger,
     rng::CombatRng,
+    runtime::{Intent, IntentQueue, applier::intent_applier, intent::CastId},
     team::Team,
     types::{Attribute, DamageTag, EvoStage, UnitId},
     unit::Unit,

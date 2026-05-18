@@ -238,8 +238,8 @@ fn missing_identity_metadata_fails_to_parse() {
         ),
     ]"#;
 
-    let err = ron::from_str::<UnitRoster>(missing_metadata)
-        .expect_err("missing metadata should fail");
+    let err =
+        ron::from_str::<UnitRoster>(missing_metadata).expect_err("missing metadata should fail");
     let message = err.to_string();
     assert!(
         message.contains("role_tags") || message.contains("signature_traits"),
@@ -322,8 +322,7 @@ fn missing_evo_stage_fails_to_parse() {
         ),
     ]"#;
 
-    let err =
-        ron::from_str::<UnitRoster>(missing_evo).expect_err("missing evo_stage should fail");
+    let err = ron::from_str::<UnitRoster>(missing_evo).expect_err("missing evo_stage should fail");
     assert!(
         err.to_string().contains("missing field `evo_stage`"),
         "unexpected error: {}",

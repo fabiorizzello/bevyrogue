@@ -6,9 +6,9 @@ use super::signals::{
     OWNER, SIGNAL_APPLY_PREY_LOCK, SIGNAL_BUILD_EXPLOIT, SIGNAL_CONSUME_PREY_LOCK_PAYOFF,
     SIGNAL_ENTER_BERSERK, SIGNAL_TICK,
 };
-use crate::combat::runtime::SignalPayload;
 use crate::combat::events::{CombatEvent, CombatEventKind};
 use crate::combat::kernel::{CombatKernelState, CombatKernelTransition};
+use crate::combat::runtime::SignalPayload;
 use crate::combat::types::UnitId;
 
 use super::identity::{
@@ -341,22 +341,34 @@ pub(crate) fn format_predator_loop_transition(transition: PredatorLoopTransition
         | PredatorLoopSignal::ConsumePreyLockPayoff
         | PredatorLoopSignal::EnterBerserk
         | PredatorLoopSignal::Expire => {
-            format!("{signal}(target={:?};amount={})", transition.target, transition.amount)
+            format!(
+                "{signal}(target={:?};amount={})",
+                transition.target, transition.amount
+            )
         }
         PredatorLoopSignal::Tick => signal.to_string(),
-        PredatorLoopSignal::Rejected | PredatorLoopSignal::Ignored => match (transition.attempted, transition.reason) {
-            (Some(attempted), Some(reason)) => {
-                format!("{signal}({};reason={reason:?})", format_predator_loop_step(attempted))
+        PredatorLoopSignal::Rejected | PredatorLoopSignal::Ignored => {
+            match (transition.attempted, transition.reason) {
+                (Some(attempted), Some(reason)) => {
+                    format!(
+                        "{signal}({};reason={reason:?})",
+                        format_predator_loop_step(attempted)
+                    )
+                }
+                (Some(attempted), None) => {
+                    format!("{signal}({})", format_predator_loop_step(attempted))
+                }
+                _ => signal.to_string(),
             }
-            (Some(attempted), None) => format!("{signal}({})", format_predator_loop_step(attempted)),
-            _ => signal.to_string(),
-        },
+        }
     }
 }
 
 fn format_predator_loop_step(step: PredatorLoopStep) -> String {
     match step {
-        PredatorLoopStep::BuildExploit { target, amount } => format!("build({}:{})", target.0, amount),
+        PredatorLoopStep::BuildExploit { target, amount } => {
+            format!("build({}:{})", target.0, amount)
+        }
         PredatorLoopStep::ApplyPreyLock { target } => format!("prey-lock({})", target.0),
         PredatorLoopStep::ConsumePreyLockPayoff { target } => format!("payoff({})", target.0),
         PredatorLoopStep::EnterBerserk => "berserk".to_string(),

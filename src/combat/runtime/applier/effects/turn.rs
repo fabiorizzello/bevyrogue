@@ -2,9 +2,9 @@ use bevy::log;
 use bevy::prelude::*;
 
 use crate::combat::{
-    runtime::intent::CastId,
     energy::{Energy, EnergyGainSource, RoundEnergyTracker},
     events::CombatEventKind,
+    runtime::intent::CastId,
     types::UnitId,
     unit::{Ko, Unit},
 };

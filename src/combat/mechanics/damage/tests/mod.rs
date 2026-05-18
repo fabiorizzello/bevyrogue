@@ -4,8 +4,8 @@ use crate::combat::{
     unit::Unit,
 };
 
-mod matrix;
 mod edge;
+mod matrix;
 
 fn make_unit(attr: Attribute, resists: Vec<DamageTag>) -> Unit {
     Unit {

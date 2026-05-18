@@ -1,6 +1,8 @@
 use super::*;
 use crate::combat::runtime::timeline::{Beat, BeatEdge, BeatKind, CompiledTimeline};
-use crate::combat::runtime::{SignalPayload, intent::CastId, timeline::BeatPayload, validate_timeline_refs};
+use crate::combat::runtime::{
+    SignalPayload, intent::CastId, timeline::BeatPayload, validate_timeline_refs,
+};
 use bevy::prelude::World;
 use std::{
     collections::{HashSet, VecDeque},

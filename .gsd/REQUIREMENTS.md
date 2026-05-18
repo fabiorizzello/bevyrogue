@@ -24,16 +24,6 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: mapped
 - Notes: Seeded from M022 S01, adapted so the owner module is animation rather than a Digimon-specific or blueprint-specific seam.
 
-### R003 — The project must load `clip.ron` as a typed Bevy asset and prove geometry parity against the existing atlas source data for Agumon.
-- Class: core-capability
-- Status: active
-- Description: The project must load `clip.ron` as a typed Bevy asset and prove geometry parity against the existing atlas source data for Agumon.
-- Why it matters: Frame geometry must be trustworthy before animation graphs and future runtime playback depend on it.
-- Source: user
-- Primary owning slice: M001/S02
-- Validation: mapped
-- Notes: Seeded from M022 S02. Agumon remains the first full proof path, but the schema must not be Agumon-specific.
-
 ### R004 — Invalid animation assets at boot must fail fast with typed diagnostics instead of being deferred to runtime behavior.
 - Class: continuity
 - Status: active
@@ -87,6 +77,16 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Validated
 
+### R003 — The project must load `clip.ron` as a typed Bevy asset and prove geometry parity against the existing atlas source data for Agumon.
+- Class: core-capability
+- Status: validated
+- Description: The project must load `clip.ron` as a typed Bevy asset and prove geometry parity against the existing atlas source data for Agumon.
+- Why it matters: Frame geometry must be trustworthy before animation graphs and future runtime playback depend on it.
+- Source: user
+- Primary owning slice: M001/S02
+- Validation: Validated by fresh S02 verification: `cargo test --test clip_parse`, `cargo test --test clip_geometry_parity`, `cargo test --test clip_asset`, and `cargo test` all passed, proving typed `clip.ron` loading plus Agumon geometry parity against `assets/digimon/agumon_atlas.json`.
+- Notes: S02 established the generic typed Clip schema, authored `assets/digimon/agumon/clip.ron`, and verified readiness only flips after the typed Bevy asset is readable.
+
 ### R013 — Recovered historical baseline: preserve the validated M015 Combat Authority Closure contract covering deterministic headless verification, canonical combat authority boundaries, shared combat surfaces, and truthful supersession of incomplete M013 closure evidence.
 - Class: core-capability
 - Status: validated
@@ -94,7 +94,7 @@ This file is the explicit capability and coverage contract for the project.
 - Why it matters: This baseline defines the last validated pre-M001 combat contract and should remain queryable in the DB rather than only in a recovered markdown snapshot.
 - Source: git-history 00c0812
 - Validation: Validated baseline from recovered historical requirements snapshot; evidence in `.gsd/milestones/M015/M015-VALIDATION.md`, `docs/combat_current.md`, and listed M015 contract docs.
-- Notes: Recovered from historical Git requirements. Corresponds to the validated baseline section naming R086, R088, R089-R100.
+- Notes: Recovered from `docs/recovery/REQUIREMENTS-from-git-00c0812.md`. Corresponds to the historical validated baseline section naming R086, R088, R089-R100.
 
 ## Deferred
 
@@ -125,7 +125,7 @@ This file is the explicit capability and coverage contract for the project.
 - Why it matters: The historical contract explicitly tracked full roster blueprint migration as future work beyond the validated combat baseline.
 - Source: git-history 00c0812
 - Validation: Deferred historical work item; no current proof required.
-- Notes: Recovered from the historical Git requirements snapshot.
+- Notes: Recovered from the `Deferred / future work` section of `docs/recovery/REQUIREMENTS-from-git-00c0812.md`.
 
 ### R015 — Recovered deferred work: complete revised 12-Digimon roster behavior and balance validation.
 - Class: quality-attribute
@@ -134,7 +134,7 @@ This file is the explicit capability and coverage contract for the project.
 - Why it matters: Historical planning kept full roster behavior and balance validation out of the validated baseline while preserving it as explicit future work.
 - Source: git-history 00c0812
 - Validation: Deferred historical work item; no current proof required.
-- Notes: Recovered from the historical Git requirements snapshot.
+- Notes: Recovered from the `Deferred / future work` section of `docs/recovery/REQUIREMENTS-from-git-00c0812.md`.
 
 ### R016 — Recovered deferred work: deliver a full playable CLI UX and windowed presentation pipeline consuming canonical combat surfaces.
 - Class: launchability
@@ -143,7 +143,7 @@ This file is the explicit capability and coverage contract for the project.
 - Why it matters: The historical contract distinguished validated combat authority from later playable UX and presentation delivery.
 - Source: git-history 00c0812
 - Validation: Deferred historical work item; no current proof required.
-- Notes: Recovered from the historical Git requirements snapshot.
+- Notes: Recovered from the `Deferred / future work` section of `docs/recovery/REQUIREMENTS-from-git-00c0812.md`.
 
 ### R017 — Recovered deferred work: integrate Roguelite Fatigue and the run-loop into the combat stack.
 - Class: primary-user-loop
@@ -152,7 +152,7 @@ This file is the explicit capability and coverage contract for the project.
 - Why it matters: The historical requirements snapshot preserved run-loop integration as a future capability beyond the validated baseline.
 - Source: git-history 00c0812
 - Validation: Deferred historical work item; no current proof required.
-- Notes: Recovered from the historical Git requirements snapshot.
+- Notes: Recovered from the `Deferred / future work` section of `docs/recovery/REQUIREMENTS-from-git-00c0812.md`.
 
 ### R018 — Recovered deferred work: complete boss conversion and hard-control policy integration.
 - Class: integration
@@ -161,7 +161,7 @@ This file is the explicit capability and coverage contract for the project.
 - Why it matters: The historical contract kept boss conversion and hard-control policy as explicit pending integration work.
 - Source: git-history 00c0812
 - Validation: Deferred historical work item; no current proof required.
-- Notes: Recovered from the historical Git requirements snapshot.
+- Notes: Recovered from the `Deferred / future work` section of `docs/recovery/REQUIREMENTS-from-git-00c0812.md`.
 
 ### R019 — Recovered deferred work: complete the Heavy taxonomy.
 - Class: core-capability
@@ -170,7 +170,43 @@ This file is the explicit capability and coverage contract for the project.
 - Why it matters: The historical requirements snapshot tracked Heavy taxonomy completion as unresolved future capability work.
 - Source: git-history 00c0812
 - Validation: Deferred historical work item; no current proof required.
-- Notes: Recovered from the historical Git requirements snapshot.
+- Notes: Recovered from the `Deferred / future work` section of `docs/recovery/REQUIREMENTS-from-git-00c0812.md`.
+
+### R020 — Recovered deferred work: deliver a full playable CLI UX and windowed presentation pipeline consuming canonical combat surfaces.
+- Class: launchability
+- Status: deferred
+- Description: Recovered deferred work: deliver a full playable CLI UX and windowed presentation pipeline consuming canonical combat surfaces.
+- Why it matters: The historical contract distinguished validated combat authority from later playable UX and presentation delivery.
+- Source: git-history 00c0812
+- Validation: Deferred historical work item; no current proof required.
+- Notes: Duplicate recovery row created during retry. Canonical recovered row is R016; ignore this duplicate in planning/reporting.
+
+### R021 — Recovered deferred work: integrate Roguelite Fatigue and the run-loop into the combat stack.
+- Class: primary-user-loop
+- Status: deferred
+- Description: Recovered deferred work: integrate Roguelite Fatigue and the run-loop into the combat stack.
+- Why it matters: The historical requirements snapshot preserved run-loop integration as a future capability beyond the validated baseline.
+- Source: git-history 00c0812
+- Validation: Deferred historical work item; no current proof required.
+- Notes: Duplicate recovery row created during retry. Canonical recovered row is R017; ignore this duplicate in planning/reporting.
+
+### R022 — Recovered deferred work: complete boss conversion and hard-control policy integration.
+- Class: integration
+- Status: deferred
+- Description: Recovered deferred work: complete boss conversion and hard-control policy integration.
+- Why it matters: The historical contract kept boss conversion and hard-control policy as explicit pending integration work.
+- Source: git-history 00c0812
+- Validation: Deferred historical work item; no current proof required.
+- Notes: Duplicate recovery row created during retry. Canonical recovered row is R018; ignore this duplicate in planning/reporting.
+
+### R023 — Recovered deferred work: complete the Heavy taxonomy.
+- Class: core-capability
+- Status: deferred
+- Description: Recovered deferred work: complete the Heavy taxonomy.
+- Why it matters: The historical requirements snapshot tracked Heavy taxonomy completion as unresolved future capability work.
+- Source: git-history 00c0812
+- Validation: Deferred historical work item; no current proof required.
+- Notes: Duplicate recovery row created during retry. Canonical recovered row is R019; ignore this duplicate in planning/reporting.
 
 ## Out of Scope
 
@@ -200,7 +236,7 @@ This file is the explicit capability and coverage contract for the project.
 |---|---|---|---|---|---|
 | R001 | quality-attribute | active | M001/S01 | none | mapped |
 | R002 | core-capability | active | M001/S01 | none | mapped |
-| R003 | core-capability | active | M001/S02 | none | mapped |
+| R003 | core-capability | validated | M001/S02 | none | Validated by fresh S02 verification: `cargo test --test clip_parse`, `cargo test --test clip_geometry_parity`, `cargo test --test clip_asset`, and `cargo test` all passed, proving typed `clip.ron` loading plus Agumon geometry parity against `assets/digimon/agumon_atlas.json`. |
 | R004 | continuity | active | M001/S03 | none | mapped |
 | R005 | integration | active | M001/S03 | none | mapped |
 | R006 | launchability | active | M001/S04 | none | mapped |
@@ -217,10 +253,14 @@ This file is the explicit capability and coverage contract for the project.
 | R017 | primary-user-loop | deferred | none | none | Deferred historical work item; no current proof required. |
 | R018 | integration | deferred | none | none | Deferred historical work item; no current proof required. |
 | R019 | core-capability | deferred | none | none | Deferred historical work item; no current proof required. |
+| R020 | launchability | deferred | none | none | Deferred historical work item; no current proof required. |
+| R021 | primary-user-loop | deferred | none | none | Deferred historical work item; no current proof required. |
+| R022 | integration | deferred | none | none | Deferred historical work item; no current proof required. |
+| R023 | core-capability | deferred | none | none | Deferred historical work item; no current proof required. |
 
 ## Coverage Summary
 
-- Active requirements: 8
-- Mapped to slices: 8
-- Validated: 1 (R013)
+- Active requirements: 7
+- Mapped to slices: 7
+- Validated: 2 (R003, R013)
 - Unmapped active requirements: 0

@@ -2,9 +2,9 @@
 
 use bevy::prelude::*;
 use bevyrogue::combat::{
-    runtime::{CastIdGen, ExtRegistries, register_kernel_builtins},
     kit::UnitSkills,
     preview::{query_skill_preview, summarize_preview_damage},
+    runtime::{CastIdGen, ExtRegistries, register_kernel_builtins},
     sp::SpPool,
     state::CombatState,
     team::Team,
@@ -83,11 +83,13 @@ fn build_app() -> App {
                     hook: Some("core/deal_damage".into()),
                     selector: Some("core/primary".into()),
                     presentation: None,
-                    payload: Some(bevyrogue::combat::runtime::timeline::BeatPayload::DealDamage {
-                        amount: 11,
-                        tag: DamageTag::Fire,
-                        target: TargetShape::Single,
-                    }),
+                    payload: Some(
+                        bevyrogue::combat::runtime::timeline::BeatPayload::DealDamage {
+                            amount: 11,
+                            tag: DamageTag::Fire,
+                            target: TargetShape::Single,
+                        },
+                    ),
                 },
                 bevyrogue::combat::runtime::timeline::Beat {
                     id: "impact_2".into(),
@@ -95,11 +97,13 @@ fn build_app() -> App {
                     hook: Some("core/deal_damage".into()),
                     selector: Some("core/primary".into()),
                     presentation: None,
-                    payload: Some(bevyrogue::combat::runtime::timeline::BeatPayload::DealDamage {
-                        amount: 13,
-                        tag: DamageTag::Fire,
-                        target: TargetShape::Single,
-                    }),
+                    payload: Some(
+                        bevyrogue::combat::runtime::timeline::BeatPayload::DealDamage {
+                            amount: 13,
+                            tag: DamageTag::Fire,
+                            target: TargetShape::Single,
+                        },
+                    ),
                 },
             ],
             edges: vec![

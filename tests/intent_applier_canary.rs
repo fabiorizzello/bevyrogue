@@ -9,11 +9,11 @@
 
 use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::{
+    events::{CombatEvent, CombatEventKind},
     runtime::{
         CastId, Intent,
         applier::{IntentQueue, intent_applier},
     },
-    events::{CombatEvent, CombatEventKind},
     team::Team,
     types::{Attribute, DamageTag, EvoStage, UnitId},
     unit::Unit,

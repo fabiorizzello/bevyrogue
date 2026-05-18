@@ -1,24 +1,24 @@
 use super::*;
+use crate::combat::events::CombatEventKind;
+use crate::combat::kit::UnitSkills;
 use crate::combat::{
     team::Team,
     turn_system::ActionIntent,
     types::{Attribute, DamageTag, EvoStage, SkillId, UnitId},
     ultimate::UltAccumulationTrigger,
 };
-use crate::combat::events::CombatEventKind;
-use crate::combat::kit::UnitSkills;
 
 use crate::combat::ultimate::UltimateCharge;
 use crate::combat::unit::Unit;
 use crate::data::skills_ron::{
-    Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
-    SkillTargeting, TargetLife, TargetShape, TargetSide,
+    Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation, SkillTargeting, TargetLife,
+    TargetShape, TargetSide,
 };
 
+mod bounce;
 mod resolve_apply;
 mod streak;
 mod targets;
-mod bounce;
 
 fn grant_free_skill_def(id: &str, grant_count: usize) -> SkillDef {
     SkillDef {

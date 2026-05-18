@@ -7,6 +7,7 @@
 
 use bevy::prelude::*;
 use bevyrogue::combat::{
+    events::{CombatEvent, CombatEventKind},
     runtime::{
         CastIdGen, Intent, IntentQueue,
         applier::intent_applier,
@@ -15,7 +16,6 @@ use bevyrogue::combat::{
         skill_ctx::{SkillCtx, SkillCtxMode},
         timeline::{Beat, BeatEvent, BeatKind, CompiledTimeline},
     },
-    events::{CombatEvent, CombatEventKind},
     team::Team,
     types::{Attribute, DamageTag, EvoStage, UnitId},
     unit::Unit,

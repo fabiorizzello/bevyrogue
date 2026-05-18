@@ -8,8 +8,10 @@ use crate::combat::bevy_types::*;
 
 use crate::combat::runtime::registry::{ValidationField, ValidationSection};
 use crate::combat::{
+    kernel::{
+        CombatKernelHook, CombatKernelHookDomain, CombatKernelRegistry, CombatKernelTransition,
+    },
     runtime::SignalPayload,
-    kernel::{CombatKernelRegistry, CombatKernelTransition, CombatKernelHook, CombatKernelHookDomain},
     types::UnitId,
 };
 use crate::data::skills_ron::SkillCustomSignal;

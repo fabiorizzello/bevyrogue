@@ -13,8 +13,8 @@ use crate::combat::{
     unit::BasicStreak,
 };
 use crate::data::skills_ron::{
-    Effect, LegalityReasonCode, SelfTargetRule, SkillDef, SkillImplementation,
-    SkillTargeting, TargetLife, TargetShape, TargetSide,
+    Effect, LegalityReasonCode, SelfTargetRule, SkillDef, SkillImplementation, SkillTargeting,
+    TargetLife, TargetShape, TargetSide,
 };
 
 #[test]

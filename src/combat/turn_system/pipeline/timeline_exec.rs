@@ -13,17 +13,18 @@ pub(crate) fn run_timeline_backed_action(
     cast_id: CastId,
 ) {
     let mut _fallback_regs = None;
-    let regs_ptr: *const crate::combat::runtime::registry::ExtRegistries =
-        if let Some(regs) = world.get_resource::<crate::combat::runtime::registry::ExtRegistries>() {
-            regs as *const _
-        } else {
-            let mut regs = crate::combat::runtime::registry::ExtRegistries::default();
-            crate::combat::runtime::builtins::register_kernel_builtins(&mut regs);
-            _fallback_regs = Some(regs);
-            _fallback_regs
-                .as_ref()
-                .expect("fallback ext registries initialized") as *const _
-        };
+    let regs_ptr: *const crate::combat::runtime::registry::ExtRegistries = if let Some(regs) =
+        world.get_resource::<crate::combat::runtime::registry::ExtRegistries>()
+    {
+        regs as *const _
+    } else {
+        let mut regs = crate::combat::runtime::registry::ExtRegistries::default();
+        crate::combat::runtime::builtins::register_kernel_builtins(&mut regs);
+        _fallback_regs = Some(regs);
+        _fallback_regs
+            .as_ref()
+            .expect("fallback ext registries initialized") as *const _
+    };
 
     let Some(timeline) = crate::combat::preview::resolve_compiled_skill_timeline(
         world,

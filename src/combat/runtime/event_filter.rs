@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::combat::{runtime::signal::Signal, events::CombatEvent};
+use crate::combat::{events::CombatEvent, runtime::signal::Signal};
 
 /// Typed runtime filter for passive listeners.
 ///
@@ -95,8 +95,8 @@ impl std::fmt::Debug for EventFilter {
 mod tests {
     use super::*;
     use crate::combat::{
-        runtime::{CastId, SignalPayload},
         events::CombatEventKind,
+        runtime::{CastId, SignalPayload},
         types::UnitId,
     };
 

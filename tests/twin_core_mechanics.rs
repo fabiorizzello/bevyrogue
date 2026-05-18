@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 
-use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::blueprints::twin_core::{
     TwinCoreDesignTag, TwinCoreHook, TwinCoreSignal, TwinCoreState,
     apply_twin_core_transitions_system, twin_core_design_tag,
@@ -11,6 +10,7 @@ use bevyrogue::combat::kernel::{
     CombatTagState, CombatTagTransition, TacticalCyclePhase, TacticalCycleStep,
     TacticalCycleTransition,
 };
+use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::types::UnitId;
 
 fn route_transition(

@@ -1,6 +1,6 @@
 use super::*;
-use crate::combat::runtime::intent::CastId;
 use crate::combat::enemy_ai;
+use crate::combat::runtime::intent::CastId;
 use crate::combat::{
     kit::UnitSkills,
     preview::{summarize_preview_damage, try_query_skill_preview},
@@ -113,4 +113,3 @@ pub fn resolve_enemy_turn_action_system(world: &mut World) {
         }
     }
 }
-

@@ -2,12 +2,12 @@ use std::sync::Arc;
 
 use bevy::prelude::*;
 use bevyrogue::combat::{
+    events::{CombatEvent, CombatEventKind},
     runtime::{
         BlueprintState, CastId, CastIdGen, EventFilter, ExtRegistries, Intent, IntentQueue,
         PassiveListeners, PassiveRunner, Signal, SignalBus, SignalPayload, SignalTaxonomy,
         applier::intent_applier, combat_event_to_signal_system, passive_dispatch_system,
     },
-    events::{CombatEvent, CombatEventKind},
     types::UnitId,
 };
 

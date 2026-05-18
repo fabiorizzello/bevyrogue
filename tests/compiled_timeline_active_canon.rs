@@ -1,8 +1,6 @@
 use bevy::ecs::message::{MessageCursor, Messages};
 use bevy::prelude::*;
 use bevyrogue::combat::{
-    runtime::timeline::TimelineLibrary,
-    runtime::{ExtRegistries, SignalBus, SignalTaxonomy, register_kernel_builtins},
     av::{ActionValue, ActionValueUpdated, MAX_AV},
     blueprints::register_all_blueprint_exts,
     events::{CombatEvent, CombatEventKind},
@@ -10,6 +8,8 @@ use bevyrogue::combat::{
     kit::UnitSkills,
     log::ActionLog,
     rng::CombatRng,
+    runtime::timeline::TimelineLibrary,
+    runtime::{ExtRegistries, SignalBus, SignalTaxonomy, register_kernel_builtins},
     sp::SpPool,
     state::CombatState,
     status_effect::StatusBag,
@@ -256,8 +256,11 @@ fn baby_flame_timeline_path_delivers_damage_before_break_then_signal() {
 #[test]
 fn dangling_hook_in_child_roster_skill_fails_at_compile_with_skill_and_site() {
     // Inject a typo into the first deal_damage hook (baby_flame's impact_damage beat)
-    let bad_ron =
-        bevyrogue::data::aggregate_skill_book_ron_text().replacen("core/deal_damage", "core/deal_dmge", 1);
+    let bad_ron = bevyrogue::data::aggregate_skill_book_ron_text().replacen(
+        "core/deal_damage",
+        "core/deal_dmge",
+        1,
+    );
     let book: SkillBook = ron::from_str(&bad_ron).expect("parse tweaked skills.ron");
 
     let err = compile_skill_book_timelines(&book, &canonical_regs())
@@ -276,8 +279,11 @@ fn dangling_hook_in_child_roster_skill_fails_at_compile_with_skill_and_site() {
 #[test]
 fn dangling_selector_in_child_roster_skill_fails_at_compile() {
     // Inject a typo into the first selector (bubble_blast or baby_flame)
-    let bad_ron =
-        bevyrogue::data::aggregate_skill_book_ron_text().replacen("core/primary", "core/priimary", 1);
+    let bad_ron = bevyrogue::data::aggregate_skill_book_ron_text().replacen(
+        "core/primary",
+        "core/priimary",
+        1,
+    );
     let book: SkillBook = ron::from_str(&bad_ron).expect("parse tweaked skills.ron");
 
     let err = compile_skill_book_timelines(&book, &canonical_regs())

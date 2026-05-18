@@ -1,4 +1,4 @@
-# M001: Animation asset pipeline foundation
+# M001: M001: Animation asset pipeline foundation
 
 **Vision:** Port and adapt the existing M022 asset-pipeline plan into a generic, roster-ready animation module with typed `clip.ron` and `anim_graph.ron`, boot-time validation, adapter-based cross-asset checks, and real `windowed` hot-reload proof. M022 is the scope seed, not a rigid implementation law.
 
@@ -12,17 +12,19 @@
 
 ## Slices
 
-- [ ] **S01: Animation module and anim graph schema** `risk:high` `depends:[]`
+- [x] **S01: S01** `risk:high` `depends:[]`
   > After this: `cargo test` loads an Agumon `anim_graph.ron` as a typed asset through the new animation module and rejects out-of-vocabulary schema values with typed errors.
 
-- [ ] **S02: Clip schema and lossless geometry loading** `risk:medium` `depends:[]`
+- [x] **S02: S02** `risk:medium` `depends:[]`
   > After this: `cargo test` loads Agumon `clip.ron` as a typed asset and proves geometry parity with the source atlas data.
 
-- [ ] **S03: Validator L with adapter based checks** `risk:high` `depends:[S01,S02]`
+- [x] **S03: S03** `risk:high` `depends:[]`
   > After this: Valid graph+clip assets pass required checks; broken fixtures fail with typed diagnostics; cross-asset checks use adapter-provided catalogs.
 
-- [ ] **S04: Roster ready assets and real hot reload proof** `risk:medium` `depends:[S01,S02,S03]`
+- [ ] **S04: S04** `risk:medium` `depends:[]`
   > After this: Non-Agumon animation assets validate through the same generic path, and `cargo run --features windowed` proves manual hot reload without crash or corrupted world state.
+
+## Boundary Map
 
 ## Boundary Map
 

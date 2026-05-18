@@ -2,7 +2,6 @@ use bevy::ecs::message::{MessageCursor, Messages};
 use bevy::prelude::*;
 use bevyrogue::combat::runtime::timeline::TimelineLibrary;
 use bevyrogue::combat::{
-    runtime::{ExtRegistries, SignalBus, SignalTaxonomy, register_kernel_builtins},
     av::{ActionValue, ActionValueUpdated, MAX_AV},
     blueprints::{agumon::TalentRanks, register_all_blueprint_exts},
     events::{CombatEvent, CombatEventKind},
@@ -10,6 +9,7 @@ use bevyrogue::combat::{
     kit::UnitSkills,
     log::ActionLog,
     rng::CombatRng,
+    runtime::{ExtRegistries, SignalBus, SignalTaxonomy, register_kernel_builtins},
     sp::SpPool,
     state::CombatState,
     status_effect::StatusBag,

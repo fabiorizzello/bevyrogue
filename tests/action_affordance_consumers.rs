@@ -1,6 +1,6 @@
 use bevyrogue::combat::action_query::{
-    ActionQueryKind, ActionStatus, CombatQuerySnapshot, ResourceKind, ResourceStatus,
-    TargetStatus, build_snapshot_from_ecs, build_snapshot_from_ecs_with_sp, enabled_target_ids,
+    ActionQueryKind, ActionStatus, CombatQuerySnapshot, ResourceKind, ResourceStatus, TargetStatus,
+    build_snapshot_from_ecs, build_snapshot_from_ecs_with_sp, enabled_target_ids,
     first_enabled_target_id, query_action_affordance,
 };
 use bevyrogue::combat::counterplay::EnemyCounterplayKit;
@@ -700,7 +700,9 @@ fn deferred_actions_are_excluded_from_enabled_selection() {
     ]
     .into_iter()
     .filter_map(|(label, affordance)| {
-        first_enabled_target_id(affordance).is_some().then_some(label)
+        first_enabled_target_id(affordance)
+            .is_some()
+            .then_some(label)
     })
     .collect();
 

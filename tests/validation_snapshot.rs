@@ -1,19 +1,19 @@
 use bevy::prelude::*;
 use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::{
-    runtime::{ExtRegistries, SignalPayload},
-    blueprints::{self, dorumon::PredatorLoopState, patamon::HolySupportState},
     blueprints::patamon::identity::HolySupportTransition,
     blueprints::renamon::{PrecisionMindGameState, PrecisionWindowKind},
     blueprints::twin_core::{TwinCoreState, TwinCoreTransition},
+    blueprints::{self, dorumon::PredatorLoopState, patamon::HolySupportState},
     events::{CombatEvent, CombatEventKind},
     floating::FloatingDamage,
     kernel::CombatKernelTransition,
-    plugin::CombatPlugin,
     log::{ActionLog, LogEntry},
     observability::{
         ValidationStatusSnapshot, capture_validation_snapshot, format_validation_snapshot,
     },
+    plugin::CombatPlugin,
+    runtime::{ExtRegistries, SignalPayload},
     sp::SpPool,
     state::{CombatPhase, CombatState},
     status_effect::{StatusBag, StatusEffectKind},
@@ -269,13 +269,28 @@ fn runtime_registration_populates_snapshot_kernel_resources() {
     let snapshot =
         capture_validation_snapshot(app.world_mut()).expect("runtime snapshot should build");
     let formatted = format_validation_snapshot(&snapshot);
-    assert!(formatted.contains("twin_core="), "missing twin_core: {formatted}");
+    assert!(
+        formatted.contains("twin_core="),
+        "missing twin_core: {formatted}"
+    );
     assert!(formatted.contains("cr=0"), "missing cr: {formatted}");
-    assert!(formatted.contains("support="), "missing support: {formatted}");
+    assert!(
+        formatted.contains("support="),
+        "missing support: {formatted}"
+    );
     assert!(formatted.contains("grace=0"), "missing grace: {formatted}");
-    assert!(formatted.contains("predator="), "missing predator: {formatted}");
-    assert!(formatted.contains("exploit_cap=3"), "missing exploit_cap: {formatted}");
-    assert!(formatted.contains("mind_game="), "missing mind_game: {formatted}");
+    assert!(
+        formatted.contains("predator="),
+        "missing predator: {formatted}"
+    );
+    assert!(
+        formatted.contains("exploit_cap=3"),
+        "missing exploit_cap: {formatted}"
+    );
+    assert!(
+        formatted.contains("mind_game="),
+        "missing mind_game: {formatted}"
+    );
 }
 
 #[test]

@@ -1,11 +1,11 @@
 use bevy::{ecs::message::MessageCursor, ecs::system::RunSystemOnce, prelude::*};
 use bevyrogue::combat::{
+    events::{CombatEvent, CombatEventKind, CombatKernelTransition},
     runtime::{
         CastId, Intent, Signal, SignalBus, SignalPayload, SignalTaxonomy,
         applier::{IntentQueue, intent_applier},
         blueprint_state::BlueprintState,
     },
-    events::{CombatEvent, CombatEventKind, CombatKernelTransition},
     types::UnitId,
 };
 
@@ -54,7 +54,9 @@ fn test_blueprint_signal_dispatching() {
             cast_id,
         });
 
-    app.world_mut().run_system_once(intent_applier).expect("intent_applier system runs");
+    app.world_mut()
+        .run_system_once(intent_applier)
+        .expect("intent_applier system runs");
 
     // Assert SignalBus
     let signals: Vec<_> = app
@@ -133,7 +135,9 @@ fn test_set_blueprint_state() {
             cast_id: CastId::ROOT,
         });
 
-    app.world_mut().run_system_once(intent_applier).expect("intent_applier system runs");
+    app.world_mut()
+        .run_system_once(intent_applier)
+        .expect("intent_applier system runs");
 
     let state = app.world().resource::<BlueprintState>();
     assert_eq!(state.map.get(&(actor, key)), Some(&value));
@@ -155,5 +159,7 @@ fn test_unregistered_signal_panics_in_debug() {
             cast_id: CastId::ROOT,
         });
 
-    app.world_mut().run_system_once(intent_applier).expect("intent_applier system runs");
+    app.world_mut()
+        .run_system_once(intent_applier)
+        .expect("intent_applier system runs");
 }

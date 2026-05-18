@@ -7,6 +7,7 @@ use std::time::Duration;
 
 // Use the library modules
 use bevyrogue::CombatPlugin;
+use bevyrogue::combat::av::ActionValueUpdated;
 use bevyrogue::combat::bootstrap::EncounterPreset;
 use bevyrogue::combat::events::CombatEvent;
 use bevyrogue::combat::follow_up::{FollowUpIntent, FollowUpTrace};
@@ -27,12 +28,13 @@ use bevyrogue::combat::types::UnitId;
 use bevyrogue::combat::ultimate::UltGainQueue;
 use bevyrogue::combat::ultimate::{flush_ult_gain_system, ult_accumulation_system};
 use bevyrogue::data::DataPlugin;
-use bevyrogue::combat::av::ActionValueUpdated;
 
-#[path = "combat_cli/config.rs"]
-mod config;
+#[path = "combat_cli/assets.rs"]
+mod assets;
 #[path = "combat_cli/bootstrap.rs"]
 mod bootstrap;
+#[path = "combat_cli/config.rs"]
+mod config;
 #[path = "combat_cli/dashboard.rs"]
 mod dashboard;
 #[path = "combat_cli/menu.rs"]
@@ -41,20 +43,18 @@ mod menu;
 mod player;
 #[path = "combat_cli/proof.rs"]
 mod proof;
-#[path = "combat_cli/assets.rs"]
-mod assets;
 #[path = "combat_cli/scenarios.rs"]
 mod scenarios;
 
+use assets::{load_ally_roster, manifest_assets_dir, verify_required_data_assets};
+use bootstrap::{bootstrap_system, event_logger_system, timeout_system};
 use config::{
     CliProofConfig, CliProofState, IsInteractive, PlayerActed, SelectedAllies, SelectedEncounter,
     TickCounter, cli_proof_enabled, cli_proof_tick_limit_from_env,
 };
-use bootstrap::{bootstrap_system, event_logger_system, timeout_system};
 use dashboard::combat_dashboard_system;
 use player::player_action_system;
 use proof::cli_proof_system;
-use assets::{load_ally_roster, manifest_assets_dir, verify_required_data_assets};
 use scenarios::{run_advance_delay_cap_scenario, run_aoe_blast_scenario};
 
 fn main() -> AppExit {

@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 
-use bevyrogue::combat::runtime::{CastId, ExtRegistries};
 use bevyrogue::combat::blueprints::twin_core::{
     TwinCoreDesignTag, TwinCoreHook, TwinCoreState, apply_twin_core_transitions_system,
     twin_core_design_tag,
@@ -12,6 +11,7 @@ use bevyrogue::combat::kernel::{
 };
 use bevyrogue::combat::log::ActionLog;
 use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
+use bevyrogue::combat::runtime::{CastId, ExtRegistries};
 use bevyrogue::combat::sp::SpPool;
 use bevyrogue::combat::state::CombatState;
 use bevyrogue::combat::toughness::Toughness;
@@ -212,10 +212,7 @@ fn canonical_fire_ice_twin_core_loop_is_visible_through_validation_snapshots() {
     assert!(after_beat.contains("units=["), "{after_beat}");
 
     let final_snapshot = capture_snapshot_string(&mut app);
-    assert!(
-        final_snapshot.contains("cr=0"),
-        "{final_snapshot}"
-    );
+    assert!(final_snapshot.contains("cr=0"), "{final_snapshot}");
     assert!(
         final_snapshot.contains("burst_guard=true"),
         "{final_snapshot}"

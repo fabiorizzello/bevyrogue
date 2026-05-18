@@ -110,34 +110,33 @@ fn build_app(
         .map(|s| s.id.clone())
         .unwrap_or_else(|| SkillId("noop".into()));
 
-    app.world_mut()
-        .spawn((
-            Unit {
-                id: UnitId(1),
-                name: "Attacker".into(),
-                hp_max: 10_000,
-                hp_current: 10_000,
-                attribute: Attribute::Vaccine,
-                resists: vec![],
-                evo_stage: EvoStage::Adult,
-            },
-            Team::Ally,
-            UnitSkills {
-                basic: skill_id.clone(),
-                skills: vec![skill_id.clone()],
-                ultimate: skill_id.clone(),
-                follow_up: None,
-            },
-            UltimateCharge {
-                current: 0,
-                trigger: 100,
-                cap: 150,
-                trigger_type: UltAccumulationTrigger::OnBasicAttack,
-                charge_per_event: 10,
-            },
-            Toughness::new(1_000, vec![]),
-            StatusBag::default(),
-        ));
+    app.world_mut().spawn((
+        Unit {
+            id: UnitId(1),
+            name: "Attacker".into(),
+            hp_max: 10_000,
+            hp_current: 10_000,
+            attribute: Attribute::Vaccine,
+            resists: vec![],
+            evo_stage: EvoStage::Adult,
+        },
+        Team::Ally,
+        UnitSkills {
+            basic: skill_id.clone(),
+            skills: vec![skill_id.clone()],
+            ultimate: skill_id.clone(),
+            follow_up: None,
+        },
+        UltimateCharge {
+            current: 0,
+            trigger: 100,
+            cap: 150,
+            trigger_type: UltAccumulationTrigger::OnBasicAttack,
+            charge_per_event: 10,
+        },
+        Toughness::new(1_000, vec![]),
+        StatusBag::default(),
+    ));
 
     let mut target_builder = app.world_mut().spawn((
         Unit {
@@ -159,10 +158,7 @@ fn build_app(
     }
     let target = target_builder.id();
 
-    Setup {
-        app,
-        target,
-    }
+    Setup { app, target }
 }
 
 fn fire_skill(app: &mut App, skill_id: &str) {

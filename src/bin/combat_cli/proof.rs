@@ -5,8 +5,8 @@ use bevyrogue::combat::observability::{capture_validation_snapshot, format_valid
 use bevyrogue::combat::state::{CombatPhase, CombatState};
 use bevyrogue::combat::turn_order::TurnOrder;
 use bevyrogue::combat::unit::Unit;
-use bevyrogue::data::SkillBookHandle;
 use bevyrogue::data::DataReady;
+use bevyrogue::data::SkillBookHandle;
 use bevyrogue::data::skills_ron::SkillBook;
 
 use super::config::{CliProofConfig, CliProofState};

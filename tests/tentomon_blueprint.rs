@@ -3,11 +3,11 @@ use bevyrogue::combat::blueprints::tentomon::{
     OWNER as TENTOMON_OWNER, SIG_BUILD_CIRCUIT_CHARGE, SIG_BUILD_STATIC_CHARGE,
     SIG_SPEND_CIRCUIT_CHARGE,
 };
+use bevyrogue::combat::blueprints::{self, tentomon::BatteryLoopState};
 use bevyrogue::combat::kernel::CombatKernelTransition;
 use bevyrogue::combat::plugin::CombatPlugin;
 use bevyrogue::combat::state::{ResolvedAction, UltEffect};
 use bevyrogue::combat::types::{DamageTag, SkillId, UnitId};
-use bevyrogue::combat::blueprints::{self, tentomon::BatteryLoopState};
 use bevyrogue::data::skills_ron::{CustomSignalPayload, SkillCustomSignal, TargetShape};
 
 fn base_action() -> ResolvedAction {
@@ -121,8 +121,8 @@ fn integration_blueprint_to_kernel_state() {
         .push(signal("tentomon", "build_static_charge", 1));
 
     let transitions = blueprints::transitions_for_action(&action);
-    use bevyrogue::combat::runtime::intent::CastId;
     use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
+    use bevyrogue::combat::runtime::intent::CastId;
     for transition in transitions {
         app.world_mut().write_message(CombatEvent {
             kind: CombatEventKind::OnKernelTransition { transition },

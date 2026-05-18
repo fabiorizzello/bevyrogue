@@ -1,9 +1,12 @@
 use bevyrogue::combat::blueprints::{self, CustomSignalDispatchError};
+use bevyrogue::combat::kit::UnitSkills;
 use bevyrogue::combat::resolution::resolve_action;
 use bevyrogue::combat::turn_system::ActionIntent;
 use bevyrogue::combat::types::{DamageTag, SkillId, UnitId};
-use bevyrogue::combat::kit::UnitSkills;
-use bevyrogue::data::skills_ron::{CustomSignalPayload, Effect, SelfTargetRule, SkillBook, SkillCustomSignal, SkillDef, SkillImplementation, SkillTargeting, TargetLife, TargetShape, TargetSide};
+use bevyrogue::data::skills_ron::{
+    CustomSignalPayload, Effect, SelfTargetRule, SkillBook, SkillCustomSignal, SkillDef,
+    SkillImplementation, SkillTargeting, TargetLife, TargetShape, TargetSide,
+};
 use bevyrogue::data::units_ron::UnitRoster;
 
 fn canonical_roster() -> UnitRoster {
@@ -14,7 +17,12 @@ fn canonical_skill_book() -> SkillBook {
     bevyrogue::data::aggregate_skill_book()
 }
 
-fn skill_with_signal(id: &str, owner: &str, signal: &str, payload: CustomSignalPayload) -> SkillDef {
+fn skill_with_signal(
+    id: &str,
+    owner: &str,
+    signal: &str,
+    payload: CustomSignalPayload,
+) -> SkillDef {
     SkillDef {
         id: SkillId(id.into()),
         name: id.to_owned(),
@@ -87,7 +95,10 @@ fn add_new_digimon_requires_registry_owner_not_shared_kernel_names() {
 
     let err = blueprints::transitions_for_action_checked(&resolved)
         .expect_err("unknown owner must be rejected");
-    assert!(matches!(err, CustomSignalDispatchError::UnknownOwner { .. }));
+    assert!(matches!(
+        err,
+        CustomSignalDispatchError::UnknownOwner { .. }
+    ));
 }
 
 #[test]

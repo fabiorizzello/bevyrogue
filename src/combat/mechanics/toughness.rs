@@ -1,4 +1,3 @@
-
 use bevy::prelude::Component;
 
 use crate::combat::team::Team;

@@ -8,7 +8,6 @@
 /// stop showing events with follow_up_depth >= 2. The assertions below guard against that.
 use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::{
-    runtime::{ExtRegistries, register_kernel_builtins, timeline::TimelineLibrary},
     blueprints::register_all_blueprint_exts,
     events::{CombatEvent, CombatEventKind},
     follow_up::{
@@ -16,6 +15,7 @@ use bevyrogue::combat::{
     },
     kit::{FollowUpConfig, FollowUpTrigger, UnitSkills},
     log::{ActionLog, LogEntry},
+    runtime::{ExtRegistries, register_kernel_builtins, timeline::TimelineLibrary},
     sp::SpPool,
     state::CombatState,
     team::Team,
@@ -83,7 +83,9 @@ fn setup_app(skill_book: SkillBook) -> App {
         register_all_blueprint_exts(&mut regs);
         let compiled = compile_skill_book_timelines(&skill_book, &regs)
             .expect("follow_up_chains test book must compile");
-        app.world_mut().resource_mut::<TimelineLibrary<String>>().timelines = compiled;
+        app.world_mut()
+            .resource_mut::<TimelineLibrary<String>>()
+            .timelines = compiled;
     }
     app.world_mut().resource_mut::<SpPool>().current = 999;
     app

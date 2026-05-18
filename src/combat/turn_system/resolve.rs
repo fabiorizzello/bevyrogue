@@ -1,6 +1,6 @@
 use super::*;
-use crate::combat::runtime::intent::{CastId, CastIdGen};
 use crate::combat::rng::CombatRng;
+use crate::combat::runtime::intent::{CastId, CastIdGen};
 use crate::combat::{
     action_query::{ActionQueryKind, build_snapshot_from_ecs, query_intent_legality},
     energy::{Energy, RoundEnergyTracker},
@@ -28,10 +28,7 @@ pub fn resolve_action_system(
     registry: Option<Res<CombatKernelRegistry>>,
     mut actors: ResolveActorsQuery,
     mut combat_rng: Option<ResMut<CombatRng>>,
-    mut entropy_q: Query<
-        &mut crate::combat::rng::CombatEntropy,
-        With<crate::combat::unit::Unit>,
-    >,
+    mut entropy_q: Query<&mut crate::combat::rng::CombatEntropy, With<crate::combat::unit::Unit>>,
     mut energy_q: Query<(&mut Energy, Option<&mut RoundEnergyTracker>)>,
     mut cast_id_gen: Option<ResMut<CastIdGen>>,
 ) {
@@ -261,4 +258,3 @@ pub fn resolve_action_system(
         }
     }
 }
-

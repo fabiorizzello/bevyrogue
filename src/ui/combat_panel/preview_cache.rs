@@ -3,14 +3,12 @@ use bevy::prelude::*;
 
 #[cfg(feature = "windowed")]
 use crate::combat::{
-    action_query::{
-        ActionStatus, build_snapshot_from_ecs_with_sp, first_enabled_target_id,
-    },
-    runtime::intent::CastIdGen,
+    action_query::{ActionStatus, build_snapshot_from_ecs_with_sp, first_enabled_target_id},
     counterplay::EnemyCounterplayKit,
     energy::{Energy, RoundEnergyTracker},
     kit::UnitSkills,
     preview::{PreviewDamageSummary, query_skill_preview, summarize_preview_damage},
+    runtime::intent::CastIdGen,
     sp::SpPool,
     state::CombatState,
     stun::Stunned,
@@ -26,8 +24,8 @@ use crate::data::{SkillBookHandle, skills_ron::SkillBook};
 
 #[cfg(feature = "windowed")]
 use super::{
-    PendingAction, PreviewDamageCache, pending_kind_skill_id,
-    labels::query_pending_action_affordance,
+    PendingAction, PreviewDamageCache, labels::query_pending_action_affordance,
+    pending_kind_skill_id,
 };
 
 #[cfg(feature = "windowed")]

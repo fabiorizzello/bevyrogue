@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
 use crate::combat::{
-    runtime::signal::{Signal, SignalBus, SignalPayload},
     events::{CombatEvent, CombatEventKind},
+    runtime::signal::{Signal, SignalBus, SignalPayload},
 };
 
 /// Mirrors kernel combat events onto the passive signal bus.
@@ -33,8 +33,8 @@ pub fn combat_event_to_signal_system(
 mod tests {
     use super::*;
     use crate::combat::{
-        runtime::intent::CastId,
         events::{ActionIntentKind, CombatEvent},
+        runtime::intent::CastId,
         types::UnitId,
     };
 

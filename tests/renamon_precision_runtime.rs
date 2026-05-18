@@ -1,16 +1,16 @@
 use bevy::prelude::*;
 
-use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::blueprints;
-use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
-use bevyrogue::combat::plugin::CombatPlugin;
-use bevyrogue::combat::kit::UnitSkills;
-use bevyrogue::combat::log::ActionLog;
-use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
 use bevyrogue::combat::blueprints::renamon::{
     PrecisionCommitment, PrecisionMindGameState, PrecisionOutcome, PrecisionReveal,
     PrecisionWindowKind,
 };
+use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
+use bevyrogue::combat::kit::UnitSkills;
+use bevyrogue::combat::log::ActionLog;
+use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
+use bevyrogue::combat::plugin::CombatPlugin;
+use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::sp::SpPool;
 use bevyrogue::combat::state::CombatState;
 use bevyrogue::combat::team::Team;
@@ -193,9 +193,24 @@ fn renamon_precision_loop_runtime_proof() {
     let snapshot = capture_validation_snapshot(app.world_mut()).expect("snapshot should build");
     let formatted = format_validation_snapshot(&snapshot);
 
-    assert!(formatted.contains("mind_game="), "missing mind_game section: {formatted}");
-    assert!(formatted.contains("phase=Resolved"), "missing phase: {formatted}");
-    assert!(formatted.contains("window=Momentum"), "missing window: {formatted}");
-    assert!(formatted.contains("commitment=Press"), "missing commitment: {formatted}");
-    assert!(formatted.contains("outcome=Success"), "missing outcome: {formatted}");
+    assert!(
+        formatted.contains("mind_game="),
+        "missing mind_game section: {formatted}"
+    );
+    assert!(
+        formatted.contains("phase=Resolved"),
+        "missing phase: {formatted}"
+    );
+    assert!(
+        formatted.contains("window=Momentum"),
+        "missing window: {formatted}"
+    );
+    assert!(
+        formatted.contains("commitment=Press"),
+        "missing commitment: {formatted}"
+    );
+    assert!(
+        formatted.contains("outcome=Success"),
+        "missing outcome: {formatted}"
+    );
 }

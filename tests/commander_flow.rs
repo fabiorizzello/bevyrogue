@@ -59,7 +59,9 @@ fn enemy_does_not_target_commander() {
     for intent in &captured.0 {
         match intent {
             ActionIntent::Basic { attacker, target }
-            | ActionIntent::Skill { attacker, target, .. }
+            | ActionIntent::Skill {
+                attacker, target, ..
+            }
             | ActionIntent::Ultimate { attacker, target } => {
                 assert_eq!(*attacker, UnitId(2), "attacker should be the enemy");
                 assert_ne!(

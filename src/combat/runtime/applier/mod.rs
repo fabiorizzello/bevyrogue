@@ -5,24 +5,22 @@ use std::collections::{HashMap, VecDeque};
 use bevy::prelude::*;
 
 use crate::combat::{
-    runtime::{
-        intent::{CastId, Intent},
-    },
     buffs::DrBag,
     events::{CombatEvent, CombatEventKind},
+    kit::UnitSkills,
     log::{ActionLog, LogEntry},
+    runtime::intent::{CastId, Intent},
     status_effect::StatusBag,
     team::Team,
     toughness::Toughness,
     types::{DamageTag, UnitId},
     unit::{Ko, SlotIndex, Unit},
-    kit::UnitSkills,
 };
 
 use effects::{
     apply_add_energy, apply_advance_turn, apply_blueprint_signal, apply_break_toughness,
-    apply_buff, apply_damage_modifier, apply_deal_damage, apply_delay_turn,
-    apply_grant_free_skill, apply_revive, apply_set_blueprint_state, apply_status,
+    apply_buff, apply_damage_modifier, apply_deal_damage, apply_delay_turn, apply_grant_free_skill,
+    apply_revive, apply_set_blueprint_state, apply_status,
 };
 
 /// Pending `Intent` queue drained each frame by `intent_applier`.

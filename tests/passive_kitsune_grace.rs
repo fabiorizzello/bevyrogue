@@ -1,5 +1,6 @@
 use bevy::{ecs::message::MessageCursor, ecs::system::RunSystemOnce, prelude::*};
 use bevyrogue::combat::{
+    events::{CombatEvent, CombatEventKind, CombatKernelTransition},
     runtime::{
         BlueprintState, CastId, CastIdGen, EventFilter, ExtRegistries, Intent, IntentQueue,
         PassiveListeners, PassiveRunner, SignalBus, SignalPayload, SignalTaxonomy, SkillCtx,
@@ -7,7 +8,6 @@ use bevyrogue::combat::{
         combat_event_to_signal_system, passive_dispatch_system,
         timeline::{Beat, BeatEvent, BeatKind, CompiledTimeline},
     },
-    events::{CombatEvent, CombatEventKind, CombatKernelTransition},
     team::Team,
     types::{Attribute, EvoStage, UnitId},
     unit::Unit,
@@ -361,5 +361,7 @@ fn unregistered_blueprint_signal_panics_in_debug() {
             cast_id: CastId::ROOT,
         });
 
-    app.world_mut().run_system_once(intent_applier).expect("intent_applier system runs");
+    app.world_mut()
+        .run_system_once(intent_applier)
+        .expect("intent_applier system runs");
 }

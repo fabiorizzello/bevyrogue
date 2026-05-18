@@ -15,13 +15,21 @@ fn canonical_skill_book() -> SkillBook {
 fn expected_unit_names() -> [&'static str; 15] {
     [
         // Per-digimon file order: each evo line lists Child then Adult
-        "Agumon", "Greymon",
-        "Gabumon", "Garurumon",
-        "Dorumon", "DORUgamon",
-        "Renamon", "Kyubimon",
-        "Patamon", "Angemon",
-        "Tentomon", "Kabuterimon",
+        "Agumon",
+        "Greymon",
+        "Gabumon",
+        "Garurumon",
+        "Dorumon",
+        "DORUgamon",
+        "Renamon",
+        "Kyubimon",
+        "Patamon",
+        "Angemon",
+        "Tentomon",
+        "Kabuterimon",
         // Enemies
-        "Devimon", "Goblimon", "Ogremon",
+        "Devimon",
+        "Goblimon",
+        "Ogremon",
     ]
 }

@@ -42,11 +42,7 @@ type ResolveActorsQuery<'w, 's> = Query<
     ),
 >;
 
-use crate::combat::{
-    kit::UnitSkills,
-    stun::Stunned,
-    team::Team,
-};
+use crate::combat::{kit::UnitSkills, stun::Stunned, team::Team};
 
 #[allow(clippy::too_many_arguments)]
 pub fn resolve_follow_up_action_system(
@@ -63,10 +59,7 @@ pub fn resolve_follow_up_action_system(
     registry: Option<Res<CombatKernelRegistry>>,
     mut actors: ResolveActorsQuery,
     mut combat_rng: Option<ResMut<crate::combat::rng::CombatRng>>,
-    mut entropy_q: Query<
-        &mut crate::combat::rng::CombatEntropy,
-        With<crate::combat::unit::Unit>,
-    >,
+    mut entropy_q: Query<&mut crate::combat::rng::CombatEntropy, With<crate::combat::unit::Unit>>,
     mut energy_q: Query<(&mut Energy, Option<&mut RoundEnergyTracker>)>,
     mut cast_id_gen: Option<ResMut<crate::combat::runtime::intent::CastIdGen>>,
 ) {

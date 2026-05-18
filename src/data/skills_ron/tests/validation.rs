@@ -24,8 +24,7 @@ fn validate_rejects_row_damage_against_single_targeting() {
         ..Default::default()
     }]);
 
-    let err =
-        validate_skill_book(&book).expect_err("row damage with single targeting must fail");
+    let err = validate_skill_book(&book).expect_err("row damage with single targeting must fail");
     assert_eq!(err.skill_id, SkillId("row_mismatch".into()));
     assert_eq!(err.category, SkillBookValidationCategory::Semantic);
     assert_eq!(err.reason, LegalityReasonCode::UnimplementedTargetShape);

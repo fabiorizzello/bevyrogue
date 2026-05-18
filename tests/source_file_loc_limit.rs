@@ -58,7 +58,10 @@ fn no_source_file_exceeds_loc_cap() {
                 .strip_prefix(manifest_dir)
                 .unwrap_or(path.as_path())
                 .display();
-            report.push_str(&format!("  {loc:>5} LOC  {rel}  (+{} over)\n", loc - MAX_LOC));
+            report.push_str(&format!(
+                "  {loc:>5} LOC  {rel}  (+{} over)\n",
+                loc - MAX_LOC
+            ));
         }
         panic!("{report}");
     }

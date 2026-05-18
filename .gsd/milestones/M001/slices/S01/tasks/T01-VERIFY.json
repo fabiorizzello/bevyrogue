@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T01",
+  "unitId": "M001/S01/T01",
+  "timestamp": 1779137097789,
+  "passed": true,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "cargo test --test anim_graph_parse",
+      "exitCode": 0,
+      "durationMs": 682,
+      "verdict": "pass"
+    }
+  ]
+}

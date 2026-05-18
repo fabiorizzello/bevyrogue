@@ -30,18 +30,18 @@ pub fn apply_precision_mind_game_transitions_system(
             }
 
             let step = match name.as_str() {
-                SIGNAL_OPEN_MOMENTUM_WINDOW => {
-                    Some(PrecisionMindGameTransition::open_window(PrecisionWindowKind::Momentum))
-                }
-                SIGNAL_COMMIT_PRECISION_PRESS => {
-                    Some(PrecisionMindGameTransition::commit(PrecisionCommitment::Press))
-                }
+                SIGNAL_OPEN_MOMENTUM_WINDOW => Some(PrecisionMindGameTransition::open_window(
+                    PrecisionWindowKind::Momentum,
+                )),
+                SIGNAL_COMMIT_PRECISION_PRESS => Some(PrecisionMindGameTransition::commit(
+                    PrecisionCommitment::Press,
+                )),
                 SIGNAL_REVEAL_BAIT => {
                     Some(PrecisionMindGameTransition::reveal(PrecisionReveal::Baited))
                 }
-                SIGNAL_RESOLVE_PRECISION_SUCCESS => {
-                    Some(PrecisionMindGameTransition::resolve(PrecisionOutcome::Success))
-                }
+                SIGNAL_RESOLVE_PRECISION_SUCCESS => Some(PrecisionMindGameTransition::resolve(
+                    PrecisionOutcome::Success,
+                )),
                 _ => None,
             };
 

@@ -9,10 +9,10 @@ use crate::combat::types::UnitId;
 // `blueprints::dorumon::identity::format_predator_loop_transition` and
 // `super::identity::{PredatorLoopHook, apply_predator_loop_transitions_system}`
 // keep resolving after the split into `identity_apply.rs`.
+pub(crate) use super::identity_apply::format_predator_loop_transition;
 pub use super::identity_apply::{
     PredatorLoopHook, apply_predator_loop_transition, apply_predator_loop_transitions_system,
 };
-pub(crate) use super::identity_apply::format_predator_loop_transition;
 
 pub const DEFAULT_EXPLOIT_CAP: u8 = 3;
 pub const DEFAULT_PREY_LOCK_DURATION: u8 = 2;
@@ -161,7 +161,6 @@ impl PredatorLoopTransition {
         }
     }
 }
-
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PredatorLockState {

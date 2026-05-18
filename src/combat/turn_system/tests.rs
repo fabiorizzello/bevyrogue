@@ -1,5 +1,15 @@
 use super::*;
-use bevy::prelude::*;
+use crate::combat::runtime::timeline::{Beat, BeatKind, TimelineLibrary};
+use crate::combat::{
+    events::CombatEvent,
+    kit::UnitSkills,
+    log::{ActionLog, LogEntry},
+    runtime::ExtRegistries,
+    team::Team,
+    toughness::Toughness,
+    types::{Attribute, DamageTag, EvoStage},
+    ultimate::UltAccumulationTrigger,
+};
 use crate::combat::{
     sp::SpPool,
     state::{CombatPhase, CombatState},
@@ -9,17 +19,6 @@ use crate::combat::{
     ultimate::UltimateCharge,
     unit::{Ko, Unit},
 };
-use crate::combat::runtime::timeline::{Beat, BeatKind, TimelineLibrary};
-use crate::combat::{
-    runtime::ExtRegistries,
-    events::CombatEvent,
-    kit::UnitSkills,
-    log::{ActionLog, LogEntry},
-    team::Team,
-    toughness::Toughness,
-    types::{Attribute, DamageTag, EvoStage},
-    ultimate::UltAccumulationTrigger,
-};
 use crate::data::{
     SkillBookHandle,
     skill_timeline::compile_skill_book_timelines,
@@ -28,6 +27,7 @@ use crate::data::{
         TargetLife, TargetShape, TargetSide,
     },
 };
+use bevy::prelude::*;
 
 fn unit(id: u32, attribute: Attribute, hp_current: i32) -> Unit {
     Unit {

@@ -349,8 +349,8 @@ where
 {
     let mut merged = Vec::new();
     for (path, fragment) in fragments {
-        let partial: Vec<T> = ron::from_str(fragment)
-            .map_err(|source| DataError::RonParse { path, source })?;
+        let partial: Vec<T> =
+            ron::from_str(fragment).map_err(|source| DataError::RonParse { path, source })?;
         merged.extend(partial);
     }
     Ok(merged)
