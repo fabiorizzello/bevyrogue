@@ -970,7 +970,7 @@ mod tests {
     #[test]
     fn parse_canonical_skills_ron() {
         let book = canonical_skill_book();
-        assert_eq!(book.0.len(), 74, "unexpected skill catalog size");
+        assert_eq!(book.0.len(), 65, "unexpected skill catalog size");
 
         let ids: HashSet<_> = book.0.iter().map(|skill| skill.id.clone()).collect();
         assert_eq!(ids.len(), book.0.len(), "duplicate skill ids in skills.ron");

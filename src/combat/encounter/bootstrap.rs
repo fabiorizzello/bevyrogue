@@ -5,19 +5,19 @@ use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
-use super::av::ActionValue;
-use super::buffs::DrBag;
-use super::counterplay::EnemyCounterplayKit;
-use super::energy::{Energy, RoundEnergyTracker};
-use super::kit::{FormIdentityKit, UnitSkills};
-use super::resistance::TempoResistance;
-use super::round_flags::RoundFlags;
-use super::speed::{Speed, SpeedModifier};
-use super::status_effect::StatusBag;
-use super::toughness::{Toughness, ToughnessCategory};
-use super::turn_order::TurnOrder;
-use super::ultimate::{UltAccumulationTrigger, UltimateCharge};
-use super::unit::{BasicStreak, Commander, SlotIndex, Unit};
+use crate::combat::av::ActionValue;
+use crate::combat::buffs::DrBag;
+use crate::combat::counterplay::EnemyCounterplayKit;
+use crate::combat::energy::{Energy, RoundEnergyTracker};
+use crate::combat::kit::{FormIdentityKit, UnitSkills};
+use crate::combat::resistance::TempoResistance;
+use crate::combat::round_flags::RoundFlags;
+use crate::combat::speed::{Speed, SpeedModifier};
+use crate::combat::status_effect::StatusBag;
+use crate::combat::toughness::{Toughness, ToughnessCategory};
+use crate::combat::turn_order::TurnOrder;
+use crate::combat::ultimate::{UltAccumulationTrigger, UltimateCharge};
+use crate::combat::unit::{BasicStreak, Commander, SlotIndex, Unit};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SelectionRequest {
@@ -224,13 +224,12 @@ pub fn taichi_def() -> UnitDef {
         attribute: crate::combat::types::Attribute::Free,
         team: Team::Ally,
         basic_damage_tag: crate::combat::types::DamageTag::Fire,
-        basic_skill: crate::combat::types::SkillId("rally".into()),
+        basic_skill: crate::combat::types::SkillId("goblimon_basic".into()),
         skill_ids: vec![
-            crate::combat::types::SkillId("rally".into()),
-            crate::combat::types::SkillId("first_aid".into()),
-            crate::combat::types::SkillId("taunt".into()),
+            crate::combat::types::SkillId("goblimon_basic".into()),
+            crate::combat::types::SkillId("goblimon_slash".into()),
         ],
-        ultimate_skill: crate::combat::types::SkillId("brave_tri_strike".into()),
+        ultimate_skill: crate::combat::types::SkillId("goblimon_ult".into()),
         follow_up: None,
         enemy_traits: vec![],
         charged_attack: None,

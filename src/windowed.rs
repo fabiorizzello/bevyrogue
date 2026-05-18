@@ -207,7 +207,6 @@ fn roster_panel(
             for path in crate::data::DIGIMON_SKILL_PATHS
                 .iter()
                 .chain(crate::data::ENEMY_SKILL_PATHS.iter())
-                .chain(crate::data::SHARED_SKILL_PATHS.iter())
             {
                 asset_server.reload(*path);
             }

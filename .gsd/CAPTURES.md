@@ -3,47 +3,48 @@
 ### CAP-8d133d1a
 **Text:** vedo un sacco di file relativi a identità custom dei digimon ma sotto combat/ battery_loop, precision_mind_game(è ancora usato?)? tieni conto che non dobbiamo mantenerci retrocompatibili o altro. voglio che dal kernel spariscano le logiche/strutture dati custom dei specifici digimon. in più i test che non servono realmente si possono togliere. è normale avere tutti quei test per il nostro numeor di LOC del progetto effettivo? Fai un passaggio di prune/remove orphan code/obsoleto. magari tramite un ultimo slice a fine m021
 **Captured:** 2026-05-17T06:50:03.872Z
-**Status:** resolved
+**Status:** done
 **Classification:** defer
-**Resolution:** Defer to a final M021 cleanup slice for pruning Digimon-specific kernel logic, orphan code, and obsolete tests.
+**Resolution:** Completed across M021 waves 1-5: kernel cleaned of digimon-specific logic (battery_loop, precision_mind_game removed), orphan code pruned, dead-code warnings eliminated. Further structural reorganization done in post-M021 refactor (combat submodule split).
 **Rationale:** This is important follow-up work, but it belongs in a later cleanup slice rather than changing the current S12 scope.
 **Resolved:** 2026-05-17T08:18:14Z
+**Completed:** 2026-05-18
 **Milestone:** M021
 
 ### CAP-af4db4ca
 **Text:** anche enemy_counterplay - ogni enemy avrà il suo counterplay, non bisogna inserire la logica nel kernel, se non primitive
 **Captured:** 2026-05-17T06:51:21.060Z
-**Status:** resolved
+**Status:** done
 **Classification:** defer
-**Resolution:** Defer as a design constraint for future enemy implementations: keep counterplay logic in per-enemy modules/blueprints, not in kernel code.
+**Resolution:** Completed: counterplay.rs consolidated as typed per-enemy data declarations (not kernel logic). enemy_counterplay.rs merged into counterplay.rs. Module moved to combat/encounter/ submodule alongside bootstrap and enemy_ai.
 **Rationale:** This is a reusable architectural note, but it does not require immediate action in the current slice.
 **Resolved:** 2026-05-17T08:18:14Z
+**Completed:** 2026-05-18
 **Milestone:** M021
 
-### CAP-7c065a44
+### CAP-7c065a44 (pt.1 — Asset structure)
+**Text:** Decentrare il RON delle Skill: Il file monolitico assets/data/skills.ron va diviso. Sfrutta l'architettura di M021 per avere un file skills.ron globale solo per le mosse comuni, e sposta le skill specifiche nelle cartelle dei Digimon (es. assets/data/digimon/agumon/skills.ron).
+**Captured:** 2026-05-17T13:26:46.110Z
+**Status:** done
+**Resolution:** Completed: skill RON split into per-digimon files (assets/data/digimon/{name}/skills.ron + assets/data/enemies/{name}/skills.ron). Shared demo skills removed — no more monolithic skills.ron.
+**Completed:** 2026-05-18
+**Milestone:** M021
+
+### CAP-7c065a44 (pt.2 — Visual architecture)
 **Text:** 1. Architettura Visiva (M023)
    * Niente Fisica/Collider per i VFX: In un RPG a turni deterministico, usare motori fisici (Rapier/Avian)
      per gestire impatti o VFX è un anti-pattern che rompe il determinismo e introduce overhead inutile.
    * VFX tramite Cue e Reactive Bus: Usa il sistema di CueExt (già previsto nella tua CompiledTimeline) per
-     inviare segnali visivi. Esempio: il nodo Impact emette un evento, il sistema di rendering cattura
-     l'evento (leggendo il target_id) e applica uno shader (es. un componente HitFlash { intensity: 1.0 }) o
-     spawna particelle esattamente sulle coordinate dello sprite bersaglio.
-   * Action Queue Feedback: Per evitare che il sistema a grafo risulti "incomprensibile" al giocatore, la UI
-     di M023 dovrebbe mostrare graficamente gli Intent (es. piccole icone danno/buff) che "esplodono" in sync
-     con l'animazione, chiarendo perché una mossa multi-hit o un loop sta avvenendo.
-
-  2. Struttura degli Asset (M021 S12 / M022)
-   * Decentrare il RON delle Skill: Il file monolitico assets/data/skills.ron va diviso. Sfrutta
-     l'architettura di M021 per avere un file skills.ron globale solo per le mosse comuni, e sposta le skill
-     specifiche nelle cartelle dei Digimon (es. assets/data/digimon/agumon/skills.ron). Questo eliminerà il
-     rischio di conflitti e isolerà completamente l'identità di ogni personaggio.
+     inviare segnali visivi.
+   * Action Queue Feedback: La UI di M023 dovrebbe mostrare graficamente gli Intent che "esplodono" in sync
+     con l'animazione.
 **Captured:** 2026-05-17T13:26:46.110Z
 **Status:** resolved
 **Classification:** defer
-**Resolution:** Defer the M023 visual architecture guidance and the M022 asset-structure split to their future milestones rather than changing S13.
-**Rationale:** The VFX/Cue/UI feedback ideas target M023 rendering work, and the skill-RON decentralization is an asset-pipeline follow-up better handled in M022 or a later post-M021 slice, not during current M021 verification remediation.
+**Resolution:** Defer the M023 visual architecture guidance to its future milestone.
+**Rationale:** The VFX/Cue/UI feedback ideas target M023 rendering work.
 **Resolved:** 2026-05-17T13:28:58Z
-**Milestone:** M021
+**Milestone:** M023
 
 ### CAP-159d33b5
 **Text:** 3. La "Sfida" di M023: Il Sync

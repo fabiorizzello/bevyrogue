@@ -935,7 +935,7 @@ fn run_aoe_blast_scenario() {
     };
 
     // --- Cast 1: Blast on slot-1 primary (GobB) ---
-    println!("\n--- Cast 1: nova_burst (Blast, primary=GobB slot-1) ---");
+    println!("\n--- Cast 1: blast_demo (Blast, primary=GobB slot-1) ---");
     let primary_blast = UnitId(2);
     let snapshot1 = build_snapshot(&enemies);
     let blast_targets = resolve_targets(&TargetShape::Blast, primary_blast, &snapshot1);
@@ -964,14 +964,14 @@ fn run_aoe_blast_scenario() {
             target_id: enemy.id.0,
             target_slot: enemy.slot_index,
             amount: blast_damage_per_target,
-            skill_id: "nova_burst",
+            skill_id: "blast_demo",
         };
         println!("{}", serde_json::to_string(&entry).unwrap());
         let _ = blast_toughness_per_target;
     }
 
-    // --- Cast 2: AllEnemies (dark_flood) ---
-    println!("\n--- Cast 2: dark_flood (AllEnemies) ---");
+    // --- Cast 2: AllEnemies (aoe_demo) ---
+    println!("\n--- Cast 2: aoe_demo (AllEnemies) ---");
     let primary_all = UnitId(1);
     let snapshot2 = build_snapshot(&enemies);
     let all_targets = resolve_targets(&TargetShape::AllEnemies, primary_all, &snapshot2);
@@ -1000,7 +1000,7 @@ fn run_aoe_blast_scenario() {
             target_id: enemy.id.0,
             target_slot: enemy.slot_index,
             amount: all_damage_per_target,
-            skill_id: "dark_flood",
+            skill_id: "aoe_demo",
         };
         println!("{}", serde_json::to_string(&entry).unwrap());
         let _ = all_toughness_per_target;

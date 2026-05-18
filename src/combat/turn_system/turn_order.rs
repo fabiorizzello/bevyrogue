@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use std::collections::VecDeque;
 
-use super::types::UnitId;
+use crate::combat::types::UnitId;
 
 /// Resource to track the current active unit and the next unit in the turn order.
 /// This resource will be managed by the Action Value system.

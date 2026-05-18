@@ -1504,7 +1504,7 @@ mod tests {
             attacker: UnitId(1),
             target: UnitId(2),
         };
-        let skill = grant_free_skill_def("brave_tri_strike", 4);
+        let skill = grant_free_skill_def("test_grant_skill", 4);
         let book = SkillBook(vec![skill.clone()]);
         let kit = UnitSkills {
             basic: skill.id.clone(),

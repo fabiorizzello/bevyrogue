@@ -47,8 +47,7 @@ pub const ENEMY_SKILL_PATHS: &[&str] = &[
     "data/enemies/ogremon/skills.ron",
 ];
 
-/// Shared/legacy skill RON sources (relative to `assets/`).
-pub const SHARED_SKILL_PATHS: &[&str] = &["data/shared/skills.ron"];
+
 
 #[derive(Resource)]
 pub struct UnitRosterHandles(pub Vec<Handle<UnitRoster>>);
@@ -115,11 +114,9 @@ fn load_data(mut commands: Commands, asset_server: Res<AssetServer>) {
         .collect();
     let unit_count = unit_handles.len();
 
-    // Load all per-digimon + shared skill files.
     let skill_handles: Vec<Handle<SkillBook>> = DIGIMON_SKILL_PATHS
         .iter()
         .chain(ENEMY_SKILL_PATHS.iter())
-        .chain(SHARED_SKILL_PATHS.iter())
         .map(|path| asset_server.load(*path))
         .collect();
     let skill_count = skill_handles.len();
@@ -377,7 +374,6 @@ pub fn aggregate_skill_book() -> SkillBook {
         include_str!("../../assets/data/enemies/devimon/skills.ron"),
         include_str!("../../assets/data/enemies/goblimon/skills.ron"),
         include_str!("../../assets/data/enemies/ogremon/skills.ron"),
-        include_str!("../../assets/data/shared/skills.ron"),
     ];
     let mut merged = Vec::new();
     for fragment in fragments {
@@ -400,7 +396,6 @@ pub fn aggregate_skill_book_ron_text() -> String {
         include_str!("../../assets/data/enemies/devimon/skills.ron"),
         include_str!("../../assets/data/enemies/goblimon/skills.ron"),
         include_str!("../../assets/data/enemies/ogremon/skills.ron"),
-        include_str!("../../assets/data/shared/skills.ron"),
     ];
 
     // Merge all fragments into a single RON list by stripping outer brackets
