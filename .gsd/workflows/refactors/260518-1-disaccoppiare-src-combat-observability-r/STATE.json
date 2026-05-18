@@ -7,17 +7,17 @@
     {
       "name": "inventory",
       "index": 0,
-      "status": "active"
+      "status": "complete"
     },
     {
       "name": "plan",
       "index": 1,
-      "status": "pending"
+      "status": "complete"
     },
     {
       "name": "migrate",
       "index": 2,
-      "status": "pending"
+      "status": "active"
     },
     {
       "name": "verify",
@@ -25,8 +25,8 @@
       "status": "pending"
     }
   ],
-  "currentPhase": 0,
+  "currentPhase": 2,
   "startedAt": "2026-05-18T06:10:22.354Z",
-  "updatedAt": "2026-05-18T06:10:22.354Z",
+  "updatedAt": "2026-05-18T08:10:00.000Z",
   "artifactDir": "/home/fabio/dev/bevyrogue/.gsd/workflows/refactors/260518-1-disaccoppiare-src-combat-observability-r"
 }
