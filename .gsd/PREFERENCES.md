@@ -4,7 +4,7 @@ mode: team
 git:
   auto_push: true
   main_branch: master
-  isolation: branch
+  isolation: none
 widget_mode: full
 ---
 # GSD Project Preferences
