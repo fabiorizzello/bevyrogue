@@ -6,6 +6,7 @@
 use bevy::prelude::*;
 use bevy_egui::{EguiContexts, EguiPlugin, EguiPrimaryContextPass, egui};
 
+use bevyrogue::animation::{AnimGraph, AnimGraphId, AnimGraphPlayer, StanceGraphRegistry};
 use bevyrogue::combat::follow_up::{
     follow_up_listener_system, form_identity_listener_system, resolve_follow_up_action_system,
 };
@@ -31,6 +32,67 @@ struct WindowedValidationState {
     started_at_secs: Option<f32>,
     snapshot_logged: bool,
     finished: bool,
+}
+
+/// Marker + FSM state for the on-screen Agumon idle sprite.
+#[derive(Component)]
+struct AgumonSprite {
+    player: AnimGraphPlayer,
+}
+
+/// Sprite camera + Agumon idle animation. Feature-agnostic player, windowed render.
+pub struct RenderPlugin;
+
+impl Plugin for RenderPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Startup, setup_camera)
+            .add_systems(Update, advance_agumon_idle);
+    }
+}
+
+fn setup_camera(mut commands: Commands) {
+    commands.spawn(Camera2d);
+}
+
+fn advance_agumon_idle(
+    mut commands: Commands,
+    stance_reg: Res<StanceGraphRegistry>,
+    graphs: Res<Assets<AnimGraph>>,
+    mut sprites: Query<&mut AgumonSprite>,
+) {
+    let id = AnimGraphId("agumon_stance".into());
+    let Some(handle) = stance_reg.resolve(&id) else {
+        return;
+    };
+    let Some(graph) = graphs.get(handle) else {
+        return;
+    };
+
+    if sprites.is_empty() {
+        commands.spawn(AgumonSprite {
+            player: AnimGraphPlayer::new(graph.entry.clone()),
+        });
+    }
+
+    for mut s in &mut sprites {
+        let frame = s.player.advance(graph);
+        trace!("agumon_idle_frame={frame}");
+    }
+}
+
+/// Egui panels: roster, turn order, combat panel.
+pub struct UiPlugin;
+
+impl Plugin for UiPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_plugins(EguiPlugin::default())
+            .init_resource::<bevyrogue::ui::combat_panel::PendingAction>()
+            .init_resource::<bevyrogue::ui::combat_panel::PreviewDamageCache>()
+            .add_systems(Update, bevyrogue::ui::combat_panel::refresh_preview_damage_cache)
+            .add_systems(EguiPrimaryContextPass, roster_panel)
+            .add_systems(EguiPrimaryContextPass, turn_order_panel)
+            .add_systems(EguiPrimaryContextPass, bevyrogue::ui::combat_panel::combat_panel);
+    }
 }
 
 fn parse_windowed_validation_toggle(raw: Option<&str>) -> Result<bool, String> {
@@ -86,20 +148,8 @@ pub fn register(app: &mut App, validation: Option<WindowedValidationConfig>) {
         ..default()
     }))
     .add_plugins(DataPlugin)
-    .add_plugins(EguiPlugin::default())
-    .init_resource::<bevyrogue::ui::combat_panel::PendingAction>()
-    .init_resource::<bevyrogue::ui::combat_panel::PreviewDamageCache>()
-    .add_systems(
-        Update,
-        bevyrogue::ui::combat_panel::refresh_preview_damage_cache,
-    )
-    .add_systems(Startup, setup)
-    .add_systems(EguiPrimaryContextPass, roster_panel)
-    .add_systems(EguiPrimaryContextPass, turn_order_panel)
-    .add_systems(
-        EguiPrimaryContextPass,
-        bevyrogue::ui::combat_panel::combat_panel,
-    );
+    .add_plugins(RenderPlugin)
+    .add_plugins(UiPlugin);
 
     if let Some(config) = validation {
         app.insert_resource(config)
@@ -125,10 +175,6 @@ pub fn register_combat_systems(app: &mut App) {
             )
                 .chain(),
         );
-}
-
-fn setup(mut commands: Commands) {
-    commands.spawn(Camera2d);
 }
 
 fn windowed_validation_tick(world: &mut World) {
