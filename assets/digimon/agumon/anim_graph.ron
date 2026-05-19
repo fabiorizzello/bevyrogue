@@ -1,6 +1,6 @@
 (
     id: "agumon_skill",
-    clip: "skill",
+    clip: "all",
     entry: "baby_flame_cast",
     nodes: {
         "baby_flame_cast": (
@@ -20,6 +20,18 @@
         "baby_flame_recover": (
             frames: (73, 77),
         ),
+        "sharp_claws_windup": (
+            frames: (0, 2),
+        ),
+        "sharp_claws_strike": (
+            frames: (3, 5),
+            cues: [
+                (at: 1, command: ReleaseKernel(())),
+            ],
+        ),
+        "sharp_claws_recover": (
+            frames: (6, 8),
+        ),
     },
     transitions: [
         (
@@ -37,6 +49,21 @@
             from: "baby_flame_recover",
             to: Exit,
             when: Always,
+        ),
+        (
+            from: "sharp_claws_windup",
+            to: Node("sharp_claws_strike"),
+            when: TimeInNode,
+        ),
+        (
+            from: "sharp_claws_strike",
+            to: Node("sharp_claws_recover"),
+            when: KernelCue,
+        ),
+        (
+            from: "sharp_claws_recover",
+            to: Exit,
+            when: TimeInNode,
         ),
     ],
 )

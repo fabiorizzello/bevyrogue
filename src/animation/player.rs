@@ -1,4 +1,4 @@
-use super::anim_graph::{AnimGraph, AnimNode, NodeId, PlaybackModifier, Predicate, TransitionTarget};
+use super::anim_graph::{AnimEdge, AnimGraph, AnimNode, NodeId, PlaybackModifier, Predicate, TransitionTarget};
 
 /// Feature-agnostic FSM core — no `#[cfg(feature)]` anywhere in this file.
 ///
@@ -10,17 +10,29 @@ use super::anim_graph::{AnimGraph, AnimNode, NodeId, PlaybackModifier, Predicate
 pub struct AnimGraphPlayer {
     pub current_node: NodeId,
     pub elapsed_anim_frames: u32,
+    pending_kernel_cue: bool,
 }
 
 impl AnimGraphPlayer {
     pub fn new(entry: NodeId) -> Self {
-        Self { current_node: entry, elapsed_anim_frames: 0 }
+        Self {
+            current_node: entry,
+            elapsed_anim_frames: 0,
+            pending_kernel_cue: false,
+        }
+    }
+
+    /// Latch a one-shot kernel cue for the current node.
+    ///
+    /// The cue stays pending until a `Predicate::KernelCue` transition fires,
+    /// then it is consumed so one release cannot satisfy later gates.
+    pub fn fire_kernel_cue(&mut self) {
+        self.pending_kernel_cue = true;
     }
 
     /// Advance one animation tick.
     ///
-    /// Evaluates `TimeInNode` and `Always` transitions; ignores `KernelCue` and
-    /// all other predicates (those are driven by the combat kernel, not this layer).
+    /// Evaluates `TimeInNode`, `Always`, and `KernelCue` transitions.
     /// Returns the sprite-sheet frame index for the current animation state.
     pub fn advance(&mut self, graph: &AnimGraph) -> u32 {
         let Some(node) = graph.nodes.get(&self.current_node) else {
@@ -28,19 +40,13 @@ impl AnimGraphPlayer {
         };
 
         let duration = node_duration(node);
-
-        let transition = graph
-            .transitions
-            .iter()
-            .filter(|e| e.from == self.current_node)
-            .filter(|e| match &e.when {
-                Predicate::Always => true,
-                Predicate::TimeInNode => self.elapsed_anim_frames >= duration,
-                _ => false,
-            })
-            .max_by_key(|e| e.priority.map_or(0, |p| p.0));
+        let transition = self.select_transition(graph, duration);
 
         if let Some(edge) = transition {
+            if matches!(edge.when, Predicate::KernelCue) {
+                self.pending_kernel_cue = false;
+            }
+
             match &edge.to {
                 TransitionTarget::Node(id) => {
                     self.current_node = id.clone();
@@ -59,6 +65,24 @@ impl AnimGraphPlayer {
         let idx = frame_index(node, self.elapsed_anim_frames);
         self.elapsed_anim_frames = self.elapsed_anim_frames.wrapping_add(1);
         idx
+    }
+
+    fn select_transition<'a>(&self, graph: &'a AnimGraph, duration: u32) -> Option<&'a AnimEdge> {
+        graph
+            .transitions
+            .iter()
+            .filter(|edge| edge.from == self.current_node)
+            .filter(|edge| self.predicate_matches(&edge.when, duration))
+            .max_by_key(|edge| edge.priority.map_or(0, |priority| priority.0))
+    }
+
+    fn predicate_matches(&self, predicate: &Predicate, duration: u32) -> bool {
+        match predicate {
+            Predicate::Always => true,
+            Predicate::TimeInNode => self.elapsed_anim_frames >= duration,
+            Predicate::KernelCue => self.pending_kernel_cue,
+            _ => false,
+        }
     }
 }
 

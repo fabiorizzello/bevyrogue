@@ -1,4 +1,4 @@
-use bevyrogue::animation::{AnimGraph, AnimGraphPlayer};
+use bevyrogue::animation::{AnimGraph, AnimGraphPlayer, NodeId};
 
 fn parse_stance() -> AnimGraph {
     ron::from_str(include_str!("../assets/digimon/agumon/stance.ron"))
@@ -43,6 +43,18 @@ fn player_idle_does_not_leave_node_with_infinite_loop() {
     );
 }
 
+#[test]
+fn player_returns_zero_for_missing_current_node() {
+    let graph = parse_stance();
+    let mut player = AnimGraphPlayer::new(NodeId("missing".into()));
+
+    player.fire_kernel_cue();
+
+    assert_eq!(player.advance(&graph), 0, "missing nodes must keep the safe frame-0 fallback");
+    assert_eq!(player.current_node.0, "missing");
+    assert_eq!(player.elapsed_anim_frames, 0);
+}
+
 // --- TimeInNode transitions ---
 
 #[test]
@@ -71,6 +83,72 @@ fn player_transitions_on_time_in_node() {
         player.current_node.0, "recover",
         "player must transition to recover after cast duration"
     );
+}
+
+// --- KernelCue transitions ---
+
+#[test]
+fn player_kernel_cue_transition_waits_for_signal() {
+    let graph = parse_graph(r#"(
+        id: "test",
+        clip: "skill",
+        entry: "strike",
+        nodes: {
+            "strike": (frames: (0, 2)),
+            "recover": (frames: (3, 5)),
+        },
+        transitions: [
+            (from: "strike", to: Node("recover"), when: KernelCue),
+            (from: "recover", to: Exit, when: TimeInNode),
+        ]
+    )"#);
+
+    let mut player = AnimGraphPlayer::new(graph.entry.clone());
+    let frames: Vec<u32> = (0..5).map(|_| player.advance(&graph)).collect();
+    assert_eq!(frames, vec![0, 1, 2, 2, 2], "strike must clamp on its last frame before release");
+    assert_eq!(player.current_node.0, "strike");
+    assert_eq!(player.elapsed_anim_frames, 5, "elapsed ticks should keep climbing while the cue is blocked");
+
+    player.fire_kernel_cue();
+
+    assert_eq!(player.advance(&graph), 3, "release should jump to recover's first frame");
+    assert_eq!(player.current_node.0, "recover");
+    assert_eq!(player.elapsed_anim_frames, 0, "transitioning on KernelCue must reset elapsed ticks");
+}
+
+#[test]
+fn player_kernel_cue_consumes_signal_once() {
+    let graph = parse_graph(r#"(
+        id: "test",
+        clip: "skill",
+        entry: "windup",
+        nodes: {
+            "windup": (frames: (0, 1)),
+            "strike": (frames: (2, 3)),
+            "recover": (frames: (4, 5)),
+        },
+        transitions: [
+            (from: "windup", to: Node("strike"), when: KernelCue),
+            (from: "strike", to: Node("recover"), when: KernelCue),
+            (from: "recover", to: Exit, when: TimeInNode),
+        ]
+    )"#);
+
+    let mut player = AnimGraphPlayer::new(graph.entry.clone());
+
+    player.fire_kernel_cue();
+    assert_eq!(player.advance(&graph), 2, "first cue should enter strike");
+    assert_eq!(player.current_node.0, "strike");
+    assert_eq!(player.elapsed_anim_frames, 0);
+
+    assert_eq!(player.advance(&graph), 2, "stale cue must not satisfy strike -> recover");
+    assert_eq!(player.current_node.0, "strike");
+    assert_eq!(player.elapsed_anim_frames, 1);
+
+    player.fire_kernel_cue();
+    assert_eq!(player.advance(&graph), 4, "second cue should enter recover");
+    assert_eq!(player.current_node.0, "recover");
+    assert_eq!(player.elapsed_anim_frames, 0);
 }
 
 // --- Always transitions ---
