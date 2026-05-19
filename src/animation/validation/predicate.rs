@@ -105,6 +105,7 @@ pub(crate) fn validate_predicate(
         Predicate::TimeInNode
         | Predicate::KernelEvent(_)
         | Predicate::UserInput(_)
-        | Predicate::Always => {}
+        | Predicate::Always
+        | Predicate::KernelCue => {}
     }
 }

@@ -1,4 +1,5 @@
 (
+    id: "test_valid",
     clip: "skill",
     entry: "windup",
     nodes: {

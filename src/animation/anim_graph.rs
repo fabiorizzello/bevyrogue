@@ -11,11 +11,16 @@ use serde::{Deserialize, Serialize};
 #[derive(Asset, TypePath, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct AnimGraph {
+    pub id: AnimGraphId,
     pub clip: ClipId,
     pub entry: NodeId,
     pub nodes: BTreeMap<NodeId, AnimNode>,
     pub transitions: Vec<AnimEdge>,
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct AnimGraphId(pub String);
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
@@ -64,10 +69,31 @@ pub struct AnimNode {
     #[serde(default)]
     pub on_enter: Vec<Command>,
     #[serde(default)]
+    pub cues: Vec<FrameCue>,
+    #[serde(default)]
     pub modifier: Option<PlaybackModifier>,
     #[serde(default)]
     pub reverse: bool,
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FrameCue {
+    pub at: u32,
+    pub command: FrameCueCommand,
+}
+
+/// Closed enum: either a presentation-layer command or a kernel release signal.
+/// Keeping it closed means S02+ extensions are explicit, not ad-hoc.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum FrameCueCommand {
+    Presentation(Command),
+    ReleaseKernel(ReleaseKernelCue),
+}
+
+/// Unit signal emitted at a specific frame to hand control back to the combat kernel.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ReleaseKernelCue;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -188,6 +214,8 @@ pub enum Predicate {
     Or(Box<Predicate>, Box<Predicate>),
     Not(Box<Predicate>),
     Always,
+    /// Fires when the AnimGraph runtime sees a `ReleaseKernelCue` at the current frame.
+    KernelCue,
 }
 
 /// Event kinds are kept closed even though payload identifiers stay generic.

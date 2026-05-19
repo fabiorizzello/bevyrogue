@@ -1,4 +1,5 @@
 (
+    id: "agumon_skill",
     clip: "skill",
     entry: "baby_flame_cast",
     nodes: {

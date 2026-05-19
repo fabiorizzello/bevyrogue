@@ -47,6 +47,18 @@ name = "dump_schedule"
 path = "examples/dump_schedule.rs"
 
 [[test]]
+name = "anim_graph_parse"
+path = "tests/anim_graph_parse.rs"
+
+[[test]]
+name = "anim_graph_asset"
+path = "tests/anim_graph_asset.rs"
+
+[[test]]
+name = "anim_validation"
+path = "tests/anim_validation.rs"
+
+[[test]]
 name = "twin_core_integration"
 path = "tests/twin_core_integration.rs"
 

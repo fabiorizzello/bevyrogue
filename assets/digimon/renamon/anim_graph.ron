@@ -1,4 +1,5 @@
 (
+    id: "renamon_skill",
     clip: "skill",
     entry: "diamond_storm_cast",
     nodes: {
