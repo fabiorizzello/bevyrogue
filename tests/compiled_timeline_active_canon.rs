@@ -43,6 +43,7 @@ fn canonical_regs() -> ExtRegistries {
 const CHILD_ROSTER_ACTIVE: &[&str] = &[
     // child basics / skill_ids
     "baby_flame",
+    "sharp_claws",
     "bubble_blast",
     "draconic_edge",
     "diamond_storm",

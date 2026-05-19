@@ -8,7 +8,7 @@
         attribute: Vaccine,
         team: Ally,
         basic_damage_tag: Fire,
-        basic_skill: SkillId("baby_flame"),
+        basic_skill: SkillId("sharp_claws"),
         skill_ids: [SkillId("baby_flame")],
         ultimate_skill: SkillId("agumon_ult"),
         follow_up: Some((

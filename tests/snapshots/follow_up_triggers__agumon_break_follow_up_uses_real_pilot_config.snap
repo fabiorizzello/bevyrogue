@@ -4,7 +4,7 @@ expression: snapshot
 ---
 {"type":"combat_event","source":1,"target":4,"follow_up_depth":0,"event":{"kind":"OnDamageDealt","amount":23,"damage_kind":"Normal"}}
 {"type":"combat_event","source":1,"target":4,"follow_up_depth":0,"event":{"kind":"OnBreak","element":"Fire"}}
-{"type":"combat_event","source":1,"target":4,"follow_up_depth":0,"event":{"kind":"OnSkillCast","skill_id":"baby_flame"}}
+{"type":"combat_event","source":1,"target":4,"follow_up_depth":0,"event":{"kind":"OnSkillCast","skill_id":"sharp_claws"}}
 {"type":"combat_event","source":1,"target":4,"follow_up_depth":1,"event":{"kind":"OnDamageDealt","amount":28,"damage_kind":"Weak"}}
 {"type":"combat_event","source":1,"target":4,"follow_up_depth":1,"event":{"kind":"OnHitTaken","amount":28}}
 {"type":"combat_event","source":1,"target":4,"follow_up_depth":1,"event":{"kind":"OnSkillCast","skill_id":"agumon_follow_up"}}

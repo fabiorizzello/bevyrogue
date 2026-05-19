@@ -39,13 +39,14 @@ fn canonical_asset_compiles_timeline_backed_skills_into_library_shape() {
         .collect();
     assert_eq!(
         ids.len(),
-        15,
-        "expected 15 timeline-backed canon skills after child-roster migration"
+        16,
+        "expected 16 timeline-backed canon skills after Agumon Sharp Claws routing"
     );
 
     // child basic/active skills
     for required in [
         "baby_flame",
+        "sharp_claws",
         "bubble_blast",
         "draconic_edge",
         "diamond_storm",
