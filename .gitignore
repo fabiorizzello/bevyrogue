@@ -51,8 +51,8 @@ tmp/
 .gsd/doctor-history.jsonl
 .gsd/last-snapshot.md
 .gsd/repo-meta.json
-.gsd/gsd.db-shm
-.gsd/gsd.db-wal
+.gsd/gsd.db*
+!.gsd/gsd.db
 .gsd/completed-units.json
 .gsd/STATE.md
 .gsd/state-manifest.json
