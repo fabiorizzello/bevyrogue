@@ -1,0 +1,11 @@
+(
+    meta: (
+        frame_size: (w: 64, h: 64),
+        columns: 4,
+        rows: 2,
+        total_frames: 8,
+    ),
+    ranges: {
+        "skill": (start: 0, end: 7),
+    },
+)

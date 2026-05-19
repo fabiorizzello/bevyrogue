@@ -1,0 +1,18 @@
+(
+    meta: (
+        frame_size: (w: 633, h: 701),
+        columns: 9,
+        rows: 8,
+        total_frames: 71,
+    ),
+    ranges: {
+        "attack": (start: 0, end: 9),
+        "block": (start: 10, end: 15),
+        "death": (start: 16, end: 19),
+        "heavy_attack": (start: 20, end: 29),
+        "hurt": (start: 30, end: 36),
+        "idle": (start: 37, end: 44),
+        "skill": (start: 45, end: 56),
+        "victory": (start: 57, end: 70),
+    },
+)

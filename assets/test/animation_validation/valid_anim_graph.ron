@@ -1,0 +1,41 @@
+(
+    clip: "skill",
+    entry: "windup",
+    nodes: {
+        "impact": (
+            frames: (4, 7),
+            on_enter: [
+                EmitDamage(
+                    hits: Literal(1),
+                    mul: Literal(2),
+                    status: Some("Burn"),
+                    chance_pct: None,
+                    duration: Some(Literal(2)),
+                    target: Primary,
+                ),
+            ],
+        ),
+        "windup": (
+            frames: (0, 3),
+            on_enter: [
+                SpawnParticle(
+                    name: "impact_particle",
+                    origin: CasterCenter,
+                    motion: ArcToTarget,
+                ),
+            ],
+        ),
+    },
+    transitions: [
+        (
+            from: "windup",
+            to: Node("impact"),
+            when: TimeInNode,
+        ),
+        (
+            from: "impact",
+            to: Exit,
+            when: Always,
+        ),
+    ],
+)

@@ -1,0 +1,41 @@
+(
+    clip: "skill",
+    entry: "windup",
+    nodes: {
+        "impact": (
+            frames: (4, 7),
+            on_enter: [
+                EmitDamage(
+                    hits: Literal(1),
+                    mul: Literal(2),
+                    status: Some("MissingStatus"),
+                    chance_pct: None,
+                    duration: None,
+                    target: Primary,
+                ),
+            ],
+        ),
+        "windup": (
+            frames: (0, 3),
+            on_enter: [
+                SpawnParticle(
+                    name: "missing_particle",
+                    origin: CasterCenter,
+                    motion: ArcToTarget,
+                ),
+            ],
+        ),
+    },
+    transitions: [
+        (
+            from: "windup",
+            to: Node("missing_target"),
+            when: TimeInNode,
+        ),
+        (
+            from: "impact",
+            to: Exit,
+            when: Always,
+        ),
+    ],
+)
