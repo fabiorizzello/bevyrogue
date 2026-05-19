@@ -1,0 +1,26 @@
+(
+    id: "agumon_stance",
+    clip: "all",
+    entry: "idle",
+    nodes: {
+        "idle": (
+            frames: (53, 58),
+            modifier: Some(Loop(count: 0)),
+        ),
+        "hurt": (
+            frames: (46, 52),
+        ),
+        "death": (
+            frames: (14, 22),
+        ),
+        "victory": (
+            frames: (76, 92),
+        ),
+    },
+    transitions: [
+        (from: "idle", to: Node("idle"), when: TimeInNode),
+        (from: "hurt", to: Node("idle"), when: TimeInNode),
+        (from: "death", to: Exit, when: TimeInNode),
+        (from: "victory", to: Exit, when: TimeInNode),
+    ],
+)

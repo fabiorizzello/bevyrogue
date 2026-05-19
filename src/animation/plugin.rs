@@ -10,8 +10,8 @@ use super::{
     ClipMeta, ClipRange, FrameSize, SkillIdRef, StatusId,
 };
 use super::registry::{
-    SkillGraphPaths, SkillGraphRegistry, StanceGraphPaths, StanceGraphRegistry,
-    has_matching_asset_event, populate_graph_registries,
+    AnimationStancePaths, SkillGraphPaths, SkillGraphRegistry, StanceGraphPaths,
+    StanceGraphRegistry, has_matching_asset_event, populate_graph_registries,
 };
 use crate::data::{SkillBookHandle, skills_ron::SkillBook};
 
@@ -96,6 +96,7 @@ impl Plugin for AnimationAssetPlugin {
         .init_resource::<AnimationClipPaths>()
         .init_resource::<AnimationValidationCatalogs>()
         .init_resource::<AnimationValidationState>()
+        .init_resource::<AnimationStancePaths>()
         .init_resource::<SkillGraphPaths>()
         .init_resource::<StanceGraphPaths>()
         .init_resource::<SkillGraphRegistry>()
@@ -118,13 +119,13 @@ fn load_animation_graphs(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     paths: Res<AnimationGraphPaths>,
+    stance_paths: Res<AnimationStancePaths>,
 ) {
-    let handles: Vec<Handle<AnimGraph>> = paths
-        .0
-        .iter()
-        .cloned()
-        .map(|path| asset_server.load(path))
-        .collect();
+    commands.insert_resource(SkillGraphPaths(paths.0.clone()));
+    commands.insert_resource(StanceGraphPaths(stance_paths.0.clone()));
+
+    let all_paths: Vec<String> = paths.0.iter().chain(stance_paths.0.iter()).cloned().collect();
+    let handles: Vec<Handle<AnimGraph>> = all_paths.iter().map(|p| asset_server.load(p.clone())).collect();
 
     commands.insert_resource(AnimationGraphLoadState {
         loaded: vec![false; handles.len()],
@@ -133,9 +134,8 @@ fn load_animation_graphs(
     commands.insert_resource(AnimationGraphHandles(handles));
 
     info!(
-        "animation graph load requested: count={}, paths={:?}",
-        paths.0.len(),
-        paths.0
+        "animation graph load requested: skill={}, stance={}, total={}",
+        paths.0.len(), stance_paths.0.len(), all_paths.len()
     );
 }
 

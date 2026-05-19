@@ -28,6 +28,19 @@ impl StanceGraphRegistry {
     }
 }
 
+/// Default stance graph asset paths loaded at boot (relative to `assets/`).
+pub const DEFAULT_ANIM_STANCE_PATHS: &[&str] = &["digimon/agumon/stance.ron"];
+
+/// Data-driven list of stance graph asset paths.
+#[derive(Resource, Debug, Clone)]
+pub struct AnimationStancePaths(pub Vec<String>);
+
+impl Default for AnimationStancePaths {
+    fn default() -> Self {
+        Self(DEFAULT_ANIM_STANCE_PATHS.iter().map(|p| p.to_string()).collect())
+    }
+}
+
 /// Asset paths whose loaded graphs are classified as skill graphs.
 #[derive(Resource, Debug, Default, Clone)]
 pub struct SkillGraphPaths(pub Vec<String>);
