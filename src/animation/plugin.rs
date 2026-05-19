@@ -9,6 +9,10 @@ use super::{
     AnimationValidationReport, AnimationValidationSeverity, AnimationValidationState, Clip,
     ClipMeta, ClipRange, FrameSize, SkillIdRef, StatusId,
 };
+use super::registry::{
+    SkillGraphPaths, SkillGraphRegistry, StanceGraphPaths, StanceGraphRegistry,
+    has_matching_asset_event, populate_graph_registries,
+};
 use crate::data::{SkillBookHandle, skills_ron::SkillBook};
 
 /// Default animation graph assets to load at boot (relative to `assets/`).
@@ -92,6 +96,10 @@ impl Plugin for AnimationAssetPlugin {
         .init_resource::<AnimationClipPaths>()
         .init_resource::<AnimationValidationCatalogs>()
         .init_resource::<AnimationValidationState>()
+        .init_resource::<SkillGraphPaths>()
+        .init_resource::<StanceGraphPaths>()
+        .init_resource::<SkillGraphRegistry>()
+        .init_resource::<StanceGraphRegistry>()
         .add_systems(Startup, (load_animation_graphs, load_animation_clips))
         .add_systems(
             Update,
@@ -100,6 +108,7 @@ impl Plugin for AnimationAssetPlugin {
                 track_animation_clip_loads,
                 sync_validation_catalogs,
                 validate_animation_assets,
+                populate_graph_registries,
             ),
         );
     }
@@ -477,18 +486,4 @@ fn sync_validation_catalogs(
         catalogs.statuses.len(),
         catalogs.skills.len()
     );
-}
-
-fn has_matching_asset_event<T: Asset>(
-    events: &mut MessageReader<AssetEvent<T>>,
-    handles: &[Handle<T>],
-) -> bool {
-    events.read().any(|event| {
-        let id = match event {
-            AssetEvent::LoadedWithDependencies { id } | AssetEvent::Modified { id } => *id,
-            _ => return false,
-        };
-
-        handles.iter().any(|handle| handle.id() == id)
-    })
 }
