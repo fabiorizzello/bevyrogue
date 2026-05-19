@@ -75,6 +75,10 @@ name = "anim_player_fsm"
 path = "tests/anim_player_fsm.rs"
 
 [[test]]
+name = "clip_atlas_parity"
+path = "tests/clip_atlas_parity.rs"
+
+[[test]]
 name = "twin_core_integration"
 path = "tests/twin_core_integration.rs"
 

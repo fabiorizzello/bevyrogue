@@ -4,7 +4,7 @@
     entry: "baby_flame_cast",
     nodes: {
         "baby_flame_cast": (
-            frames: (59, 67),
+            frames: (60, 68),
             on_enter: [
                 SpawnParticle(
                     name: "baby_flame",
@@ -14,11 +14,11 @@
             ],
         ),
         "baby_flame_impact": (
-            frames: (68, 71),
+            frames: (69, 72),
             modifier: Some(Hold(extra_frames: 2)),
         ),
         "baby_flame_recover": (
-            frames: (72, 75),
+            frames: (73, 77),
         ),
     },
     transitions: [

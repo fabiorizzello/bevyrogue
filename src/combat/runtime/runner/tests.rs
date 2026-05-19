@@ -317,10 +317,10 @@ fn windowed_stalls_on_presentation_hook_fires_once() {
     );
 }
 
-// ── Test (f): HeadlessAuto pending == Windowed pending (stream parity) ────
+// ── Test (f): Windowed batch run awaits cues but preserves final parity ────
 
 #[test]
-fn headless_and_windowed_produce_identical_pending_stream() {
+fn headless_and_windowed_manual_resume_produce_identical_pending_stream() {
     use crate::combat::runtime::intent::Intent;
     use std::sync::atomic::{AtomicUsize, Ordering};
     static PARITY_HOOK_CALLS: AtomicUsize = AtomicUsize::new(0);
@@ -340,38 +340,50 @@ fn headless_and_windowed_produce_identical_pending_stream() {
     regs.hooks.register("record_hook", parity_hook);
 
     let timeline = presentation_timeline();
-    let mut world = World::new();
+    let mut world_headless = World::new();
 
     // HeadlessAuto run.
     PARITY_HOOK_CALLS.store(0, Ordering::Relaxed);
     let mut pending_headless = VecDeque::new();
     let mut runner_headless = BeatRunner::new(Arc::clone(&timeline), cast_id(), CASTER, TARGET);
-    runner_headless.run_to_completion(
-        &mut world,
+    let headless_outcome = runner_headless.run_to_completion(
+        &mut world_headless,
         &regs,
         SkillCtxMode::Execute,
         &mut pending_headless,
         100,
     );
+    assert_eq!(headless_outcome, StepOutcome::Done);
 
-    // Windowed run (auto-resumed via run_to_completion).
+    // Windowed run: first batch stops at cue, second batch finishes after resume.
     PARITY_HOOK_CALLS.store(0, Ordering::Relaxed);
+    let mut world_windowed = World::new();
     let mut pending_windowed = VecDeque::new();
     let mut runner_windowed = BeatRunner::new(Arc::clone(&timeline), cast_id(), CASTER, TARGET)
         .with_clock(Clock::Windowed);
-    runner_windowed.run_to_completion(
-        &mut world,
+    let first_outcome = runner_windowed.run_to_completion(
+        &mut world_windowed,
         &regs,
         SkillCtxMode::Execute,
         &mut pending_windowed,
         100,
     );
+    assert_eq!(first_outcome, StepOutcome::AwaitingCue);
+    runner_windowed.resume_cue();
+    let second_outcome = runner_windowed.run_to_completion(
+        &mut world_windowed,
+        &regs,
+        SkillCtxMode::Execute,
+        &mut pending_windowed,
+        100,
+    );
+    assert_eq!(second_outcome, StepOutcome::Done);
 
     // Compare normalized intent streams.
     let headless_str: Vec<String> = pending_headless.iter().map(|i| format!("{i:?}")).collect();
     let windowed_str: Vec<String> = pending_windowed.iter().map(|i| format!("{i:?}")).collect();
     assert_eq!(
         headless_str, windowed_str,
-        "HeadlessAuto and Windowed must produce identical Intent streams"
+        "HeadlessAuto and Windowed must produce identical final Intent streams"
     );
 }

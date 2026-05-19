@@ -4,17 +4,17 @@
     entry: "idle",
     nodes: {
         "idle": (
-            frames: (53, 58),
+            frames: (54, 59),
             modifier: Some(Loop(count: 0)),
         ),
         "hurt": (
-            frames: (46, 52),
+            frames: (47, 53),
         ),
         "death": (
             frames: (14, 22),
         ),
         "victory": (
-            frames: (76, 92),
+            frames: (78, 94),
         ),
     },
     transitions: [

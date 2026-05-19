@@ -15,21 +15,18 @@ fn parse_graph(ron_str: &str) -> AnimGraph {
 fn player_starts_at_entry_node_first_frame() {
     let graph = parse_stance();
     let mut player = AnimGraphPlayer::new(graph.entry.clone());
-    // idle range is 53-58; first advance returns frame 53
-    assert_eq!(player.advance(&graph), 53);
+    // idle range is 54-59; first advance returns frame 54
+    assert_eq!(player.advance(&graph), 54);
 }
 
 #[test]
 fn player_cycles_idle_through_loop_modifier() {
     let graph = parse_stance();
     let mut player = AnimGraphPlayer::new(graph.entry.clone());
-    let range_len = 6u32; // frames 53-58
+    let range_len = 6u32; // frames 54-59
     for _ in 0..range_len * 3 {
         let frame = player.advance(&graph);
-        assert!(
-            (53..=58).contains(&frame),
-            "idle frame must stay within 53-58, got {frame}"
-        );
+        assert!((54..=59).contains(&frame), "idle frame must stay within 54-59, got {frame}");
     }
 }
 

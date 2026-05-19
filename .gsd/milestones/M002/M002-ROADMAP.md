@@ -1,13 +1,13 @@
-# M002: M002: First on-screen combat (Agumon-only)
+# M002: M002: M002: First on-screen combat (Agumon-only)
 
 **Vision:** The first time bevyrogue's combat appears on screen: AnimGraph runtime player + wgpu sprite render + §9 UI core + two-clock impact sync, Agumon-only, ending in a playable cargo run --features windowed of Agumon vs an Agumon dummy at full kit, with damage landing on the visible impact frame, gated at closeout by a repomix architectural review. The animation/skill seam must be complete and extensible so M003-M007 and a future RON editor lean on it without rewrites.
 
 ## Slices
 
-- [ ] **S01: Runtime player + sprite render + Stance FSM foundation** `risk:high` `depends:[]`
+- [x] **S01: S01** `risk:high` `depends:[]`
   > After this: cargo run --features windowed shows Agumon cycling idle via the stance graph (not hardcoded); M001 headless tests green; clip-atlas geometry parity test present and passing.
 
-- [ ] **S02: Basic attack + two-clock impact barrier + telegraph chip** `risk:high` `depends:[S01]`
+- [ ] **S02: S02** `risk:high` `depends:[]`
   > After this: Sharp Claws windup to strike to recovery on screen; damage falls on the impact frame via ReleaseKernelCue; telegraph chip visible; I3 extended green.
 
 - [ ] **S03: Section 9 phase strip live (event-driven)** `risk:medium` `depends:[S01]`
@@ -25,5 +25,3 @@
 ## Boundary Map
 
 ## Boundary Map
-
-Not provided.

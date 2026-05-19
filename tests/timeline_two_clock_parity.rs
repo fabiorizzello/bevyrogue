@@ -1,17 +1,21 @@
-//! Integration test — I3/D026: HeadlessAuto ≡ Windowed end-of-cast Intent stream.
+//! Integration test — I3/D026: HeadlessAuto and Windowed preserve the same
+//! end-of-cast `Intent` stream while differing only in cue timing.
 //!
-//! A two-beat timeline (Cast with Presentation + Impact without) is driven by two
-//! BeatRunner instances over identical fresh worlds:
+//! The shared timeline has two presentation-bearing beats:
 //!
-//!   Run #1 — HeadlessAuto: `run_to_completion` (never stalls, auto-resumes).
-//!   Run #2 — Clock::Windowed: manual `step()` loop; on `StepOutcome::AwaitingCue`
-//!             assert it occurs at the presentation beat then call `resume_cue()`
-//!             and continue; stop on Done/Halted.
+//!   cast (Presentation) -> impact (Presentation)
 //!
-//! Assertions:
-//!   - At least one `AwaitingCue` was observed in the Windowed run (stall is real).
-//!   - `format!("{:?}")` of every Intent in both pending queues is identical (stream parity).
-//!   - Both runs terminate with `StepOutcome::Done` (no Halt, no infinite loop).
+//! HeadlessAuto drives straight to `Done`. Windowed uses repeated
+//! `run_to_completion()` calls, which now stop at each presentation barrier with
+//! `StepOutcome::AwaitingCue`; the caller must invoke `resume_cue()` before the
+//! runner advances. Assertions cover:
+//!
+//! - Windowed returns `AwaitingCue` at each presentation barrier.
+//! - Re-entering `run_to_completion()` without `resume_cue()` does not advance or
+//!   duplicate intents.
+//! - After both manual resumes, the final normalized `Intent` stream matches the
+//!   HeadlessAuto run exactly and terminates with `Done`.
+//! - Calling `resume_cue()` with no awaiting beat is a harmless no-op.
 //!
 //! Deterministic: no wall-clock, no RNG.
 
@@ -33,13 +37,14 @@ use std::sync::Arc;
 const CASTER: UnitId = UnitId(1);
 const TARGET: UnitId = UnitId(2);
 
-/// Hook registered on both beats: enqueues one `DealDamage` intent so the pending
-/// stream is non-empty and beat-distinguishable (amount encodes `hop_index` for
-/// the Cast beat where hop=0, and `hop_index + 10` for the Impact beat).
+/// Hook registered on both beats: enqueues one distinct `DealDamage` intent so
+/// the pending stream is beat-distinguishable and easy to diff in failure text.
 fn emit_damage_intent(ev: &BeatEvent, ctx: &mut SkillCtx<'_>) {
-    // Amount encodes which beat fired: Cast beat has id "cast", Impact has "impact".
-    // Use a fixed sentinel per beat_id so the stream is deterministic.
-    let amount: i32 = if ev.beat_id == "cast" { 7 } else { 13 };
+    let amount: i32 = match ev.beat_id {
+        "cast" => 7,
+        "impact" => 13,
+        other => panic!("unexpected beat_id in parity test: {other}"),
+    };
     ctx.enqueue(Intent::DealDamage {
         source: ctx.caster,
         target: ctx.primary_target,
@@ -49,8 +54,8 @@ fn emit_damage_intent(ev: &BeatEvent, ctx: &mut SkillCtx<'_>) {
     });
 }
 
-/// Build the shared timeline: Cast (with Presentation) → Impact (no Presentation).
-/// Both beats carry the same hook so both enqueue intents.
+/// Build the shared timeline: both beats carry Presentation so Windowed must
+/// handshake twice before the runner can terminate with `Done`.
 fn build_timeline() -> Arc<CompiledTimeline> {
     Arc::new(CompiledTimeline {
         id: "parity_test",
@@ -61,7 +66,6 @@ fn build_timeline() -> Arc<CompiledTimeline> {
                 kind: BeatKind::Cast,
                 hook: Some("parity/emit_damage"),
                 selector: None,
-                // Presentation is present → Windowed runner stalls here.
                 presentation: Some(Presentation {
                     cue_id: "parity_cast_cue",
                     anim: None,
@@ -75,7 +79,12 @@ fn build_timeline() -> Arc<CompiledTimeline> {
                 kind: BeatKind::Impact,
                 hook: Some("parity/emit_damage"),
                 selector: None,
-                presentation: None,
+                presentation: Some(Presentation {
+                    cue_id: "parity_impact_cue",
+                    anim: None,
+                    vfx: None,
+                    sfx: None,
+                }),
                 payload: None,
             },
         ],
@@ -94,17 +103,20 @@ fn build_regs() -> ExtRegistries {
     regs
 }
 
+fn normalized_intents(pending: &VecDeque<Intent>) -> Vec<String> {
+    pending.iter().map(|intent| format!("{intent:?}")).collect()
+}
+
 #[test]
-fn headless_auto_eq_windowed_end_of_cast_intent_stream() {
+fn headless_auto_eq_windowed_manual_cue_handshake_end_of_cast_intent_stream() {
     let timeline = build_timeline();
     let regs = build_regs();
     let cast_id = CastId::ROOT; // deterministic, no CastIdGen needed for a standalone test
 
-    // ── Run #1: HeadlessAuto via run_to_completion ────────────────────────────
+    // ── Run #1: HeadlessAuto reaches Done in one batch call ──────────────────
     let mut world_headless = World::new();
     let mut pending_headless: VecDeque<Intent> = VecDeque::new();
     let mut runner_headless = BeatRunner::new(Arc::clone(&timeline), cast_id, CASTER, TARGET);
-    // Default clock is HeadlessAuto — no with_clock needed.
     let headless_outcome = runner_headless.run_to_completion(
         &mut world_headless,
         &regs,
@@ -117,86 +129,177 @@ fn headless_auto_eq_windowed_end_of_cast_intent_stream() {
         StepOutcome::Done,
         "HeadlessAuto run must terminate with Done"
     );
-    assert!(
-        !pending_headless.is_empty(),
-        "HeadlessAuto run must produce at least one Intent (both hooks must fire)"
+    let headless_normalized = normalized_intents(&pending_headless);
+    assert_eq!(
+        headless_normalized.len(),
+        2,
+        "HeadlessAuto should fire both presentation-bearing beats exactly once; got {headless_normalized:?}"
     );
 
-    // ── Run #2: Clock::Windowed via manual step() loop ────────────────────────
+    // ── Run #2: Windowed stops at each cue barrier until manually resumed ───
     let mut world_windowed = World::new();
     let mut pending_windowed: VecDeque<Intent> = VecDeque::new();
     let mut runner_windowed =
         BeatRunner::new(Arc::clone(&timeline), cast_id, CASTER, TARGET).with_clock(Clock::Windowed);
 
-    let mut awaiting_cue_count: u32 = 0;
-    let mut last_awaiting_cue_beat: Option<&'static str> = None;
-    let mut windowed_outcome = StepOutcome::Advanced;
-    const MAX_ITER: u32 = 64;
+    let first_barrier = runner_windowed.run_to_completion(
+        &mut world_windowed,
+        &regs,
+        SkillCtxMode::Execute,
+        &mut pending_windowed,
+        64,
+    );
+    assert_eq!(
+        first_barrier,
+        StepOutcome::AwaitingCue,
+        "Windowed batch run must stop at the first presentation beat"
+    );
+    assert_eq!(
+        runner_windowed.cursor(),
+        Some("cast"),
+        "first barrier should latch on the cast beat before cursor advances"
+    );
+    let after_first_barrier = normalized_intents(&pending_windowed);
+    assert_eq!(
+        after_first_barrier,
+        vec![headless_normalized[0].clone()],
+        "first barrier should enqueue only the cast beat intent once; got {after_first_barrier:?}"
+    );
 
-    for _ in 0..MAX_ITER {
-        let outcome = runner_windowed.step(
-            &mut world_windowed,
-            &regs,
-            SkillCtxMode::Execute,
-            &mut pending_windowed,
-        );
-        match outcome {
-            StepOutcome::Done | StepOutcome::Halted => {
-                windowed_outcome = outcome;
-                break;
-            }
-            StepOutcome::AwaitingCue => {
-                awaiting_cue_count += 1;
-                // Record which beat triggered the stall (first occurrence only).
-                if last_awaiting_cue_beat.is_none() {
-                    last_awaiting_cue_beat = Some("cast");
-                }
-                runner_windowed.resume_cue();
-                // Do NOT count this step; the loop will call step() again.
-            }
-            StepOutcome::Advanced | StepOutcome::LoopExited => {
-                windowed_outcome = outcome;
-            }
-        }
-    }
+    let redundant_run = runner_windowed.run_to_completion(
+        &mut world_windowed,
+        &regs,
+        SkillCtxMode::Execute,
+        &mut pending_windowed,
+        64,
+    );
+    assert_eq!(
+        redundant_run,
+        StepOutcome::AwaitingCue,
+        "Windowed must remain stalled until resume_cue() is called"
+    );
+    assert_eq!(
+        runner_windowed.cursor(),
+        Some("cast"),
+        "cursor must stay pinned to the stalled beat before resume_cue()"
+    );
+    assert_eq!(
+        normalized_intents(&pending_windowed),
+        after_first_barrier,
+        "re-entering run_to_completion() without resume_cue() must not duplicate intents"
+    );
 
+    runner_windowed.resume_cue();
+
+    let second_barrier = runner_windowed.run_to_completion(
+        &mut world_windowed,
+        &regs,
+        SkillCtxMode::Execute,
+        &mut pending_windowed,
+        64,
+    );
+    assert_eq!(
+        second_barrier,
+        StepOutcome::AwaitingCue,
+        "after resuming cast, Windowed must stop again at the impact presentation beat"
+    );
+    assert_eq!(
+        runner_windowed.cursor(),
+        Some("impact"),
+        "second barrier should latch on the impact beat"
+    );
+    let after_second_barrier = normalized_intents(&pending_windowed);
+    assert_eq!(
+        after_second_barrier,
+        headless_normalized,
+        "second barrier should add the impact beat exactly once; got {after_second_barrier:?}"
+    );
+
+    let redundant_second_run = runner_windowed.run_to_completion(
+        &mut world_windowed,
+        &regs,
+        SkillCtxMode::Execute,
+        &mut pending_windowed,
+        64,
+    );
+    assert_eq!(
+        redundant_second_run,
+        StepOutcome::AwaitingCue,
+        "Windowed must not advance past the impact barrier without resume_cue()"
+    );
+    assert_eq!(
+        normalized_intents(&pending_windowed),
+        after_second_barrier,
+        "impact barrier must not duplicate intents across repeated AwaitingCue returns"
+    );
+
+    runner_windowed.resume_cue();
+
+    let windowed_outcome = runner_windowed.run_to_completion(
+        &mut world_windowed,
+        &regs,
+        SkillCtxMode::Execute,
+        &mut pending_windowed,
+        64,
+    );
     assert_eq!(
         windowed_outcome,
         StepOutcome::Done,
-        "Windowed run must terminate with Done (not Halted or stuck)"
-    );
-
-    // ── Assert stall was real (not bypassed) ──────────────────────────────────
-    assert!(
-        awaiting_cue_count >= 1,
-        "Windowed run must stall at least once on the presentation-bearing Cast beat; \
-         got awaiting_cue_count={}",
-        awaiting_cue_count
+        "Windowed run must terminate with Done after both cues are resumed"
     );
     assert_eq!(
-        last_awaiting_cue_beat,
+        runner_windowed.cursor(),
+        None,
+        "cursor must clear after the final resumed beat advances to timeline end"
+    );
+
+    let windowed_normalized = normalized_intents(&pending_windowed);
+    assert_eq!(
+        windowed_normalized, headless_normalized,
+        "HeadlessAuto and Windowed must produce identical final Intent streams; \
+         headless={headless_normalized:?}, windowed={windowed_normalized:?}",
+    );
+}
+
+#[test]
+fn resume_cue_without_awaiting_is_harmless() {
+    let timeline = build_timeline();
+    let regs = build_regs();
+    let mut world = World::new();
+    let mut pending: VecDeque<Intent> = VecDeque::new();
+    let mut runner = BeatRunner::new(timeline, CastId::ROOT, CASTER, TARGET).with_clock(Clock::Windowed);
+
+    runner.resume_cue();
+
+    let outcome = runner.run_to_completion(
+        &mut world,
+        &regs,
+        SkillCtxMode::Execute,
+        &mut pending,
+        64,
+    );
+    assert_eq!(
+        outcome,
+        StepOutcome::AwaitingCue,
+        "resume_cue() with no suspended beat must be a no-op, not skip the first presentation beat"
+    );
+    assert_eq!(
+        runner.cursor(),
         Some("cast"),
-        "AwaitingCue must occur at the 'cast' beat (the only beat with a Presentation)"
-    );
-
-    // ── Assert stream parity ──────────────────────────────────────────────────
-    let headless_normalized: Vec<String> =
-        pending_headless.iter().map(|i| format!("{i:?}")).collect();
-    let windowed_normalized: Vec<String> =
-        pending_windowed.iter().map(|i| format!("{i:?}")).collect();
-
-    assert_eq!(
-        headless_normalized.len(),
-        windowed_normalized.len(),
-        "HeadlessAuto and Windowed must produce the same number of intents; \
-         headless={:?}, windowed={:?}",
-        headless_normalized,
-        windowed_normalized,
+        "no-op resume_cue() must leave the runner awaiting the first cue"
     );
     assert_eq!(
-        headless_normalized, windowed_normalized,
-        "HeadlessAuto and Windowed must produce identical Intent streams (I3/D026); \
-         headless={:?}, windowed={:?}",
-        headless_normalized, windowed_normalized,
+        normalized_intents(&pending),
+        vec![format!(
+            "{:?}",
+            Intent::DealDamage {
+                source: CASTER,
+                target: TARGET,
+                amount: 7,
+                tag: DamageTag::Physical,
+                cast_id: CastId::ROOT,
+            }
+        )],
+        "no-op resume_cue() must not suppress the cast beat hook"
     );
 }

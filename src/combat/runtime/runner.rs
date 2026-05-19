@@ -49,8 +49,9 @@ pub enum StepOutcome {
     /// A `bevy::log::warn!` is emitted with cast_id, timeline id, and hop count.
     Halted,
     /// Clock::Windowed only: a Presentation-bearing beat fired its hook and is now
-    /// stalling. Call `resume_cue()` to unlatch, then `step()` to advance normally.
-    /// Never returned by `run_to_completion` (auto-resumed) or HeadlessAuto.
+    /// stalling. Call `resume_cue()` to unlatch, then `step()` or
+    /// `run_to_completion()` again to advance normally.
+    /// HeadlessAuto never returns this.
     AwaitingCue,
 }
 
@@ -321,18 +322,22 @@ impl BeatRunner {
 
     /// Unlatch a `StepOutcome::AwaitingCue` stall (Clock::Windowed only).
     ///
-    /// The subsequent `step()` call will advance cursor/body_cursor normally
-    /// without re-firing the stalled beat's hook.
+    /// The subsequent `step()` or `run_to_completion()` call will advance
+    /// cursor/body_cursor normally without re-firing the stalled beat's hook.
+    /// Calling this when no cue is latched is a harmless no-op.
     pub fn resume_cue(&mut self) {
-        self.awaiting_cue = None;
-        self.cue_just_resumed = true;
+        if self.awaiting_cue.is_some() {
+            self.awaiting_cue = None;
+            self.cue_just_resumed = true;
+        }
     }
 
-    /// Drive the runner to completion, calling `step` repeatedly.
+    /// Drive the runner until it either finishes or hits a cue barrier.
     ///
-    /// `StepOutcome::AwaitingCue` is auto-resumed (Windowed cues are not awaited
-    /// in batch mode), preserving identical S02 drive-to-completion semantics.
-    /// Returns `Done` on normal finish, `Halted` on MAX_HOPS circuit-breaker.
+    /// - `Clock::HeadlessAuto` keeps stepping until `Done`/`Halted`.
+    /// - `Clock::Windowed` returns `AwaitingCue` as soon as a presentation beat
+    ///   latches; callers must invoke `resume_cue()` and call this again.
+    ///
     /// Panics if `max_steps` is exceeded (a safety net for bugs, not the loop guard).
     pub fn run_to_completion(
         &mut self,
@@ -346,6 +351,9 @@ impl BeatRunner {
             let outcome = self.step(world, regs, mode, pending);
             match outcome {
                 StepOutcome::Done | StepOutcome::Halted => return outcome,
+                StepOutcome::AwaitingCue if self.clock == Clock::Windowed => {
+                    return StepOutcome::AwaitingCue;
+                }
                 StepOutcome::AwaitingCue => {
                     self.resume_cue();
                 }

@@ -47,12 +47,12 @@ Added `AnimationValidationCheck::GameplayCommandForbidden` that errors when Emit
 `src/animation/registry.rs` — two Resources wrapping `HashMap<AnimGraphId, Handle<AnimGraph>>` with pure `resolve()` map lookup. `populate_graph_registries` system routes loaded graphs to the correct registry by comparing asset paths to `SkillGraphPaths`/`StanceGraphPaths`. `has_matching_asset_event` helper moved here from plugin.rs to keep plugin.rs under the 500 LOC cap. 5/5 tests green.
 
 ### T04 — Agumon Stance FSM asset
-Added `"all": (start: 0, end: 92)` to agumon clip.ron. Authored `assets/digimon/agumon/stance.ron` with idle(53-58, Loop∞), hurt(46-52), death(14-22), victory(76-92). Added `AnimationStancePaths` resource (in registry.rs) and wired it into `load_animation_graphs` so stance graphs route to `StanceGraphRegistry`. 3/3 tests green.
+Added `"all": (start: 0, end: 94)` to agumon clip.ron. Authored `assets/digimon/agumon/stance.ron` with idle(54-59, Loop∞), hurt(47-53), death(14-22), victory(78-94). Added `AnimationStancePaths` resource (in registry.rs) and wired it into `load_animation_graphs` so stance graphs route to `StanceGraphRegistry`. 3/3 tests green.
 
 ### T05 — AnimGraphPlayer FSM core + windowed split
 `src/animation/player.rs` — feature-agnostic FSM: `advance(&mut self, graph) -> u32` evaluates TimeInNode/Always transitions (ignores KernelCue and future predicates), derives frame index honoring PlaybackModifier (Loop, Hold, SpeedMul) and `reverse`. 8/8 headless tests green.
 
-`src/windowed.rs` split into `RenderPlugin` (Camera2d + advance_agumon_idle system) and `UiPlugin` (egui panels). `windowed::register` wires both. `cargo build --features windowed` compiles. Soak run: `advance_agumon_idle` traces `agumon_idle_frame` each tick cycling 53-58 via the infinite-loop idle stance node — no panic.
+`src/windowed.rs` split into `RenderPlugin` (Camera2d + advance_agumon_idle system) and `UiPlugin` (egui panels). `windowed::register` wires both. `cargo build --features windowed` compiles. Soak run: `advance_agumon_idle` traces `agumon_idle_frame` each tick cycling 54-59 via the infinite-loop idle stance node — no panic.
 
 ## Verification Evidence
 
