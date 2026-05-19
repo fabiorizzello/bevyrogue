@@ -25,12 +25,12 @@
   - Files: `assets/digimon/renamon/clip.ron`, `assets/digimon/renamon/anim_graph.ron`
   - Verify: ls assets/digimon/renamon/clip.ron assets/digimon/renamon/anim_graph.ron
 
-- [ ] **T02: Implement Catalog Sync and Dynamic Discovery** `est:1h`
+- [x] **T02: Implement Catalog Sync and Dynamic Discovery** `est:1h`
   Implement dynamic discovery and catalog synchronization in the animation plugin to move beyond Agumon-only hardcoding (R003, R007).
   - Files: `src/animation/plugin.rs`
   - Verify: cargo test --test anim_asset_validation
 
-- [ ] **T03: Visual Validation Status and Hot-Reload Proof** `est:45m`
+- [x] **T03: Visual Validation Status and Hot-Reload Proof** `est:45m`
   Add a visual validation status to the windowed UI and perform the manual hot-reload proof required by R006.
   - Files: `src/windowed.rs`
   - Verify: grep -q "AnimationValidationState" src/windowed.rs

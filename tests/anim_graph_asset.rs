@@ -36,10 +36,14 @@ fn agumon_anim_graph_loads_as_typed_asset_before_ready_flips() {
     {
         let state = app.world().resource::<AnimationGraphLoadState>();
         let handles = app.world().resource::<AnimationGraphHandles>();
-        assert_eq!(handles.0.len(), 1, "expected one configured graph for S01");
+        assert_eq!(
+            handles.0.len(),
+            2,
+            "expected two configured graphs (Agumon + Renamon)"
+        );
         assert_eq!(
             state.loaded,
-            vec![false],
+            vec![false, false],
             "load events should not exist before updates settle"
         );
         assert!(
@@ -74,15 +78,15 @@ fn agumon_anim_graph_loads_as_typed_asset_before_ready_flips() {
         if ready {
             assert_eq!(
                 loaded_flags,
-                vec![true],
-                "ready requires a prior load/modify event"
+                vec![true, true],
+                "ready requires all graphs to have a prior load/modify event"
             );
             break;
         }
 
         assert!(
             start.elapsed() < timeout,
-            "timed out waiting for Agumon anim_graph.ron to load; last loaded flags: {loaded_flags:?}"
+            "timed out waiting for all anim_graphs to load; last loaded flags: {loaded_flags:?}"
         );
         thread::sleep(poll_interval);
     }
@@ -96,7 +100,7 @@ fn agumon_anim_graph_loads_as_typed_asset_before_ready_flips() {
         .expect("ready state must correspond to an available AnimGraph asset");
 
     assert!(state.ready);
-    assert_eq!(state.loaded, vec![true]);
+    assert_eq!(state.loaded, vec![true, true]);
     assert_eq!(graph.clip, ClipId("skill".into()));
     assert_eq!(graph.entry, NodeId("baby_flame_cast".into()));
     assert_eq!(graph.transitions.len(), 3);

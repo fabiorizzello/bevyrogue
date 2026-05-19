@@ -34,10 +34,14 @@ fn agumon_clip_loads_as_typed_asset_before_ready_flips() {
     {
         let state = app.world().resource::<AnimationClipLoadState>();
         let handles = app.world().resource::<AnimationClipHandles>();
-        assert_eq!(handles.0.len(), 1, "expected one configured clip for S02");
+        assert_eq!(
+            handles.0.len(),
+            2,
+            "expected two configured clips (Agumon + Renamon)"
+        );
         assert_eq!(
             state.loaded,
-            vec![false],
+            vec![false, false],
             "load events should not exist before updates settle"
         );
         assert!(!state.ready, "ready must start false before any asset event");
@@ -69,15 +73,15 @@ fn agumon_clip_loads_as_typed_asset_before_ready_flips() {
         if ready {
             assert_eq!(
                 loaded_flags,
-                vec![true],
-                "ready requires a prior load/modify event"
+                vec![true, true],
+                "ready requires all clips to have a prior load/modify event"
             );
             break;
         }
 
         assert!(
             start.elapsed() < timeout,
-            "timed out waiting for Agumon clip.ron to load; last loaded flags: {loaded_flags:?}"
+            "timed out waiting for all clip.ron files to load; last loaded flags: {loaded_flags:?}"
         );
         thread::sleep(poll_interval);
     }
@@ -91,7 +95,7 @@ fn agumon_clip_loads_as_typed_asset_before_ready_flips() {
         .expect("ready state must correspond to an available Clip asset");
 
     assert!(state.ready);
-    assert_eq!(state.loaded, vec![true]);
+    assert_eq!(state.loaded, vec![true, true]);
     assert_eq!(clip.meta.frame_size.w, 557);
     assert_eq!(clip.meta.frame_size.h, 561);
     assert_eq!(clip.meta.columns, 10);

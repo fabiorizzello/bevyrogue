@@ -67,6 +67,50 @@ fn has_diag(
 }
 
 #[test]
+fn agumon_real_assets_validate_correctly() {
+    let mut app = build_asset_app(
+        "digimon/agumon/anim_graph.ron",
+        "digimon/agumon/clip.ron",
+        AnimationValidationCatalogs {
+            params: BTreeSet::new(),
+            statuses: BTreeSet::from([StatusId("Heated".into())]),
+            particles: BTreeSet::from([ParticleId("baby_flame".into())]),
+            skills: BTreeSet::new(),
+        },
+    );
+
+    let state = wait_for_validation(&mut app);
+
+    assert!(
+        state.is_ready(),
+        "expected ready state for Agumon, got {state:?}"
+    );
+    assert!(state.diagnostics().is_empty(), "{:?}", state.diagnostics());
+}
+
+#[test]
+fn renamon_real_assets_validate_correctly() {
+    let mut app = build_asset_app(
+        "digimon/renamon/anim_graph.ron",
+        "digimon/renamon/clip.ron",
+        AnimationValidationCatalogs {
+            params: BTreeSet::new(),
+            statuses: BTreeSet::new(),
+            particles: BTreeSet::from([ParticleId("diamond_storm_leaf".into())]),
+            skills: BTreeSet::new(),
+        },
+    );
+
+    let state = wait_for_validation(&mut app);
+
+    assert!(
+        state.is_ready(),
+        "expected ready state for Renamon, got {state:?}"
+    );
+    assert!(state.diagnostics().is_empty(), "{:?}", state.diagnostics());
+}
+
+#[test]
 fn valid_assets_set_plugin_validation_ready() {
     let mut app = build_asset_app(
         "test/animation_validation/valid_anim_graph.ron",

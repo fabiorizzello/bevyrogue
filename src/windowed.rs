@@ -6,6 +6,7 @@
 use bevy::prelude::*;
 use bevy_egui::{EguiContexts, EguiPlugin, EguiPrimaryContextPass, egui};
 
+use bevyrogue::animation::AnimationValidationState;
 use bevyrogue::combat::av::ActionValue;
 use bevyrogue::combat::follow_up::{
     follow_up_listener_system, form_identity_listener_system, resolve_follow_up_action_system,
@@ -187,6 +188,7 @@ fn roster_panel(
     mut contexts: EguiContexts,
     units: Query<&Unit>,
     asset_server: Res<AssetServer>,
+    anim_validation: Option<Res<AnimationValidationState>>,
 ) -> Result {
     let ctx = contexts.ctx_mut()?;
     egui::SidePanel::left("roster").show(ctx, |ui| {
@@ -209,6 +211,30 @@ fn roster_panel(
                 .chain(bevyrogue::data::ENEMY_SKILL_PATHS.iter())
             {
                 asset_server.reload(*path);
+            }
+        }
+
+        ui.separator();
+        ui.label("Animation Validation");
+        match anim_validation.as_deref() {
+            None | Some(AnimationValidationState::Pending) => {
+                ui.colored_label(egui::Color32::YELLOW, "PENDING");
+            }
+            Some(AnimationValidationState::Ready(report)) => {
+                ui.colored_label(egui::Color32::GREEN, "READY");
+                ui.label(format!("diagnostics: {}", report.diagnostics.len()));
+            }
+            Some(AnimationValidationState::Failed(report)) => {
+                let error_count = report
+                    .diagnostics
+                    .iter()
+                    .filter(|d| {
+                        d.severity
+                            == bevyrogue::animation::AnimationValidationSeverity::Error
+                    })
+                    .count();
+                ui.colored_label(egui::Color32::RED, "FAILED");
+                ui.label(format!("errors: {error_count}"));
             }
         }
     });

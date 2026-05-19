@@ -7,13 +7,20 @@ use super::{
     validate_anim_graph, AnimGraph, AnimationValidationCatalogs, AnimationValidationCheck,
     AnimationValidationContext, AnimationValidationDiagnostic, AnimationValidationReason,
     AnimationValidationReport, AnimationValidationSeverity, AnimationValidationState, Clip,
-    ClipMeta, ClipRange, FrameSize,
+    ClipMeta, ClipRange, FrameSize, SkillIdRef, StatusId,
 };
+use crate::data::{SkillBookHandle, skills_ron::SkillBook};
 
 /// Default animation graph assets to load at boot (relative to `assets/`).
-pub const DEFAULT_ANIM_GRAPH_PATHS: &[&str] = &["digimon/agumon/anim_graph.ron"];
+pub const DEFAULT_ANIM_GRAPH_PATHS: &[&str] = &[
+    "digimon/agumon/anim_graph.ron",
+    "digimon/renamon/anim_graph.ron",
+];
 /// Default clip geometry assets to load at boot (relative to `assets/`).
-pub const DEFAULT_ANIM_CLIP_PATHS: &[&str] = &["digimon/agumon/clip.ron"];
+pub const DEFAULT_ANIM_CLIP_PATHS: &[&str] = &[
+    "digimon/agumon/clip.ron",
+    "digimon/renamon/clip.ron",
+];
 
 /// Data-driven list of animation graph asset paths.
 #[derive(Resource, Debug, Clone)]
@@ -91,6 +98,7 @@ impl Plugin for AnimationAssetPlugin {
             (
                 track_animation_graph_loads,
                 track_animation_clip_loads,
+                sync_validation_catalogs,
                 validate_animation_assets,
             ),
         );
@@ -152,6 +160,7 @@ fn track_animation_graph_loads(
     handles: Option<Res<AnimationGraphHandles>>,
     paths: Res<AnimationGraphPaths>,
     graphs: Res<Assets<AnimGraph>>,
+    asset_server: Res<AssetServer>,
     mut state: ResMut<AnimationGraphLoadState>,
 ) {
     let Some(handles) = handles else {
@@ -178,14 +187,40 @@ fn track_animation_graph_loads(
         }
     }
 
+    // Mark handles that failed to load so they don't block global readiness.
+    for (index, handle) in handles.0.iter().enumerate() {
+        if !state.loaded[index] {
+            if matches!(
+                asset_server.load_state(handle.id()),
+                bevy::asset::LoadState::Failed(_)
+            ) {
+                state.loaded[index] = true;
+                let path = paths
+                    .0
+                    .get(index)
+                    .map(String::as_str)
+                    .unwrap_or("<unknown>");
+                warn!("animation graph missing or failed: {path} — skipping");
+            }
+        }
+    }
+
     if state.ready || !state.loaded.iter().all(|loaded| *loaded) {
         return;
     }
 
-    if handles.0.iter().all(|handle| graphs.get(handle).is_some()) {
-        state.ready = true;
-        info!("animation graphs ready: count={}", handles.0.len());
-    }
+    // Ready when all non-failed handles have their asset loaded.
+    let loaded_count = handles
+        .0
+        .iter()
+        .filter(|handle| graphs.get(*handle).is_some())
+        .count();
+    state.ready = true;
+    info!(
+        "animation graphs ready: loaded={}, total={}",
+        loaded_count,
+        handles.0.len()
+    );
 }
 
 fn track_animation_clip_loads(
@@ -193,6 +228,7 @@ fn track_animation_clip_loads(
     handles: Option<Res<AnimationClipHandles>>,
     paths: Res<AnimationClipPaths>,
     clips: Res<Assets<Clip>>,
+    asset_server: Res<AssetServer>,
     mut state: ResMut<AnimationClipLoadState>,
 ) {
     let Some(handles) = handles else {
@@ -219,14 +255,39 @@ fn track_animation_clip_loads(
         }
     }
 
+    // Mark handles that failed to load so they don't block global readiness.
+    for (index, handle) in handles.0.iter().enumerate() {
+        if !state.loaded[index] {
+            if matches!(
+                asset_server.load_state(handle.id()),
+                bevy::asset::LoadState::Failed(_)
+            ) {
+                state.loaded[index] = true;
+                let path = paths
+                    .0
+                    .get(index)
+                    .map(String::as_str)
+                    .unwrap_or("<unknown>");
+                warn!("animation clip missing or failed: {path} — skipping");
+            }
+        }
+    }
+
     if state.ready || !state.loaded.iter().all(|loaded| *loaded) {
         return;
     }
 
-    if handles.0.iter().all(|handle| clips.get(handle).is_some()) {
-        state.ready = true;
-        info!("animation clips ready: count={}", handles.0.len());
-    }
+    let loaded_count = handles
+        .0
+        .iter()
+        .filter(|handle| clips.get(*handle).is_some())
+        .count();
+    state.ready = true;
+    info!(
+        "animation clips ready: loaded={}, total={}",
+        loaded_count,
+        handles.0.len()
+    );
 }
 
 fn validate_animation_assets(
@@ -253,6 +314,7 @@ fn validate_animation_assets(
 
     *dirty |= has_matching_asset_event(&mut graph_events, &graph_handles.0);
     *dirty |= has_matching_asset_event(&mut clip_events, &clip_handles.0);
+    *dirty |= catalogs.is_changed();
 
     if !graph_state.ready || !clip_state.ready {
         return;
@@ -266,7 +328,8 @@ fn validate_animation_assets(
 
     for (graph_index, graph_handle) in graph_handles.0.iter().enumerate() {
         let Some(graph) = graphs.get(graph_handle) else {
-            return;
+            // Graph failed to load; skip it without blocking other graphs.
+            continue;
         };
 
         let matching_clips: Vec<_> = clip_handles
@@ -371,6 +434,49 @@ fn validate_animation_assets(
 
     *validation_state = next_state;
     *dirty = false;
+}
+
+/// Populates `AnimationValidationCatalogs` from the assembled `SkillBook` and the
+/// `StatusEffectKind` enum vocabulary. Runs once after `DataReady` is present.
+fn sync_validation_catalogs(
+    skill_book_handle: Option<Res<SkillBookHandle>>,
+    books: Option<Res<Assets<SkillBook>>>,
+    mut catalogs: ResMut<AnimationValidationCatalogs>,
+    mut ran: Local<bool>,
+) {
+    if *ran {
+        return;
+    }
+
+    let Some(handle) = skill_book_handle else {
+        return;
+    };
+    let Some(books) = books else {
+        return;
+    };
+
+    let Some(book) = books.get(&handle.0) else {
+        return;
+    };
+
+    // All StatusEffectKind variant names — kept in sync with the enum definition.
+    let status_names = [
+        "Heated", "Chilled", "Paralyzed", "Slowed", "Blessed", "Burn", "Shock",
+    ];
+    for name in status_names {
+        catalogs.statuses.insert(StatusId(name.to_string()));
+    }
+
+    for skill in &book.0 {
+        catalogs.skills.insert(SkillIdRef(skill.id.0.clone()));
+    }
+
+    *ran = true;
+    info!(
+        "animation validation catalogs synced: statuses={}, skills={}",
+        catalogs.statuses.len(),
+        catalogs.skills.len()
+    );
 }
 
 fn has_matching_asset_event<T: Asset>(
