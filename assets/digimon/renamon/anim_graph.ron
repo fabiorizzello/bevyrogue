@@ -15,13 +15,6 @@
         ),
         "diamond_storm_impact": (
             frames: (50, 53),
-            on_enter: [
-                EmitDamage(
-                    hits: Literal(1),
-                    mul: Literal(16),
-                    target: Primary,
-                ),
-            ],
         ),
         "diamond_storm_recover": (
             frames: (54, 56),

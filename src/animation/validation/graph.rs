@@ -5,7 +5,7 @@ use super::{
 use crate::animation::{
     AnimGraph, AnimationValidationCheck, AnimationValidationContext,
     AnimationValidationReason, AnimationValidationSeverity, Clip, ClipId, ClipRange,
-    TransitionTarget,
+    Command, FrameCueCommand, TransitionTarget,
 };
 
 pub fn validate_anim_graph(
@@ -132,8 +132,54 @@ fn validate_graph_nodes(
 
         for (command_index, command) in node.on_enter.iter().enumerate() {
             validate_command(command, catalogs, clip_id, node_id, command_index, diagnostics);
+            if is_gameplay_command(command) {
+                diagnostics.push(AnimationValidationDiagnostic {
+                    severity: AnimationValidationSeverity::Error,
+                    check: AnimationValidationCheck::GameplayCommandForbidden,
+                    reason: AnimationValidationReason::GameplayCommandInAnimGraph,
+                    context: AnimationValidationContext {
+                        clip_id: Some(clip_id.clone()),
+                        node_id: Some(node_id.clone()),
+                        command_index: Some(command_index),
+                        ..Default::default()
+                    },
+                    detail: format!(
+                        "node '{}' on_enter[{command_index}] contains a gameplay command; use ReleaseKernelCue instead",
+                        node_id.0
+                    ),
+                });
+            }
+        }
+
+        for (cue_index, cue) in node.cues.iter().enumerate() {
+            if let FrameCueCommand::Presentation(command) = &cue.command {
+                if is_gameplay_command(command) {
+                    diagnostics.push(AnimationValidationDiagnostic {
+                        severity: AnimationValidationSeverity::Error,
+                        check: AnimationValidationCheck::GameplayCommandForbidden,
+                        reason: AnimationValidationReason::GameplayCommandInAnimGraph,
+                        context: AnimationValidationContext {
+                            clip_id: Some(clip_id.clone()),
+                            node_id: Some(node_id.clone()),
+                            command_index: Some(cue_index),
+                            ..Default::default()
+                        },
+                        detail: format!(
+                            "node '{}' cues[{cue_index}] contains a gameplay command; use ReleaseKernelCue instead",
+                            node_id.0
+                        ),
+                    });
+                }
+            }
         }
     }
+}
+
+fn is_gameplay_command(command: &Command) -> bool {
+    matches!(
+        command,
+        Command::EmitDamage { .. } | Command::EmitStatus { .. } | Command::EmitHeal { .. }
+    )
 }
 
 fn validate_graph_transitions(

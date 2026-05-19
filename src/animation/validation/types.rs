@@ -30,6 +30,7 @@ pub enum AnimationValidationCheck {
     CommandParam,
     CommandStatus,
     CommandParticle,
+    GameplayCommandForbidden,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -43,6 +44,7 @@ pub enum AnimationValidationReason {
     UnknownParamReference,
     UnknownStatusReference,
     UnknownParticleReference,
+    GameplayCommandInAnimGraph,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]

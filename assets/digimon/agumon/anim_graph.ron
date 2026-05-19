@@ -15,16 +15,6 @@
         ),
         "baby_flame_impact": (
             frames: (68, 71),
-            on_enter: [
-                EmitDamage(
-                    hits: Literal(1),
-                    mul: Literal(18),
-                    status: Some("Heated"),
-                    chance_pct: None,
-                    duration: Some(Literal(3)),
-                    target: Primary,
-                ),
-            ],
             modifier: Some(Hold(extra_frames: 2)),
         ),
         "baby_flame_recover": (

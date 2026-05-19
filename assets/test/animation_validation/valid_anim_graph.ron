@@ -5,15 +5,8 @@
     nodes: {
         "impact": (
             frames: (4, 7),
-            on_enter: [
-                EmitDamage(
-                    hits: Literal(1),
-                    mul: Literal(2),
-                    status: Some("Burn"),
-                    chance_pct: None,
-                    duration: Some(Literal(2)),
-                    target: Primary,
-                ),
+            cues: [
+                (at: 5, command: ReleaseKernel(())),
             ],
         ),
         "windup": (
