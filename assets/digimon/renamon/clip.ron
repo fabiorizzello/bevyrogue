@@ -1,18 +1,18 @@
 (
     meta: (
-        frame_size: (w: 633, h: 701),
+        frame_size: (w: 512, h: 512),
         columns: 9,
         rows: 8,
-        total_frames: 71,
+        total_frames: 68,
     ),
     ranges: {
-        "attack": (start: 0, end: 9),
-        "block": (start: 10, end: 15),
-        "death": (start: 16, end: 19),
-        "heavy_attack": (start: 20, end: 29),
-        "hurt": (start: 30, end: 36),
-        "idle": (start: 37, end: 44),
-        "skill": (start: 45, end: 56),
-        "victory": (start: 57, end: 70),
+        "attack": (start: 0, end: 8),
+        "block": (start: 9, end: 14),
+        "death": (start: 15, end: 18),
+        "heavy_attack": (start: 19, end: 27),
+        "hurt": (start: 28, end: 34),
+        "idle": (start: 35, end: 42),
+        "skill": (start: 43, end: 54),
+        "victory": (start: 55, end: 67),
     },
 )

@@ -7,11 +7,19 @@ use crate::combat::{
         ActionAffordance, ActionQueryKind, ActionStatus, CombatQuerySnapshot, TargetAffordance,
         TargetStatus, query_action_affordance,
     },
+    runtime::CueBarrierStatus,
     types::Attribute,
     types::{SkillId, UnitId},
 };
 #[cfg(feature = "windowed")]
 use crate::data::skills_ron::SkillBook;
+
+#[cfg(feature = "windowed")]
+#[derive(Debug, Clone)]
+pub struct TelegraphChip {
+    pub label: String,
+    pub tooltip: String,
+}
 
 #[cfg(feature = "windowed")]
 use super::PendingKind;

@@ -1,4 +1,6 @@
 #[cfg(feature = "windowed")]
+use bevy::ecs::system::ParamSet;
+#[cfg(feature = "windowed")]
 use bevy::prelude::*;
 #[cfg(feature = "windowed")]
 use bevy_egui::{EguiContexts, egui};
@@ -22,12 +24,13 @@ use crate::combat::{
     unit::Unit,
 };
 #[cfg(feature = "windowed")]
+use crate::combat::runtime::SuspendedTimelineState;
 use crate::data::skills_ron::SkillBook;
 
 #[cfg(feature = "windowed")]
 use super::display::{FdDisplay, SkillDisplay, UnitDisplay};
 #[cfg(feature = "windowed")]
-use super::labels::{query_pending_action_affordance, skill_name};
+use super::labels::{cue_barrier_chip, query_pending_action_affordance, skill_name};
 #[cfg(feature = "windowed")]
 use super::widgets::{render_action_bar, render_columns, render_floating};
 #[cfg(feature = "windowed")]
@@ -47,11 +50,11 @@ pub fn combat_panel(
     mut log: ResMut<ActionLog>,
     preview_cache: Res<PreviewDamageCache>,
     skill_books: Res<Assets<SkillBook>>,
+    barrier: Res<SuspendedTimelineState>,
     mut action_intent: MessageWriter<ActionIntent>,
     units_q: CombatPanelUnitsQuery,
     floating_q: Query<&FloatingDamage>,
-    unit_entities: Query<Instance<Unit>>,
-    floating_entities: Query<Instance<FloatingDamage>>,
+    mut despawn_q: ParamSet<(Query<Instance<Unit>>, Query<Instance<FloatingDamage>>)>,
 ) -> Result {
     let fallback_skill_book = SkillBook(Vec::new());
     let skill_book = skill_books
@@ -175,6 +178,8 @@ pub fn combat_panel(
             })
         })
         .collect();
+
+    let telegraph_chip = cue_barrier_chip(barrier.active_status(), Some(skill_book));
 
     let mut pending_request: Option<Option<PendingKind>> = None;
     let mut clicked_target: Option<UnitId> = None;
@@ -307,10 +312,10 @@ pub fn combat_panel(
         *order = TurnOrder::default();
         log.events.clear();
         *sp = SpPool::default();
-        for floating in &floating_entities {
+        for floating in &despawn_q.p1() {
             commands.entity(floating.entity()).despawn();
         }
-        for unit in &unit_entities {
+        for unit in &despawn_q.p0() {
             commands.entity(unit.entity()).despawn();
         }
         // Reload per-digimon unit sources to trigger re-assembly.
@@ -319,13 +324,6 @@ pub fn combat_panel(
             .chain(crate::data::ENEMY_UNIT_PATHS.iter())
         {
             asset_server.reload(*path);
-        }
-        info!("restart: roster reloaded");
-    }
-
-    Ok(())
-}
-    asset_server.reload(*path);
         }
         info!("restart: roster reloaded");
     }

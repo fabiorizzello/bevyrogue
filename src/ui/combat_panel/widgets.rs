@@ -19,8 +19,8 @@ use crate::data::{skills_ron::LegalityReasonCode, skills_ron::SkillBook};
 use super::display::{FdDisplay, UnitDisplay};
 #[cfg(feature = "windowed")]
 use super::labels::{
-    action_button_label, action_status_label, action_tooltip, attr_color, pending_label,
-    target_button_label, target_status_label,
+    TelegraphChip, action_button_label, action_status_label, action_tooltip, attr_color,
+    pending_label, target_button_label, target_status_label,
 };
 #[cfg(feature = "windowed")]
 use super::{PendingAction, PendingKind, PreviewDamageCache};
@@ -37,6 +37,7 @@ pub(super) fn render_action_bar(
     pending_action: &PendingAction,
     selected_action_affordance: &Option<ActionAffordance<'_>>,
     selected_target_id: Option<UnitId>,
+    telegraph_chip: Option<&TelegraphChip>,
     pending_request: &mut Option<Option<PendingKind>>,
 ) {
     ui.horizontal_wrapped(|ui| {

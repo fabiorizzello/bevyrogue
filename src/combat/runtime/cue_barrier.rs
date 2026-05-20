@@ -190,24 +190,57 @@ impl SuspendedTimelineState {
         self.last_message = Some(msg);
         self.current = None;
     }
-}
 
-/// Request release of the currently suspended timeline barrier.
-///
-/// Future windowed animation systems can call this when a `ReleaseKernelCue`
-/// fires. Duplicate calls and calls with no suspended timeline are explicit,
-/// inspectable no-ops.
-pub fn request_timeline_cue_release(world: &mut World, requested_cue_id: &str) -> CueReleaseResult {
-    world.init_resource::<SuspendedTimelineState>();
-    world
-        .resource_mut::<SuspendedTimelineState>()
-        .request_release(requested_cue_id)
-}
-age = Some(msg);
+    pub fn annotate_active_animation(&mut self, node: &str, frame: usize) {
+        if let Some(current) = self.current.as_mut() {
+            current.status.animation_node = Some(node.to_string());
+            current.status.animation_frame = Some(frame);
+        }
+    }
 
-    result
-}
-      .status
+    pub fn request_release(&mut self, requested_cue_id: &str) -> CueReleaseResult {
+        let (result, snapshot, msg) = match self.current.as_mut() {
+            None => {
+                let msg = format!(
+                    "timeline cue release ignored: no suspended timeline for cue_id={requested_cue_id}"
+                );
+                (CueReleaseResult::NoSuspendedTimeline, None, msg)
+            }
+            Some(current) if current.release_requested => {
+                let msg = format!(
+                    "timeline cue release ignored: duplicate release cast_id={:?} skill_id={:?} beat_id={} cue_id={} requested_cue_id={requested_cue_id}",
+                    current.status.cast_id,
+                    current.status.skill_id,
+                    current.status.beat_id,
+                    current.status.cue_id,
+                );
+                (
+                    CueReleaseResult::DuplicateRelease,
+                    Some(current.status.clone()),
+                    msg,
+                )
+            }
+            Some(current) if current.status.cue_id != requested_cue_id => {
+                let msg = format!(
+                    "timeline cue release ignored: cue mismatch cast_id={:?} skill_id={:?} beat_id={} expected_cue_id={} requested_cue_id={requested_cue_id}",
+                    current.status.cast_id,
+                    current.status.skill_id,
+                    current.status.beat_id,
+                    current.status.cue_id,
+                );
+                (CueReleaseResult::CueMismatch, Some(current.status.clone()), msg)
+            }
+            Some(current) => {
+                current.release_requested = true;
+                current.status.mark_released();
+                let msg = format!(
+                    "timeline cue release accepted cast_id={:?} skill_id={:?} beat_id={} cue_id={} anim_node={} anim_frame={}",
+                    current.status.cast_id,
+                    current.status.skill_id,
+                    current.status.beat_id,
+                    current.status.cue_id,
+                    current
+                        .status
                         .animation_node
                         .as_deref()
                         .unwrap_or("none"),
@@ -237,56 +270,6 @@ age = Some(msg);
 
         result
     }
-
-    pub fn suspend(&mut self, suspended: SuspendedTimeline) {
-        let status = suspended.status.clone();
-        let msg = format!(
-            "timeline cue barrier awaiting cast_id={:?} skill_id={:?} timeline={} beat_id={} cue_id={} anim_node={} anim_frame={}",
-            status.cast_id,
-            status.skill_id,
-            status.timeline_id,
-            status.beat_id,
-            status.cue_id,
-            status
-                .animation_node
-                .as_deref()
-                .unwrap_or("none"),
-            status
-                .animation_frame
-                .map(|frame| frame.to_string())
-                .unwrap_or_else(|| "none".to_string()),
-        );
-        info!(target: "combat.timeline_barrier", "{msg}");
-        self.last_status = Some(status);
-        self.last_release_result = None;
-        self.last_message = Some(msg);
-        self.current = Some(suspended);
-    }
-
-    pub fn take_released(&mut self) -> Option<SuspendedTimeline> {
-        match self.current.as_ref() {
-            Some(current) if current.release_requested => self.current.take(),
-            _ => None,
-        }
-    }
-
-    pub fn note_completion(&mut self, cast_id: CastId, skill_id: &SkillId) {
-        let msg = format!(
-            "timeline cue barrier cleared after completion cast_id={cast_id:?} skill_id={skill_id:?}"
-        );
-        info!(target: "combat.timeline_barrier", "{msg}");
-        self.last_message = Some(msg);
-        self.current = None;
-    }
-
-    pub fn note_failure(&mut self, cast_id: CastId, skill_id: &SkillId, reason: &str) {
-        let msg = format!(
-            "timeline cue barrier cleared after failure cast_id={cast_id:?} skill_id={skill_id:?} reason={reason}"
-        );
-        warn!(target: "combat.timeline_barrier", "{msg}");
-        self.last_message = Some(msg);
-        self.current = None;
-    }
 }
 
 /// Request release of the currently suspended timeline barrier.
@@ -296,80 +279,7 @@ age = Some(msg);
 /// inspectable no-ops.
 pub fn request_timeline_cue_release(world: &mut World, requested_cue_id: &str) -> CueReleaseResult {
     world.init_resource::<SuspendedTimelineState>();
-
-    let mut state = world.resource_mut::<SuspendedTimelineState>();
-    let (result, snapshot, msg) = match state.current.as_mut() {
-        None => {
-            let msg = format!(
-                "timeline cue release ignored: no suspended timeline for cue_id={requested_cue_id}"
-            );
-            (CueReleaseResult::NoSuspendedTimeline, None, msg)
-        }
-        Some(current) if current.release_requested => {
-            let msg = format!(
-                "timeline cue release ignored: duplicate release cast_id={:?} skill_id={:?} beat_id={} cue_id={} requested_cue_id={requested_cue_id}",
-                current.status.cast_id,
-                current.status.skill_id,
-                current.status.beat_id,
-                current.status.cue_id,
-            );
-            (
-                CueReleaseResult::DuplicateRelease,
-                Some(current.status.clone()),
-                msg,
-            )
-        }
-        Some(current) if current.status.cue_id != requested_cue_id => {
-            let msg = format!(
-                "timeline cue release ignored: cue mismatch cast_id={:?} skill_id={:?} beat_id={} expected_cue_id={} requested_cue_id={requested_cue_id}",
-                current.status.cast_id,
-                current.status.skill_id,
-                current.status.beat_id,
-                current.status.cue_id,
-            );
-            (CueReleaseResult::CueMismatch, Some(current.status.clone()), msg)
-        }
-        Some(current) => {
-            current.release_requested = true;
-            current.status.mark_released();
-            let msg = format!(
-                "timeline cue release accepted cast_id={:?} skill_id={:?} beat_id={} cue_id={} anim_node={} anim_frame={}",
-                current.status.cast_id,
-                current.status.skill_id,
-                current.status.beat_id,
-                current.status.cue_id,
-                current
-                    .status
-                    .animation_node
-                    .as_deref()
-                    .unwrap_or("none"),
-                current
-                    .status
-                    .animation_frame
-                    .map(|frame| frame.to_string())
-                    .unwrap_or_else(|| "none".to_string()),
-            );
-            (CueReleaseResult::Released, Some(current.status.clone()), msg)
-        }
-    };
-
-    match result {
-        CueReleaseResult::Released => info!(target: "combat.timeline_barrier", "{msg}"),
-        CueReleaseResult::DuplicateRelease | CueReleaseResult::NoSuspendedTimeline => {
-            debug!(target: "combat.timeline_barrier", "{msg}")
-        }
-        CueReleaseResult::CueMismatch => warn!(target: "combat.timeline_barrier", "{msg}"),
-    }
-
-    state.last_release_result = Some(result);
-    if let Some(snapshot) = snapshot {
-        state.last_status = Some(snapshot);
-    }
-    state.last_message = Some(msg);
-
-    result
-}
-age = Some(msg);
-
-    result
+    world
+        .resource_mut::<SuspendedTimelineState>()
+        .request_release(requested_cue_id)
 }
