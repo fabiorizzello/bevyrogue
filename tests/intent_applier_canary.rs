@@ -7,25 +7,17 @@
 //! cast_id propagation on the event is verified in T03 (additive non-breaking
 //! field on `CombatEvent` arrives there).
 
+mod common;
+
 use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::{
-    runtime::{
-        CastId, Intent,
-        applier::{IntentQueue, intent_applier},
-    },
     events::{CombatEvent, CombatEventKind},
+    runtime::{CastId, Intent, applier::IntentQueue},
     team::Team,
     types::{Attribute, DamageTag, EvoStage, UnitId},
     unit::Unit,
 };
-
-fn setup_app() -> App {
-    let mut app = App::new();
-    app.init_resource::<IntentQueue>()
-        .add_message::<CombatEvent>()
-        .add_systems(Update, intent_applier);
-    app
-}
+use common::app::minimal_intent_app;
 
 fn spawn_unit(app: &mut App, id: UnitId, team: Team, attribute: Attribute, hp: i32) {
     app.world_mut().spawn((
@@ -55,7 +47,7 @@ fn drain_events(app: &mut App) -> Vec<CombatEvent> {
 
 #[test]
 fn deal_damage_intent_reduces_hp_and_emits_event() {
-    let mut app = setup_app();
+    let mut app = minimal_intent_app();
 
     let attacker_id = UnitId(1);
     let defender_id = UnitId(2);
@@ -116,7 +108,7 @@ fn deal_damage_intent_reduces_hp_and_emits_event() {
 
 #[test]
 fn intent_queue_is_empty_after_applier_runs() {
-    let mut app = setup_app();
+    let mut app = minimal_intent_app();
     spawn_unit(&mut app, UnitId(1), Team::Ally, Attribute::Data, 100);
     spawn_unit(&mut app, UnitId(2), Team::Enemy, Attribute::Data, 100);
 

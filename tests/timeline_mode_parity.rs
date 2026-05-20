@@ -16,11 +16,12 @@
 //! A second test case flips the spawned HP so the predicate does NOT fire, routing
 //! through the normal branch — proving the predicate is live, not dead.
 
+mod common;
+
 use bevy::prelude::*;
 use bevyrogue::combat::{
     runtime::{
-        CastId, CastIdGen, Intent, IntentQueue,
-        applier::intent_applier,
+        CastId, CastIdGen, Intent,
         registry::ExtRegistries,
         runner::{BeatRunner, StepOutcome},
         skill_ctx::{SkillCtx, SkillCtxMode},
@@ -30,6 +31,7 @@ use bevyrogue::combat::{
     types::{Attribute, DamageTag, EvoStage, UnitId},
     unit::Unit,
 };
+use common::app::minimal_intent_app;
 use std::collections::VecDeque;
 use std::sync::Arc;
 
@@ -48,14 +50,6 @@ const NORMAL_DAMAGE: i32 = 100;
 const LOW_HP_THRESHOLD: i32 = 30;
 
 // ─── App scaffolding ──────────────────────────────────────────────────────────
-
-fn setup_app() -> App {
-    let mut app = App::new();
-    app.init_resource::<IntentQueue>()
-        .init_resource::<CastIdGen>()
-        .add_systems(Update, intent_applier);
-    app
-}
 
 fn spawn_unit(app: &mut App, id: UnitId, team: Team, hp_current: i32, hp_max: i32) {
     app.world_mut().spawn((
@@ -240,7 +234,7 @@ fn run_mode(
 #[test]
 fn mode_parity_execute_dryrun_preview_match_on_finisher_branch() {
     // Spawn target with hp_current=10, which is < LOW_HP_THRESHOLD(30) → finisher branch.
-    let mut app = setup_app();
+    let mut app = minimal_intent_app();
     spawn_unit(&mut app, CASTER_ID, Team::Ally, 500, 500);
     spawn_unit(&mut app, TARGET_ID, Team::Enemy, 10, 100);
 
@@ -331,7 +325,7 @@ fn mode_parity_execute_dryrun_preview_match_on_finisher_branch() {
 #[test]
 fn mode_parity_execute_dryrun_preview_match_on_normal_branch() {
     // Spawn target with hp_current=100 = hp_max, which is >= LOW_HP_THRESHOLD(30) → normal branch.
-    let mut app = setup_app();
+    let mut app = minimal_intent_app();
     spawn_unit(&mut app, CASTER_ID, Team::Ally, 500, 500);
     spawn_unit(&mut app, TARGET_ID, Team::Enemy, 100, 100);
 

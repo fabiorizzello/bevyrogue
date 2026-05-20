@@ -12,34 +12,27 @@
 //! - 3 `OnDamageDealt` events emitted after `app.update()`.
 
 use bevy::prelude::*;
+mod common;
+
 use bevyrogue::combat::{
+    events::{CombatEvent, CombatEventKind},
     runtime::{
         CastIdGen, Intent, IntentQueue,
-        applier::intent_applier,
         registry::ExtRegistries,
         runner::{BeatRunner, StepOutcome},
         skill_ctx::{SkillCtx, SkillCtxMode},
         timeline::{Beat, BeatEvent, BeatKind, CompiledTimeline, SelectorCtx},
     },
-    events::{CombatEvent, CombatEventKind},
     team::Team,
     types::{Attribute, DamageTag, EvoStage, UnitId},
     unit::Unit,
 };
+use common::app::minimal_intent_app;
 use std::collections::VecDeque;
 use std::sync::Arc;
 
 // Target order for this test fixture: ascending hp_pct (60/100, 80/100, 100/100).
 const CHAIN_ORDER: [UnitId; 3] = [UnitId(12), UnitId(11), UnitId(10)];
-
-fn setup_app() -> App {
-    let mut app = App::new();
-    app.init_resource::<IntentQueue>()
-        .init_resource::<CastIdGen>()
-        .add_message::<CombatEvent>()
-        .add_systems(Update, intent_applier);
-    app
-}
 
 fn spawn_unit(app: &mut App, id: UnitId, team: Team, hp_current: i32, hp_max: i32) {
     app.world_mut().spawn((
@@ -98,7 +91,7 @@ fn pool_exhausted_or_max_hops(evt: &BeatEvent, ctx: &SkillCtx<'_>) -> bool {
 
 #[test]
 fn chain_bolt_hits_3_targets_with_falloff() {
-    let mut app = setup_app();
+    let mut app = minimal_intent_app();
 
     let caster_id = UnitId(1);
     let e_low = UnitId(12); // hp_current=60/100, lowest pct → hit first
@@ -231,7 +224,7 @@ fn chain_bolt_hits_3_targets_with_falloff() {
 
 #[test]
 fn chain_bolt_respects_bounded_hops_without_extra_iterations() {
-    let mut app = setup_app();
+    let mut app = minimal_intent_app();
 
     let caster_id = UnitId(1);
     let e_low = UnitId(12);

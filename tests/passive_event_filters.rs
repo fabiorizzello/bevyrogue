@@ -1,42 +1,23 @@
+mod common;
+
 use std::sync::Arc;
 
 use bevy::prelude::*;
 use bevyrogue::combat::{
-    runtime::{
-        BlueprintState, CastId, CastIdGen, EventFilter, ExtRegistries, Intent, IntentQueue,
-        PassiveListeners, PassiveRunner, Signal, SignalBus, SignalPayload, SignalTaxonomy,
-        applier::intent_applier, combat_event_to_signal_system, passive_dispatch_system,
-    },
     events::{CombatEvent, CombatEventKind},
+    runtime::{
+        BlueprintState, CastId, EventFilter, ExtRegistries, Intent, PassiveListeners,
+        PassiveRunner, Signal, SignalBus, SignalPayload, SignalTaxonomy,
+    },
     types::UnitId,
 };
+use common::app::passive_dispatch_app;
 
 const OWNER: UnitId = UnitId(10);
 const TARGET: UnitId = UnitId(11);
 const TRACE_KEY: &str = "trace/order";
 const ULT_KEY: &str = "ult/seen";
 const LOOP_KEY: &str = "loop/count";
-
-fn setup_app() -> App {
-    let mut app = App::new();
-    app.add_message::<CombatEvent>()
-        .init_resource::<IntentQueue>()
-        .init_resource::<CastIdGen>()
-        .init_resource::<SignalBus>()
-        .init_resource::<SignalTaxonomy>()
-        .init_resource::<BlueprintState>()
-        .init_resource::<ExtRegistries>()
-        .init_resource::<PassiveListeners>()
-        .add_systems(
-            Update,
-            (
-                intent_applier,
-                combat_event_to_signal_system.after(intent_applier),
-                passive_dispatch_system.after(combat_event_to_signal_system),
-            ),
-        );
-    app
-}
 
 fn register_hooks(app: &mut App) {
     let mut regs = app.world_mut().resource_mut::<ExtRegistries>();
@@ -212,7 +193,7 @@ fn write_ultimate_used(app: &mut App) {
 
 #[test]
 fn composite_matching_same_frame_cascade_and_loop_breaker_all_hold_together() {
-    let mut app = setup_app();
+    let mut app = passive_dispatch_app();
     register_hooks(&mut app);
     register_passives(&mut app);
 

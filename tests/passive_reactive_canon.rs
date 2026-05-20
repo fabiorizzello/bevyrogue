@@ -1,27 +1,20 @@
+mod common;
+
 use bevy::prelude::*;
 use bevyrogue::combat::{
-    runtime::{Intent, IntentQueue, applier::intent_applier, intent::CastId},
     blueprints::dorumon::PredatorLoopState,
     blueprints::tentomon::BatteryLoopState,
     events::{CombatEvent, CombatEventKind},
-    kernel::register_combat_kernel_runtime,
-    modifiers::DamageModifierLedger,
     rng::CombatRng,
+    runtime::{Intent, IntentQueue, intent::CastId},
     team::Team,
     types::{Attribute, DamageTag, EvoStage, UnitId},
     unit::Unit,
 };
+use common::app::kernel_app;
 
 fn setup_app(seed: u64) -> App {
-    let mut app = App::new();
-    app.add_message::<CombatEvent>()
-        .init_resource::<IntentQueue>()
-        .init_resource::<DamageModifierLedger>()
-        .insert_resource(CombatRng::from_seed(seed))
-        .add_systems(Update, intent_applier);
-    register_combat_kernel_runtime(&mut app);
-    bevyrogue::combat::blueprints::add_runtime_plugins(&mut app);
-    app
+    kernel_app(seed)
 }
 
 fn spawn_unit(app: &mut App, id: UnitId, name: &str, team: Team, hp: i32) {

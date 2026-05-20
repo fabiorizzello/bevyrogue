@@ -1,44 +1,25 @@
+mod common;
+
 use bevy::{ecs::message::MessageCursor, ecs::system::RunSystemOnce, prelude::*};
 use bevyrogue::combat::{
+    events::{CombatEvent, CombatEventKind, CombatKernelTransition},
     runtime::{
-        BlueprintState, CastId, CastIdGen, EventFilter, ExtRegistries, Intent, IntentQueue,
+        BlueprintState, CastId, EventFilter, ExtRegistries, Intent, IntentQueue,
         PassiveListeners, PassiveRunner, SignalBus, SignalPayload, SignalTaxonomy, SkillCtx,
         applier::intent_applier,
-        combat_event_to_signal_system, passive_dispatch_system,
         timeline::{Beat, BeatEvent, BeatKind, CompiledTimeline},
     },
-    events::{CombatEvent, CombatEventKind, CombatKernelTransition},
     team::Team,
     types::{Attribute, EvoStage, UnitId},
     unit::Unit,
 };
+use common::app::passive_dispatch_app;
 use std::sync::Arc;
 
 const RENAMON_ID: UnitId = UnitId(10);
 const PATAMON_ID: UnitId = UnitId(11);
 const ENEMY_ID: UnitId = UnitId(12);
 const KITSUNE_TRIGGER_KEY: &str = "kitsune_grace/triggered";
-
-fn setup_app() -> App {
-    let mut app = App::new();
-    app.add_message::<CombatEvent>()
-        .init_resource::<IntentQueue>()
-        .init_resource::<CastIdGen>()
-        .init_resource::<SignalBus>()
-        .init_resource::<SignalTaxonomy>()
-        .init_resource::<BlueprintState>()
-        .init_resource::<ExtRegistries>()
-        .init_resource::<PassiveListeners>()
-        .add_systems(
-            Update,
-            (
-                intent_applier,
-                combat_event_to_signal_system.after(intent_applier),
-                passive_dispatch_system.after(combat_event_to_signal_system),
-            ),
-        );
-    app
-}
 
 fn spawn_unit(app: &mut App, id: UnitId, team: Team, hp_current: i32, hp_max: i32) {
     app.world_mut().spawn((
@@ -198,7 +179,7 @@ fn write_ult_used(app: &mut App, unit_id: UnitId) {
 
 #[test]
 fn kitsune_grace_triggers_for_ally_ult_and_writes_blueprint_state() {
-    let mut app = setup_app();
+    let mut app = passive_dispatch_app();
     spawn_unit(&mut app, RENAMON_ID, Team::Ally, 500, 500);
     spawn_unit(&mut app, PATAMON_ID, Team::Ally, 500, 500);
     spawn_unit(&mut app, ENEMY_ID, Team::Enemy, 500, 500);
@@ -245,7 +226,7 @@ fn kitsune_grace_triggers_for_ally_ult_and_writes_blueprint_state() {
 
 #[test]
 fn kitsune_grace_ignores_self_ult() {
-    let mut app = setup_app();
+    let mut app = passive_dispatch_app();
     spawn_unit(&mut app, RENAMON_ID, Team::Ally, 500, 500);
     spawn_unit(&mut app, PATAMON_ID, Team::Ally, 500, 500);
     spawn_unit(&mut app, ENEMY_ID, Team::Enemy, 500, 500);
@@ -280,7 +261,7 @@ fn kitsune_grace_ignores_self_ult() {
 
 #[test]
 fn kitsune_grace_ignores_enemy_ult() {
-    let mut app = setup_app();
+    let mut app = passive_dispatch_app();
     spawn_unit(&mut app, RENAMON_ID, Team::Ally, 500, 500);
     spawn_unit(&mut app, PATAMON_ID, Team::Ally, 500, 500);
     spawn_unit(&mut app, ENEMY_ID, Team::Enemy, 500, 500);
@@ -315,7 +296,7 @@ fn kitsune_grace_ignores_enemy_ult() {
 
 #[test]
 fn kitsune_grace_blueprint_event_round_trips_jsonl() {
-    let mut app = setup_app();
+    let mut app = passive_dispatch_app();
     spawn_unit(&mut app, RENAMON_ID, Team::Ally, 500, 500);
     spawn_unit(&mut app, PATAMON_ID, Team::Ally, 500, 500);
     spawn_unit(&mut app, ENEMY_ID, Team::Enemy, 500, 500);
@@ -349,7 +330,7 @@ fn kitsune_grace_blueprint_event_round_trips_jsonl() {
 #[test]
 #[should_panic(expected = "unregistered signal")]
 fn unregistered_blueprint_signal_panics_in_debug() {
-    let mut app = setup_app();
+    let mut app = passive_dispatch_app();
     app.world_mut()
         .resource_mut::<IntentQueue>()
         .0

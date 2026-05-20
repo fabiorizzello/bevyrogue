@@ -1,26 +1,23 @@
+mod common;
+
 use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::{
-    runtime::{
-        CastId, Intent,
-        applier::{IntentQueue, intent_applier},
-    },
     buffs::DrBag,
     events::{CombatEvent, CombatEventKind},
-    modifiers::{DamageModifierLedger, ModifierLayer},
-    rng::CombatRng,
+    modifiers::ModifierLayer,
+    runtime::{CastId, Intent, applier::IntentQueue},
     team::Team,
     types::{Attribute, DamageTag, EvoStage, UnitId},
     unit::Unit,
 };
+use common::app::TestAppBuilder;
 
 fn setup_app(seed: u64) -> App {
-    let mut app = App::new();
-    app.init_resource::<IntentQueue>()
-        .init_resource::<DamageModifierLedger>()
-        .insert_resource(CombatRng::from_seed(seed))
-        .add_message::<CombatEvent>()
-        .add_systems(Update, intent_applier);
-    app
+    TestAppBuilder::new()
+        .with_intent_applier()
+        .with_damage_ledger()
+        .with_rng(seed)
+        .build()
 }
 
 fn spawn_unit(app: &mut App, id: UnitId, team: Team, hp: i32, dr_pct: Option<f32>) {

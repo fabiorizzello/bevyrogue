@@ -14,36 +14,29 @@
 //! and hop_count when Halted is returned. Capturing that log signal is out of scope here;
 //! `StepOutcome::Halted` is the observable contract at the integration boundary.
 
+mod common;
+
 use bevy::prelude::*;
 use bevyrogue::combat::{
+    events::{CombatEvent, CombatEventKind},
     runtime::{
         CastIdGen, Intent, IntentQueue,
-        applier::intent_applier,
         registry::ExtRegistries,
         runner::{BeatRunner, StepOutcome},
         skill_ctx::{SkillCtx, SkillCtxMode},
         timeline::{Beat, BeatEvent, BeatKind, CompiledTimeline, SelectorCtx},
     },
-    events::{CombatEvent, CombatEventKind},
     team::Team,
     types::{Attribute, DamageTag, EvoStage, UnitId},
     unit::Unit,
 };
+use common::app::minimal_intent_app;
 use std::collections::VecDeque;
 use std::sync::Arc;
 
 /// MAX_HOPS as defined in `src/combat/api/runner.rs`. Kept as a local constant so
 /// the assertion is self-documenting; it must stay in sync with the runner.
 const MAX_HOPS: usize = 256;
-
-fn setup_app() -> App {
-    let mut app = App::new();
-    app.init_resource::<IntentQueue>()
-        .init_resource::<CastIdGen>()
-        .add_message::<CombatEvent>()
-        .add_systems(Update, intent_applier);
-    app
-}
 
 fn spawn_unit(app: &mut App, id: UnitId, team: Team) {
     app.world_mut().spawn((
@@ -91,7 +84,7 @@ fn never(_evt: &BeatEvent, _ctx: &SkillCtx<'_>) -> bool {
 
 #[test]
 fn loop_never_exit_halts_at_max_hops() {
-    let mut app = setup_app();
+    let mut app = minimal_intent_app();
 
     let caster_id = UnitId(1);
     let target_id = UnitId(2);

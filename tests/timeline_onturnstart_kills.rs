@@ -5,32 +5,25 @@
 //! transferred to `IntentQueue`, then `app.update()` lets `intent_applier` drain it.
 //! Asserts: enemy HP ≤ 0 and `OnDamageDealt` event carries the correct `cast_id`.
 
+mod common;
+
 use bevy::prelude::*;
 use bevyrogue::combat::{
+    events::{CombatEvent, CombatEventKind},
     runtime::{
         CastIdGen, Intent, IntentQueue,
-        applier::intent_applier,
         registry::ExtRegistries,
         runner::{BeatRunner, StepOutcome},
         skill_ctx::{SkillCtx, SkillCtxMode},
         timeline::{Beat, BeatEvent, BeatKind, CompiledTimeline},
     },
-    events::{CombatEvent, CombatEventKind},
     team::Team,
     types::{Attribute, DamageTag, EvoStage, UnitId},
     unit::Unit,
 };
+use common::app::minimal_intent_app;
 use std::collections::VecDeque;
 use std::sync::Arc;
-
-fn setup_app() -> App {
-    let mut app = App::new();
-    app.init_resource::<IntentQueue>()
-        .init_resource::<CastIdGen>()
-        .add_message::<CombatEvent>()
-        .add_systems(Update, intent_applier);
-    app
-}
 
 fn spawn_unit(app: &mut App, id: UnitId, team: Team, hp: i32) {
     app.world_mut().spawn((
@@ -60,7 +53,7 @@ fn ko_target(_ev: &BeatEvent, ctx: &mut SkillCtx<'_>) {
 
 #[test]
 fn fixture_onturnstart_kills_target() {
-    let mut app = setup_app();
+    let mut app = minimal_intent_app();
 
     let caster_id = UnitId(1);
     let enemy_id = UnitId(2);
