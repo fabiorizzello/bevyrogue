@@ -10,7 +10,10 @@ mod render;
 mod widgets;
 
 #[cfg(feature = "windowed")]
-pub use labels::{TelegraphChip, attr_color, cue_barrier_chip, query_pending_action_affordance};
+pub use labels::{
+    TelegraphChip, attr_color, cue_barrier_chip, query_pending_action_affordance,
+    telegraph_chip_text, telegraph_chip_tooltip,
+};
 #[cfg(feature = "windowed")]
 pub use preview_cache::refresh_preview_damage_cache;
 #[cfg(feature = "windowed")]

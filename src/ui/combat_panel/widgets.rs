@@ -178,7 +178,7 @@ pub(super) fn render_action_bar(
         if let Some(chip) = telegraph_chip {
             egui::Frame::default()
                 .fill(egui::Color32::from_rgb(95, 45, 20))
-                .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(230, 170, 90)))
+                .stroke(egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(230, 170, 90)))
                 .corner_radius(6.0)
                 .inner_margin(egui::Margin::symmetric(8, 4))
                 .show(ui, |ui| {

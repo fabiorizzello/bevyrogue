@@ -2,39 +2,31 @@
 id: T02
 parent: S01
 milestone: M002
-key_files:
-  - src/animation/validation/types.rs
-  - src/animation/validation/graph.rs
-  - assets/digimon/agumon/anim_graph.ron
-  - assets/digimon/renamon/anim_graph.ron
-  - tests/anim_gameplay_command_forbidden.rs
-  - tests/anim_validation.rs
-key_decisions:
-  - Gameplay commands are forbidden inside animation graphs; authored graphs must emit `ReleaseKernelCue` instead.
-  - The anti-DRY protection is executable: the live Agumon production graph is asserted gameplay-command-free in tests.
+key_files: []
+key_decisions: []
 duration: 
-verification_result: passed
-completed_at: 2026-05-19T19:31:49.949Z
+verification_result: untested
+completed_at: 2026-05-20T13:23:01.942Z
 blocker_discovered: false
 ---
 
-# T02: Blocked gameplay commands in animation graphs and enforced the rule with a live anti-DRY test on the production Agumon asset.
+# T02: GameplayCommandForbidden validation check + anti-DRY test + EmitDamage remediation
 
-**Blocked gameplay commands in animation graphs and enforced the rule with a live anti-DRY test on the production Agumon asset.**
+****
 
 ## What Happened
 
-Added `AnimationValidationCheck::GameplayCommandForbidden` and `AnimationValidationReason::GameplayCommandInAnimGraph`, then taught the graph validator to emit blocking diagnostics when `EmitDamage`, `EmitStatus`, or `EmitHeal` appear in `node.on_enter` or cue `Presentation(...)` commands. Removed gameplay-command authoring from the production Agumon and Renamon graphs and codified the rule with an anti-DRY integration test against the live Agumon asset. The final closeout rerun confirmed the rule still holds after the parity remediation changed Agumon frame ranges.
+No summary recorded.
 
 ## Verification
 
-Fresh `cargo nextest run --profile agent` passed after the final updates, including `anim_gameplay_command_forbidden`, `anim_graph_asset`, and `anim_validation` coverage for the production graphs.
+No verification recorded.
 
 ## Verification Evidence
 
 | # | Command | Exit Code | Verdict | Duration |
 |---|---------|-----------|---------|----------|
-| 1 | `cargo nextest run --profile agent` | 0 | ✅ pass | 7700ms |
+| — | No verification commands discovered | — | — | — |
 
 ## Deviations
 
@@ -46,9 +38,4 @@ None.
 
 ## Files Created/Modified
 
-- `src/animation/validation/types.rs`
-- `src/animation/validation/graph.rs`
-- `assets/digimon/agumon/anim_graph.ron`
-- `assets/digimon/renamon/anim_graph.ron`
-- `tests/anim_gameplay_command_forbidden.rs`
-- `tests/anim_validation.rs`
+None.

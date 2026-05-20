@@ -2,9 +2,9 @@
 
 use bevy::prelude::*;
 use bevyrogue::combat::{
-    runtime::{CastIdGen, ExtRegistries, register_kernel_builtins},
     kit::UnitSkills,
     preview::{query_skill_preview, summarize_preview_damage},
+    runtime::{CastId, CastIdGen, CueBarrierStatus, ExtRegistries, register_kernel_builtins},
     sp::SpPool,
     state::CombatState,
     team::Team,
@@ -22,7 +22,8 @@ use bevyrogue::data::{
     },
 };
 use bevyrogue::ui::combat_panel::{
-    PendingAction, PendingKind, PreviewDamageCache, refresh_preview_damage_cache,
+    PendingAction, PendingKind, PreviewDamageCache, cue_barrier_chip, refresh_preview_damage_cache,
+    telegraph_chip_text, telegraph_chip_tooltip,
 };
 
 const CASTER_ID: UnitId = UnitId(11);
@@ -32,7 +33,11 @@ fn preview_skill_id() -> SkillId {
     SkillId("preview_bridge_strike".into())
 }
 
-fn build_app() -> App {
+fn sharp_claws_skill_id() -> SkillId {
+    SkillId("sharp_claws".into())
+}
+
+fn build_app(pending_kind: PendingKind, basic_skill: SkillId) -> App {
     let mut app = App::new();
     app.init_resource::<CastIdGen>()
         .init_resource::<ExtRegistries>()
@@ -41,7 +46,7 @@ fn build_app() -> App {
         .init_resource::<CombatState>()
         .init_resource::<SpPool>()
         .insert_resource(PendingAction {
-            kind: Some(PendingKind::Skill(preview_skill_id())),
+            kind: Some(pending_kind),
         })
         .insert_resource(PreviewDamageCache::default());
 
@@ -49,73 +54,123 @@ fn build_app() -> App {
     register_kernel_builtins(&mut regs);
     app.insert_resource(regs);
 
-    let book = SkillBook(vec![SkillDef {
-        id: preview_skill_id(),
-        name: "Preview Bridge Strike".into(),
-        damage_tag: DamageTag::Fire,
-        sp_cost: 0,
-        targeting: SkillTargeting {
-            shape: TargetShape::Single,
-            side: TargetSide::Enemy,
-            life: TargetLife::Alive,
-            self_rule: SelfTargetRule::Forbid,
-            target_hp_rule: Default::default(),
+    let book = SkillBook(vec![
+        SkillDef {
+            id: preview_skill_id(),
+            name: "Preview Bridge Strike".into(),
+            damage_tag: DamageTag::Fire,
+            sp_cost: 0,
+            targeting: SkillTargeting {
+                shape: TargetShape::Single,
+                side: TargetSide::Enemy,
+                life: TargetLife::Alive,
+                self_rule: SelfTargetRule::Forbid,
+                target_hp_rule: Default::default(),
+            },
+            implementation: SkillImplementation::Implemented,
+            legacy_ops: vec![],
+            custom_signals: vec![],
+            animation_sequence: None,
+            qte: None,
+            timeline: Some(SkillTimeline {
+                entry: "cast".into(),
+                beats: vec![
+                    bevyrogue::combat::runtime::timeline::Beat {
+                        id: "cast".into(),
+                        kind: bevyrogue::combat::runtime::timeline::BeatKind::Cast,
+                        hook: None,
+                        selector: None,
+                        presentation: None,
+                        payload: None,
+                    },
+                    bevyrogue::combat::runtime::timeline::Beat {
+                        id: "impact_1".into(),
+                        kind: bevyrogue::combat::runtime::timeline::BeatKind::Impact,
+                        hook: Some("core/deal_damage".into()),
+                        selector: Some("core/primary".into()),
+                        presentation: None,
+                        payload: Some(bevyrogue::combat::runtime::timeline::BeatPayload::DealDamage {
+                            amount: 11,
+                            tag: DamageTag::Fire,
+                            target: TargetShape::Single,
+                        }),
+                    },
+                    bevyrogue::combat::runtime::timeline::Beat {
+                        id: "impact_2".into(),
+                        kind: bevyrogue::combat::runtime::timeline::BeatKind::Impact,
+                        hook: Some("core/deal_damage".into()),
+                        selector: Some("core/primary".into()),
+                        presentation: None,
+                        payload: Some(bevyrogue::combat::runtime::timeline::BeatPayload::DealDamage {
+                            amount: 13,
+                            tag: DamageTag::Fire,
+                            target: TargetShape::Single,
+                        }),
+                    },
+                ],
+                edges: vec![
+                    bevyrogue::combat::runtime::timeline::BeatEdge {
+                        from: "cast".into(),
+                        to: "impact_1".into(),
+                        gate: Some("core/always".into()),
+                    },
+                    bevyrogue::combat::runtime::timeline::BeatEdge {
+                        from: "impact_1".into(),
+                        to: "impact_2".into(),
+                        gate: Some("core/always".into()),
+                    },
+                ],
+            }),
         },
-        implementation: SkillImplementation::Implemented,
-        legacy_ops: vec![],
-        custom_signals: vec![],
-        animation_sequence: None,
-        qte: None,
-        timeline: Some(SkillTimeline {
-            entry: "cast".into(),
-            beats: vec![
-                bevyrogue::combat::runtime::timeline::Beat {
-                    id: "cast".into(),
-                    kind: bevyrogue::combat::runtime::timeline::BeatKind::Cast,
-                    hook: None,
-                    selector: None,
-                    presentation: None,
-                    payload: None,
-                },
-                bevyrogue::combat::runtime::timeline::Beat {
-                    id: "impact_1".into(),
-                    kind: bevyrogue::combat::runtime::timeline::BeatKind::Impact,
-                    hook: Some("core/deal_damage".into()),
-                    selector: Some("core/primary".into()),
-                    presentation: None,
-                    payload: Some(bevyrogue::combat::runtime::timeline::BeatPayload::DealDamage {
-                        amount: 11,
-                        tag: DamageTag::Fire,
-                        target: TargetShape::Single,
-                    }),
-                },
-                bevyrogue::combat::runtime::timeline::Beat {
-                    id: "impact_2".into(),
-                    kind: bevyrogue::combat::runtime::timeline::BeatKind::Impact,
-                    hook: Some("core/deal_damage".into()),
-                    selector: Some("core/primary".into()),
-                    presentation: None,
-                    payload: Some(bevyrogue::combat::runtime::timeline::BeatPayload::DealDamage {
-                        amount: 13,
-                        tag: DamageTag::Fire,
-                        target: TargetShape::Single,
-                    }),
-                },
-            ],
-            edges: vec![
-                bevyrogue::combat::runtime::timeline::BeatEdge {
+        SkillDef {
+            id: sharp_claws_skill_id(),
+            name: "Sharp Claws".into(),
+            damage_tag: DamageTag::Fire,
+            sp_cost: 0,
+            targeting: SkillTargeting {
+                shape: TargetShape::Single,
+                side: TargetSide::Enemy,
+                life: TargetLife::Alive,
+                self_rule: SelfTargetRule::Forbid,
+                target_hp_rule: Default::default(),
+            },
+            implementation: SkillImplementation::Implemented,
+            legacy_ops: vec![],
+            custom_signals: vec![],
+            animation_sequence: None,
+            qte: None,
+            timeline: Some(SkillTimeline {
+                entry: "cast".into(),
+                beats: vec![
+                    bevyrogue::combat::runtime::timeline::Beat {
+                        id: "cast".into(),
+                        kind: bevyrogue::combat::runtime::timeline::BeatKind::Cast,
+                        hook: None,
+                        selector: None,
+                        presentation: None,
+                        payload: None,
+                    },
+                    bevyrogue::combat::runtime::timeline::Beat {
+                        id: "impact_damage".into(),
+                        kind: bevyrogue::combat::runtime::timeline::BeatKind::Impact,
+                        hook: Some("core/deal_damage".into()),
+                        selector: Some("core/primary".into()),
+                        presentation: None,
+                        payload: Some(bevyrogue::combat::runtime::timeline::BeatPayload::DealDamage {
+                            amount: 18,
+                            tag: DamageTag::Fire,
+                            target: TargetShape::Single,
+                        }),
+                    },
+                ],
+                edges: vec![bevyrogue::combat::runtime::timeline::BeatEdge {
                     from: "cast".into(),
-                    to: "impact_1".into(),
+                    to: "impact_damage".into(),
                     gate: Some("core/always".into()),
-                },
-                bevyrogue::combat::runtime::timeline::BeatEdge {
-                    from: "impact_1".into(),
-                    to: "impact_2".into(),
-                    gate: Some("core/always".into()),
-                },
-            ],
-        }),
-    }]);
+                }],
+            }),
+        },
+    ]);
     let handle = {
         let mut assets = app.world_mut().resource_mut::<Assets<SkillBook>>();
         assets.add(book)
@@ -134,8 +189,8 @@ fn build_app() -> App {
         },
         Team::Ally,
         UnitSkills {
-            basic: SkillId("caster_basic".into()),
-            skills: vec![preview_skill_id()],
+            basic: basic_skill,
+            skills: vec![preview_skill_id(), sharp_claws_skill_id()],
             ultimate: SkillId("caster_ult".into()),
             follow_up: None,
         },
@@ -184,7 +239,10 @@ fn build_app() -> App {
 
 #[test]
 fn windowed_preview_cache_tracks_shared_preview_summary_and_stays_put_without_preview() {
-    let mut app = build_app();
+    let mut app = build_app(
+        PendingKind::Skill(preview_skill_id()),
+        SkillId("caster_basic".into()),
+    );
 
     app.update();
 
@@ -224,4 +282,87 @@ fn windowed_preview_cache_tracks_shared_preview_summary_and_stays_put_without_pr
         cached,
         "cache must stay stable when no preview can be refreshed"
     );
+}
+
+#[test]
+fn windowed_basic_preview_uses_sharp_claws_damage_data() {
+    let mut app = build_app(PendingKind::Basic, sharp_claws_skill_id());
+
+    app.update();
+
+    let cached = app.world().resource::<PreviewDamageCache>().clone();
+    assert_eq!(cached.pending_kind, Some(PendingKind::Basic));
+    assert_eq!(cached.skill_id, Some(sharp_claws_skill_id()));
+    assert_eq!(cached.target_id, Some(TARGET_ID));
+
+    let summary = cached.summary.expect("basic preview summary");
+    assert_eq!(summary.total_damage, 18);
+    assert_eq!(summary.deal_damage_intents, 1);
+    assert_eq!(
+        cached.summary.as_ref().map(|summary| format!(
+            "preview: {} dmg across {} hit(s)",
+            summary.total_damage, summary.deal_damage_intents
+        )),
+        Some("preview: 18 dmg across 1 hit(s)".to_string())
+    );
+}
+
+#[test]
+fn telegraph_chip_helpers_surface_and_hide_sharp_claws_barriers_without_egui() {
+    let book = SkillBook(vec![SkillDef {
+        id: sharp_claws_skill_id(),
+        name: "Sharp Claws".into(),
+        damage_tag: DamageTag::Fire,
+        sp_cost: 0,
+        targeting: SkillTargeting {
+            shape: TargetShape::Single,
+            side: TargetSide::Enemy,
+            life: TargetLife::Alive,
+            self_rule: SelfTargetRule::Forbid,
+            target_hp_rule: Default::default(),
+        },
+        implementation: SkillImplementation::Implemented,
+        legacy_ops: vec![],
+        custom_signals: vec![],
+        animation_sequence: None,
+        qte: None,
+        timeline: None,
+    }]);
+
+    let awaiting = CueBarrierStatus {
+        cast_id: CastId::ROOT,
+        skill_id: sharp_claws_skill_id(),
+        timeline_id: "sharp_claws",
+        beat_id: "impact_damage",
+        cue_id: "agumon/sharp_claws/impact",
+        awaiting_release: true,
+        released: false,
+        animation_node: Some("sharp_claws_strike".into()),
+        animation_frame: Some(4),
+    };
+
+    assert_eq!(
+        telegraph_chip_text("Sharp Claws"),
+        "Telegraph: Sharp Claws · impact pending"
+    );
+    assert!(
+        telegraph_chip_tooltip(&awaiting).contains("cue=agumon/sharp_claws/impact"),
+        "tooltip should expose the cue id for stuck-barrier diagnosis"
+    );
+
+    let chip = cue_barrier_chip(Some(&awaiting), Some(&book)).expect("awaiting chip");
+    assert_eq!(chip.label, "Telegraph: Sharp Claws · impact pending");
+    assert!(chip.tooltip.contains("node=sharp_claws_strike"));
+    assert!(chip.tooltip.contains("frame=4"));
+
+    let released = CueBarrierStatus {
+        awaiting_release: false,
+        released: true,
+        ..awaiting.clone()
+    };
+    assert!(
+        cue_barrier_chip(Some(&released), Some(&book)).is_none(),
+        "chip must hide after release/resolution"
+    );
+    assert!(cue_barrier_chip(None, Some(&book)).is_none());
 }

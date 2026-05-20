@@ -54,13 +54,11 @@ from quality_gate import validate as qgate
 
 
 # --- Defaults ---
-# Project decision (2026-04-30): anime-only direction, iso45 only.
-# See sprite_pipeline/DECISIONS.md for full rationale.
-# Pass --shaders / --cameras to override for experimentation.
+# Sole style: mihoyo_style (Genshin/HSR-like cel + Fresnel rim + 3-band shading).
+# Pass --shaders to override for experimentation.
 DEFAULT_SHADERS = [
-    "mihoyo_style",  # Primary: Genshin/HSR-like cel + Fresnel rim + 3-band shading
-    "anime_eevee",   # Secondary: Smooth cel + posterize
-    # --- DEPRECATED but available via --shaders flag (do not remove files) ---
+    "mihoyo_style",
+    # --- available via --shaders flag ---
     # "basic_cel",         # pixel-track winner
 ]
 DEFAULT_CAMERAS = [
