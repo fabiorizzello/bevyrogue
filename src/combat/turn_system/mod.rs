@@ -26,6 +26,3 @@ pub use resolve::resolve_action_system;
 mod pipeline;
 
 pub(crate) use pipeline::{step_app, step_declaration};
-
-#[cfg(test)]
-mod tests;

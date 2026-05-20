@@ -1,6 +1,5 @@
-use super::*;
 use bevy::prelude::*;
-use crate::combat::{
+use bevyrogue::combat::{
     sp::SpPool,
     state::{CombatPhase, CombatState},
     stun::Stunned,
@@ -9,8 +8,8 @@ use crate::combat::{
     ultimate::UltimateCharge,
     unit::{Ko, Unit},
 };
-use crate::combat::runtime::timeline::{Beat, BeatKind, TimelineLibrary};
-use crate::combat::{
+use bevyrogue::combat::runtime::timeline::{Beat, BeatKind, TimelineLibrary};
+use bevyrogue::combat::{
     runtime::ExtRegistries,
     events::CombatEvent,
     kit::UnitSkills,
@@ -20,7 +19,10 @@ use crate::combat::{
     types::{Attribute, DamageTag, EvoStage},
     ultimate::UltAccumulationTrigger,
 };
-use crate::data::{
+use bevyrogue::combat::turn_system::{
+    ActionIntent, check_victory_system, resolve_action_system,
+};
+use bevyrogue::data::{
     SkillBookHandle,
     skill_timeline::compile_skill_book_timelines,
     skills_ron::{
@@ -69,7 +71,7 @@ fn skill(
             },
             Effect::ToughnessHit(toughness_damage),
         ],
-        timeline: Some(crate::data::skill_timeline::SkillTimeline {
+        timeline: Some(bevyrogue::data::skill_timeline::SkillTimeline {
             entry: "cast".into(),
             beats: vec![Beat {
                 id: "cast".into(),
@@ -175,7 +177,7 @@ fn resolve_action_system_rejects_revive_on_healthy_target() {
         },
         implementation: SkillImplementation::Implemented,
         legacy_ops: vec![Effect::Revive(25)],
-        timeline: Some(crate::data::skill_timeline::SkillTimeline {
+        timeline: Some(bevyrogue::data::skill_timeline::SkillTimeline {
             entry: "cast".into(),
             beats: vec![Beat {
                 id: "cast".into(),
