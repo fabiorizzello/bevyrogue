@@ -326,6 +326,3 @@ fn snapshot_targets(world: &World) -> TargetableSnapshot {
         .collect();
     TargetableSnapshot { entries }
 }
-
-#[cfg(test)]
-mod tests;

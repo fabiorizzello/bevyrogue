@@ -1,7 +1,14 @@
-use super::*;
-use crate::combat::runtime::timeline::{Beat, BeatEdge, BeatKind, CompiledTimeline};
-use crate::combat::runtime::{SignalPayload, intent::CastId, timeline::BeatPayload, validate_timeline_refs};
 use bevy::prelude::World;
+use bevyrogue::combat::runtime::builtins::register_kernel_builtins;
+use bevyrogue::combat::runtime::intent::Intent;
+use bevyrogue::combat::runtime::registry::ExtRegistries;
+use bevyrogue::combat::runtime::timeline::{
+    Beat, BeatEdge, BeatEvent, BeatKind, BeatPayload, CompiledTimeline,
+};
+use bevyrogue::combat::runtime::{SignalPayload, intent::CastId, validate_timeline_refs};
+use bevyrogue::combat::runtime::{SkillCtx, SkillCtxMode};
+use bevyrogue::combat::types::UnitId;
+use bevyrogue::data::skills_ron::TargetShape;
 use std::{
     collections::{HashSet, VecDeque},
     num::NonZeroU32,
@@ -32,7 +39,7 @@ fn owned_builtin_timeline(
                 presentation: None,
                 payload: Some(BeatPayload::DealDamage {
                     amount: 1,
-                    tag: crate::combat::types::DamageTag::Fire,
+                    tag: bevyrogue::combat::types::DamageTag::Fire,
                     target: TargetShape::Single,
                 }),
             },
@@ -80,14 +87,14 @@ fn deal_damage_builtin_uses_payload_and_targets() {
     let mut pending = VecDeque::new();
     let payload = BeatPayload::DealDamage {
         amount: 17,
-        tag: crate::combat::types::DamageTag::Physical,
+        tag: bevyrogue::combat::types::DamageTag::Physical,
         target: TargetShape::Single,
     };
-    let mut ctx = crate::combat::runtime::SkillCtx::new(
+    let mut ctx = SkillCtx::new(
         UnitId(1),
         UnitId(2),
         CastId(NonZeroU32::new(7).unwrap()),
-        crate::combat::runtime::SkillCtxMode::Execute,
+        SkillCtxMode::Execute,
         &regs,
         &world,
         &mut cast_hit_set,
@@ -136,11 +143,11 @@ fn builtins_cover_new_active_verbs() {
         beat_targets: vec![revive_target],
     };
 
-    let mut ctx = crate::combat::runtime::SkillCtx::new(
+    let mut ctx = SkillCtx::new(
         caster,
         revive_target,
         cast_id,
-        crate::combat::runtime::SkillCtxMode::Execute,
+        SkillCtxMode::Execute,
         &regs,
         &world,
         &mut cast_hit_set,
@@ -167,11 +174,11 @@ fn builtins_cover_new_active_verbs() {
 
     let mut pending = VecDeque::new();
     let mut cast_hit_set = HashSet::new();
-    let mut ctx = crate::combat::runtime::SkillCtx::new(
+    let mut ctx = SkillCtx::new(
         caster,
         revive_target,
         cast_id,
-        crate::combat::runtime::SkillCtxMode::Execute,
+        SkillCtxMode::Execute,
         &regs,
         &world,
         &mut cast_hit_set,
@@ -189,11 +196,11 @@ fn builtins_cover_new_active_verbs() {
 
     let mut pending = VecDeque::new();
     let mut cast_hit_set = HashSet::new();
-    let mut ctx = crate::combat::runtime::SkillCtx::new(
+    let mut ctx = SkillCtx::new(
         caster,
         revive_target,
         cast_id,
-        crate::combat::runtime::SkillCtxMode::Execute,
+        SkillCtxMode::Execute,
         &regs,
         &world,
         &mut cast_hit_set,
@@ -213,11 +220,11 @@ fn builtins_cover_new_active_verbs() {
 
     let mut pending = VecDeque::new();
     let mut cast_hit_set = HashSet::new();
-    let mut ctx = crate::combat::runtime::SkillCtx::new(
+    let mut ctx = SkillCtx::new(
         caster,
         revive_target,
         cast_id,
-        crate::combat::runtime::SkillCtxMode::Execute,
+        SkillCtxMode::Execute,
         &regs,
         &world,
         &mut cast_hit_set,
@@ -251,11 +258,11 @@ fn apply_effect_builtin_enqueues_blueprint_signal() {
         name: "build_static_charge".to_string(),
         payload: SignalPayload::Amount(1),
     };
-    let mut ctx = crate::combat::runtime::SkillCtx::new(
+    let mut ctx = SkillCtx::new(
         UnitId(1),
         UnitId(2),
         CastId(NonZeroU32::new(7).unwrap()),
-        crate::combat::runtime::SkillCtxMode::Execute,
+        SkillCtxMode::Execute,
         &regs,
         &world,
         &mut cast_hit_set,
