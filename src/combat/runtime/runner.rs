@@ -410,7 +410,3 @@ impl BeatRunner {
         }
     }
 }
-
-// ─── Inline unit tests ────────────────────────────────────────────────────────
-#[cfg(test)]
-mod tests;

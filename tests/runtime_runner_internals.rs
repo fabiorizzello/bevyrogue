@@ -1,11 +1,13 @@
-use super::*;
-use crate::combat::runtime::{
+use bevy::prelude::World;
+use bevyrogue::combat::runtime::runner::{BeatRunner, StepOutcome};
+use bevyrogue::combat::runtime::{
     clock::Clock,
     intent::CastId,
     registry::ExtRegistries,
     skill_ctx::{SkillCtx, SkillCtxMode},
     timeline::{Beat, BeatEdge, BeatEvent, BeatKind, CompiledTimeline, Presentation},
 };
+use bevyrogue::combat::types::UnitId;
 use std::{collections::VecDeque, num::NonZeroU32, sync::Arc};
 
 fn cast_id() -> CastId {
@@ -321,7 +323,7 @@ fn windowed_stalls_on_presentation_hook_fires_once() {
 
 #[test]
 fn headless_and_windowed_manual_resume_produce_identical_pending_stream() {
-    use crate::combat::runtime::intent::Intent;
+    use bevyrogue::combat::runtime::intent::Intent;
     use std::sync::atomic::{AtomicUsize, Ordering};
     static PARITY_HOOK_CALLS: AtomicUsize = AtomicUsize::new(0);
 
