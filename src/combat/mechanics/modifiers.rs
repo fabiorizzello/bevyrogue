@@ -147,38 +147,4 @@ impl DamageModifierLedger {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn deterministic_layer_order_is_canonical() {
-        let mut chain = ModifierChain::default();
-        chain.push(ModifierLayer::Passive, 50);
-        chain.push(ModifierLayer::Status, 115);
-        chain.push(ModifierLayer::Buff, 90);
-
-        let applied = chain.apply_to(100);
-        assert_eq!(
-            applied.applied_layers,
-            vec![
-                ModifierLayer::Status,
-                ModifierLayer::Buff,
-                ModifierLayer::Passive
-            ]
-        );
-    }
-
-    #[test]
-    fn ledger_drains_once() {
-        let mut ledger = DamageModifierLedger::default();
-        let target = UnitId(7);
-        ledger.arm(target, ModifierLayer::Passive, 50);
-        assert!(ledger.is_armed(target));
-
-        let drained = ledger.drain(target);
-        assert!(!drained.terms.is_empty());
-        assert!(!ledger.is_armed(target));
-        assert!(ledger.drain(target).terms.is_empty());
-    }
-}
+// Tests relocated to `tests/modifiers_internals.rs` (R003).
