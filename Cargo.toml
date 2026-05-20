@@ -35,6 +35,11 @@ dev = ["bevy/dynamic_linking"]
 
 [dev-dependencies]
 insta = "1"
+# Parametric / property-based testing. `rstest` for table-driven `#[case]` tests,
+# `proptest` for invariant tests with seeded shrinking. Both feed into the same
+# nextest `agent` profile and respect R004 (no wall-clock, seeded RNG).
+rstest = "0.23"
+proptest = "1.6"
 
 # Agent-first observability: dump Bevy `Schedule` graphs to .gsd/schedules/*.dot
 # so future agents can read the system ordering without grepping `add_systems` /
@@ -77,10 +82,6 @@ path = "tests/anim_player_fsm.rs"
 [[test]]
 name = "clip_atlas_parity"
 path = "tests/clip_atlas_parity.rs"
-
-[[test]]
-name = "twin_core_integration"
-path = "tests/twin_core_integration.rs"
 
 [[test]]
 name = "holy_support_mechanics"

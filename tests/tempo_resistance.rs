@@ -6,35 +6,49 @@
 use bevy::prelude::*;
 use bevyrogue::combat::av::{ActionValue, MAX_AV};
 use bevyrogue::combat::resistance::{TempoResistance, apply_advance, apply_delay};
+use rstest::rstest;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Pure-logic tests (no Bevy app)
 // ──────────────────────────────────────────────────────────────────────────────
 
-#[test]
-fn tempo_resistance_multiplier_curve() {
+/// Curve points: hit 0 → 100%, hit 1 → 50%, hit 2 → 25%, hit 3+ stays at 25%.
+#[rstest]
+#[case::hit_0(0, 1.0)]
+#[case::hit_1(1, 0.5)]
+#[case::hit_2(2, 0.25)]
+#[case::hit_3_floor(3, 0.25)]
+#[case::hit_4_floor(4, 0.25)]
+fn tempo_resistance_multiplier_curve(#[case] hits: usize, #[case] expected: f64) {
     let mut r = TempoResistance::default();
-    assert_eq!(r.multiplier(), 1.0, "hit 0 → 100%");
-    r.record_delay_hit();
-    assert_eq!(r.multiplier(), 0.5, "hit 1 → 50%");
-    r.record_delay_hit();
-    assert_eq!(r.multiplier(), 0.25, "hit 2 → 25%");
-    r.record_delay_hit();
-    assert_eq!(r.multiplier(), 0.25, "hit 3+ stays at 25%");
+    for _ in 0..hits {
+        r.record_delay_hit();
+    }
+    assert_eq!(
+        r.multiplier(),
+        expected,
+        "after {hits} hits expected {expected}, got {}",
+        r.multiplier()
+    );
 }
 
 /// Each successive Delay on the same unit gets attenuated via TempoResistance.
-#[test]
-fn three_consecutive_delays_show_diminishing_returns() {
-    let mut av = ActionValue(MAX_AV); // 10000 — enough headroom to avoid floor clamp
+/// Index 0..=2: 100% / 50% / 25% of 20% on AV=MAX_AV (10000).
+#[rstest]
+#[case::first(1, -2000)]
+#[case::second(2, -1000)]
+#[case::third(3, -500)]
+fn consecutive_delays_attenuate(#[case] applied_hits: usize, #[case] expected_delta: i32) {
+    let mut av = ActionValue(MAX_AV);
     let mut r = TempoResistance::default();
-    let d1 = apply_delay(&mut av, 20, Some(&mut r)); // 100% → -2000
-    let d2 = apply_delay(&mut av, 20, Some(&mut r)); // 50%  → -1000
-    let d3 = apply_delay(&mut av, 20, Some(&mut r)); // 25%  → -500
-
-    assert_eq!(d1, -2000, "first delay: 100%");
-    assert_eq!(d2, -1000, "second delay: 50%");
-    assert_eq!(d3, -500, "third delay: 25%");
+    let mut last = 0;
+    for _ in 0..applied_hits {
+        last = apply_delay(&mut av, 20, Some(&mut r));
+    }
+    assert_eq!(
+        last, expected_delta,
+        "hit {applied_hits}: expected delta {expected_delta}, got {last}"
+    );
 }
 
 #[test]

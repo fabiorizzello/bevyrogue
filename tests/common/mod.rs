@@ -1,7 +1,16 @@
-//! Shared fixtures for scenario TTK tests (boss/miniboss/minion).
+//! Shared fixtures for integration tests.
 //!
 //! Rust integration-test convention: this file is included with `mod common;`
-//! in the consuming test binaries.
+//! in the consuming test binaries. Each binary instantiates its own copy and
+//! only sees the items it imports — the `#![allow(dead_code)]` attribute on
+//! each submodule silences "unused helper" warnings in binaries that exercise
+//! only part of the API.
+
+#![allow(dead_code)]
+
+pub mod actions;
+pub mod apply;
+pub mod units;
 
 use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::{
