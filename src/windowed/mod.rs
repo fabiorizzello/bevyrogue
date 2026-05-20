@@ -1,0 +1,320 @@
+//! Windowed app wiring (feature `windowed`): winit + wgpu + bevy_ui + egui.
+//!
+//! Provides the egui combat panel, roster/turn-order side panels, and an
+//! optional validation tick that exits cleanly after a soak window.
+
+mod render;
+
+use bevy::prelude::*;
+use bevy_egui::{EguiContexts, EguiPlugin, EguiPrimaryContextPass, egui};
+
+use bevyrogue::animation::AnimationAssetPlugin;
+use bevyrogue::combat::av::ActionValue;
+use bevyrogue::combat::follow_up::{
+    follow_up_listener_system, form_identity_listener_system, resolve_follow_up_action_system,
+};
+use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
+use bevyrogue::combat::runtime::{Clock, SuspendedTimelineState, TimelineClock};
+use bevyrogue::combat::turn_order::TurnAdvanced;
+use bevyrogue::combat::turn_system::{
+    advance_turn_system, check_victory_system, continue_suspended_timeline_system,
+    resolve_action_system, resolve_enemy_turn_action_system,
+};
+use bevyrogue::combat::types::{Attribute, UnitId};
+use bevyrogue::combat::ultimate::{flush_ult_gain_system, ult_accumulation_system};
+use bevyrogue::combat::unit::Unit;
+use bevyrogue::data::{self, DataPlugin};
+
+pub(super) const AGUMON_STANCE_GRAPH_ID: &str = "agumon_stance";
+pub(super) const AGUMON_SKILL_GRAPH_ID: &str = "agumon_skill";
+pub(super) const SHARP_CLAWS_SKILL_ID: &str = "sharp_claws";
+pub(super) const SHARP_CLAWS_WINDUP_NODE: &str = "sharp_claws_windup";
+pub(super) const SHARP_CLAWS_STRIKE_NODE: &str = "sharp_claws_strike";
+
+#[derive(Resource, Debug, Clone, Copy, PartialEq, Eq)]
+pub struct WindowedValidationConfig {
+    soak_secs: u64,
+}
+
+#[derive(Resource, Debug, Default, Clone, Copy, PartialEq)]
+struct WindowedValidationState {
+    started_at_secs: Option<f32>,
+    snapshot_logged: bool,
+    finished: bool,
+}
+
+/// Egui panels: roster, turn order, combat panel.
+pub struct UiPlugin;
+
+impl Plugin for UiPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_plugins(EguiPlugin::default())
+            .init_resource::<bevyrogue::ui::combat_panel::PendingAction>()
+            .init_resource::<bevyrogue::ui::combat_panel::PreviewDamageCache>()
+            .add_systems(Update, bevyrogue::ui::combat_panel::refresh_preview_damage_cache)
+            .add_systems(EguiPrimaryContextPass, roster_panel)
+            .add_systems(EguiPrimaryContextPass, turn_order_panel)
+            .add_systems(EguiPrimaryContextPass, bevyrogue::ui::combat_panel::combat_panel);
+    }
+}
+
+fn parse_windowed_validation_toggle(raw: Option<&str>) -> Result<bool, String> {
+    match raw {
+        None | Some("0" | "false" | "False" | "FALSE" | "no" | "No" | "NO" | "off") => Ok(false),
+        Some("") | Some("1" | "true" | "True" | "TRUE" | "yes" | "Yes" | "YES" | "on") => Ok(true),
+        Some(other) => Err(format!(
+            "BEVYROGUE_VALIDATION_WINDOWED must be one of: 1,true,yes,on,0,false,no,off (got {other:?})"
+        )),
+    }
+}
+
+fn parse_windowed_validation_config(
+    enabled_raw: Option<&str>,
+    soak_secs_raw: Option<&str>,
+) -> Result<Option<WindowedValidationConfig>, String> {
+    if !parse_windowed_validation_toggle(enabled_raw)? {
+        return Ok(None);
+    }
+
+    let soak_secs = match soak_secs_raw {
+        None => 300,
+        Some(raw) => raw.parse::<u64>().map_err(|_| {
+            format!(
+                "BEVYROGUE_VALIDATION_WINDOWED_SOAK_SECS must be a positive integer (got {raw:?})"
+            )
+        })?,
+    };
+
+    if soak_secs == 0 {
+        return Err(
+            "BEVYROGUE_VALIDATION_WINDOWED_SOAK_SECS must be greater than zero".to_string(),
+        );
+    }
+
+    Ok(Some(WindowedValidationConfig { soak_secs }))
+}
+
+pub fn config_from_env() -> Result<Option<WindowedValidationConfig>, String> {
+    parse_windowed_validation_config(
+        std::env::var("BEVYROGUE_VALIDATION_WINDOWED")
+            .ok()
+            .as_deref(),
+        std::env::var("BEVYROGUE_VALIDATION_WINDOWED_SOAK_SECS")
+            .ok()
+            .as_deref(),
+    )
+}
+
+pub fn register(app: &mut App, validation: Option<WindowedValidationConfig>) {
+    app.add_plugins(DefaultPlugins.set(AssetPlugin {
+        watch_for_changes_override: Some(true),
+        ..default()
+    }))
+    .add_plugins(AnimationAssetPlugin)
+    .add_plugins(DataPlugin)
+    .insert_resource(TimelineClock(Clock::Windowed))
+    .init_resource::<SuspendedTimelineState>()
+    .add_plugins(render::RenderPlugin)
+    .add_plugins(UiPlugin);
+
+    if let Some(config) = validation {
+        app.insert_resource(config)
+            .init_resource::<WindowedValidationState>()
+            .add_systems(Update, windowed_validation_tick);
+    }
+}
+
+pub fn register_combat_systems(app: &mut App) {
+    app.init_resource::<bevyrogue::combat::turn_system::EnemyTurnRequestQueue>()
+        .add_systems(
+            Update,
+            (
+                resolve_action_system,
+                follow_up_listener_system,
+                form_identity_listener_system,
+                resolve_follow_up_action_system,
+                continue_suspended_timeline_system,
+                ult_accumulation_system,
+                flush_ult_gain_system,
+                advance_turn_system,
+                resolve_enemy_turn_action_system,
+                check_victory_system,
+            )
+                .chain(),
+        );
+}
+
+fn windowed_validation_tick(world: &mut World) {
+    if !world.contains_resource::<data::DataReady>() {
+        return;
+    }
+
+    let soak_secs = world.resource::<WindowedValidationConfig>().soak_secs;
+    let elapsed_secs = world.resource::<Time>().elapsed_secs();
+
+    let mut log_start = false;
+    let mut log_snapshot = false;
+    let mut log_finish = false;
+
+    {
+        let mut state = world.resource_mut::<WindowedValidationState>();
+        if state.started_at_secs.is_none() {
+            state.started_at_secs = Some(elapsed_secs);
+            log_start = true;
+        }
+        if !state.snapshot_logged {
+            state.snapshot_logged = true;
+            log_snapshot = true;
+        }
+        if !state.finished
+            && state
+                .started_at_secs
+                .is_some_and(|started_at| elapsed_secs - started_at >= soak_secs as f32)
+        {
+            state.finished = true;
+            log_finish = true;
+        }
+    }
+
+    if log_start {
+        info!("validation_windowed:start soak_secs={soak_secs}");
+    }
+
+    if log_snapshot {
+        match capture_validation_snapshot(world) {
+            Ok(snapshot) => info!(
+                "validation_snapshot: {}",
+                format_validation_snapshot(&snapshot)
+            ),
+            Err(err) => error!("validation_snapshot_error: {err}"),
+        }
+    }
+
+    if log_finish {
+        info!("validation_windowed:finish soak_secs={soak_secs}");
+        world.write_message(AppExit::Success);
+    }
+}
+
+fn roster_panel(
+    mut contexts: EguiContexts,
+    units: Query<&Unit>,
+    asset_server: Res<AssetServer>,
+) -> Result {
+    let ctx = contexts.ctx_mut()?;
+    egui::SidePanel::left("roster").show(ctx, |ui| {
+        ui.heading("Roster (S04 RON-driven)");
+        for u in &units {
+            ui.label(format!(
+                "{} — {:?} — HP {}/{}",
+                u.name, u.attribute, u.hp_current, u.hp_max
+            ));
+        }
+        if ui.button("reload combat").clicked() {
+            for path in bevyrogue::data::DIGIMON_UNIT_PATHS
+                .iter()
+                .chain(bevyrogue::data::ENEMY_UNIT_PATHS.iter())
+            {
+                asset_server.reload(*path);
+            }
+            for path in bevyrogue::data::DIGIMON_SKILL_PATHS
+                .iter()
+                .chain(bevyrogue::data::ENEMY_SKILL_PATHS.iter())
+            {
+                asset_server.reload(*path);
+            }
+        }
+    });
+    Ok(())
+}
+
+/// Computes the upcoming turn order from live Action Values: units closest to
+/// acting (highest AV) first, ties broken by ascending `UnitId` to match
+/// `advance_turn_system`.
+fn av_preview(units: &Query<(&Unit, &ActionValue)>, limit: usize) -> Vec<UnitId> {
+    let mut ranked: Vec<(UnitId, i32)> = units.iter().map(|(u, av)| (u.id, av.0)).collect();
+    ranked.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.0.cmp(&b.0.0)));
+    ranked.into_iter().take(limit).map(|(id, _)| id).collect()
+}
+
+fn turn_order_panel(
+    mut contexts: EguiContexts,
+    av_units: Query<(&Unit, &ActionValue)>,
+    units: Query<&Unit>,
+    mut turn_advanced: MessageWriter<TurnAdvanced>,
+) -> Result {
+    let ctx = contexts.ctx_mut()?;
+    let preview = av_preview(&av_units, 5);
+    egui::TopBottomPanel::top("av_bar").show(ctx, |ui| {
+        ui.heading("AV Bar (next 5)");
+        ui.horizontal(|ui| {
+            for id in &preview {
+                let (label, color) = unit_chip(*id, &units);
+                let bg = egui::Frame::default()
+                    .fill(color)
+                    .inner_margin(egui::Margin::symmetric(6, 4));
+                bg.show(ui, |ui| {
+                    ui.label(label);
+                });
+            }
+        });
+        ui.horizontal(|ui| {
+            if ui.button("Advance").clicked() {
+                if let Some(id) = preview.first().copied() {
+                    turn_advanced.write(TurnAdvanced::of(id));
+                }
+            }
+        });
+    });
+    Ok(())
+}
+
+fn unit_chip(id: UnitId, units: &Query<&Unit>) -> (String, egui::Color32) {
+    let u = units.iter().find(|u| u.id == id);
+    match u {
+        Some(u) => (u.name.clone(), attr_color(u.attribute)),
+        None => (format!("{:?}", id), egui::Color32::from_gray(80)),
+    }
+}
+
+pub(crate) fn attr_color(a: Attribute) -> egui::Color32 {
+    match a {
+        Attribute::Vaccine => egui::Color32::from_rgb(80, 140, 220),
+        Attribute::Data => egui::Color32::from_rgb(220, 200, 60),
+        Attribute::Virus => egui::Color32::from_rgb(200, 60, 180),
+        Attribute::Free => egui::Color32::from_gray(160),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn windowed_validation_is_disabled_when_flag_absent_or_false() {
+        assert_eq!(parse_windowed_validation_config(None, None).unwrap(), None);
+        assert_eq!(
+            parse_windowed_validation_config(Some("false"), Some("300")).unwrap(),
+            None
+        );
+    }
+
+    #[test]
+    fn windowed_validation_uses_default_soak_when_enabled_without_override() {
+        assert_eq!(
+            parse_windowed_validation_config(Some("1"), None).unwrap(),
+            Some(WindowedValidationConfig { soak_secs: 300 })
+        );
+    }
+
+    #[test]
+    fn windowed_validation_rejects_bad_inputs() {
+        assert_eq!(
+            parse_windowed_validation_config(Some("true"), Some("120")).unwrap(),
+            Some(WindowedValidationConfig { soak_secs: 120 })
+        );
+        assert!(parse_windowed_validation_config(Some("true"), Some("0")).is_err());
+        assert!(parse_windowed_validation_config(Some("true"), Some("bogus")).is_err());
+        assert!(parse_windowed_validation_config(Some("maybe"), None).is_err());
+    }
+}
