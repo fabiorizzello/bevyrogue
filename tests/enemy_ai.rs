@@ -5,13 +5,14 @@
 /// no SkillBook asset is required — all inputs are inline Rust.
 ///
 /// Enemy UnitIds use the 101+ range to avoid collisions with ally IDs 0–10 (MEM030).
+mod common;
+
 use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::{
     kit::UnitSkills,
-    state::CombatState,
     team::Team,
     toughness::Toughness,
-    turn_order::{TurnAdvanced, TurnOrder},
+    turn_order::TurnAdvanced,
     turn_system::{
         ActionIntent, EnemyTurnRequestQueue, advance_turn_system, resolve_enemy_turn_action_system,
     },
@@ -19,25 +20,18 @@ use bevyrogue::combat::{
     ultimate::{UltAccumulationTrigger, UltimateCharge},
     unit::Unit,
 };
+use common::app::turn_av_base_app;
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 fn setup_app() -> App {
-    let mut app = App::new();
-    app.init_resource::<CombatState>()
-        .init_resource::<TurnOrder>()
-        .init_resource::<EnemyTurnRequestQueue>()
-        .init_resource::<Time>()
-        .add_message::<TurnAdvanced>()
-        .add_message::<bevyrogue::combat::av::ActionValueUpdated>()
-        .add_message::<ActionIntent>()
-        .add_message::<bevyrogue::combat::events::CombatEvent>()
-        .add_systems(
-            Update,
-            (advance_turn_system, resolve_enemy_turn_action_system).chain(),
-        );
+    let mut app = turn_av_base_app();
+    app.init_resource::<EnemyTurnRequestQueue>().add_systems(
+        Update,
+        (advance_turn_system, resolve_enemy_turn_action_system).chain(),
+    );
     app
 }
 

@@ -3,9 +3,12 @@
 //! T02: pure-logic curve tests (no Bevy world needed).
 //! T03: boss-spawn scenario tests (TempoResistance wired via UnitDef.tempo_resistant).
 
+mod common;
+
 use bevy::prelude::*;
 use bevyrogue::combat::av::{ActionValue, MAX_AV};
 use bevyrogue::combat::resistance::{TempoResistance, apply_advance, apply_delay};
+use common::app::turn_av_base_app;
 use rstest::rstest;
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -111,14 +114,11 @@ fn advance_does_not_exceed_2x_max_av() {
 // ──────────────────────────────────────────────────────────────────────────────
 
 use bevy::ecs::message::Messages;
-use bevyrogue::combat::runtime::intent::CastId;
-use bevyrogue::combat::av::ActionValueUpdated;
 use bevyrogue::combat::bootstrap::spawn_unit_from_def;
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
-use bevyrogue::combat::state::CombatState;
+use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::team::Team;
-use bevyrogue::combat::turn_order::{TurnAdvanced, TurnOrder};
-use bevyrogue::combat::turn_system::{ActionIntent, apply_av_ops_system};
+use bevyrogue::combat::turn_system::apply_av_ops_system;
 use bevyrogue::combat::types::UnitId;
 use bevyrogue::combat::unit::Unit;
 
@@ -127,14 +127,7 @@ fn uid(n: u32) -> UnitId {
 }
 
 fn setup_app() -> App {
-    let mut app = App::new();
-    app.add_plugins(MinimalPlugins);
-    app.init_resource::<TurnOrder>();
-    app.init_resource::<CombatState>();
-    app.add_message::<TurnAdvanced>();
-    app.add_message::<ActionValueUpdated>();
-    app.add_message::<CombatEvent>();
-    app.add_message::<ActionIntent>();
+    let mut app = turn_av_base_app();
     app.add_systems(Update, apply_av_ops_system);
     app
 }
@@ -366,14 +359,7 @@ fn ally_spawn_has_no_tempo_resistance_component() {
 /// This is the full pipeline: spawn_unit_from_def → CombatEvent bus → apply_av_ops_system.
 #[test]
 fn boss_scenario_three_slow_hits_show_resistance_curve() {
-    let mut app = App::new();
-    app.add_plugins(MinimalPlugins);
-    app.init_resource::<TurnOrder>();
-    app.init_resource::<CombatState>();
-    app.add_message::<TurnAdvanced>();
-    app.add_message::<ActionValueUpdated>();
-    app.add_message::<CombatEvent>();
-    app.add_message::<ActionIntent>();
+    let mut app = turn_av_base_app();
     app.add_systems(Update, apply_av_ops_system);
 
     // Spawn boss from def — TempoResistance should be inserted automatically.

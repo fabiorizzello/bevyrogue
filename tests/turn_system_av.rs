@@ -1,28 +1,25 @@
+mod common;
+
 use bevy::prelude::*;
-use bevyrogue::combat::av::{ActionValue, ActionValueUpdated, MAX_AV};
+use bevyrogue::combat::av::{ActionValue, MAX_AV};
 use bevyrogue::combat::speed::Speed;
 use bevyrogue::combat::state::{CombatPhase, CombatState};
 use bevyrogue::combat::stun::Stunned;
 use bevyrogue::combat::team::Team;
-use bevyrogue::combat::turn_order::{TurnAdvanced, TurnOrder};
+use bevyrogue::combat::turn_order::TurnOrder;
 use bevyrogue::combat::turn_system::advance_turn_system;
 use bevyrogue::combat::types::UnitId;
 use bevyrogue::combat::unit::Ko;
 use bevyrogue::combat::unit::Unit;
+
+use common::app::turn_av_base_app;
 
 fn uid(n: u32) -> UnitId {
     UnitId(n)
 }
 
 fn setup_app() -> App {
-    let mut app = App::new();
-    app.add_plugins(MinimalPlugins);
-    app.init_resource::<TurnOrder>();
-    app.init_resource::<CombatState>();
-    app.add_message::<TurnAdvanced>();
-    app.add_message::<ActionValueUpdated>();
-    app.add_message::<bevyrogue::combat::events::CombatEvent>();
-    app.add_message::<bevyrogue::combat::turn_system::ActionIntent>();
+    let mut app = turn_av_base_app();
     app.add_systems(Update, advance_turn_system);
     app
 }

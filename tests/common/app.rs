@@ -30,6 +30,7 @@
 
 use bevy::prelude::*;
 use bevyrogue::combat::{
+    av::ActionValueUpdated,
     blueprints::{add_runtime_plugins, register_all_blueprint_exts},
     events::CombatEvent,
     follow_up::{
@@ -49,7 +50,7 @@ use bevyrogue::combat::{
     },
     sp::SpPool,
     state::CombatState,
-    turn_order::TurnOrder,
+    turn_order::{TurnAdvanced, TurnOrder},
     turn_system::{ActionIntent, resolve_action_system},
 };
 use bevyrogue::data::{SkillBookHandle, skill_timeline::compile_skill_book_timelines, skills_ron::SkillBook};
@@ -251,6 +252,23 @@ pub fn skill_resolve_app(book: SkillBook, seed: u64) -> App {
         .add_message::<ActionIntent>()
         .add_message::<CombatEvent>()
         .add_systems(Update, resolve_action_system);
+    app
+}
+
+/// Convenience: turn/AV-system test app — `App::new() + MinimalPlugins +
+/// CombatState + TurnOrder + (TurnAdvanced, ActionValueUpdated, ActionIntent,
+/// CombatEvent) messages`. No systems registered — caller adds the system(s)
+/// under test. Used by `tests/enemy_ai.rs`, `tests/tempo_resistance.rs`, and
+/// `tests/turn_system_av.rs`.
+pub fn turn_av_base_app() -> App {
+    let mut app = App::new();
+    app.add_plugins(MinimalPlugins)
+        .init_resource::<CombatState>()
+        .init_resource::<TurnOrder>()
+        .add_message::<TurnAdvanced>()
+        .add_message::<ActionValueUpdated>()
+        .add_message::<ActionIntent>()
+        .add_message::<CombatEvent>();
     app
 }
 
