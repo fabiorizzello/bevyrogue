@@ -1,12 +1,10 @@
-use bevy::ecs::message::{MessageCursor, Messages};
 use bevy::prelude::*;
 use bevyrogue::combat::{
     runtime::timeline::TimelineLibrary,
     runtime::{ExtRegistries, SignalBus, SignalTaxonomy, register_kernel_builtins},
     av::{ActionValue, ActionValueUpdated, MAX_AV},
     blueprints::register_all_blueprint_exts,
-    events::{CombatEvent, CombatEventKind},
-    kernel::CombatKernelTransition,
+    events::CombatEvent,
     kit::UnitSkills,
     log::ActionLog,
     rng::CombatRng,
@@ -17,7 +15,7 @@ use bevyrogue::combat::{
     toughness::Toughness,
     turn_order::{TurnAdvanced, TurnOrder},
     turn_system::{ActionIntent, apply_av_ops_system, resolve_action_system},
-    types::{Attribute, DamageTag, EvoStage, SkillId, UnitId},
+    types::{Attribute, EvoStage, SkillId, UnitId},
     ultimate::{UltAccumulationTrigger, UltimateCharge},
     unit::Unit,
 };
@@ -79,7 +77,10 @@ fn child_roster_active_skills_all_have_compiled_timelines() {
     }
 }
 
-// ── runtime execution test ────────────────────────────────────────────────────
+// `baby_flame_timeline_path_…` runtime test merged into
+// `compiled_timeline_runtime_skills.rs` (parametric matrix). The remaining
+// tests below cover the catalog gate, compile-time negative cases, and the
+// graceful-empty-targets check that live at the active-canon boundary.
 
 fn build_app(book: &SkillBook) -> App {
     let mut app = App::new();
@@ -153,33 +154,6 @@ fn spawn_caster(app: &mut App, skill_id: &str) -> Entity {
         .id()
 }
 
-fn spawn_enemy(app: &mut App) -> Entity {
-    app.world_mut()
-        .spawn((
-            Unit {
-                id: UnitId(2),
-                name: "Enemy".into(),
-                hp_max: 300,
-                hp_current: 300,
-                attribute: Attribute::Virus,
-                resists: vec![],
-                evo_stage: EvoStage::Child,
-            },
-            Team::Enemy,
-            ActionValue(MAX_AV),
-            Toughness::new(10, vec![DamageTag::Fire]),
-            StatusBag::default(),
-        ))
-        .id()
-}
-
-fn collect_events(app: &App, cursor: &mut MessageCursor<CombatEvent>) -> Vec<CombatEvent> {
-    cursor
-        .read(app.world().resource::<Messages<CombatEvent>>())
-        .cloned()
-        .collect()
-}
-
 fn fire_skill(app: &mut App, attacker: UnitId, skill_id: &str, target: UnitId) {
     app.world_mut().write_message(ActionIntent::Skill {
         attacker,
@@ -187,69 +161,6 @@ fn fire_skill(app: &mut App, attacker: UnitId, skill_id: &str, target: UnitId) {
         target,
     });
     app.update();
-}
-
-#[test]
-fn baby_flame_timeline_path_delivers_damage_before_break_then_signal() {
-    let book = canonical_book();
-    validate_skill_book(&book).expect("canonical skills.ron must validate");
-
-    let mut app = build_app(&book);
-    // register signal so taxonomy check passes
-    app.world_mut()
-        .resource_mut::<SignalTaxonomy>()
-        .register("agumon", "apply_heated");
-
-    let _caster = spawn_caster(&mut app, "baby_flame");
-    let _enemy = spawn_enemy(&mut app);
-
-    let mut cursor = app
-        .world_mut()
-        .resource_mut::<Messages<CombatEvent>>()
-        .get_cursor_current();
-
-    fire_skill(&mut app, UnitId(1), "baby_flame", UnitId(2));
-
-    let events = collect_events(&app, &mut cursor);
-    let dump: Vec<_> = events.iter().map(|e| format!("{:?}", e.kind)).collect();
-
-    let pos_damage = events
-        .iter()
-        .position(|e| matches!(e.kind, CombatEventKind::OnDamageDealt { .. }))
-        .expect("damage event must fire");
-
-    let pos_break = events
-        .iter()
-        .position(|e| matches!(e.kind, CombatEventKind::OnBreak { .. }))
-        .expect("break event must fire");
-
-    let pos_signal = events
-        .iter()
-        .position(|e| {
-            matches!(
-                &e.kind,
-                CombatEventKind::OnKernelTransition {
-                    transition: CombatKernelTransition::Blueprint { owner, name, .. }
-                } if owner == "agumon" && name == "apply_heated"
-            )
-        })
-        .expect("apply_heated signal must fire");
-
-    assert!(
-        pos_damage < pos_break,
-        "damage must precede break: {dump:?}"
-    );
-    assert!(
-        pos_break < pos_signal,
-        "break must precede signal: {dump:?}"
-    );
-
-    // target should have taken damage
-    let mut q = app.world_mut().query::<(&Unit, &Team)>();
-    let took_damage = q
-        .iter(app.world())
-        .any(|(unit, team)| *team == Team::Enemy && unit.hp_current < 300);
-    assert!(took_damage, "baby_flame must deal damage via timeline path");
 }
 
 // ── negative tests ────────────────────────────────────────────────────────────
