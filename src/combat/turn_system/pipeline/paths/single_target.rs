@@ -9,8 +9,8 @@ use crate::combat::log::{ActionLog, LogEntry};
 use crate::combat::resolution::{apply_cleanse_only, apply_legacy_ops};
 use crate::combat::rng::{CombatEntropy, CombatRng, roll_pct_entropy};
 use crate::combat::runtime::{
-    CastId, PostActionContext, PostActionUnitDied, PostActionUnitSnapshot,
-    dispatch_post_action_reactions,
+    CastId, IntentExecutionMeta, IntentQueue, PostActionContext, PostActionUnitDied,
+    PostActionUnitSnapshot, dispatch_post_action_reactions,
 };
 use crate::combat::sp::{RoundSpTracker, SpPool};
 use crate::combat::state::{CombatPhase, CombatState, InFlightAction, UltEffect};
@@ -39,6 +39,8 @@ pub(in crate::combat::turn_system::pipeline) fn run(
     entropy_q: &mut Query<&mut CombatEntropy, With<Unit>>,
     energy_q: &mut Query<(&mut Energy, Option<&mut RoundEnergyTracker>)>,
     ext_regs: Option<&crate::combat::runtime::ExtRegistries>,
+    intent_queue: &mut Option<ResMut<IntentQueue>>,
+    intent_execution_meta: &mut Option<ResMut<IntentExecutionMeta>>,
     cast_id: CastId,
     attacker_entity: Entity,
     target_entity: Entity,
@@ -396,6 +398,33 @@ pub(in crate::combat::turn_system::pipeline) fn run(
             post_action_roster,
         );
         let post_action = dispatch_post_action_reactions(ext_regs, &post_action_ctx);
+        if !post_action.intents.is_empty() {
+            let follow_up_depth = inflight.follow_up_depth;
+            let intents = post_action.intents;
+
+            if let Some(meta) = intent_execution_meta.as_deref_mut() {
+                meta.follow_up_depths.insert(cast_id, follow_up_depth);
+            }
+            if let Some(queue) = intent_queue.as_deref_mut() {
+                queue.0.extend(intents);
+            } else {
+                commands.queue(move |world: &mut World| {
+                    world.init_resource::<crate::combat::runtime::IntentQueue>();
+                    world.init_resource::<crate::combat::runtime::IntentExecutionMeta>();
+                    world.init_resource::<crate::combat::runtime::SignalBus>();
+                    world.init_resource::<crate::combat::runtime::SignalTaxonomy>();
+                    world.init_resource::<crate::combat::runtime::BlueprintState>();
+                    world
+                        .resource_mut::<crate::combat::runtime::IntentExecutionMeta>()
+                        .follow_up_depths
+                        .insert(cast_id, follow_up_depth);
+                    world
+                        .resource_mut::<crate::combat::runtime::IntentQueue>()
+                        .0
+                        .extend(intents);
+                });
+            }
+        }
         for transition in post_action.transitions {
             crate::combat::turn_system::emit_kernel_transition(
                 event_writer,

@@ -8,7 +8,7 @@ use crate::combat::{
     kernel::{CombatBeatId, CombatKernelRegistry},
     log::ActionLog,
     round_flags::RoundFlags,
-    runtime::{ExtRegistries, intent::CastIdGen},
+    runtime::{ExtRegistries, IntentExecutionMeta, IntentQueue, intent::CastIdGen},
     sp::SpPool,
     state::CombatState,
     toughness::Toughness,
@@ -32,6 +32,8 @@ pub struct FollowUpRuntimeParams<'w, 's> {
     >,
     energy_q: Query<'w, 's, (&'static mut Energy, Option<&'static mut RoundEnergyTracker>)>,
     ext_regs: Option<Res<'w, ExtRegistries>>,
+    intent_queue: Option<ResMut<'w, IntentQueue>>,
+    intent_execution_meta: Option<ResMut<'w, IntentExecutionMeta>>,
     cast_id_gen: Option<ResMut<'w, CastIdGen>>,
 }
 
@@ -179,6 +181,8 @@ pub fn resolve_follow_up_action_system(
             &mut runtime.entropy_q,
             &mut runtime.energy_q,
             runtime.ext_regs.as_deref(),
+            &mut runtime.intent_queue,
+            &mut runtime.intent_execution_meta,
             follow_up_cast_id,
         );
 

@@ -16,6 +16,7 @@ use crate::combat::{
     unit::Unit,
 };
 
+pub mod baby_burner;
 pub mod signals;
 
 use crate::combat::blueprints::twin_core::{TwinCoreDesignTag, twin_core_added_tag_transition};
@@ -43,6 +44,10 @@ pub fn register_agumon_ext(regs: &mut crate::combat::runtime::ExtRegistries) {
     regs.selectors
         .register("agumon/bounce_pick_next", bounce_pick_next);
     regs.hooks.register("agumon/on_bounce_hop", on_bounce_hop);
+    regs.post_action_reactions.register(
+        "agumon/baby_burner/reactive_detonate",
+        baby_burner::enqueue_reactive_detonate,
+    );
 }
 
 pub fn register_validation_ext(regs: &mut crate::combat::runtime::ExtRegistries) {
@@ -53,9 +58,9 @@ pub fn register_passive_runtime(app: &mut App) {
     app.init_resource::<TalentRanks>();
     register_passive_hooks(app);
 
-    app.world_mut()
-        .resource_mut::<SignalTaxonomy>()
-        .register(OWNER, PASSIVE_SIGNAL_NAME);
+    let mut taxonomy = app.world_mut().resource_mut::<SignalTaxonomy>();
+    taxonomy.register(OWNER, PASSIVE_SIGNAL_NAME);
+    taxonomy.register(OWNER, baby_burner::DETONATE_SIGNAL_NAME);
 
     app.world_mut()
         .resource_mut::<PassiveListeners>()

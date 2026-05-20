@@ -5,7 +5,9 @@ use crate::combat::events::CombatEvent;
 use crate::combat::kernel::CombatKernelRegistry;
 use crate::combat::log::ActionLog;
 use crate::combat::rng::{CombatEntropy, CombatRng};
-use crate::combat::runtime::{ExtRegistries, intent::CastId};
+use crate::combat::runtime::{
+    ExtRegistries, IntentExecutionMeta, IntentQueue, intent::CastId,
+};
 use crate::combat::sp::SpPool;
 use crate::combat::state::{CombatState, InFlightAction};
 use crate::combat::turn_order::TurnOrder;
@@ -30,6 +32,8 @@ pub(crate) fn step_app(
     entropy_q: &mut Query<&mut CombatEntropy, With<Unit>>,
     energy_q: &mut Query<(&mut Energy, Option<&mut RoundEnergyTracker>)>,
     ext_regs: Option<&ExtRegistries>,
+    intent_queue: &mut Option<ResMut<IntentQueue>>,
+    intent_execution_meta: &mut Option<ResMut<IntentExecutionMeta>>,
     cast_id: CastId,
 ) {
     if inflight.interrupted {
@@ -147,6 +151,8 @@ pub(crate) fn step_app(
         entropy_q,
         energy_q,
         ext_regs,
+        intent_queue,
+        intent_execution_meta,
         cast_id,
         attacker_entity,
         target_entity,
