@@ -1,4 +1,11 @@
 use bevy::ecs::message::Messages;
+// Intentionally not migrated to `tests/common/` helpers (W7c outlier):
+// scheduling is unique (resolve_action_system + apply_av_ops_system pair),
+// the defender spawns with a pre-set ActionValue (mid-turn fixture), and
+// `count_delay_for` filters on a single CombatEventKind variant that no
+// other test reuses. A shared helper would obscure the AV-fixture shape
+// for one caller. See D026 for the broader observability-seam principle.
+//
 /// Integration test for §H.2 Slowed semantics (S04/T02): first-apply pushes gauge −30%,
 /// re-apply does NOT re-push (refresh_max_dur path only).
 ///
