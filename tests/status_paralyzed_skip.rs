@@ -1,9 +1,12 @@
-/// Integration test for §H.1 Paralyzed semantics (S04/T01): always-skip across full duration.
+/// Property-based invariant for §H.1 Paralyzed semantics (S04/T01).
 ///
-/// Scenario: single enemy unit with Paralyzed(dur=100), 100 TurnAdvanced cycles.
-/// Asserts:
-///   - exactly 100 OnActionFailed{reason:"paralyzed"} events (one per turn, including last tick)
-///   - zero ActionIntent from the enemy across all 100 turns
+/// Replaces the previous fixed-duration scenario (`paralyzed_enemy_skips_all_100_turns`)
+/// with a proptest that varies paralysis duration and RNG seed: a paralyzed unit
+/// must emit exactly one `OnActionFailed{reason:"paralyzed"}` per turn and zero
+/// `ActionIntent::Skill` across the entire window, regardless of randomness.
+///
+/// Asserting the behavior (intent blocked + event emitted) rather than a state
+/// latch keeps the test alive across kernel refactors.
 use bevy::prelude::*;
 use bevyrogue::combat::{
     StatusBag, StatusEffectKind,
@@ -19,14 +22,15 @@ use bevyrogue::combat::{
     types::{Attribute, EvoStage, UnitId},
     unit::Unit,
 };
+use proptest::prelude::*;
 
-fn setup_app() -> (App, Entity, Entity) {
+fn setup_app(duration: u32, seed: u64) -> (App, Entity, Entity) {
     let mut app = App::new();
     app.init_resource::<CombatState>()
         .init_resource::<TurnOrder>()
         .init_resource::<ActionLog>()
         .init_resource::<Time>()
-        .insert_resource(CombatRng::from_seed(0))
+        .insert_resource(CombatRng::from_seed(seed))
         .add_message::<TurnAdvanced>()
         .add_message::<ActionIntent>()
         .add_message::<CombatEvent>()
@@ -67,7 +71,7 @@ fn setup_app() -> (App, Entity, Entity) {
             Toughness::new(100, vec![]),
             {
                 let mut bag = StatusBag::default();
-                bag.apply(StatusEffectKind::Paralyzed, 100);
+                bag.apply(StatusEffectKind::Paralyzed, duration);
                 bag
             },
         ))
@@ -76,58 +80,59 @@ fn setup_app() -> (App, Entity, Entity) {
     (app, ally, enemy)
 }
 
-#[test]
-fn paralyzed_enemy_skips_all_100_turns() {
-    let (mut app, _ally, enemy) = setup_app();
-    let enemy_id = app.world().get::<Unit>(enemy).unwrap().id;
+proptest! {
+    /// For any paralysis duration `T > 0` and any RNG seed, a paralyzed unit
+    /// produces exactly `T` `OnActionFailed{reason:"paralyzed"}` events and
+    /// zero `ActionIntent::Skill` across `T` consecutive turns.
+    #[test]
+    fn paralyzed_unit_skips_every_turn_until_expiry(
+        duration in 1u32..=50,
+        seed in proptest::num::u64::ANY,
+    ) {
+        let (mut app, _ally, enemy) = setup_app(duration, seed);
+        let enemy_id = app.world().get::<Unit>(enemy).unwrap().id;
 
-    // Create cursors at current write-head so each read() returns only that frame's new messages.
-    let mut event_cursor = app
-        .world()
-        .resource::<Messages<CombatEvent>>()
-        .get_cursor_current();
-    let mut intent_cursor = app
-        .world()
-        .resource::<Messages<ActionIntent>>()
-        .get_cursor_current();
+        let mut event_cursor = app
+            .world()
+            .resource::<Messages<CombatEvent>>()
+            .get_cursor_current();
+        let mut intent_cursor = app
+            .world()
+            .resource::<Messages<ActionIntent>>()
+            .get_cursor_current();
 
-    let mut skip_count = 0usize;
-    let mut enemy_intent_count = 0usize;
+        let mut skip_count = 0usize;
+        let mut enemy_intent_count = 0usize;
 
-    for _ in 0..100 {
-        app.world_mut().write_message(TurnAdvanced::of(enemy_id));
-        app.update();
+        for _ in 0..duration {
+            app.world_mut().write_message(TurnAdvanced::of(enemy_id));
+            app.update();
 
-        let frame_events: Vec<CombatEvent> = {
-            let msgs = app.world().resource::<Messages<CombatEvent>>();
-            event_cursor.read(msgs).cloned().collect()
-        };
-        for ev in &frame_events {
-            if matches!(&ev.kind, CombatEventKind::OnActionFailed { reason } if reason == "paralyzed")
-            {
-                skip_count += 1;
+            let frame_events: Vec<CombatEvent> = {
+                let msgs = app.world().resource::<Messages<CombatEvent>>();
+                event_cursor.read(msgs).cloned().collect()
+            };
+            for ev in &frame_events {
+                if matches!(&ev.kind, CombatEventKind::OnActionFailed { reason } if reason == "paralyzed")
+                {
+                    skip_count += 1;
+                }
             }
-        }
 
-        let frame_intents: Vec<ActionIntent> = {
-            let msgs = app.world().resource::<Messages<ActionIntent>>();
-            intent_cursor.read(msgs).cloned().collect()
-        };
-        for intent in &frame_intents {
-            if let ActionIntent::Skill { attacker, .. } = intent {
-                if *attacker == enemy_id {
-                    enemy_intent_count += 1;
+            let frame_intents: Vec<ActionIntent> = {
+                let msgs = app.world().resource::<Messages<ActionIntent>>();
+                intent_cursor.read(msgs).cloned().collect()
+            };
+            for intent in &frame_intents {
+                if let ActionIntent::Skill { attacker, .. } = intent {
+                    if *attacker == enemy_id {
+                        enemy_intent_count += 1;
+                    }
                 }
             }
         }
-    }
 
-    assert_eq!(
-        skip_count, 100,
-        "expected 100 OnActionFailed{{reason:\"paralyzed\"}} across 100 turns; got {skip_count}"
-    );
-    assert_eq!(
-        enemy_intent_count, 0,
-        "paralyzed enemy must dispatch zero ActionIntents across 100 turns; got {enemy_intent_count}"
-    );
+        prop_assert_eq!(skip_count, duration as usize);
+        prop_assert_eq!(enemy_intent_count, 0);
+    }
 }
