@@ -3,27 +3,21 @@
 use bevy::prelude::*;
 use bevyrogue::combat::{
     StatusBag, StatusEffectKind,
-    events::CombatEvent,
     kit::UnitSkills,
-    log::ActionLog,
-    rng::CombatRng,
-    sp::SpPool,
-    state::CombatState,
     team::Team,
     toughness::Toughness,
-    turn_order::TurnOrder,
-    turn_system::{ActionIntent, resolve_action_system},
+    turn_system::ActionIntent,
     types::{Attribute, DamageTag, EvoStage, SkillId, UnitId},
     ultimate::{UltAccumulationTrigger, UltimateCharge},
     unit::Unit,
 };
-use bevyrogue::data::{
-    SkillBookHandle,
-    skills_ron::{
-        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation, SkillTargeting,
-        TargetLife, TargetShape, TargetSide,
-    },
+use bevyrogue::data::skills_ron::{
+    Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation, SkillTargeting, TargetLife,
+    TargetShape, TargetSide,
 };
+
+mod common;
+use common::app::skill_resolve_app;
 
 fn heated_skill(id: &str, duration: u32) -> SkillDef {
     SkillDef {
@@ -56,27 +50,14 @@ fn heated_skill(id: &str, duration: u32) -> SkillDef {
 }
 
 fn setup_app() -> (App, Entity) {
-    let mut app = App::new();
-    let mut assets = Assets::<SkillBook>::default();
-    let handle = assets.add(SkillBook(vec![
-        heated_skill("h2", 2),
-        heated_skill("h1", 1),
-        heated_skill("h5", 5),
-    ]));
-    app.insert_resource(assets)
-        .insert_resource(SkillBookHandle(handle))
-        .init_resource::<CombatState>()
-        .init_resource::<TurnOrder>()
-        .insert_resource(SpPool {
-            current: 100,
-            max: 100,
-        })
-        .init_resource::<ActionLog>()
-        .init_resource::<Time>()
-        .insert_resource(CombatRng::from_seed(0))
-        .add_message::<ActionIntent>()
-        .add_message::<CombatEvent>()
-        .add_systems(Update, resolve_action_system);
+    let mut app = skill_resolve_app(
+        SkillBook(vec![
+            heated_skill("h2", 2),
+            heated_skill("h1", 1),
+            heated_skill("h5", 5),
+        ]),
+        0,
+    );
 
     app.world_mut().spawn((
         Unit {

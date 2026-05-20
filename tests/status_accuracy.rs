@@ -12,25 +12,21 @@ use bevyrogue::combat::{
     StatusBag, StatusEffectKind,
     events::{CombatEvent, CombatEventKind},
     kit::UnitSkills,
-    log::ActionLog,
     rng::CombatRng,
-    sp::SpPool,
-    state::CombatState,
     team::Team,
     toughness::Toughness,
-    turn_order::TurnOrder,
-    turn_system::{ActionIntent, resolve_action_system},
+    turn_system::ActionIntent,
     types::{Attribute, DamageTag, EvoStage, SkillId, UnitId},
     ultimate::{UltAccumulationTrigger, UltimateCharge},
     unit::Unit,
 };
-use bevyrogue::data::{
-    SkillBookHandle,
-    skills_ron::{
-        Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation, SkillTargeting,
-        TargetLife, TargetShape, TargetSide,
-    },
+use bevyrogue::data::skills_ron::{
+    Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation, SkillTargeting, TargetLife,
+    TargetShape, TargetSide,
 };
+
+mod common;
+use common::app::skill_resolve_app;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -68,23 +64,7 @@ fn shock_skill() -> SkillDef {
 
 /// Returns `(app, defender_entity)`.
 fn setup_app(seed: u64, defender_attribute: Attribute) -> (App, Entity) {
-    let mut app = App::new();
-    let mut assets = Assets::<SkillBook>::default();
-    let handle = assets.add(SkillBook(vec![shock_skill()]));
-    app.insert_resource(assets)
-        .insert_resource(SkillBookHandle(handle))
-        .init_resource::<CombatState>()
-        .init_resource::<TurnOrder>()
-        .insert_resource(SpPool {
-            current: 100,
-            max: 100,
-        })
-        .init_resource::<ActionLog>()
-        .init_resource::<Time>()
-        .insert_resource(CombatRng::from_seed(seed))
-        .add_message::<ActionIntent>()
-        .add_message::<CombatEvent>()
-        .add_systems(Update, resolve_action_system);
+    let mut app = skill_resolve_app(SkillBook(vec![shock_skill()]), seed);
 
     // Attacker: Vaccine
     app.world_mut().spawn((

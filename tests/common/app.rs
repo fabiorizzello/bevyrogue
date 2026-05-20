@@ -225,6 +225,35 @@ pub fn skill_book_runtime_app(book: SkillBook) -> App {
     app
 }
 
+/// Convenience: skill-resolution test app — single `resolve_action_system`
+/// driving a `SkillBook` asset. Inserts `SpPool{current:100,max:100}`, default
+/// `CombatState/TurnOrder/ActionLog/Time`, `CombatRng::from_seed(seed)`, and
+/// registers `ActionIntent + CombatEvent` messages.
+///
+/// Used by tests that drive a single `resolve_action_system` per `app.update()`
+/// (damage_breakdown_log, status_accuracy, status_multi_kind_coexist,
+/// status_refresh_max_dur, …). Callers spawn their own unit entities afterwards.
+pub fn skill_resolve_app(book: SkillBook, seed: u64) -> App {
+    let mut app = App::new();
+    let mut assets = Assets::<SkillBook>::default();
+    let handle = assets.add(book);
+    app.insert_resource(assets)
+        .insert_resource(SkillBookHandle(handle))
+        .init_resource::<CombatState>()
+        .init_resource::<TurnOrder>()
+        .insert_resource(SpPool {
+            current: 100,
+            max: 100,
+        })
+        .init_resource::<ActionLog>()
+        .init_resource::<Time>()
+        .insert_resource(CombatRng::from_seed(seed))
+        .add_message::<ActionIntent>()
+        .add_message::<CombatEvent>()
+        .add_systems(Update, resolve_action_system);
+    app
+}
+
 /// Convenience: shape-D' follow-up engine app — same systems as
 /// [`skill_book_runtime_app`] plus `form_identity_listener_system`, and
 /// WITHOUT `TimelineLibrary`/`ExtRegistries`/skill-book compilation. Used by
