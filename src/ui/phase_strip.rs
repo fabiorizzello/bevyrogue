@@ -1,8 +1,13 @@
 #[cfg(feature = "windowed")]
-use bevy::prelude::Resource;
+use bevy::prelude::*;
+#[cfg(feature = "windowed")]
+use bevy_egui::{EguiContexts, egui};
 
 #[cfg(feature = "windowed")]
-use crate::combat::kernel::CombatBeatId;
+use crate::combat::{
+    events::{CombatEvent, CombatEventKind},
+    kernel::CombatBeatId,
+};
 
 /// Windowed-only UI snapshot derived from `CombatEventKind::OnCombatBeat`.
 ///
@@ -53,6 +58,15 @@ pub enum PhaseStripPhase {
 
 #[cfg(feature = "windowed")]
 impl PhaseStripPhase {
+    pub const ALL: [Self; 6] = [
+        Self::Declared,
+        Self::PreApp,
+        Self::Impact,
+        Self::Chain,
+        Self::Applied,
+        Self::Resolved,
+    ];
+
     pub const fn label(self) -> &'static str {
         match self {
             Self::Declared => "Declared",
@@ -82,10 +96,123 @@ pub const fn phase_strip_label(beat: CombatBeatId) -> &'static str {
     phase_strip_phase(beat).label()
 }
 
+/// Scans the combat event bus and updates only the UI-owned phase display.
+///
+/// The last `OnCombatBeat` message in the reader window wins. All other combat
+/// event kinds are ignored so the strip remains a pure projection of the combat
+/// observability stream rather than a second gameplay state machine.
+#[cfg(feature = "windowed")]
+pub fn observe_combat_beats(
+    mut events: MessageReader<CombatEvent>,
+    mut display: ResMut<PhaseStripDisplay>,
+) {
+    let mut latest_beat = None;
+
+    for event in events.read() {
+        if let CombatEventKind::OnCombatBeat { beat } = event.kind {
+            latest_beat = Some(beat);
+        }
+    }
+
+    if let Some(beat) = latest_beat {
+        display.observe(beat);
+    }
+}
+
+/// Draws a compact top-center phase strip from the presentation-owned display.
+///
+/// Renders nothing until at least one combat beat has been observed. This keeps
+/// the UI path side-effect-free: it reads the derived display resource and egui
+/// context only, never combat state or world entities.
+#[cfg(feature = "windowed")]
+pub fn render_phase_strip(
+    mut contexts: EguiContexts,
+    display: Res<PhaseStripDisplay>,
+) -> Result {
+    let Some(active_phase) = display.active_phase() else {
+        return Ok(());
+    };
+
+    let ctx = contexts.ctx_mut()?;
+    egui::Area::new(egui::Id::new("combat_phase_strip"))
+        .anchor(egui::Align2::CENTER_TOP, egui::vec2(0.0, 12.0))
+        .order(egui::Order::Foreground)
+        .interactable(false)
+        .show(ctx, |ui| {
+            egui::Frame::window(ui.style())
+                .inner_margin(egui::Margin::symmetric(10, 8))
+                .show(ui, |ui| {
+                    ui.horizontal_wrapped(|ui| {
+                        for phase in PhaseStripPhase::ALL {
+                            let is_active = phase == active_phase;
+                            let fill = if is_active {
+                                egui::Color32::from_rgb(76, 114, 176)
+                            } else {
+                                egui::Color32::from_gray(44)
+                            };
+                            let stroke = if is_active {
+                                egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(190, 220, 255))
+                            } else {
+                                egui::Stroke::new(1.0_f32, egui::Color32::from_gray(72))
+                            };
+                            let text = egui::RichText::new(phase.label())
+                                .strong()
+                                .color(if is_active {
+                                    egui::Color32::WHITE
+                                } else {
+                                    egui::Color32::from_gray(170)
+                                });
+
+                            egui::Frame::default()
+                                .fill(fill)
+                                .stroke(stroke)
+                                .corner_radius(egui::CornerRadius::same(6))
+                                .inner_margin(egui::Margin::symmetric(8, 4))
+                                .show(ui, |ui| {
+                                    ui.label(text);
+                                });
+                        }
+                    });
+                });
+        });
+
+    Ok(())
+}
+
 #[cfg(all(test, feature = "windowed"))]
 mod tests {
-    use super::{phase_strip_label, phase_strip_phase, PhaseStripDisplay, PhaseStripPhase};
-    use crate::combat::kernel::CombatBeatId;
+    use bevy::prelude::*;
+
+    use super::{
+        PhaseStripDisplay, PhaseStripPhase, observe_combat_beats, phase_strip_label,
+        phase_strip_phase,
+    };
+    use crate::combat::{
+        events::{ActionIntentKind, CombatEvent, CombatEventKind},
+        kernel::CombatBeatId,
+        runtime::intent::CastId,
+        state::CombatState,
+        types::UnitId,
+    };
+
+    fn build_event(beat: CombatBeatId) -> CombatEvent {
+        CombatEvent {
+            kind: CombatEventKind::OnCombatBeat { beat },
+            source: UnitId(1),
+            target: UnitId(2),
+            follow_up_depth: 0,
+            cast_id: CastId::ROOT,
+        }
+    }
+
+    fn build_app() -> App {
+        let mut app = App::new();
+        app.add_message::<CombatEvent>()
+            .init_resource::<PhaseStripDisplay>()
+            .insert_resource(CombatState::default())
+            .add_systems(Update, observe_combat_beats);
+        app
+    }
 
     #[test]
     fn default_display_has_no_active_phase() {
@@ -145,5 +272,71 @@ mod tests {
         display.clear();
         assert_eq!(display.active_phase(), None);
         assert_eq!(display.active_label(), None);
+    }
+
+    #[test]
+    fn ingest_system_leaves_display_inactive_without_events() {
+        let mut app = build_app();
+        let before_state = app.world().resource::<CombatState>().clone();
+
+        app.update();
+
+        assert_eq!(
+            app.world().resource::<PhaseStripDisplay>().current_beat,
+            None,
+            "no combat events should leave the phase strip empty"
+        );
+        assert_eq!(
+            *app.world().resource::<CombatState>(),
+            before_state,
+            "phase strip ingestion must not mutate combat state"
+        );
+    }
+
+    #[test]
+    fn ingest_system_ignores_non_beat_events() {
+        let mut app = build_app();
+        {
+            let mut display = app.world_mut().resource_mut::<PhaseStripDisplay>();
+            display.observe(CombatBeatId::Impact);
+        }
+        let before_state = app.world().resource::<CombatState>().clone();
+
+        app.world_mut().write_message(CombatEvent {
+            kind: CombatEventKind::OnActionDeclared {
+                intent_kind: ActionIntentKind::Basic,
+            },
+            source: UnitId(1),
+            target: UnitId(2),
+            follow_up_depth: 0,
+            cast_id: CastId::ROOT,
+        });
+
+        app.update();
+
+        assert_eq!(
+            app.world().resource::<PhaseStripDisplay>().current_beat,
+            Some(CombatBeatId::Impact),
+            "non-beat events must not disturb the active phase display"
+        );
+        assert_eq!(*app.world().resource::<CombatState>(), before_state);
+    }
+
+    #[test]
+    fn ingest_system_uses_the_latest_beat_when_multiple_arrive() {
+        let mut app = build_app();
+        let before_state = app.world().resource::<CombatState>().clone();
+
+        app.world_mut().write_message(build_event(CombatBeatId::Declared));
+        app.world_mut().write_message(build_event(CombatBeatId::PreApp));
+        app.world_mut().write_message(build_event(CombatBeatId::Resolved));
+
+        app.update();
+
+        let display = app.world().resource::<PhaseStripDisplay>();
+        assert_eq!(display.current_beat, Some(CombatBeatId::Resolved));
+        assert_eq!(display.active_phase(), Some(PhaseStripPhase::Resolved));
+        assert_eq!(display.active_label(), Some("Resolved"));
+        assert_eq!(*app.world().resource::<CombatState>(), before_state);
     }
 }
