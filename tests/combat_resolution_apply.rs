@@ -1,9 +1,10 @@
-use super::super::*;
-use super::*;
-use crate::combat::events::CombatEventKind;
-use crate::combat::toughness::DamageKind;
-use crate::combat::ultimate::UltimateCharge;
-use crate::combat::{
+mod common;
+
+use bevyrogue::combat::events::CombatEventKind;
+use bevyrogue::combat::resolution::apply_legacy_ops;
+use bevyrogue::combat::toughness::DamageKind;
+use bevyrogue::combat::ultimate::UltimateCharge;
+use bevyrogue::combat::{
     sp::{RoundSpTracker, SpPool},
     team::Team,
     toughness::Toughness,
@@ -12,10 +13,11 @@ use crate::combat::{
     ultimate::UltAccumulationTrigger,
     unit::BasicStreak,
 };
-use crate::data::skills_ron::{
-    Effect, LegalityReasonCode, SelfTargetRule, SkillDef, SkillImplementation,
-    SkillTargeting, TargetLife, TargetShape, TargetSide,
+use bevyrogue::data::skills_ron::{
+    Effect, LegalityReasonCode, SelfTargetRule, SkillDef, SkillImplementation, SkillTargeting,
+    TargetLife, TargetShape, TargetSide,
 };
+use common::resolution_helpers::{basic_intent, resolved, revive_skill, skill, unit};
 
 #[test]
 fn resolve_action_uses_targeting_shape_over_damage_effect_shape() {

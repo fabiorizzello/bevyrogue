@@ -1,26 +1,23 @@
-use super::*;
-use crate::combat::{
-    team::Team,
-    turn_system::ActionIntent,
-    types::{Attribute, DamageTag, EvoStage, SkillId, UnitId},
-    ultimate::UltAccumulationTrigger,
+//! Shared fixtures for `combat::resolution` integration tests.
+//! Relocated from `src/combat/resolution/tests/mod.rs` (R003).
+
+#![allow(dead_code)]
+
+use bevyrogue::combat::events::CombatEventKind;
+use bevyrogue::combat::kit::UnitSkills;
+use bevyrogue::combat::resolution::{TargetEntry, TargetableSnapshot, resolve_action};
+use bevyrogue::combat::state::ResolvedAction;
+use bevyrogue::combat::team::Team;
+use bevyrogue::combat::turn_system::ActionIntent;
+use bevyrogue::combat::types::{Attribute, DamageTag, EvoStage, SkillId, UnitId};
+use bevyrogue::combat::ultimate::{UltAccumulationTrigger, UltimateCharge};
+use bevyrogue::combat::unit::Unit;
+use bevyrogue::data::skills_ron::{
+    Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation, SkillTargeting, TargetLife,
+    TargetShape, TargetSide,
 };
-use crate::combat::events::CombatEventKind;
-use crate::combat::kit::UnitSkills;
 
-use crate::combat::ultimate::UltimateCharge;
-use crate::combat::unit::Unit;
-use crate::data::skills_ron::{
-    Effect, SelfTargetRule, SkillBook, SkillDef, SkillImplementation,
-    SkillTargeting, TargetLife, TargetShape, TargetSide,
-};
-
-mod resolve_apply;
-mod streak;
-mod targets;
-mod bounce;
-
-fn grant_free_skill_def(id: &str, grant_count: usize) -> SkillDef {
+pub fn grant_free_skill_def(id: &str, grant_count: usize) -> SkillDef {
     SkillDef {
         id: SkillId(id.into()),
         name: id.into(),
@@ -43,7 +40,6 @@ fn grant_free_skill_def(id: &str, grant_count: usize) -> SkillDef {
             Effect::ToughnessHit(15),
             Effect::GrantFreeSkill { count: grant_count },
         ],
-
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
@@ -51,7 +47,7 @@ fn grant_free_skill_def(id: &str, grant_count: usize) -> SkillDef {
     }
 }
 
-fn grant_free_skill_events(count: usize, ally_basics: &[SkillId]) -> Vec<CombatEventKind> {
+pub fn grant_free_skill_events(count: usize, ally_basics: &[SkillId]) -> Vec<CombatEventKind> {
     ally_basics
         .iter()
         .take(count)
@@ -60,7 +56,7 @@ fn grant_free_skill_events(count: usize, ally_basics: &[SkillId]) -> Vec<CombatE
         .collect()
 }
 
-fn unit(id: u32, attribute: Attribute, hp_current: i32) -> Unit {
+pub fn unit(id: u32, attribute: Attribute, hp_current: i32) -> Unit {
     Unit {
         id: UnitId(id),
         name: format!("Unit{id}"),
@@ -72,7 +68,7 @@ fn unit(id: u32, attribute: Attribute, hp_current: i32) -> Unit {
     }
 }
 
-fn child_unit(id: u32, attribute: Attribute, hp_current: i32) -> Unit {
+pub fn child_unit(id: u32, attribute: Attribute, hp_current: i32) -> Unit {
     Unit {
         id: UnitId(id),
         name: format!("ChildUnit{id}"),
@@ -84,7 +80,7 @@ fn child_unit(id: u32, attribute: Attribute, hp_current: i32) -> Unit {
     }
 }
 
-fn skill(
+pub fn skill(
     id: &str,
     damage_tag: DamageTag,
     damage: i32,
@@ -112,7 +108,6 @@ fn skill(
             },
             Effect::ToughnessHit(toughness_damage),
         ],
-
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
@@ -120,7 +115,7 @@ fn skill(
     }
 }
 
-fn revive_skill(id: &str, pct: i32, sp_cost: i32) -> SkillDef {
+pub fn revive_skill(id: &str, pct: i32, sp_cost: i32) -> SkillDef {
     SkillDef {
         id: SkillId(id.into()),
         name: id.into(),
@@ -135,7 +130,6 @@ fn revive_skill(id: &str, pct: i32, sp_cost: i32) -> SkillDef {
         },
         implementation: SkillImplementation::Implemented,
         legacy_ops: vec![Effect::Revive(pct)],
-
         custom_signals: vec![],
         animation_sequence: None,
         qte: None,
@@ -143,7 +137,7 @@ fn revive_skill(id: &str, pct: i32, sp_cost: i32) -> SkillDef {
     }
 }
 
-fn resolved(intent: &ActionIntent, skill: SkillDef) -> crate::combat::state::ResolvedAction {
+pub fn resolved(intent: &ActionIntent, skill: SkillDef) -> ResolvedAction {
     let book = SkillBook(vec![skill.clone()]);
     let kit = UnitSkills {
         basic: skill.id.clone(),
@@ -154,14 +148,14 @@ fn resolved(intent: &ActionIntent, skill: SkillDef) -> crate::combat::state::Res
     resolve_action(intent, &kit, Some(&book)).expect("skill should resolve")
 }
 
-fn basic_intent() -> ActionIntent {
+pub fn basic_intent() -> ActionIntent {
     ActionIntent::Basic {
         attacker: UnitId(1),
         target: UnitId(2),
     }
 }
 
-fn default_ult() -> UltimateCharge {
+pub fn default_ult() -> UltimateCharge {
     UltimateCharge {
         current: 0,
         trigger: 100,
@@ -171,7 +165,7 @@ fn default_ult() -> UltimateCharge {
     }
 }
 
-fn snap(entries: Vec<(UnitId, Team, u8, bool)>) -> TargetableSnapshot {
+pub fn snap(entries: Vec<(UnitId, Team, u8, bool)>) -> TargetableSnapshot {
     TargetableSnapshot {
         entries: entries
             .into_iter()
@@ -180,14 +174,13 @@ fn snap(entries: Vec<(UnitId, Team, u8, bool)>) -> TargetableSnapshot {
                 team,
                 slot_index,
                 alive,
-                hp_per_mille: 1000, // full HP default for shape tests that don't use HP selector
+                hp_per_mille: 1000,
             })
             .collect(),
     }
 }
 
-/// Build a snapshot with explicit HP percentages (per-mille: 0–1000).
-fn snap_hp(entries: Vec<(UnitId, Team, u8, bool, u32)>) -> TargetableSnapshot {
+pub fn snap_hp(entries: Vec<(UnitId, Team, u8, bool, u32)>) -> TargetableSnapshot {
     TargetableSnapshot {
         entries: entries
             .into_iter()

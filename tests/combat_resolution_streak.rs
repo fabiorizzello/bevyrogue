@@ -1,8 +1,10 @@
-use super::super::*;
-use super::*;
-use crate::combat::events::CombatEventKind;
-use crate::combat::kit::UnitSkills;
-use crate::combat::{
+mod common;
+
+use bevyrogue::combat::events::CombatEventKind;
+use bevyrogue::combat::kit::UnitSkills;
+use bevyrogue::combat::resolution::{apply_legacy_ops, resolve_action};
+use bevyrogue::combat::ultimate::{UltAccumulationTrigger, UltimateCharge};
+use bevyrogue::combat::{
     sp::{RoundSpTracker, SpPool},
     team::Team,
     toughness::Toughness,
@@ -10,7 +12,11 @@ use crate::combat::{
     types::{Attribute, DamageTag, SkillId, UnitId},
     unit::BasicStreak,
 };
-use crate::data::skills_ron::SkillBook;
+use bevyrogue::data::skills_ron::SkillBook;
+use common::resolution_helpers::{
+    basic_intent, child_unit, default_ult, grant_free_skill_def, grant_free_skill_events,
+    resolved, revive_skill, skill, unit,
+};
 
 #[test]
 fn grant_free_skill_resolve_sets_grant_count() {

@@ -10,6 +10,8 @@
 
 pub mod actions;
 pub mod apply;
+pub mod damage_helpers;
+pub mod resolution_helpers;
 pub mod units;
 
 use bevy::{ecs::message::MessageCursor, prelude::*};

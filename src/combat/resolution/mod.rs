@@ -19,6 +19,3 @@ pub use skill_extract::{
 pub use apply::{
     apply_cleanse_only, apply_damage_only, apply_heal_only, apply_legacy_ops,
 };
-
-#[cfg(test)]
-mod tests;

@@ -133,5 +133,3 @@ pub fn calculate_damage(
     }
 }
 
-#[cfg(test)]
-mod tests;

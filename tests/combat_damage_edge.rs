@@ -1,6 +1,8 @@
-use super::super::*;
-use super::{atk, make_unit};
-use crate::combat::types::{Attribute, DamageTag};
+mod common;
+
+use bevyrogue::combat::mechanics::damage::calculate_damage;
+use bevyrogue::combat::types::{Attribute, DamageTag};
+use common::damage_helpers::{atk, make_unit};
 
 // ──────────────────────────────────────────────────────────────────────────
 // Edge cases
@@ -114,7 +116,7 @@ fn resist_and_triangle_lose_stack_multiplicatively() {
 #[test]
 fn dr_30pct_reduces_damage_multiplicatively() {
     // base=100, neutral, dr=0.30 → factor=0.70 → 70
-    use crate::combat::buffs::DrBag;
+    use bevyrogue::combat::buffs::DrBag;
     let a = make_unit(Attribute::Data, vec![]);
     let d = make_unit(Attribute::Data, vec![]);
     let mut bag = DrBag::default();
@@ -135,7 +137,7 @@ fn dr_30pct_reduces_damage_multiplicatively() {
 #[test]
 fn dr_100pct_floors_damage_to_zero() {
     // sum_dr=1.0 → factor=0.0 → 0
-    use crate::combat::buffs::DrBag;
+    use bevyrogue::combat::buffs::DrBag;
     let a = make_unit(Attribute::Data, vec![]);
     let d = make_unit(Attribute::Data, vec![]);
     let mut bag = DrBag::default();
@@ -158,7 +160,7 @@ fn dr_100pct_floors_damage_to_zero() {
 #[test]
 fn dr_over_100pct_still_floors_to_zero() {
     // unclamped sum > 1.0 → factor=max(0,<0)=0 → damage=0
-    use crate::combat::buffs::DrBag;
+    use bevyrogue::combat::buffs::DrBag;
     let a = make_unit(Attribute::Data, vec![]);
     let d = make_unit(Attribute::Data, vec![]);
     let mut bag = DrBag::default();
