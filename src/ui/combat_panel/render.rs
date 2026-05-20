@@ -210,6 +210,7 @@ pub fn combat_panel(
             &pending_action,
             &selected_action_affordance,
             selected_target_id,
+            telegraph_chip.as_ref(),
             &mut pending_request,
         );
         ui.separator();
@@ -318,6 +319,13 @@ pub fn combat_panel(
             .chain(crate::data::ENEMY_UNIT_PATHS.iter())
         {
             asset_server.reload(*path);
+        }
+        info!("restart: roster reloaded");
+    }
+
+    Ok(())
+}
+    asset_server.reload(*path);
         }
         info!("restart: roster reloaded");
     }

@@ -91,6 +91,32 @@ pub(crate) fn action_tooltip(
 }
 
 #[cfg(feature = "windowed")]
+pub fn cue_barrier_chip(
+    status: Option<&CueBarrierStatus>,
+    skill_book: Option<&SkillBook>,
+) -> Option<TelegraphChip> {
+    let status = status?;
+    if !status.awaiting_release {
+        return None;
+    }
+
+    let skill_label = skill_name(skill_book, &status.skill_id);
+    let animation_node = status.animation_node.as_deref().unwrap_or("unbound");
+    let animation_frame = status
+        .animation_frame
+        .map(|frame| frame.to_string())
+        .unwrap_or_else(|| "unknown".to_string());
+
+    Some(TelegraphChip {
+        label: format!("Telegraph: {skill_label} · impact pending"),
+        tooltip: format!(
+            "cast={:?}\nbeat={}\ncue={}\nnode={}\nframe={}",
+            status.cast_id, status.beat_id, status.cue_id, animation_node, animation_frame
+        ),
+    })
+}
+
+#[cfg(feature = "windowed")]
 pub fn attr_color(a: Attribute) -> egui::Color32 {
     match a {
         Attribute::Vaccine => egui::Color32::from_rgb(80, 140, 220),

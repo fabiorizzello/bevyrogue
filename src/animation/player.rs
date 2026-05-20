@@ -1,5 +1,11 @@
 use super::anim_graph::{AnimEdge, AnimGraph, AnimNode, NodeId, PlaybackModifier, Predicate, TransitionTarget};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AnimAdvanceResult {
+    pub frame: u32,
+    pub exited: bool,
+}
+
 /// Feature-agnostic FSM core — no `#[cfg(feature)]` anywhere in this file.
 ///
 /// The player tracks which node is active and how many animation ticks have
@@ -35,8 +41,16 @@ impl AnimGraphPlayer {
     /// Evaluates `TimeInNode`, `Always`, and `KernelCue` transitions.
     /// Returns the sprite-sheet frame index for the current animation state.
     pub fn advance(&mut self, graph: &AnimGraph) -> u32 {
+        self.advance_result(graph).frame
+    }
+
+    /// Advance one animation tick and surface whether the graph exited.
+    pub fn advance_result(&mut self, graph: &AnimGraph) -> AnimAdvanceResult {
         let Some(node) = graph.nodes.get(&self.current_node) else {
-            return 0;
+            return AnimAdvanceResult {
+                frame: 0,
+                exited: false,
+            };
         };
 
         let duration = node_duration(node);
@@ -51,20 +65,32 @@ impl AnimGraphPlayer {
                 TransitionTarget::Node(id) => {
                     self.current_node = id.clone();
                     self.elapsed_anim_frames = 0;
-                    return frame_index(
-                        graph.nodes.get(&self.current_node).expect("transition targets a valid node"),
-                        0,
-                    );
+                    return AnimAdvanceResult {
+                        frame: frame_index(
+                            graph
+                                .nodes
+                                .get(&self.current_node)
+                                .expect("transition targets a valid node"),
+                            0,
+                        ),
+                        exited: false,
+                    };
                 }
                 TransitionTarget::Exit => {
-                    return frame_index(node, duration.saturating_sub(1));
+                    return AnimAdvanceResult {
+                        frame: frame_index(node, duration.saturating_sub(1)),
+                        exited: true,
+                    };
                 }
             }
         }
 
         let idx = frame_index(node, self.elapsed_anim_frames);
         self.elapsed_anim_frames = self.elapsed_anim_frames.wrapping_add(1);
-        idx
+        AnimAdvanceResult {
+            frame: idx,
+            exited: false,
+        }
     }
 
     fn select_transition<'a>(&self, graph: &'a AnimGraph, duration: u32) -> Option<&'a AnimEdge> {
