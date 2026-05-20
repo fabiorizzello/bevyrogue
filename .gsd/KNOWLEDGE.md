@@ -32,6 +32,7 @@ Test workflow (nextest `agent` profile, seeded `bevy_rand`, insta snapshots): `d
 | P002 | Reuse the same compiled timeline resolution/interner path for preview and execute. | `src/combat/preview.rs`, timeline-backed consumers | Preview should run `BeatRunner` in preview mode and return the pending queue without touching `intent_applier`, so preview/execution drift is caught early. |
 | P003 | Use owner-gated generic Blueprint envelopes while preserving typed owner-side observability seams. | Blueprint runtime modules + observability surfaces | Raw transport can stay generic without breaking downstream assertions if the owner module preserves the typed resolved-state contract. |
 | P004 | Apply damage modifiers in canonical order: Intrinsic → Status → Buff → Passive. | Damage modifier ledger / incoming-damage pipeline | Fixed fold order keeps layered mitigation deterministic and replayable regardless of insertion order. |
+| P005 | Blueprint `*Snapshot::last_transition` fields are typed observability contract surfaces, not internal latches. | `src/combat/blueprints/{tentomon,dorumon}/{identity,apply,mod}.rs` | Consumed by `ValidationExt` rows + per-step JSONL transition logging. Tests asserting on these fields are the regression guard for those display surfaces. See D026. |
 
 ## Lessons Learned
 
