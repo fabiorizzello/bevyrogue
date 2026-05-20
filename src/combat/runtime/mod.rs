@@ -23,6 +23,7 @@ pub mod applier;
 pub mod blueprint_state;
 pub mod builtins;
 pub mod clock;
+pub mod cue_barrier;
 pub mod event_bridge;
 pub mod event_filter;
 pub mod intent;
@@ -42,6 +43,10 @@ pub use applier::{IntentExecutionMeta, IntentQueue, intent_applier};
 pub use blueprint_state::BlueprintState;
 pub use builtins::register_kernel_builtins;
 pub use clock::Clock;
+pub use cue_barrier::{
+    CueBarrierStatus, CueReleaseResult, SuspendedTimelineState, TimelineClock,
+    request_timeline_cue_release,
+};
 pub use event_bridge::combat_event_to_signal_system;
 pub use event_filter::EventFilter;
 pub use intent::{CastId, CastIdGen, Intent};

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T04",
+  "unitId": "M002/S02/T04",
+  "timestamp": 1779260986676,
+  "passed": true,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "cargo test --test timeline_cue_barrier_pipeline --test timeline_two_clock_parity --test compiled_timeline_runtime_dispatch",
+      "exitCode": 0,
+      "durationMs": 152,
+      "verdict": "pass"
+    }
+  ]
+}

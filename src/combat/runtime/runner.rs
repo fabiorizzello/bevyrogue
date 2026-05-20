@@ -55,6 +55,13 @@ pub enum StepOutcome {
     AwaitingCue,
 }
 
+/// Read-only snapshot of the currently latched presentation barrier.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AwaitingCueInfo {
+    pub beat_id: BeatId,
+    pub cue_id: &'static str,
+}
+
 /// FSM engine that drives a `CompiledTimeline` beat-by-beat.
 ///
 /// Callers advance the runner via repeated `step` calls, or drive it
@@ -125,6 +132,17 @@ impl BeatRunner {
     /// Entry beat for the timeline.
     pub fn entry(&self) -> BeatId {
         self.timeline.entry
+    }
+
+    pub fn timeline_id(&self) -> &'static str {
+        self.timeline.id
+    }
+
+    pub fn awaiting_cue_info(&self) -> Option<AwaitingCueInfo> {
+        let beat_id = self.awaiting_cue?;
+        let beat = find_beat(&self.timeline, beat_id);
+        let cue_id = beat.presentation.as_ref()?.cue_id;
+        Some(AwaitingCueInfo { beat_id, cue_id })
     }
 
     /// Whether the runner is currently inside a `BeatKind::Loop` body.

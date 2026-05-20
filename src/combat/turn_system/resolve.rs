@@ -8,7 +8,7 @@ use crate::combat::{
     kernel::{CombatBeatId, CombatKernelRegistry},
     log::ActionLog,
     sp::SpPool,
-    state::CombatState,
+    state::{CombatPhase, CombatState},
     turn_order::TurnOrder,
 };
 use crate::data::{SkillBookHandle, skills_ron::SkillBook};
@@ -35,6 +35,18 @@ pub fn resolve_action_system(
     mut energy_q: Query<(&mut Energy, Option<&mut RoundEnergyTracker>)>,
     mut cast_id_gen: Option<ResMut<CastIdGen>>,
 ) {
+    if state.phase == CombatPhase::Resolving {
+        let dropped = intents.read().count();
+        if dropped > 0 {
+            debug!(
+                target: "combat.timeline_barrier",
+                dropped,
+                "ignoring action intents while combat phase is Resolving"
+            );
+        }
+        return;
+    }
+
     if let Some(intent) = intents.read().next() {
         let (actor_id, target_id, query_kind) = match intent {
             ActionIntent::Basic { attacker, target } => {

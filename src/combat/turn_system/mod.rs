@@ -20,6 +20,7 @@ mod resolve;
 pub use advance::advance_turn_system;
 pub use enemy_turn::resolve_enemy_turn_action_system;
 pub use finalize::{apply_av_ops_system, check_victory_system};
+pub use pipeline::{continue_suspended_timeline, continue_suspended_timeline_system};
 pub use resolve::resolve_action_system;
 
 mod pipeline;
