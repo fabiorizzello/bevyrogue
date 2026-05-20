@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T06",
+  "unitId": "M002/S02/T06",
+  "timestamp": 1779290189236,
+  "passed": true,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "cargo build --features windowed",
+      "exitCode": 0,
+      "durationMs": 40189,
+      "verdict": "pass"
+    }
+  ]
+}
