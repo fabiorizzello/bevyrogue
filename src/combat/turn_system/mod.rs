@@ -6,8 +6,8 @@ pub mod turn_order;
 pub mod types;
 
 // Re-export extracted types so external consumers keep working.
-pub use types::{ActionIntent, EnemyTurnRequestQueue};
 pub(crate) use types::ResolveActorsQuery;
+pub use types::{ActionIntent, EnemyTurnRequestQueue};
 
 // Re-export extracted helpers so sibling modules (`pipeline`, `tests`) keep working.
 pub(crate) use helpers::{emit_combat_beat, emit_combat_event, emit_kernel_transition, set_phase};

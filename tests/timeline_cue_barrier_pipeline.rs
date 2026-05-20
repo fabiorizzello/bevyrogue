@@ -276,7 +276,10 @@ fn target_hp(app: &mut App) -> i32 {
 }
 
 fn normalized_event_kinds(events: &[CombatEvent]) -> Vec<String> {
-    events.iter().map(|event| format!("{:?}", event.kind)).collect()
+    events
+        .iter()
+        .map(|event| format!("{:?}", event.kind))
+        .collect()
 }
 
 fn expected_barrier_basic_final_hp() -> i32 {
@@ -321,7 +324,11 @@ fn windowed_basic_action_suspends_until_release_then_matches_headless() {
     fire_basic(&mut windowed);
 
     let first_frame_events = collect_events(&windowed, &mut windowed_cursor);
-    assert_eq!(target_hp(&mut windowed), 200, "damage must not land before cue release");
+    assert_eq!(
+        target_hp(&mut windowed),
+        200,
+        "damage must not land before cue release"
+    );
     assert_eq!(damage_event_count(&first_frame_events), 0);
     assert!(
         first_frame_events
@@ -356,7 +363,10 @@ fn windowed_basic_action_suspends_until_release_then_matches_headless() {
         .expect("windowed action should suspend on the impact cue");
     assert_eq!(active.cue_id, IMPACT_CUE);
     assert_eq!(active.beat_id, "impact");
-    assert_eq!(windowed.world().resource::<CombatState>().phase, CombatPhase::Resolving);
+    assert_eq!(
+        windowed.world().resource::<CombatState>().phase,
+        CombatPhase::Resolving
+    );
 
     assert_eq!(
         request_timeline_cue_release(windowed.world_mut(), IMPACT_CUE),
@@ -397,7 +407,10 @@ fn windowed_basic_action_suspends_until_release_then_matches_headless() {
 
     windowed.update();
     let after_done_events = collect_events(&windowed, &mut windowed_cursor);
-    assert!(after_done_events.is_empty(), "resume must not replay damage on later frames");
+    assert!(
+        after_done_events.is_empty(),
+        "resume must not replay damage on later frames"
+    );
     assert_eq!(target_hp(&mut windowed), expected_hp);
 }
 
@@ -486,7 +499,10 @@ fn action_spam_is_ignored_while_barrier_keeps_phase_resolving() {
 
     fire_basic(&mut app);
     let _ = collect_events(&app, &mut cursor);
-    assert_eq!(app.world().resource::<CombatState>().phase, CombatPhase::Resolving);
+    assert_eq!(
+        app.world().resource::<CombatState>().phase,
+        CombatPhase::Resolving
+    );
 
     for _ in 0..10 {
         app.world_mut().write_message(ActionIntent::Basic {
@@ -568,5 +584,8 @@ fn halted_resume_emits_failure_and_clears_suspension_without_mutating_world() {
             .is_none(),
         "halted resume must clear the suspended runner"
     );
-    assert_eq!(app.world().resource::<CombatState>().phase, CombatPhase::WaitingAction);
+    assert_eq!(
+        app.world().resource::<CombatState>().phase,
+        CombatPhase::WaitingAction
+    );
 }

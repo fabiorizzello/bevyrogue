@@ -4,23 +4,31 @@ use bevyrogue::animation::{
 };
 
 fn parse_valid_graph() -> AnimGraph {
-    ron::from_str(include_str!("../assets/test/animation_validation/valid_anim_graph.ron"))
-        .expect("valid_anim_graph.ron should parse")
+    ron::from_str(include_str!(
+        "../assets/test/animation_validation/valid_anim_graph.ron"
+    ))
+    .expect("valid_anim_graph.ron should parse")
 }
 
 fn parse_broken_graph() -> AnimGraph {
-    ron::from_str(include_str!("../assets/test/animation_validation/broken_anim_graph.ron"))
-        .expect("broken_anim_graph.ron should parse")
+    ron::from_str(include_str!(
+        "../assets/test/animation_validation/broken_anim_graph.ron"
+    ))
+    .expect("broken_anim_graph.ron should parse")
 }
 
 fn parse_valid_clip() -> Clip {
-    ron::from_str(include_str!("../assets/test/animation_validation/valid_clip.ron"))
-        .expect("valid_clip.ron should parse")
+    ron::from_str(include_str!(
+        "../assets/test/animation_validation/valid_clip.ron"
+    ))
+    .expect("valid_clip.ron should parse")
 }
 
 fn full_catalog() -> AnimationValidationCatalogs {
     let mut catalogs = AnimationValidationCatalogs::default();
-    catalogs.particles.insert(ParticleId("impact_particle".into()));
+    catalogs
+        .particles
+        .insert(ParticleId("impact_particle".into()));
     catalogs.statuses.insert(StatusId("Burn".into()));
     catalogs
 }

@@ -44,7 +44,8 @@ fn stance_validates_with_zero_errors() {
 fn stance_registry_resolves_agumon_stance() {
     let graph = parse_stance();
     let mut reg = StanceGraphRegistry::default();
-    reg.0.insert(graph.id.clone(), bevy::prelude::Handle::default());
+    reg.0
+        .insert(graph.id.clone(), bevy::prelude::Handle::default());
     assert!(
         reg.resolve(&graph.id).is_some(),
         "StanceGraphRegistry must resolve 'agumon_stance'"

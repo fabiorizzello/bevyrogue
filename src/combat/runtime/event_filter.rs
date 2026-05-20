@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::combat::{runtime::signal::Signal, events::CombatEvent};
+use crate::combat::{events::CombatEvent, runtime::signal::Signal};
 
 /// Typed runtime filter for passive listeners.
 ///

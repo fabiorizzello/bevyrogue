@@ -109,7 +109,12 @@ pub(super) fn advance_agumon_presentation(
     }
 
     for mut sprite in &mut sprites {
-        sync_agumon_mode(&mut sprite, active_barrier.as_ref(), skill_graph, stance_graph);
+        sync_agumon_mode(
+            &mut sprite,
+            active_barrier.as_ref(),
+            skill_graph,
+            stance_graph,
+        );
 
         let Some(graph) = current_graph_for_mode(&sprite, stance_graph, skill_graph) else {
             continue;
@@ -126,7 +131,9 @@ pub(super) fn advance_agumon_presentation(
         let awaiting = active_barrier
             .as_ref()
             .is_some_and(|status| status.awaiting_release);
-        let released = active_barrier.as_ref().is_some_and(|status| status.released);
+        let released = active_barrier
+            .as_ref()
+            .is_some_and(|status| status.released);
         trace!(
             target: "windowed.agumon_playback",
             mode = ?sprite.mode,
@@ -139,29 +146,28 @@ pub(super) fn advance_agumon_presentation(
             "agumon windowed playback tick"
         );
 
-        let pending_release =
-            if let AgumonPlaybackMode::SharpClaws { cue_id, .. } = &sprite.mode {
-                if let (Some(lf), Some(node)) =
-                    (local_frame, graph.nodes.get(&sprite.player.current_node))
+        let pending_release = if let AgumonPlaybackMode::SharpClaws { cue_id, .. } = &sprite.mode {
+            if let (Some(lf), Some(node)) =
+                (local_frame, graph.nodes.get(&sprite.player.current_node))
+            {
+                if should_release_kernel(node, lf)
+                    && !already_released_frame(
+                        sprite.last_release_frame.as_ref(),
+                        cue_id,
+                        &current_node,
+                        lf,
+                    )
                 {
-                    if should_release_kernel(node, lf)
-                        && !already_released_frame(
-                            sprite.last_release_frame.as_ref(),
-                            cue_id,
-                            &current_node,
-                            lf,
-                        )
-                    {
-                        Some((cue_id.clone(), lf))
-                    } else {
-                        None
-                    }
+                    Some((cue_id.clone(), lf))
                 } else {
                     None
                 }
             } else {
                 None
-            };
+            }
+        } else {
+            None
+        };
 
         if let Some((cue_id, lf)) = pending_release {
             let result = barrier.request_release(&cue_id);

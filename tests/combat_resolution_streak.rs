@@ -14,8 +14,8 @@ use bevyrogue::combat::{
 };
 use bevyrogue::data::skills_ron::SkillBook;
 use common::resolution_helpers::{
-    basic_intent, child_unit, default_ult, grant_free_skill_def, grant_free_skill_events,
-    resolved, revive_skill, skill, unit,
+    basic_intent, child_unit, default_ult, grant_free_skill_def, grant_free_skill_events, resolved,
+    revive_skill, skill, unit,
 };
 
 #[test]

@@ -10,10 +10,10 @@
 - [x] **S02: S02** `risk:high` `depends:[]`
   > After this: Sharp Claws windup to strike to recovery on screen; damage falls on the impact frame via ReleaseKernelCue; telegraph chip visible; I3 extended green.
 
-- [ ] **S03: S03** `risk:medium` `depends:[]`
+- [x] **S03: S03** `risk:medium` `depends:[]`
   > After this: §9 phase strip updates from EventReader<CombatEvent>; a structural test asserts the UI path never mutates combat state.
 
-- [ ] **S04: Baby Burner reactive detonate + flash VFX** `risk:medium` `depends:[S02]`
+- [ ] **S04: S04** `risk:medium` `depends:[]`
   > After this: Baby Burner reactive detonate with a flash VFX (Rust code, no RON/editor); zero non-determinism, R004 intact, headless tests unchanged.
 
 - [ ] **S05: Full kit: Agumon vs Agumon dummy** `risk:medium` `depends:[S02,S04]`

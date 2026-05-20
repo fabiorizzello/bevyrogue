@@ -43,163 +43,163 @@ pub(in crate::combat::turn_system::pipeline) fn run(
     else {
         return false;
     };
-        // Phase 0: build entity→id map (read-only pass released before mut borrows).
-        let actor_pairs: Vec<(Entity, UnitId)> = actors
-            .iter()
-            .map(|(entity, _, unit, ..)| (entity, unit.id))
-            .collect();
+    // Phase 0: build entity→id map (read-only pass released before mut borrows).
+    let actor_pairs: Vec<(Entity, UnitId)> = actors
+        .iter()
+        .map(|(entity, _, unit, ..)| (entity, unit.id))
+        .collect();
 
-        // Phase 1: attacker validation + resource consumption (hoisted, paid once pre-loop).
-        {
-            let Ok((
-                _,
-                _,
-                attacker_unit,
-                _,
-                att_ult_opt,
-                _,
-                _,
-                att_ko,
-                att_stun,
-                _,
-                _,
-                mut att_streak_opt,
-                _,
-                _,
-                _,
-            )) = actors.get_mut(attacker_entity)
-            else {
-                return true;
-            };
+    // Phase 1: attacker validation + resource consumption (hoisted, paid once pre-loop).
+    {
+        let Ok((
+            _,
+            _,
+            attacker_unit,
+            _,
+            att_ult_opt,
+            _,
+            _,
+            att_ko,
+            att_stun,
+            _,
+            _,
+            mut att_streak_opt,
+            _,
+            _,
+            _,
+        )) = actors.get_mut(attacker_entity)
+        else {
+            return true;
+        };
 
-            if att_stun.is_some() {
-                log.push(LogEntry::ActionFailed {
+        if att_stun.is_some() {
+            log.push(LogEntry::ActionFailed {
+                reason: "Attacker is stunned".to_string(),
+            });
+            emit_combat_event(
+                event_writer,
+                CombatEventKind::OnActionFailed {
                     reason: "Attacker is stunned".to_string(),
-                });
-                emit_combat_event(
-                    event_writer,
-                    CombatEventKind::OnActionFailed {
-                        reason: "Attacker is stunned".to_string(),
-                    },
-                    attacker_id,
-                    target_id,
-                    inflight.follow_up_depth,
-                    cast_id,
-                );
-                set_phase(state, CombatPhase::WaitingAction);
-                return true;
-            }
-            if att_ko.is_some() {
-                log.push(LogEntry::ActionFailed {
+                },
+                attacker_id,
+                target_id,
+                inflight.follow_up_depth,
+                cast_id,
+            );
+            set_phase(state, CombatPhase::WaitingAction);
+            return true;
+        }
+        if att_ko.is_some() {
+            log.push(LogEntry::ActionFailed {
+                reason: "Attacker is KO".to_string(),
+            });
+            emit_combat_event(
+                event_writer,
+                CombatEventKind::OnActionFailed {
                     reason: "Attacker is KO".to_string(),
-                });
-                emit_combat_event(
-                    event_writer,
-                    CombatEventKind::OnActionFailed {
-                        reason: "Attacker is KO".to_string(),
-                    },
-                    attacker_id,
-                    target_id,
-                    inflight.follow_up_depth,
-                    cast_id,
-                );
-                set_phase(state, CombatPhase::WaitingAction);
-                return true;
+                },
+                attacker_id,
+                target_id,
+                inflight.follow_up_depth,
+                cast_id,
+            );
+            set_phase(state, CombatPhase::WaitingAction);
+            return true;
+        }
+
+        let Some(att_ult) = att_ult_opt else {
+            return true;
+        };
+
+        // SP cost with Child streak discount (hoisted from apply_effects).
+        let effective_sp_cost = if matches!(inflight.action.ult_effect, UltEffect::None)
+            && inflight.action.sp_cost > 0
+            && attacker_unit.evo_stage == EvoStage::Child
+            && att_streak_opt
+                .as_deref()
+                .map(|s| s.qualifies_for_discount())
+                .unwrap_or(false)
+        {
+            if let Some(ref mut streak) = att_streak_opt {
+                streak.reset();
             }
+            (inflight.action.sp_cost - 1).max(0)
+        } else {
+            inflight.action.sp_cost
+        };
 
-            let Some(att_ult) = att_ult_opt else {
-                return true;
-            };
+        if effective_sp_cost > 0 && !sp.spend(effective_sp_cost) {
+            emit_combat_event(
+                event_writer,
+                CombatEventKind::OnActionFailed {
+                    reason: "SP shortfall".to_string(),
+                },
+                attacker_id,
+                target_id,
+                inflight.follow_up_depth,
+                cast_id,
+            );
+            set_phase(state, CombatPhase::WaitingAction);
+            return true;
+        }
 
-            // SP cost with Child streak discount (hoisted from apply_effects).
-            let effective_sp_cost = if matches!(inflight.action.ult_effect, UltEffect::None)
-                && inflight.action.sp_cost > 0
-                && attacker_unit.evo_stage == EvoStage::Child
-                && att_streak_opt
-                    .as_deref()
-                    .map(|s| s.qualifies_for_discount())
-                    .unwrap_or(false)
-            {
-                if let Some(ref mut streak) = att_streak_opt {
-                    streak.reset();
-                }
-                (inflight.action.sp_cost - 1).max(0)
-            } else {
-                inflight.action.sp_cost
-            };
+        if matches!(inflight.action.ult_effect, UltEffect::Reset) && !att_ult.ready() {
+            emit_combat_event(
+                event_writer,
+                CombatEventKind::OnActionFailed {
+                    reason: "SP shortfall".to_string(),
+                },
+                attacker_id,
+                target_id,
+                inflight.follow_up_depth,
+                cast_id,
+            );
+            set_phase(state, CombatPhase::WaitingAction);
+            return true;
+        }
+    } // attacker mut borrow released
 
-            if effective_sp_cost > 0 && !sp.spend(effective_sp_cost) {
-                emit_combat_event(
-                    event_writer,
-                    CombatEventKind::OnActionFailed {
-                        reason: "SP shortfall".to_string(),
-                    },
-                    attacker_id,
-                    target_id,
-                    inflight.follow_up_depth,
-                    cast_id,
-                );
-                set_phase(state, CombatPhase::WaitingAction);
-                return true;
-            }
+    set_phase(state, CombatPhase::Resolving);
+    emit_combat_beat(
+        event_writer,
+        registry,
+        CombatBeatId::Impact,
+        attacker_id,
+        target_id,
+        inflight.follow_up_depth,
+        cast_id,
+    );
 
-            if matches!(inflight.action.ult_effect, UltEffect::Reset) && !att_ult.ready() {
-                emit_combat_event(
-                    event_writer,
-                    CombatEventKind::OnActionFailed {
-                        reason: "SP shortfall".to_string(),
-                    },
-                    attacker_id,
-                    target_id,
-                    inflight.follow_up_depth,
-                    cast_id,
-                );
-                set_phase(state, CombatPhase::WaitingAction);
-                return true;
-            }
-        } // attacker mut borrow released
+    hops::run_hop_loop(
+        commands,
+        inflight,
+        log,
+        time,
+        event_writer,
+        registry,
+        actors,
+        cast_id,
+        attacker_entity,
+        attacker_id,
+        target_id,
+        hops,
+        selector,
+        repeat,
+        &actor_pairs,
+    );
 
-        set_phase(state, CombatPhase::Resolving);
-        emit_combat_beat(
-            event_writer,
-            registry,
-            CombatBeatId::Impact,
-            attacker_id,
-            target_id,
-            inflight.follow_up_depth,
-            cast_id,
-        );
-
-        hops::run_hop_loop(
-            commands,
-            inflight,
-            log,
-            time,
-            event_writer,
-            registry,
-            actors,
-            cast_id,
-            attacker_entity,
-            attacker_id,
-            target_id,
-            hops,
-            selector,
-            repeat,
-            &actor_pairs,
-        );
-
-        finalize::finalize(
-            inflight,
-            state,
-            sp,
-            log,
-            event_writer,
-            registry,
-            actors,
-            energy_q,
-            cast_id,
-            attacker_entity,
-            attacker_id,
-            target_id,
-        )
+    finalize::finalize(
+        inflight,
+        state,
+        sp,
+        log,
+        event_writer,
+        registry,
+        actors,
+        energy_q,
+        cast_id,
+        attacker_entity,
+        attacker_id,
+        target_id,
+    )
 }

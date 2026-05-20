@@ -89,11 +89,13 @@ fn build_app(pending_kind: PendingKind, basic_skill: SkillId) -> App {
                         hook: Some("core/deal_damage".into()),
                         selector: Some("core/primary".into()),
                         presentation: None,
-                        payload: Some(bevyrogue::combat::runtime::timeline::BeatPayload::DealDamage {
-                            amount: 11,
-                            tag: DamageTag::Fire,
-                            target: TargetShape::Single,
-                        }),
+                        payload: Some(
+                            bevyrogue::combat::runtime::timeline::BeatPayload::DealDamage {
+                                amount: 11,
+                                tag: DamageTag::Fire,
+                                target: TargetShape::Single,
+                            },
+                        ),
                     },
                     bevyrogue::combat::runtime::timeline::Beat {
                         id: "impact_2".into(),
@@ -101,11 +103,13 @@ fn build_app(pending_kind: PendingKind, basic_skill: SkillId) -> App {
                         hook: Some("core/deal_damage".into()),
                         selector: Some("core/primary".into()),
                         presentation: None,
-                        payload: Some(bevyrogue::combat::runtime::timeline::BeatPayload::DealDamage {
-                            amount: 13,
-                            tag: DamageTag::Fire,
-                            target: TargetShape::Single,
-                        }),
+                        payload: Some(
+                            bevyrogue::combat::runtime::timeline::BeatPayload::DealDamage {
+                                amount: 13,
+                                tag: DamageTag::Fire,
+                                target: TargetShape::Single,
+                            },
+                        ),
                     },
                 ],
                 edges: vec![
@@ -156,11 +160,13 @@ fn build_app(pending_kind: PendingKind, basic_skill: SkillId) -> App {
                         hook: Some("core/deal_damage".into()),
                         selector: Some("core/primary".into()),
                         presentation: None,
-                        payload: Some(bevyrogue::combat::runtime::timeline::BeatPayload::DealDamage {
-                            amount: 18,
-                            tag: DamageTag::Fire,
-                            target: TargetShape::Single,
-                        }),
+                        payload: Some(
+                            bevyrogue::combat::runtime::timeline::BeatPayload::DealDamage {
+                                amount: 18,
+                                tag: DamageTag::Fire,
+                                target: TargetShape::Single,
+                            },
+                        ),
                     },
                 ],
                 edges: vec![bevyrogue::combat::runtime::timeline::BeatEdge {

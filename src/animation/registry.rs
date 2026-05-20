@@ -37,7 +37,12 @@ pub struct AnimationStancePaths(pub Vec<String>);
 
 impl Default for AnimationStancePaths {
     fn default() -> Self {
-        Self(DEFAULT_ANIM_STANCE_PATHS.iter().map(|p| p.to_string()).collect())
+        Self(
+            DEFAULT_ANIM_STANCE_PATHS
+                .iter()
+                .map(|p| p.to_string())
+                .collect(),
+        )
     }
 }
 

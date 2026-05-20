@@ -1,4 +1,3 @@
-
 use bevy::prelude::Resource;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

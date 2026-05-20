@@ -29,17 +29,17 @@ Consumes existing `CombatEventKind::OnCombatBeat { beat }` from `src/combat/obse
   - Files: `src/ui/phase_strip.rs`, `src/ui/mod.rs`
   - Verify: cargo test --features windowed phase_strip
 
-- [ ] **T02: Wire EventReader-driven egui phase strip into UiPlugin** `est:1h`
+- [x] **T02: Wire EventReader-driven egui phase strip into UiPlugin** `est:1h`
   Why: The slice demo requires the live windowed UI path to consume the combat event stream, not a hardcoded combat-state phase. This task follows grill-me, tdd, write-docs, bevy, rust-best-practices, and verify-before-complete: keep the runtime system narrow, make its system params read-only except UI-owned state, and attach it to the existing egui pass.
   - Files: `src/ui/phase_strip.rs`, `src/windowed/mod.rs`
   - Verify: cargo build --features windowed
 
-- [ ] **T03: Prove phase-strip UI path is combat-read-only** `est:1h`
+- [x] **T03: Prove phase-strip UI path is combat-read-only** `est:1h`
   Why: S03's acceptance hinges on a structural proof that the UI path never mutates combat state. This task follows grill-me, tdd, write-docs, bevy, rust-best-practices, and verify-before-complete: encode the boundary as an executable regression test rather than relying on review.
   - Files: `tests/phase_strip_readonly.rs`, `src/ui/phase_strip.rs`
   - Verify: cargo test --test phase_strip_readonly --features windowed
 
-- [ ] **T04: Close S03 verification across headless and windowed gates** `est:30m`
+- [x] **T04: Close S03 verification across headless and windowed gates** `est:30m`
   Why: S03 touches feature-gated UI code, so closeout must prove both the default headless contract and the windowed integration contract. This task follows verify-before-complete plus write-docs by producing fresh verification evidence and leaving concise code comments where the read-only boundary matters.
   - Verify: cargo test
 

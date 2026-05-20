@@ -150,10 +150,7 @@ impl SuspendedTimelineState {
             status.timeline_id,
             status.beat_id,
             status.cue_id,
-            status
-                .animation_node
-                .as_deref()
-                .unwrap_or("none"),
+            status.animation_node.as_deref().unwrap_or("none"),
             status
                 .animation_frame
                 .map(|frame| frame.to_string())
@@ -228,7 +225,11 @@ impl SuspendedTimelineState {
                     current.status.beat_id,
                     current.status.cue_id,
                 );
-                (CueReleaseResult::CueMismatch, Some(current.status.clone()), msg)
+                (
+                    CueReleaseResult::CueMismatch,
+                    Some(current.status.clone()),
+                    msg,
+                )
             }
             Some(current) => {
                 current.release_requested = true;
@@ -239,18 +240,18 @@ impl SuspendedTimelineState {
                     current.status.skill_id,
                     current.status.beat_id,
                     current.status.cue_id,
-                    current
-                        .status
-                        .animation_node
-                        .as_deref()
-                        .unwrap_or("none"),
+                    current.status.animation_node.as_deref().unwrap_or("none"),
                     current
                         .status
                         .animation_frame
                         .map(|frame| frame.to_string())
                         .unwrap_or_else(|| "none".to_string()),
                 );
-                (CueReleaseResult::Released, Some(current.status.clone()), msg)
+                (
+                    CueReleaseResult::Released,
+                    Some(current.status.clone()),
+                    msg,
+                )
             }
         };
 

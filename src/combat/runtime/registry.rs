@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use bevy::prelude::{Resource, World};
 
 use super::intent::CastId;
+use super::post_action::{PostActionContext, PostActionQueue};
 use super::skill_ctx::SkillCtx;
 use super::timeline::{BeatEvent, CueCtx, SelectorCtx};
 use crate::combat::types::UnitId;
@@ -66,7 +67,7 @@ impl<E: ExtPoint> Default for Registry<E> {
     }
 }
 
-// ─── Seven extension axes (F3 / D031) ────────────────────────────────────────
+// ─── Extension axes (F3 / D031) ──────────────────────────────────────────────
 // Each axis is a unit struct + `ExtPoint` impl. Concrete `Fn` signatures are
 // placeholders (`fn()`) for S01 and refined per axis in S02+.
 
@@ -122,6 +123,14 @@ impl ExtPoint for CueExt {
 pub struct PreDamageReactionExt;
 impl ExtPoint for PreDamageReactionExt {
     type Fn = fn(&mut World, UnitId, CastId) -> Option<i32>;
+}
+
+/// Post-action reaction: owner-neutral logic that observes the resolved
+/// primary-hit context and may enqueue generic intents and/or blueprint
+/// transitions for downstream handling.
+pub struct PostActionReactionExt;
+impl ExtPoint for PostActionReactionExt {
+    type Fn = fn(&PostActionContext, &mut PostActionQueue);
 }
 
 /// One key/value captured from a validation contributor.
@@ -182,6 +191,7 @@ pub struct ExtRegistries {
     pub ai_utilities: Registry<AiUtilityExt>,
     pub cues: Registry<CueExt>,
     pub pre_damage_reactions: Registry<PreDamageReactionExt>,
+    pub post_action_reactions: Registry<PostActionReactionExt>,
     pub validation: Registry<ValidationExt>,
 }
 

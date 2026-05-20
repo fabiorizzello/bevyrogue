@@ -1,16 +1,16 @@
 use bevy::prelude::*;
-use bevyrogue::combat::runtime::ExtRegistries;
-use bevyrogue::combat::runtime::{SignalPayload, intent::CastId};
-use bevyrogue::combat::blueprints::twin_core::TwinCoreState;
+use bevyrogue::combat::blueprints::patamon::identity::HolySupportSignal;
 use bevyrogue::combat::blueprints::patamon::{
     HolySupportState, HolySupportTransition, apply_holy_support_transitions_system,
     register_validation_ext,
 };
-use bevyrogue::combat::blueprints::patamon::identity::HolySupportSignal;
+use bevyrogue::combat::blueprints::twin_core::TwinCoreState;
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::kernel::CombatKernelTransition;
 use bevyrogue::combat::log::ActionLog;
 use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
+use bevyrogue::combat::runtime::ExtRegistries;
+use bevyrogue::combat::runtime::{SignalPayload, intent::CastId};
 use bevyrogue::combat::sp::SpPool;
 use bevyrogue::combat::state::CombatState;
 use bevyrogue::combat::types::UnitId;
@@ -81,7 +81,9 @@ fn emit_holy_transition(app: &mut App, transition: HolySupportTransition) {
     app.update();
 }
 
-fn holy_support_section<'a>(snapshot: &'a bevyrogue::combat::observability::ValidationSnapshot) -> &'a bevyrogue::combat::runtime::ValidationSection {
+fn holy_support_section<'a>(
+    snapshot: &'a bevyrogue::combat::observability::ValidationSnapshot,
+) -> &'a bevyrogue::combat::runtime::ValidationSection {
     snapshot
         .section("support")
         .expect("support section should be present when HolySupportState is registered")

@@ -50,19 +50,37 @@ fn assert_clip_matches_atlas(name: &str, require_all_range: bool) {
     let clip = parse_clip(name);
     let atlas = parse_atlas(name);
 
-    assert_eq!(clip.meta.frame_size.w, atlas.meta.frame_size.w, "{name}: frame width mismatch");
-    assert_eq!(clip.meta.frame_size.h, atlas.meta.frame_size.h, "{name}: frame height mismatch");
-    assert_eq!(clip.meta.columns, atlas.meta.columns, "{name}: columns mismatch");
+    assert_eq!(
+        clip.meta.frame_size.w, atlas.meta.frame_size.w,
+        "{name}: frame width mismatch"
+    );
+    assert_eq!(
+        clip.meta.frame_size.h, atlas.meta.frame_size.h,
+        "{name}: frame height mismatch"
+    );
+    assert_eq!(
+        clip.meta.columns, atlas.meta.columns,
+        "{name}: columns mismatch"
+    );
     assert_eq!(clip.meta.rows, atlas.meta.rows, "{name}: rows mismatch");
-    assert_eq!(clip.meta.total_frames, atlas.meta.total_frames, "{name}: total_frames mismatch");
+    assert_eq!(
+        clip.meta.total_frames, atlas.meta.total_frames,
+        "{name}: total_frames mismatch"
+    );
 
     for (range_name, atlas_range) in &atlas.animations {
         let clip_range = clip
             .ranges
             .get(range_name)
             .unwrap_or_else(|| panic!("{name}: missing clip range '{range_name}'"));
-        assert_eq!(clip_range.start, atlas_range.start_index, "{name}:{range_name} start mismatch");
-        assert_eq!(clip_range.end, atlas_range.end_index, "{name}:{range_name} end mismatch");
+        assert_eq!(
+            clip_range.start, atlas_range.start_index,
+            "{name}:{range_name} start mismatch"
+        );
+        assert_eq!(
+            clip_range.end, atlas_range.end_index,
+            "{name}:{range_name} end mismatch"
+        );
     }
 
     if require_all_range {
@@ -71,7 +89,11 @@ fn assert_clip_matches_atlas(name: &str, require_all_range: bool) {
             .get("all")
             .expect("agumon clip should expose a whole-sheet 'all' range");
         assert_eq!(all.start, 0, "{name}: 'all' range must start at frame 0");
-        assert_eq!(all.end, clip.meta.total_frames - 1, "{name}: 'all' range must span the full atlas");
+        assert_eq!(
+            all.end,
+            clip.meta.total_frames - 1,
+            "{name}: 'all' range must span the full atlas"
+        );
     }
 }
 

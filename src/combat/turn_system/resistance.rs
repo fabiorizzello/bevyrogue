@@ -65,4 +65,3 @@ pub fn apply_delay(
     }
     av.0 - old
 }
-

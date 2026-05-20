@@ -175,4 +175,3 @@ pub fn status_amp_pct(bag: &StatusBag, tag: DamageTag) -> i32 {
         100
     }
 }
-

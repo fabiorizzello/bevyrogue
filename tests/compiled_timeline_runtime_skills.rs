@@ -257,7 +257,9 @@ fn assert_tohakken_post(app: &mut App, target: Entity) {
         5000,
         "DelayTurn should flow through apply_av_ops_system"
     );
-    let mut q = app.world_mut().query_filtered::<&StatusBag, With<UnitSkills>>();
+    let mut q = app
+        .world_mut()
+        .query_filtered::<&StatusBag, With<UnitSkills>>();
     let caster_bag = q
         .iter(app.world())
         .next()

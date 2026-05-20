@@ -1,6 +1,9 @@
 use super::*;
-use crate::combat::runtime::intent::{CastId, CastIdGen};
 use crate::combat::rng::CombatRng;
+use crate::combat::runtime::{
+    ExtRegistries,
+    intent::{CastId, CastIdGen},
+};
 use crate::combat::{
     action_query::{ActionQueryKind, build_snapshot_from_ecs, query_intent_legality},
     energy::{Energy, RoundEnergyTracker},
@@ -12,7 +15,21 @@ use crate::combat::{
     turn_order::TurnOrder,
 };
 use crate::data::{SkillBookHandle, skills_ron::SkillBook};
-use bevy::prelude::*;
+use bevy::{ecs::system::SystemParam, prelude::*};
+
+#[derive(SystemParam)]
+pub struct ActionRuntimeParams<'w, 's> {
+    combat_rng: Option<ResMut<'w, CombatRng>>,
+    entropy_q: Query<
+        'w,
+        's,
+        &'static mut crate::combat::rng::CombatEntropy,
+        With<crate::combat::unit::Unit>,
+    >,
+    energy_q: Query<'w, 's, (&'static mut Energy, Option<&'static mut RoundEnergyTracker>)>,
+    ext_regs: Option<Res<'w, ExtRegistries>>,
+    cast_id_gen: Option<ResMut<'w, CastIdGen>>,
+}
 
 pub fn resolve_action_system(
     mut commands: Commands,
@@ -27,13 +44,7 @@ pub fn resolve_action_system(
     mut event_writer: MessageWriter<CombatEvent>,
     registry: Option<Res<CombatKernelRegistry>>,
     mut actors: ResolveActorsQuery,
-    mut combat_rng: Option<ResMut<CombatRng>>,
-    mut entropy_q: Query<
-        &mut crate::combat::rng::CombatEntropy,
-        With<crate::combat::unit::Unit>,
-    >,
-    mut energy_q: Query<(&mut Energy, Option<&mut RoundEnergyTracker>)>,
-    mut cast_id_gen: Option<ResMut<CastIdGen>>,
+    mut runtime: ActionRuntimeParams,
 ) {
     if state.phase == CombatPhase::Resolving {
         let dropped = intents.read().count();
@@ -78,7 +89,7 @@ pub fn resolve_action_system(
             .and_then(|h| skill_books.get(&h.0))
         {
             let actors_readonly = actors.as_readonly();
-            let energy_readonly = energy_q.as_readonly();
+            let energy_readonly = runtime.energy_q.as_readonly();
             let units_data: Vec<_> = actors_readonly
                 .iter()
                 .map(
@@ -198,7 +209,8 @@ pub fn resolve_action_system(
             CastId::ROOT,
         );
 
-        let action_cast_id = cast_id_gen
+        let action_cast_id = runtime
+            .cast_id_gen
             .as_deref_mut()
             .map(|g| g.next())
             .unwrap_or(CastId::ROOT);
@@ -230,9 +242,10 @@ pub fn resolve_action_system(
                 &mut event_writer,
                 registry.as_deref(),
                 &mut actors,
-                &mut combat_rng,
-                &mut entropy_q,
-                &mut energy_q,
+                &mut runtime.combat_rng,
+                &mut runtime.entropy_q,
+                &mut runtime.energy_q,
+                runtime.ext_regs.as_deref(),
                 action_cast_id,
             );
 
@@ -273,4 +286,3 @@ pub fn resolve_action_system(
         }
     }
 }
-

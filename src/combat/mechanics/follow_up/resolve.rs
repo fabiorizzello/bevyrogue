@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{ecs::system::SystemParam, prelude::*};
 
 use crate::combat::{
     StatusBag,
@@ -8,6 +8,7 @@ use crate::combat::{
     kernel::{CombatBeatId, CombatKernelRegistry},
     log::ActionLog,
     round_flags::RoundFlags,
+    runtime::{ExtRegistries, intent::CastIdGen},
     sp::SpPool,
     state::CombatState,
     toughness::Toughness,
@@ -19,6 +20,20 @@ use crate::combat::{
 use crate::data::{SkillBookHandle, skills_ron::SkillBook};
 
 use super::types::{FollowUpIntent, FollowUpOriginKind};
+
+#[derive(SystemParam)]
+pub struct FollowUpRuntimeParams<'w, 's> {
+    combat_rng: Option<ResMut<'w, crate::combat::rng::CombatRng>>,
+    entropy_q: Query<
+        'w,
+        's,
+        &'static mut crate::combat::rng::CombatEntropy,
+        With<crate::combat::unit::Unit>,
+    >,
+    energy_q: Query<'w, 's, (&'static mut Energy, Option<&'static mut RoundEnergyTracker>)>,
+    ext_regs: Option<Res<'w, ExtRegistries>>,
+    cast_id_gen: Option<ResMut<'w, CastIdGen>>,
+}
 
 type ResolveActorsQuery<'w, 's> = Query<
     'w,
@@ -42,11 +57,7 @@ type ResolveActorsQuery<'w, 's> = Query<
     ),
 >;
 
-use crate::combat::{
-    kit::UnitSkills,
-    stun::Stunned,
-    team::Team,
-};
+use crate::combat::{kit::UnitSkills, stun::Stunned, team::Team};
 
 #[allow(clippy::too_many_arguments)]
 pub fn resolve_follow_up_action_system(
@@ -62,13 +73,7 @@ pub fn resolve_follow_up_action_system(
     mut event_writer: MessageWriter<CombatEvent>,
     registry: Option<Res<CombatKernelRegistry>>,
     mut actors: ResolveActorsQuery,
-    mut combat_rng: Option<ResMut<crate::combat::rng::CombatRng>>,
-    mut entropy_q: Query<
-        &mut crate::combat::rng::CombatEntropy,
-        With<crate::combat::unit::Unit>,
-    >,
-    mut energy_q: Query<(&mut Energy, Option<&mut RoundEnergyTracker>)>,
-    mut cast_id_gen: Option<ResMut<crate::combat::runtime::intent::CastIdGen>>,
+    mut runtime: FollowUpRuntimeParams,
 ) {
     if let Some(intent) = intents.read().next() {
         #[cfg(debug_assertions)]
@@ -153,7 +158,8 @@ pub fn resolve_follow_up_action_system(
             crate::combat::runtime::intent::CastId::ROOT,
         );
 
-        let follow_up_cast_id = cast_id_gen
+        let follow_up_cast_id = runtime
+            .cast_id_gen
             .as_deref_mut()
             .map(|g| g.next())
             .unwrap_or(crate::combat::runtime::intent::CastId::ROOT);
@@ -169,9 +175,10 @@ pub fn resolve_follow_up_action_system(
             &mut event_writer,
             registry.as_deref(),
             &mut actors,
-            &mut combat_rng,
-            &mut entropy_q,
-            &mut energy_q,
+            &mut runtime.combat_rng,
+            &mut runtime.entropy_q,
+            &mut runtime.energy_q,
+            runtime.ext_regs.as_deref(),
             follow_up_cast_id,
         );
 

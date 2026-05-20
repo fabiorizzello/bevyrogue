@@ -2,13 +2,16 @@ use bevyrogue::animation::{AnimGraph, FrameCueCommand, ReleaseKernelCue};
 use rstest::rstest;
 
 #[rstest]
-#[case::missing_id_field(r#"(
+#[case::missing_id_field(
+    r#"(
     clip: "skill",
     entry: "idle",
     nodes: { "idle": (frames: (0, 3)) },
     transitions: []
-)"#)]
-#[case::unknown_frame_cue_variant(r#"(
+)"#
+)]
+#[case::unknown_frame_cue_variant(
+    r#"(
     id: "test_graph",
     clip: "skill",
     entry: "idle",
@@ -19,16 +22,20 @@ use rstest::rstest;
         )
     },
     transitions: []
-)"#)]
-#[case::unknown_top_level_field(r#"(
+)"#
+)]
+#[case::unknown_top_level_field(
+    r#"(
     id: "test_graph",
     clip: "skill",
     entry: "idle",
     nodes: { "idle": (frames: (0, 3)) },
     transitions: [],
     unknown_field: "should_fail"
-)"#)]
-#[case::asset_like_truncated(r#"(
+)"#
+)]
+#[case::asset_like_truncated(
+    r#"(
     id: "broken",
     clip: "all",
     entry: "cast",
@@ -37,7 +44,8 @@ use rstest::rstest;
     },
     transitions: [
         (from: "cast", to: Exit, when: Always)
-"#)]
+"#
+)]
 fn anim_graph_rejects_invalid_ron(#[case] input: &str) {
     assert!(
         ron::from_str::<AnimGraph>(input).is_err(),
@@ -56,7 +64,9 @@ fn cues_absent_graph_loads_with_default_empty() {
     )"#;
     let graph: AnimGraph = ron::from_str(ron_str).expect("cues-absent graph should load");
     assert!(
-        graph.nodes[&bevyrogue::animation::NodeId("idle".into())].cues.is_empty(),
+        graph.nodes[&bevyrogue::animation::NodeId("idle".into())]
+            .cues
+            .is_empty(),
         "cues should default to empty vec"
     );
 }
@@ -77,12 +87,16 @@ fn graph_with_release_kernel_cue_parses() {
         },
         transitions: []
     )"#;
-    let graph: AnimGraph = ron::from_str(ron_str).expect("graph with ReleaseKernelCue should parse");
+    let graph: AnimGraph =
+        ron::from_str(ron_str).expect("graph with ReleaseKernelCue should parse");
     let cues = &graph.nodes[&bevyrogue::animation::NodeId("idle".into())].cues;
     assert_eq!(cues.len(), 1);
     assert_eq!(cues[0].at, 2);
     assert!(
-        matches!(cues[0].command, FrameCueCommand::ReleaseKernel(ReleaseKernelCue)),
+        matches!(
+            cues[0].command,
+            FrameCueCommand::ReleaseKernel(ReleaseKernelCue)
+        ),
         "command should be ReleaseKernel"
     );
 }
@@ -107,7 +121,8 @@ fn graph_with_presentation_cue_parses() {
         },
         transitions: []
     )"#;
-    let graph: AnimGraph = ron::from_str(ron_str).expect("graph with Presentation cue should parse");
+    let graph: AnimGraph =
+        ron::from_str(ron_str).expect("graph with Presentation cue should parse");
     let cues = &graph.nodes[&bevyrogue::animation::NodeId("idle".into())].cues;
     assert_eq!(cues.len(), 1);
     assert_eq!(cues[0].at, 1);
@@ -133,9 +148,16 @@ fn kernel_cue_predicate_parses_in_transition() {
         ]
     )"#;
     let graph: AnimGraph = ron::from_str(ron_str).expect("KernelCue predicate should parse");
-    let cast_to_recover = graph.transitions.iter().find(|e| e.from.0 == "cast").unwrap();
+    let cast_to_recover = graph
+        .transitions
+        .iter()
+        .find(|e| e.from.0 == "cast")
+        .unwrap();
     assert!(
-        matches!(cast_to_recover.when, bevyrogue::animation::Predicate::KernelCue),
+        matches!(
+            cast_to_recover.when,
+            bevyrogue::animation::Predicate::KernelCue
+        ),
         "predicate should be KernelCue"
     );
 }

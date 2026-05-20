@@ -67,4 +67,3 @@ impl CastRng {
         self.next_below(100) < pct
     }
 }
-

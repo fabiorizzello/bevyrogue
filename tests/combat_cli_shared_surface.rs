@@ -78,4 +78,3 @@ fn combat_cli_binary_emits_shared_combat_surfaces_from_non_root_cwd() {
     assert_not_contains(&run.output, "readiness_timeout");
     assert_not_contains(&run.output, "[CLI_PROOF] failure");
 }
-

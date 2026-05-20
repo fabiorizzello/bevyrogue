@@ -10,7 +10,9 @@ use bevyrogue::combat::types::UnitId;
 use bevyrogue::combat::unit::Unit;
 use bevyrogue::data::{DataReady, UnitRosterHandle, units_ron::UnitRoster};
 
-use super::config::{CliProofConfig, IsInteractive, SelectedAllies, SelectedEncounter, TickCounter};
+use super::config::{
+    CliProofConfig, IsInteractive, SelectedAllies, SelectedEncounter, TickCounter,
+};
 
 pub fn timeout_system(
     mut counter: ResMut<TickCounter>,

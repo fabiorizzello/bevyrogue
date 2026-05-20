@@ -45,15 +45,16 @@ use bevyrogue::combat::{
     runtime::{
         BlueprintState, CastIdGen, ExtRegistries, IntentQueue, PassiveListeners, SignalBus,
         SignalTaxonomy, applier::intent_applier, combat_event_to_signal_system,
-        passive_dispatch_system, register_kernel_builtins,
-        timeline::TimelineLibrary,
+        passive_dispatch_system, register_kernel_builtins, timeline::TimelineLibrary,
     },
     sp::SpPool,
     state::CombatState,
     turn_order::{TurnAdvanced, TurnOrder},
     turn_system::{ActionIntent, resolve_action_system},
 };
-use bevyrogue::data::{SkillBookHandle, skill_timeline::compile_skill_book_timelines, skills_ron::SkillBook};
+use bevyrogue::data::{
+    SkillBookHandle, skill_timeline::compile_skill_book_timelines, skills_ron::SkillBook,
+};
 
 /// Chainable test-app builder. Default is empty `App::new()` carrying just the
 /// `CombatEvent` message; opt into layers via the `with_*` methods.
@@ -220,7 +221,9 @@ pub fn skill_book_runtime_app(book: SkillBook) -> App {
         register_all_blueprint_exts(&mut regs);
         let compiled = compile_skill_book_timelines(&book, &regs)
             .expect("skill_book_runtime_app: book must compile");
-        app.world_mut().resource_mut::<TimelineLibrary<String>>().timelines = compiled;
+        app.world_mut()
+            .resource_mut::<TimelineLibrary<String>>()
+            .timelines = compiled;
     }
     app.world_mut().resource_mut::<SpPool>().current = 999;
     app

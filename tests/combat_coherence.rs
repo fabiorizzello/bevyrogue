@@ -672,15 +672,13 @@ fn break_follow_up_and_ult_timing_trace() {
     assert!(
         traces.iter().any(|entry| {
             entry.trigger == bevyrogue::combat::kit::FollowUpTrigger::OnEnemyBreak
-                && entry.decision == bevyrogue::combat::follow_up::FollowUpDecision::Suppressed {
-                    reason: bevyrogue::combat::follow_up::FollowUpSkipReason::TriggerMismatch,
-                }
+                && entry.decision
+                    == bevyrogue::combat::follow_up::FollowUpDecision::Suppressed {
+                        reason: bevyrogue::combat::follow_up::FollowUpSkipReason::TriggerMismatch,
+                    }
                 && entry.origin_source == renamon.id
                 && entry.origin_target == UnitId(101)
-                && matches!(
-                    entry.origin_kind,
-                    CombatEventKind::OnActionFailed { .. }
-                )
+                && matches!(entry.origin_kind, CombatEventKind::OnActionFailed { .. })
         }),
         "timeline-backed root break path currently suppresses the allied follow-up and surfaces a failed action trace\n{trace}"
     );

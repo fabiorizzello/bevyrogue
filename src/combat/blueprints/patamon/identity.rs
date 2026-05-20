@@ -1,12 +1,12 @@
 use crate::combat::bevy_types::*;
 use serde::{Deserialize, Serialize};
 
-use crate::combat::runtime::SignalPayload;
 use crate::combat::events::{CombatEvent, CombatEventKind};
 use crate::combat::kernel::{
     CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition, CombatTagChangeKind,
     CombatTagId, CombatTagState, CombatTagTransition, TacticalCycleTransition,
 };
+use crate::combat::runtime::SignalPayload;
 use crate::combat::types::UnitId;
 
 use super::{
@@ -426,13 +426,20 @@ pub(crate) fn format_holy_support_transition(transition: HolySupportTransition) 
         HolySupportSignal::BuildGrace | HolySupportSignal::SpendGrace => {
             format!("{signal}({})", transition.amount)
         }
-        HolySupportSignal::Rejected | HolySupportSignal::Ignored => match (transition.attempted, transition.reason) {
-            (Some(attempted), Some(reason)) => {
-                format!("{signal}({};reason={reason:?})", format_holy_support_step(attempted))
+        HolySupportSignal::Rejected | HolySupportSignal::Ignored => {
+            match (transition.attempted, transition.reason) {
+                (Some(attempted), Some(reason)) => {
+                    format!(
+                        "{signal}({};reason={reason:?})",
+                        format_holy_support_step(attempted)
+                    )
+                }
+                (Some(attempted), None) => {
+                    format!("{signal}({})", format_holy_support_step(attempted))
+                }
+                _ => signal.to_string(),
             }
-            (Some(attempted), None) => format!("{signal}({})", format_holy_support_step(attempted)),
-            _ => signal.to_string(),
-        },
+        }
         _ => signal.to_string(),
     }
 }

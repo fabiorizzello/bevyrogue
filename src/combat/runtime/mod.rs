@@ -7,7 +7,8 @@
 //!
 //! ## Module map
 //! - `intent`       — `CastId` + closed `Intent` enum (~18 variants).
-//! - `registry`     — `ExtPoint` trait + `Registry<E>` + `ExtRegistries` Resource (8 axes).
+//! - `registry`     — `ExtPoint` trait + `Registry<E>` + `ExtRegistries` Resource (9 axes).
+//! - `post_action`  — owner-neutral post-application reaction seam with KO context.
 //! - `signal`       — `SignalBus` + `SignalTaxonomy` for blueprint-owned custom signals.
 //! - `event_filter` — typed runtime filters for passive subscriptions.
 //! - `rng`          — `CastRng` deterministic per-cast RNG backed by `bevy_prng`.
@@ -28,6 +29,7 @@ pub mod event_bridge;
 pub mod event_filter;
 pub mod intent;
 pub mod passive_runner;
+pub mod post_action;
 pub mod registry;
 pub mod rng;
 pub mod runner;
@@ -51,6 +53,10 @@ pub use event_bridge::combat_event_to_signal_system;
 pub use event_filter::EventFilter;
 pub use intent::{CastId, CastIdGen, Intent};
 pub use passive_runner::{PassiveListeners, PassiveRunner, passive_dispatch_system};
+pub use post_action::{
+    PostActionContext, PostActionQueue, PostActionUnitDied, PostActionUnitSnapshot,
+    dispatch_post_action_reactions,
+};
 pub use registry::{ExtRegistries, Registry, ValidationSection};
 pub use runner::StepOutcome;
 pub use signal::{Signal, SignalBus, SignalPayload, SignalTaxonomy};

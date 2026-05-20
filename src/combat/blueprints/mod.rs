@@ -19,14 +19,9 @@ use crate::data::skills_ron::{CustomSignalPayload, SkillCustomSignal};
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum CustomSignalDispatchError {
     #[error("unknown blueprint owner '{owner}'")]
-    UnknownOwner {
-        owner: String,
-    },
+    UnknownOwner { owner: String },
     #[error("unknown signal '{signal}' for owner '{owner}'")]
-    UnknownSignal {
-        owner: String,
-        signal: String,
-    },
+    UnknownSignal { owner: String, signal: String },
     #[error("malformed payload for {owner}::{signal}: {detail}")]
     MalformedPayload {
         owner: String,

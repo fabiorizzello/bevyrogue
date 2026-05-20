@@ -1,5 +1,3 @@
-use bevyrogue::combat::runtime::intent::CastId;
-use bevyrogue::combat::runtime::registry::ValidationField;
 use bevyrogue::combat::blueprints::dorumon::{
     PredatorLoopBlockedReason, PredatorLoopCapKind, PredatorLoopSignal, PredatorLoopSnapshot,
     PredatorLoopState, PredatorLoopStep, PredatorLoopTransition,
@@ -7,6 +5,8 @@ use bevyrogue::combat::blueprints::dorumon::{
 use bevyrogue::combat::observability::{
     ValidationSection, ValidationSnapshot, format_validation_snapshot,
 };
+use bevyrogue::combat::runtime::intent::CastId;
+use bevyrogue::combat::runtime::registry::ValidationField;
 use bevyrogue::combat::state::CombatPhase;
 use bevyrogue::combat::types::UnitId;
 
@@ -249,10 +249,7 @@ fn predator_loop_event_and_snapshot_surfaces_are_serializable_and_readable() {
                     "berserk_threshold",
                     snapshot.berserk_strain_threshold.to_string(),
                 ),
-                ValidationField::new(
-                    "targets",
-                    "[7:e1:p0c]".to_string(),
-                ),
+                ValidationField::new("targets", "[7:e1:p0c]".to_string()),
                 ValidationField::new(
                     "last",
                     "payoff(target=Some(UnitId(7));amount=1)".to_string(),
@@ -262,10 +259,22 @@ fn predator_loop_event_and_snapshot_surfaces_are_serializable_and_readable() {
         )],
     };
     let rendered = format_validation_snapshot(&validation);
-    assert!(rendered.contains("predator="), "missing predator section: {rendered}");
-    assert!(rendered.contains("exploit_cap=3"), "missing exploit_cap: {rendered}");
-    assert!(rendered.contains("targets=[7"), "missing targets: {rendered}");
-    assert!(!rendered.contains("battery="), "battery should not appear: {rendered}");
+    assert!(
+        rendered.contains("predator="),
+        "missing predator section: {rendered}"
+    );
+    assert!(
+        rendered.contains("exploit_cap=3"),
+        "missing exploit_cap: {rendered}"
+    );
+    assert!(
+        rendered.contains("targets=[7"),
+        "missing targets: {rendered}"
+    );
+    assert!(
+        !rendered.contains("battery="),
+        "battery should not appear: {rendered}"
+    );
 
     let transition = PredatorLoopTransition::build_exploit(target, 2);
     let event = bevyrogue::combat::events::CombatEvent {

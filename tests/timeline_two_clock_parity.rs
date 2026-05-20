@@ -210,8 +210,7 @@ fn headless_auto_eq_windowed_manual_cue_handshake_end_of_cast_intent_stream() {
     );
     let after_second_barrier = normalized_intents(&pending_windowed);
     assert_eq!(
-        after_second_barrier,
-        headless_normalized,
+        after_second_barrier, headless_normalized,
         "second barrier should add the impact beat exactly once; got {after_second_barrier:?}"
     );
 
@@ -267,17 +266,13 @@ fn resume_cue_without_awaiting_is_harmless() {
     let regs = build_regs();
     let mut world = World::new();
     let mut pending: VecDeque<Intent> = VecDeque::new();
-    let mut runner = BeatRunner::new(timeline, CastId::ROOT, CASTER, TARGET).with_clock(Clock::Windowed);
+    let mut runner =
+        BeatRunner::new(timeline, CastId::ROOT, CASTER, TARGET).with_clock(Clock::Windowed);
 
     runner.resume_cue();
 
-    let outcome = runner.run_to_completion(
-        &mut world,
-        &regs,
-        SkillCtxMode::Execute,
-        &mut pending,
-        64,
-    );
+    let outcome =
+        runner.run_to_completion(&mut world, &regs, SkillCtxMode::Execute, &mut pending, 64);
     assert_eq!(
         outcome,
         StepOutcome::AwaitingCue,

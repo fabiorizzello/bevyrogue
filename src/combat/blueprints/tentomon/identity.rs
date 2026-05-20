@@ -4,9 +4,7 @@ use crate::combat::bevy_types::*;
 
 use crate::combat::runtime::intent::CastId;
 
-use super::{
-    CIRCUIT_CHARGE_CAP, STATIC_CHARGE_THRESHOLD, apply::apply_battery_loop_transition,
-};
+use super::{CIRCUIT_CHARGE_CAP, STATIC_CHARGE_THRESHOLD, apply::apply_battery_loop_transition};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BatteryLoopChargeKind {

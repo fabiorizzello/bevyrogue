@@ -17,13 +17,21 @@ fn canonical_skill_book() -> SkillBook {
 
 fn expected_unit_names() -> [&'static str; 15] {
     [
-        "Agumon", "Greymon",
-        "Gabumon", "Garurumon",
-        "Dorumon", "DORUgamon",
-        "Renamon", "Kyubimon",
-        "Patamon", "Angemon",
-        "Tentomon", "Kabuterimon",
-        "Devimon", "Goblimon", "Ogremon",
+        "Agumon",
+        "Greymon",
+        "Gabumon",
+        "Garurumon",
+        "Dorumon",
+        "DORUgamon",
+        "Renamon",
+        "Kyubimon",
+        "Patamon",
+        "Angemon",
+        "Tentomon",
+        "Kabuterimon",
+        "Devimon",
+        "Goblimon",
+        "Ogremon",
     ]
 }
 

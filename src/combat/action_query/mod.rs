@@ -7,7 +7,8 @@ pub use legality::{
     query_target_affordance,
 };
 pub use types::{
-    build_snapshot_from_ecs, build_snapshot_from_ecs_with_sp, ActionAffordance, ActionQueryKind,
-    ActionStatus, CombatQuerySnapshot, ImplementationStatus, ResourceAffordanceDetail, ResourceKind,
-    ResourceStatus, TargetAffordance, TargetStatus, ToughnessAffordance, UnitQuerySnapshot,
+    ActionAffordance, ActionQueryKind, ActionStatus, CombatQuerySnapshot, ImplementationStatus,
+    ResourceAffordanceDetail, ResourceKind, ResourceStatus, TargetAffordance, TargetStatus,
+    ToughnessAffordance, UnitQuerySnapshot, build_snapshot_from_ecs,
+    build_snapshot_from_ecs_with_sp,
 };

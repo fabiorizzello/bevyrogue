@@ -1,4 +1,3 @@
-
 use bevy::prelude::Component;
 
 use crate::combat::team::Team;
@@ -152,4 +151,3 @@ pub fn classify(
     }
     DamageKind::Normal
 }
-

@@ -21,8 +21,24 @@ pub(crate) fn validate_command(
             duration,
             ..
         } => {
-            validate_param_ref(hits, catalogs, clip_id, node_id, command_index, "hits", diagnostics);
-            validate_param_ref(mul, catalogs, clip_id, node_id, command_index, "mul", diagnostics);
+            validate_param_ref(
+                hits,
+                catalogs,
+                clip_id,
+                node_id,
+                command_index,
+                "hits",
+                diagnostics,
+            );
+            validate_param_ref(
+                mul,
+                catalogs,
+                clip_id,
+                node_id,
+                command_index,
+                "mul",
+                diagnostics,
+            );
             if let Some(status) = status {
                 validate_status_ref(
                     status,
@@ -63,7 +79,15 @@ pub(crate) fn validate_command(
             chance_pct,
             ..
         } => {
-            validate_status_ref(id, catalogs, clip_id, node_id, command_index, "id", diagnostics);
+            validate_status_ref(
+                id,
+                catalogs,
+                clip_id,
+                node_id,
+                command_index,
+                "id",
+                diagnostics,
+            );
             validate_param_ref(
                 duration,
                 catalogs,
@@ -156,7 +180,15 @@ pub(crate) fn validate_command(
             diagnostics,
         ),
         Command::ApplyBuff { id, duration, .. } => {
-            validate_status_ref(id, catalogs, clip_id, node_id, command_index, "id", diagnostics);
+            validate_status_ref(
+                id,
+                catalogs,
+                clip_id,
+                node_id,
+                command_index,
+                "id",
+                diagnostics,
+            );
             validate_param_ref(
                 duration,
                 catalogs,

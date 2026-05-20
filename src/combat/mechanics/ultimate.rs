@@ -1,9 +1,8 @@
-
 use bevy::prelude::*;
 
 use crate::combat::{
-    runtime::intent::CastId,
     events::{CombatEvent, CombatEventKind},
+    runtime::intent::CastId,
     team::Team,
     unit::Unit,
 };
@@ -153,4 +152,3 @@ pub fn flush_ult_gain_system(
         writer.write(event);
     }
 }
-

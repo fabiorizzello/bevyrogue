@@ -8,7 +8,10 @@ use crate::combat::kernel::{CombatBeatId, CombatKernelRegistry};
 use crate::combat::log::{ActionLog, LogEntry};
 use crate::combat::resolution::{apply_cleanse_only, apply_legacy_ops};
 use crate::combat::rng::{CombatEntropy, CombatRng, roll_pct_entropy};
-use crate::combat::runtime::intent::CastId;
+use crate::combat::runtime::{
+    CastId, PostActionContext, PostActionUnitDied, PostActionUnitSnapshot,
+    dispatch_post_action_reactions,
+};
 use crate::combat::sp::{RoundSpTracker, SpPool};
 use crate::combat::state::{CombatPhase, CombatState, InFlightAction, UltEffect};
 use crate::combat::status_effect::{StatusBag, StatusEffectKind};
@@ -35,12 +38,27 @@ pub(in crate::combat::turn_system::pipeline) fn run(
     rng: &mut Option<ResMut<CombatRng>>,
     entropy_q: &mut Query<&mut CombatEntropy, With<Unit>>,
     energy_q: &mut Query<(&mut Energy, Option<&mut RoundEnergyTracker>)>,
+    ext_regs: Option<&crate::combat::runtime::ExtRegistries>,
     cast_id: CastId,
     attacker_entity: Entity,
     target_entity: Entity,
     attacker_id: UnitId,
     target_id: UnitId,
 ) {
+    let mut post_action_roster: Vec<PostActionUnitSnapshot> = actors
+        .iter()
+        .map(|(_, team, unit, _, _, _, _, ko, _, _, _, _, _, slot, _)| {
+            PostActionUnitSnapshot::new(
+                unit.id,
+                *team,
+                slot.map(|slot| slot.0),
+                unit.hp_current,
+                unit.hp_max,
+                ko.is_none() && unit.hp_current > 0,
+            )
+        })
+        .collect();
+
     let Ok([attacker, defender]) = actors.get_many_mut([attacker_entity, target_entity]) else {
         return;
     };
@@ -210,6 +228,8 @@ pub(in crate::combat::turn_system::pipeline) fn run(
         return;
     }
 
+    let mut unit_died_payload = None;
+
     for kind in core_events {
         let hit_taken_amount = if let CombatEventKind::OnDamageDealt { amount, .. } = &kind {
             Some(*amount)
@@ -245,7 +265,14 @@ pub(in crate::combat::turn_system::pipeline) fn run(
                     damage_tag: *damage_tag,
                 });
             }
-            CombatEventKind::UnitDied { .. } => {
+            CombatEventKind::UnitDied {
+                status_remaining,
+                heated_remaining,
+            } => {
+                unit_died_payload = Some(PostActionUnitDied::new(
+                    status_remaining.clone(),
+                    *heated_remaining,
+                ));
                 commands.entity(target_entity).insert(Ko);
                 log.push(LogEntry::Ko { target: target_id });
                 if *attacker_team != *defender_team {
@@ -339,6 +366,47 @@ pub(in crate::combat::turn_system::pipeline) fn run(
             inflight.follow_up_depth,
             cast_id,
         );
+    }
+
+    if let Some(entry) = post_action_roster
+        .iter_mut()
+        .find(|entry| entry.unit_id == attacker_id)
+    {
+        entry.hp_current = attacker_unit.hp_current;
+        entry.hp_max = attacker_unit.hp_max;
+        entry.alive = attacker_unit.hp_current > 0;
+    }
+    if let Some(entry) = post_action_roster
+        .iter_mut()
+        .find(|entry| entry.unit_id == target_id)
+    {
+        entry.hp_current = defender_unit.hp_current;
+        entry.hp_max = defender_unit.hp_max;
+        entry.alive = defender_unit.hp_current > 0;
+    }
+
+    if let Some(ext_regs) = ext_regs {
+        let post_action_ctx = PostActionContext::new(
+            inflight.action.skill_id.clone(),
+            inflight.action.source,
+            inflight.action.target,
+            cast_id,
+            inflight.follow_up_depth,
+            unit_died_payload,
+            post_action_roster,
+        );
+        let post_action = dispatch_post_action_reactions(ext_regs, &post_action_ctx);
+        for transition in post_action.transitions {
+            crate::combat::turn_system::emit_kernel_transition(
+                event_writer,
+                registry,
+                transition,
+                inflight.action.source,
+                inflight.action.target,
+                inflight.follow_up_depth,
+                cast_id,
+            );
+        }
     }
 
     if outcome.succeeded {

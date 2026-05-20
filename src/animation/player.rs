@@ -1,4 +1,6 @@
-use super::anim_graph::{AnimEdge, AnimGraph, AnimNode, NodeId, PlaybackModifier, Predicate, TransitionTarget};
+use super::anim_graph::{
+    AnimEdge, AnimGraph, AnimNode, NodeId, PlaybackModifier, Predicate, TransitionTarget,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AnimAdvanceResult {

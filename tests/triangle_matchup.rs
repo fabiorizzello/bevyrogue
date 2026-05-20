@@ -14,25 +14,25 @@ use rstest::rstest;
 #[rstest]
 // Same-vs-same: neutral
 #[case::vac_vac(Vaccine, Vaccine, 1.0_f32, 1.0_f32, 1.0_f32)]
-#[case::vir_vir(Virus,   Virus,   1.0_f32, 1.0_f32, 1.0_f32)]
-#[case::dat_dat(Data,    Data,    1.0_f32, 1.0_f32, 1.0_f32)]
-#[case::free_free(Free,  Free,    1.0_f32, 1.0_f32, 1.0_f32)]
+#[case::vir_vir(Virus, Virus, 1.0_f32, 1.0_f32, 1.0_f32)]
+#[case::dat_dat(Data, Data, 1.0_f32, 1.0_f32, 1.0_f32)]
+#[case::free_free(Free, Free, 1.0_f32, 1.0_f32, 1.0_f32)]
 // Attacker wins the cycle
-#[case::vac_beats_vir(Vaccine, Virus,   1.11_f32, 1.0_f32, 1.1_f32)]
-#[case::vir_beats_dat(Virus,   Data,    1.11_f32, 1.0_f32, 1.1_f32)]
-#[case::dat_beats_vac(Data,    Vaccine, 1.11_f32, 1.0_f32, 1.1_f32)]
+#[case::vac_beats_vir(Vaccine, Virus, 1.11_f32, 1.0_f32, 1.1_f32)]
+#[case::vir_beats_dat(Virus, Data, 1.11_f32, 1.0_f32, 1.1_f32)]
+#[case::dat_beats_vac(Data, Vaccine, 1.11_f32, 1.0_f32, 1.1_f32)]
 // Defender wins the cycle
-#[case::vir_loses_vac(Virus,   Vaccine, 0.87_f32, 1.0_f32, 0.9_f32)]
-#[case::dat_loses_vir(Data,    Virus,   0.87_f32, 1.0_f32, 0.9_f32)]
-#[case::vac_loses_dat(Vaccine, Data,    0.87_f32, 1.0_f32, 0.9_f32)]
+#[case::vir_loses_vac(Virus, Vaccine, 0.87_f32, 1.0_f32, 0.9_f32)]
+#[case::dat_loses_vir(Data, Virus, 0.87_f32, 1.0_f32, 0.9_f32)]
+#[case::vac_loses_dat(Vaccine, Data, 0.87_f32, 1.0_f32, 0.9_f32)]
 // Free attacker: always neutral
 #[case::free_vac(Free, Vaccine, 1.0_f32, 1.0_f32, 1.0_f32)]
-#[case::free_vir(Free, Virus,   1.0_f32, 1.0_f32, 1.0_f32)]
-#[case::free_dat(Free, Data,    1.0_f32, 1.0_f32, 1.0_f32)]
+#[case::free_vir(Free, Virus, 1.0_f32, 1.0_f32, 1.0_f32)]
+#[case::free_dat(Free, Data, 1.0_f32, 1.0_f32, 1.0_f32)]
 // Free defender: always neutral
 #[case::vac_free(Vaccine, Free, 1.0_f32, 1.0_f32, 1.0_f32)]
-#[case::vir_free(Virus,   Free, 1.0_f32, 1.0_f32, 1.0_f32)]
-#[case::dat_free(Data,    Free, 1.0_f32, 1.0_f32, 1.0_f32)]
+#[case::vir_free(Virus, Free, 1.0_f32, 1.0_f32, 1.0_f32)]
+#[case::dat_free(Data, Free, 1.0_f32, 1.0_f32, 1.0_f32)]
 fn triangle_modifier_cell(
     #[case] attacker: Attribute,
     #[case] defender: Attribute,

@@ -6,9 +6,9 @@
 
 use crate::combat::bevy_types::*;
 
-use crate::combat::runtime::registry::{ValidationField, ValidationSection};
-use crate::combat::kernel::CombatKernelRegistry;
 use crate::combat::blueprints::dorumon::identity::format_predator_loop_transition;
+use crate::combat::kernel::CombatKernelRegistry;
+use crate::combat::runtime::registry::{ValidationField, ValidationSection};
 pub mod hooks;
 pub mod identity;
 pub mod identity_apply;
@@ -52,7 +52,9 @@ fn format_predator_targets(targets: &[identity::PredatorTargetSnapshot]) -> Stri
 }
 
 fn predator_validation_section(world: &World) -> Option<ValidationSection> {
-    let snapshot = world.get_resource::<identity::PredatorLoopState>()?.snapshot();
+    let snapshot = world
+        .get_resource::<identity::PredatorLoopState>()?
+        .snapshot();
     Some(ValidationSection::new(
         "predator",
         vec![

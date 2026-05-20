@@ -1,4 +1,3 @@
-
 use bevy::prelude::Component;
 
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
@@ -87,4 +86,3 @@ impl RoundEnergyTracker {
         self.external_gained = 0;
     }
 }
-

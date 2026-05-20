@@ -1,5 +1,6 @@
 use bevy::prelude::App;
 use bevyrogue::combat::{
+    plugin::CombatPlugin,
     runtime::{
         Beat, BeatEdge, BeatKind, BeatPayload, CompiledTimeline, ExtRegistries, Presentation,
         SelectorCtx, SkillCtx, SkillCtxMode, validate_timeline_refs,
@@ -8,7 +9,6 @@ use bevyrogue::combat::{
         builtins::register_kernel_builtins,
         intent::{CastId, Intent},
     },
-    plugin::CombatPlugin,
     types::{DamageTag, UnitId},
 };
 use bevyrogue::data::skills_ron::TargetShape;

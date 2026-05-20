@@ -1,12 +1,12 @@
 use crate::combat::bevy_types::*;
 
-use crate::combat::runtime::{SignalPayload, intent::CastId};
-use crate::combat::runtime::registry::{ValidationField, ValidationSection};
 use crate::combat::kernel::{
     CombatKernelHook, CombatKernelHookDomain, CombatKernelTransition, TacticalCycleTransition,
 };
 use crate::combat::modifiers::{DamageModifierLedger, ModifierLayer};
 use crate::combat::rng::roll_pct_for_unit_in_world;
+use crate::combat::runtime::registry::{ValidationField, ValidationSection};
+use crate::combat::runtime::{SignalPayload, intent::CastId};
 use crate::combat::types::UnitId;
 
 use super::{CustomSignalDispatchError, amount_payload};
@@ -69,10 +69,8 @@ pub struct TentomonPlugin;
 
 impl Plugin for TentomonPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<BatteryLoopState>().add_systems(
-            Update,
-            apply_battery_loop_transitions_system,
-        );
+        app.init_resource::<BatteryLoopState>()
+            .add_systems(Update, apply_battery_loop_transitions_system);
 
         app.world_mut()
             .resource_mut::<crate::combat::kernel::CombatKernelRegistry>()
@@ -98,8 +96,17 @@ fn battery_validation_section(world: &World) -> Option<ValidationSection> {
         ValidationSection::new(
             "battery",
             vec![
-                ValidationField::new("static", format!("{}/{}", snapshot.static_charge, snapshot.static_charge_cap)),
-                ValidationField::new("circuit", format!("{}/{}", snapshot.circuit_charge, snapshot.circuit_charge_cap)),
+                ValidationField::new(
+                    "static",
+                    format!("{}/{}", snapshot.static_charge, snapshot.static_charge_cap),
+                ),
+                ValidationField::new(
+                    "circuit",
+                    format!(
+                        "{}/{}",
+                        snapshot.circuit_charge, snapshot.circuit_charge_cap
+                    ),
+                ),
                 ValidationField::new("block_ready", snapshot.block_reaction_armed.to_string()),
                 ValidationField::new(
                     "last",
@@ -185,7 +192,11 @@ pub fn resolve_block_reaction_in_world(
     });
 
     if let Some(mut ledger) = world.get_resource_mut::<DamageModifierLedger>() {
-        ledger.arm(target, ModifierLayer::Passive, BLOCK_REACTION_MITIGATION_PCT);
+        ledger.arm(
+            target,
+            ModifierLayer::Passive,
+            BLOCK_REACTION_MITIGATION_PCT,
+        );
     }
 
     debug!(

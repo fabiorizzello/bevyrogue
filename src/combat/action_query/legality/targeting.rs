@@ -1,4 +1,4 @@
-use crate::combat::toughness::{exposes_toughness_affordance, visible_toughness, ToughnessView};
+use crate::combat::toughness::{ToughnessView, exposes_toughness_affordance, visible_toughness};
 use crate::combat::types::UnitId;
 use crate::data::skills_ron::{
     LegalityReasonCode, SelfTargetRule, SkillDef, SkillImplementation, TargetHpRule, TargetLife,

@@ -101,7 +101,9 @@ pub const fn phase_strip_label(beat: CombatBeatId) -> &'static str {
 /// This helper is pure over the event payloads: it ignores all non-beat events
 /// and does not touch combat resources, components, or world state.
 #[cfg(feature = "windowed")]
-pub fn latest_observed_combat_beat<'a>(events: impl IntoIterator<Item = &'a CombatEvent>) -> Option<CombatBeatId> {
+pub fn latest_observed_combat_beat<'a>(
+    events: impl IntoIterator<Item = &'a CombatEvent>,
+) -> Option<CombatBeatId> {
     let mut latest_beat = None;
 
     for event in events {
@@ -146,10 +148,7 @@ pub fn observe_combat_beats(
 /// the UI path side-effect-free: it reads the derived display resource and egui
 /// context only, never combat state or world entities.
 #[cfg(feature = "windowed")]
-pub fn render_phase_strip(
-    mut contexts: EguiContexts,
-    display: Res<PhaseStripDisplay>,
-) -> Result {
+pub fn render_phase_strip(mut contexts: EguiContexts, display: Res<PhaseStripDisplay>) -> Result {
     let Some(active_phase) = display.active_phase() else {
         return Ok(());
     };
@@ -176,13 +175,14 @@ pub fn render_phase_strip(
                             } else {
                                 egui::Stroke::new(1.0_f32, egui::Color32::from_gray(72))
                             };
-                            let text = egui::RichText::new(phase.label())
-                                .strong()
-                                .color(if is_active {
-                                    egui::Color32::WHITE
-                                } else {
-                                    egui::Color32::from_gray(170)
-                                });
+                            let text =
+                                egui::RichText::new(phase.label())
+                                    .strong()
+                                    .color(if is_active {
+                                        egui::Color32::WHITE
+                                    } else {
+                                        egui::Color32::from_gray(170)
+                                    });
 
                             egui::Frame::default()
                                 .fill(fill)
@@ -348,9 +348,12 @@ mod tests {
         let mut app = build_app();
         let before_state = app.world().resource::<CombatState>().clone();
 
-        app.world_mut().write_message(build_event(CombatBeatId::Declared));
-        app.world_mut().write_message(build_event(CombatBeatId::PreApp));
-        app.world_mut().write_message(build_event(CombatBeatId::Resolved));
+        app.world_mut()
+            .write_message(build_event(CombatBeatId::Declared));
+        app.world_mut()
+            .write_message(build_event(CombatBeatId::PreApp));
+        app.world_mut()
+            .write_message(build_event(CombatBeatId::Resolved));
 
         app.update();
 

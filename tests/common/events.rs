@@ -32,10 +32,7 @@ pub fn drain<T: Message + Clone>(app: &mut App) -> Vec<T> {
 /// read by another cursor). Useful for tests that don't keep a persistent
 /// cursor across ticks.
 pub fn drain_all<T: Message + Clone>(app: &mut App) -> Vec<T> {
-    let mut cursor: MessageCursor<T> = app
-        .world_mut()
-        .resource_mut::<Messages<T>>()
-        .get_cursor();
+    let mut cursor: MessageCursor<T> = app.world_mut().resource_mut::<Messages<T>>().get_cursor();
     cursor
         .read(app.world().resource::<Messages<T>>())
         .cloned()

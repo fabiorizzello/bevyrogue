@@ -3,15 +3,15 @@ use std::collections::BTreeMap;
 use bevy::{ecs::system::Local, prelude::*};
 use bevy_common_assets::ron::RonAssetPlugin;
 
-use super::{
-    validate_anim_graph, AnimGraph, AnimationValidationCatalogs, AnimationValidationCheck,
-    AnimationValidationContext, AnimationValidationDiagnostic, AnimationValidationReason,
-    AnimationValidationReport, AnimationValidationSeverity, AnimationValidationState, Clip,
-    ClipMeta, ClipRange, FrameSize, SkillIdRef, StatusId,
-};
 use super::registry::{
     AnimationStancePaths, SkillGraphPaths, SkillGraphRegistry, StanceGraphPaths,
     StanceGraphRegistry, has_matching_asset_event, populate_graph_registries,
+};
+use super::{
+    AnimGraph, AnimationValidationCatalogs, AnimationValidationCheck, AnimationValidationContext,
+    AnimationValidationDiagnostic, AnimationValidationReason, AnimationValidationReport,
+    AnimationValidationSeverity, AnimationValidationState, Clip, ClipMeta, ClipRange, FrameSize,
+    SkillIdRef, StatusId, validate_anim_graph,
 };
 use crate::data::{SkillBookHandle, skills_ron::SkillBook};
 
@@ -21,10 +21,8 @@ pub const DEFAULT_ANIM_GRAPH_PATHS: &[&str] = &[
     "digimon/renamon/anim_graph.ron",
 ];
 /// Default clip geometry assets to load at boot (relative to `assets/`).
-pub const DEFAULT_ANIM_CLIP_PATHS: &[&str] = &[
-    "digimon/agumon/clip.ron",
-    "digimon/renamon/clip.ron",
-];
+pub const DEFAULT_ANIM_CLIP_PATHS: &[&str] =
+    &["digimon/agumon/clip.ron", "digimon/renamon/clip.ron"];
 
 /// Data-driven list of animation graph asset paths.
 #[derive(Resource, Debug, Clone)]
@@ -124,8 +122,16 @@ fn load_animation_graphs(
     commands.insert_resource(SkillGraphPaths(paths.0.clone()));
     commands.insert_resource(StanceGraphPaths(stance_paths.0.clone()));
 
-    let all_paths: Vec<String> = paths.0.iter().chain(stance_paths.0.iter()).cloned().collect();
-    let handles: Vec<Handle<AnimGraph>> = all_paths.iter().map(|p| asset_server.load(p.clone())).collect();
+    let all_paths: Vec<String> = paths
+        .0
+        .iter()
+        .chain(stance_paths.0.iter())
+        .cloned()
+        .collect();
+    let handles: Vec<Handle<AnimGraph>> = all_paths
+        .iter()
+        .map(|p| asset_server.load(p.clone()))
+        .collect();
 
     commands.insert_resource(AnimationGraphLoadState {
         loaded: vec![false; handles.len()],
@@ -135,7 +141,9 @@ fn load_animation_graphs(
 
     info!(
         "animation graph load requested: skill={}, stance={}, total={}",
-        paths.0.len(), stance_paths.0.len(), all_paths.len()
+        paths.0.len(),
+        stance_paths.0.len(),
+        all_paths.len()
     );
 }
 
@@ -374,8 +382,7 @@ fn validate_animation_assets(
                 .unwrap_or("<unknown>");
             warn!(
                 "animation validation failed to find clip asset for graph path={} clip_id={}",
-                graph_path,
-                graph.clip.0
+                graph_path, graph.clip.0
             );
             let synthetic_clip = Clip {
                 meta: ClipMeta {
@@ -410,15 +417,12 @@ fn validate_animation_assets(
             .unwrap_or("<unknown>");
         info!(
             "animation validation checked graph path={} against clip path={} clip_id={}",
-            graph_path,
-            clip_path,
-            graph.clip.0
+            graph_path, clip_path, graph.clip.0
         );
     }
 
-    let next_state = AnimationValidationState::from_report(AnimationValidationReport {
-        diagnostics,
-    });
+    let next_state =
+        AnimationValidationState::from_report(AnimationValidationReport { diagnostics });
 
     match &next_state {
         AnimationValidationState::Pending => {}
@@ -470,7 +474,13 @@ fn sync_validation_catalogs(
 
     // All StatusEffectKind variant names — kept in sync with the enum definition.
     let status_names = [
-        "Heated", "Chilled", "Paralyzed", "Slowed", "Blessed", "Burn", "Shock",
+        "Heated",
+        "Chilled",
+        "Paralyzed",
+        "Slowed",
+        "Blessed",
+        "Burn",
+        "Shock",
     ];
     for name in status_names {
         catalogs.statuses.insert(StatusId(name.to_string()));

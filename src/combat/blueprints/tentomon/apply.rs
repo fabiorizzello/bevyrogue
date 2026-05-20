@@ -1,8 +1,8 @@
 use crate::combat::bevy_types::*;
 
-use crate::combat::runtime::SignalPayload;
 use crate::combat::events::{CombatEvent, CombatEventKind};
 use crate::combat::kernel::CombatKernelTransition;
+use crate::combat::runtime::SignalPayload;
 
 use super::identity::{
     BatteryLoopBlockedReason, BatteryLoopChargeKind, BatteryLoopSignal, BatteryLoopSnapshot,
@@ -220,7 +220,10 @@ pub(crate) fn format_battery_loop_transition(transition: BatteryLoopTransition) 
         BatteryLoopSignal::CycleReset => "cycle-reset".to_string(),
         BatteryLoopSignal::Rejected => match (transition.attempted, transition.reason) {
             (Some(attempted), Some(reason)) => {
-                format!("rejected({};reason={reason:?})", format_battery_loop_step(attempted))
+                format!(
+                    "rejected({};reason={reason:?})",
+                    format_battery_loop_step(attempted)
+                )
             }
             (Some(attempted), None) => format!("rejected({})", format_battery_loop_step(attempted)),
             _ => "rejected".to_string(),

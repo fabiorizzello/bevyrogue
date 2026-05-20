@@ -57,12 +57,6 @@ pub fn spawn_unit(app: &mut App, id: UnitId, team: Team, hp: i32) -> Entity {
 
 /// Same as [`spawn_unit`] but lets the caller name the unit (used by tests
 /// that assert on `Unit.name`).
-pub fn spawn_named_unit(
-    app: &mut App,
-    id: UnitId,
-    name: &str,
-    team: Team,
-    hp: i32,
-) -> Entity {
+pub fn spawn_named_unit(app: &mut App, id: UnitId, name: &str, team: Team, hp: i32) -> Entity {
     app.world_mut().spawn((make_unit(id, name, hp), team)).id()
 }

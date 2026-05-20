@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
-use crate::combat::runtime::SignalPayload;
 use crate::combat::kernel::CombatKernelTransition;
+use crate::combat::runtime::SignalPayload;
 use crate::combat::state::ResolvedAction;
 use crate::data::skills_ron::{CustomSignalPayload, SkillCustomSignal};
 

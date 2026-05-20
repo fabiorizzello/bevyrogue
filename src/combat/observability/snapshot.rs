@@ -2,6 +2,8 @@ use thiserror::Error;
 
 use bevy::prelude::World;
 
+use crate::combat::runtime::ExtRegistries;
+pub use crate::combat::runtime::registry::ValidationSection;
 use crate::combat::{
     av::ActionValue,
     floating::FloatingDamage,
@@ -16,8 +18,6 @@ use crate::combat::{
     ultimate::UltimateCharge,
     unit::{Ko, Unit},
 };
-pub use crate::combat::runtime::registry::ValidationSection;
-use crate::combat::runtime::ExtRegistries;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ValidationSnapshot {
@@ -34,7 +34,9 @@ pub struct ValidationSnapshot {
 
 impl ValidationSnapshot {
     pub fn section(&self, owner: &str) -> Option<&ValidationSection> {
-        self.owner_sections.iter().find(|section| section.owner == owner)
+        self.owner_sections
+            .iter()
+            .find(|section| section.owner == owner)
     }
 }
 

@@ -132,4 +132,3 @@ pub fn calculate_damage(
         dr_reduction_pct,
     }
 }
-

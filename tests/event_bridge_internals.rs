@@ -14,9 +14,7 @@ use bevy::prelude::*;
 
 use bevyrogue::combat::{
     events::{ActionIntentKind, CombatEvent, CombatEventKind},
-    runtime::{
-        CastId, Signal, SignalBus, SignalPayload, combat_event_to_signal_system,
-    },
+    runtime::{CastId, Signal, SignalBus, SignalPayload, combat_event_to_signal_system},
     types::UnitId,
 };
 

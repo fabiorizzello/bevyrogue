@@ -1,6 +1,4 @@
-use bevy::prelude::{
-    Commands, Component, Entity, Query, Resource, Single, With, Without, World,
-};
+use bevy::prelude::{Commands, Component, Entity, Query, Resource, Single, With, Without, World};
 use bevy_prng::WyRand;
 use bevy_rand::prelude::{EntropyPlugin, ForkableRng, ForkableSeed, GlobalRng, RngSeed};
 use rand_core::{Rng, SeedableRng};

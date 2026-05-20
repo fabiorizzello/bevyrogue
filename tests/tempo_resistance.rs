@@ -465,8 +465,7 @@ fn boss_scenario_three_slow_hits_show_resistance_curve() {
 /// Parse the canonical units.ron and verify Devimon is present with tempo_resistant: true.
 #[test]
 fn canonical_units_ron_contains_tempo_resistant_boss() {
-    let roster: bevyrogue::data::units_ron::UnitRoster =
-        bevyrogue::data::aggregate_unit_roster();
+    let roster: bevyrogue::data::units_ron::UnitRoster = bevyrogue::data::aggregate_unit_roster();
 
     let devimon = roster
         .0

@@ -2,8 +2,8 @@ use bevy::prelude::Component;
 use serde::{Deserialize, Serialize};
 
 use crate::combat::types::SkillId;
-use crate::data::units_ron::UnitDef;
 pub use crate::data::skills_ron::LegalityReasonCode;
+use crate::data::units_ron::UnitDef;
 // Consumed by integration tests via `bevyrogue::combat::counterplay::EnemyCounterplayStatus`;
 // the lib target alone does not see the usage, hence the explicit allow.
 pub use ImplementationStatus as EnemyCounterplayStatus;

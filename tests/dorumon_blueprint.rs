@@ -68,11 +68,7 @@ fn dorumon_transitions(
     CustomSignalPayload::Empty,
     SignalPayload::Amount(1)
 )]
-#[case::enter_berserk(
-    "enter_berserk",
-    CustomSignalPayload::Empty,
-    SignalPayload::Amount(0)
-)]
+#[case::enter_berserk("enter_berserk", CustomSignalPayload::Empty, SignalPayload::Amount(0))]
 fn dorumon_signal_maps_to_blueprint_transition(
     #[case] signal: &str,
     #[case] payload_in: CustomSignalPayload,

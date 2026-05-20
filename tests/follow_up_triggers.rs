@@ -1,9 +1,5 @@
 use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::{
-    runtime::{
-        ExtRegistries, SignalBus, SignalTaxonomy, register_kernel_builtins,
-        timeline::{Beat, BeatEdge, BeatKind, BeatPayload, TimelineLibrary},
-    },
     events::{CombatEvent, CombatEventKind},
     follow_up::{
         FollowUpDecision, FollowUpIntent, FollowUpTrace, follow_up_listener_system,
@@ -12,6 +8,10 @@ use bevyrogue::combat::{
     kit::{FollowUpConfig, FollowUpTrigger, UnitSkills},
     log::{ActionLog, LogEntry},
     rng::CombatRng,
+    runtime::{
+        ExtRegistries, SignalBus, SignalTaxonomy, register_kernel_builtins,
+        timeline::{Beat, BeatEdge, BeatKind, BeatPayload, TimelineLibrary},
+    },
     sp::SpPool,
     state::CombatState,
     team::Team,
@@ -424,8 +424,7 @@ fn agumon_break_follow_up_uses_real_pilot_config() {
         "expected root hit plus Agumon follow-up\n{trace}"
     );
     assert_eq!(
-        enemy_hp,
-        49,
+        enemy_hp, 49,
         "follow-up should leave the enemy at the expected deterministic HP\n{trace}"
     );
 }
@@ -836,7 +835,12 @@ fn synthetic_unit(id: u32, attribute: Attribute, hp_max: i32, hp_current: i32) -
     }
 }
 
-fn synthetic_skill(id: &str, damage_tag: DamageTag, damage: i32, toughness_damage: i32) -> SkillDef {
+fn synthetic_skill(
+    id: &str,
+    damage_tag: DamageTag,
+    damage: i32,
+    toughness_damage: i32,
+) -> SkillDef {
     SkillDef {
         id: SkillId(id.into()),
         name: id.into(),
@@ -948,7 +952,9 @@ fn setup_engine_app(book: SkillBook) -> App {
         register_kernel_builtins(&mut regs);
         let compiled = compile_skill_book_timelines(&book, &regs)
             .expect("synthetic engine test book must compile");
-        app.world_mut().resource_mut::<TimelineLibrary<String>>().timelines = compiled;
+        app.world_mut()
+            .resource_mut::<TimelineLibrary<String>>()
+            .timelines = compiled;
     }
     app
 }

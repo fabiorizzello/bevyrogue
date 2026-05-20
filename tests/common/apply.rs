@@ -3,6 +3,7 @@
 
 #![allow(dead_code)]
 
+use bevyrogue::combat::StatusBag;
 use bevyrogue::combat::buffs::DrBag;
 use bevyrogue::combat::events::CombatEventKind;
 use bevyrogue::combat::resolution::{ResolutionOutcome, apply_legacy_ops};
@@ -12,7 +13,6 @@ use bevyrogue::combat::team::Team;
 use bevyrogue::combat::toughness::Toughness;
 use bevyrogue::combat::ultimate::UltimateCharge;
 use bevyrogue::combat::unit::{BasicStreak, Unit};
-use bevyrogue::combat::StatusBag;
 
 use super::actions::default_ult;
 use super::units::{attacker, defender};

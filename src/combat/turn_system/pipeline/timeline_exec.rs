@@ -145,7 +145,11 @@ fn handle_timeline_outcome(
     }
 }
 
-fn preflight_timeline_action(world: &mut World, inflight: &InFlightAction, cast_id: CastId) -> bool {
+fn preflight_timeline_action(
+    world: &mut World,
+    inflight: &InFlightAction,
+    cast_id: CastId,
+) -> bool {
     let attacker_id = inflight.action.source;
 
     if inflight.action.sp_cost > 0 {

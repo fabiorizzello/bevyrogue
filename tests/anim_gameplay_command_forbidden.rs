@@ -3,8 +3,10 @@ use bevyrogue::animation::{
 };
 
 fn parse_valid_clip() -> Clip {
-    ron::from_str(include_str!("../assets/test/animation_validation/valid_clip.ron"))
-        .expect("valid_clip.ron should parse")
+    ron::from_str(include_str!(
+        "../assets/test/animation_validation/valid_clip.ron"
+    ))
+    .expect("valid_clip.ron should parse")
 }
 
 /// Validator must reject EmitDamage in on_enter.
@@ -30,7 +32,10 @@ fn emit_damage_in_on_enter_fails_validation() {
     let clip = parse_valid_clip();
     let report = validate_anim_graph(&graph, &clip, &AnimationValidationCatalogs::default());
     assert!(
-        report.diagnostics.iter().any(|d| d.check == AnimationValidationCheck::GameplayCommandForbidden),
+        report
+            .diagnostics
+            .iter()
+            .any(|d| d.check == AnimationValidationCheck::GameplayCommandForbidden),
         "EmitDamage in on_enter must produce GameplayCommandForbidden diagnostic"
     );
 }
@@ -58,7 +63,10 @@ fn emit_damage_in_cue_presentation_fails_validation() {
     let clip = parse_valid_clip();
     let report = validate_anim_graph(&graph, &clip, &AnimationValidationCatalogs::default());
     assert!(
-        report.diagnostics.iter().any(|d| d.check == AnimationValidationCheck::GameplayCommandForbidden),
+        report
+            .diagnostics
+            .iter()
+            .any(|d| d.check == AnimationValidationCheck::GameplayCommandForbidden),
         "EmitDamage in cue Presentation must produce GameplayCommandForbidden diagnostic"
     );
 }

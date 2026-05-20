@@ -45,8 +45,10 @@ fn skill_def<'a>(book: &'a SkillBook, id: &str) -> &'a SkillDef {
 }
 
 fn parse_valid_clip() -> Clip {
-    ron::from_str(include_str!("../assets/test/animation_validation/valid_clip.ron"))
-        .expect("valid animation clip fixture should parse")
+    ron::from_str(include_str!(
+        "../assets/test/animation_validation/valid_clip.ron"
+    ))
+    .expect("valid animation clip fixture should parse")
 }
 
 #[test]
@@ -177,8 +179,9 @@ fn baby_flame_still_parses_as_agumon_skill_entry() {
 #[test]
 fn sharp_claws_fails_compile_without_kernel_builtins() {
     let sharp_claws = skill_def(&canonical_book(), "sharp_claws").clone();
-    let err = compile_skill_book_timelines(&SkillBook(vec![sharp_claws]), &ExtRegistries::default())
-        .expect_err("Sharp Claws should fail before runtime when builtins are not registered");
+    let err =
+        compile_skill_book_timelines(&SkillBook(vec![sharp_claws]), &ExtRegistries::default())
+            .expect_err("Sharp Claws should fail before runtime when builtins are not registered");
 
     assert_eq!(err.skill_id, SkillId("sharp_claws".into()));
     assert_eq!(err.site, "beat impact_damage");

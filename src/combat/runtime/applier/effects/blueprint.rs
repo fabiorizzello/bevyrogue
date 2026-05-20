@@ -2,12 +2,12 @@ use bevy::log;
 use bevy::prelude::*;
 
 use crate::combat::{
+    events::{CombatEvent, CombatEventKind, CombatKernelTransition},
     runtime::{
         blueprint_state::BlueprintState,
         intent::CastId,
         signal::{Signal, SignalBus, SignalPayload, SignalTaxonomy},
     },
-    events::{CombatEvent, CombatEventKind, CombatKernelTransition},
     types::UnitId,
 };
 

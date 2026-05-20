@@ -6,6 +6,4 @@ pub use types::{
     RepeatPolicy, SelfTargetRule, SkillBook, SkillCustomSignal, SkillDef, SkillImplementation,
     SkillTargeting, TargetHpRule, TargetLife, TargetShape, TargetSide,
 };
-pub use validation::{
-    validate_skill_book, SkillBookValidationCategory, SkillBookValidationError,
-};
+pub use validation::{SkillBookValidationCategory, SkillBookValidationError, validate_skill_book};

@@ -73,8 +73,7 @@ pub(super) fn render_action_bar(
                         actor_id,
                         ActionQueryKind::Skill(&skill.id),
                     );
-                    let skill_enabled =
-                        matches!(skill_affordance.action, ActionStatus::Enabled);
+                    let skill_enabled = matches!(skill_affordance.action, ActionStatus::Enabled);
                     let skill_pending = PendingKind::Skill(skill.id.clone());
                     let skill_preview = preview_cache.label_for(
                         active_actor_id,
@@ -100,12 +99,8 @@ pub(super) fn render_action_bar(
                 }
             }
 
-            let ultimate_affordance = query_action_affordance(
-                snapshot,
-                skill_book,
-                actor_id,
-                ActionQueryKind::Ultimate,
-            );
+            let ultimate_affordance =
+                query_action_affordance(snapshot, skill_book, actor_id, ActionQueryKind::Ultimate);
             let ultimate_enabled = matches!(ultimate_affordance.action, ActionStatus::Enabled);
             let ultimate_pending = PendingKind::Ultimate;
             let ultimate_preview = preview_cache.label_for(
@@ -116,10 +111,7 @@ pub(super) fn render_action_bar(
             let ultimate_response = ui
                 .add_enabled(
                     ultimate_enabled,
-                    egui::Button::new(action_button_label(
-                        "Ultimate",
-                        &ultimate_affordance.action,
-                    )),
+                    egui::Button::new(action_button_label("Ultimate", &ultimate_affordance.action)),
                 )
                 .on_hover_text(action_tooltip(
                     "Ultimate",
@@ -178,7 +170,10 @@ pub(super) fn render_action_bar(
         if let Some(chip) = telegraph_chip {
             egui::Frame::default()
                 .fill(egui::Color32::from_rgb(95, 45, 20))
-                .stroke(egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(230, 170, 90)))
+                .stroke(egui::Stroke::new(
+                    1.0_f32,
+                    egui::Color32::from_rgb(230, 170, 90),
+                ))
                 .corner_radius(6.0)
                 .inner_margin(egui::Margin::symmetric(8, 4))
                 .show(ui, |ui| {
@@ -224,9 +219,7 @@ pub(super) fn render_columns(
                     ui.horizontal(|ui| {
                         ui.label(&ally.name);
                         if ally.is_commander {
-                            ui.label(
-                                egui::RichText::new("COMMANDER").color(egui::Color32::YELLOW),
-                            );
+                            ui.label(egui::RichText::new("COMMANDER").color(egui::Color32::YELLOW));
                         }
                     });
                 });
@@ -269,8 +262,7 @@ pub(super) fn render_columns(
                         "Target: {}",
                         target_status_label(&target_affordance.status)
                     ));
-                    let target_enabled =
-                        matches!(target_affordance.status, TargetStatus::Enabled);
+                    let target_enabled = matches!(target_affordance.status, TargetStatus::Enabled);
                     let target_preview = preview_cache.label_for(
                         active_actor_id,
                         pending_action.kind.as_ref(),
@@ -368,10 +360,9 @@ HP: {}/{}
 
         for enemy in enemies {
             cols[2].group(|ui| {
-                let chip = egui::Button::new(
-                    egui::RichText::new(&enemy.name).color(egui::Color32::BLACK),
-                )
-                .fill(attr_color(enemy.attribute));
+                let chip =
+                    egui::Button::new(egui::RichText::new(&enemy.name).color(egui::Color32::BLACK))
+                        .fill(attr_color(enemy.attribute));
                 let enemy_target = pending_targets.and_then(|affordance| {
                     affordance
                         .targets
@@ -384,8 +375,7 @@ HP: {}/{}
                         "Target: {}",
                         target_status_label(&target_affordance.status)
                     ));
-                    let target_enabled =
-                        matches!(target_affordance.status, TargetStatus::Enabled);
+                    let target_enabled = matches!(target_affordance.status, TargetStatus::Enabled);
                     let target_preview = preview_cache.label_for(
                         active_actor_id,
                         pending_action.kind.as_ref(),

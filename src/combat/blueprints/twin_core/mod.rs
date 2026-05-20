@@ -7,8 +7,8 @@ use crate::combat::kernel::{
     CombatKernelTransition, CombatTagChangeKind, CombatTagId, CombatTagState, CombatTagTransition,
     TacticalCycleTransition,
 };
-use crate::combat::runtime::registry::{ValidationField, ValidationSection};
 use crate::combat::observability::format_unit_ids;
+use crate::combat::runtime::registry::{ValidationField, ValidationSection};
 use crate::combat::types::UnitId;
 
 pub const OWNER: &str = "twin_core";
@@ -193,14 +193,8 @@ impl TwinCoreState {
                 ValidationField::new("spark_targets", format_unit_ids(&spark_targets)),
                 ValidationField::new("fire", self.fire_spend_markers.to_string()),
                 ValidationField::new("ice", self.ice_spend_markers.to_string()),
-                ValidationField::new(
-                    "burst_guard",
-                    self.twin_burst_used_this_cycle.to_string(),
-                ),
-                ValidationField::new(
-                    "shatter_guard",
-                    self.shatter_used_this_cycle.to_string(),
-                ),
+                ValidationField::new("burst_guard", self.twin_burst_used_this_cycle.to_string()),
+                ValidationField::new("shatter_guard", self.shatter_used_this_cycle.to_string()),
                 ValidationField::new(
                     "last",
                     self.last_signal

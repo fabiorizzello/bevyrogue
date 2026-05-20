@@ -82,7 +82,10 @@ fn phase_strip_ignores_non_beat_events_and_empty_updates() {
     let before_state = app.world().resource::<CombatState>().clone();
 
     app.update();
-    assert_eq!(app.world().resource::<PhaseStripDisplay>().current_beat, None);
+    assert_eq!(
+        app.world().resource::<PhaseStripDisplay>().current_beat,
+        None
+    );
     assert_eq!(*app.world().resource::<CombatState>(), before_state);
 
     {

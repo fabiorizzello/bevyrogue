@@ -22,13 +22,13 @@ use rstest::rstest;
 // ── classify_buff_kind totality ─────────────────────────────────────────────
 
 #[rstest]
-#[case(StatusEffectKind::Heated,    BuffKind::Debuff)]
-#[case(StatusEffectKind::Chilled,   BuffKind::Debuff)]
+#[case(StatusEffectKind::Heated, BuffKind::Debuff)]
+#[case(StatusEffectKind::Chilled, BuffKind::Debuff)]
 #[case(StatusEffectKind::Paralyzed, BuffKind::Debuff)]
-#[case(StatusEffectKind::Slowed,    BuffKind::Debuff)]
-#[case(StatusEffectKind::Blessed,   BuffKind::Buff)]
-#[case(StatusEffectKind::Burn,      BuffKind::Debuff)]
-#[case(StatusEffectKind::Shock,     BuffKind::Debuff)]
+#[case(StatusEffectKind::Slowed, BuffKind::Debuff)]
+#[case(StatusEffectKind::Blessed, BuffKind::Buff)]
+#[case(StatusEffectKind::Burn, BuffKind::Debuff)]
+#[case(StatusEffectKind::Shock, BuffKind::Debuff)]
 fn classify_buff_kind_totality(#[case] kind: StatusEffectKind, #[case] expected: BuffKind) {
     assert_eq!(classify_buff_kind(&kind), expected);
 }
@@ -74,10 +74,10 @@ fn is_empty_reflects_state() {
 // ── status_amp_pct ──────────────────────────────────────────────────────────
 
 #[rstest]
-#[case::no_status(None,                          DamageTag::Fire, 100)]
-#[case::heated_fire(Some(StatusEffectKind::Heated),  DamageTag::Fire, 115)]
-#[case::heated_ice(Some(StatusEffectKind::Heated),  DamageTag::Ice,  100)]
-#[case::chilled_ice(Some(StatusEffectKind::Chilled), DamageTag::Ice,  115)]
+#[case::no_status(None, DamageTag::Fire, 100)]
+#[case::heated_fire(Some(StatusEffectKind::Heated), DamageTag::Fire, 115)]
+#[case::heated_ice(Some(StatusEffectKind::Heated), DamageTag::Ice, 100)]
+#[case::chilled_ice(Some(StatusEffectKind::Chilled), DamageTag::Ice, 115)]
 fn status_amp_pct_matrix(
     #[case] applied: Option<StatusEffectKind>,
     #[case] tag: DamageTag,
@@ -113,9 +113,9 @@ fn chilled_speed_delta_matrix(
 #[test]
 fn cleanse_n_orders_by_duration_desc() {
     let mut bag = StatusBag::default();
-    bag.apply(StatusEffectKind::Heated, 1);     // idx 0, dur 1
-    bag.apply(StatusEffectKind::Slowed, 3);     // idx 1, dur 3
-    bag.apply(StatusEffectKind::Paralyzed, 2);  // idx 2, dur 2
+    bag.apply(StatusEffectKind::Heated, 1); // idx 0, dur 1
+    bag.apply(StatusEffectKind::Slowed, 3); // idx 1, dur 3
+    bag.apply(StatusEffectKind::Paralyzed, 2); // idx 2, dur 2
     let removed = bag.cleanse_n(Some(2));
     assert_eq!(
         removed,
@@ -129,9 +129,9 @@ fn cleanse_n_orders_by_duration_desc() {
 #[test]
 fn cleanse_n_idx_asc_tiebreak_on_equal_duration() {
     let mut bag = StatusBag::default();
-    bag.apply(StatusEffectKind::Heated, 2);     // idx 0
-    bag.apply(StatusEffectKind::Slowed, 2);     // idx 1
-    bag.apply(StatusEffectKind::Paralyzed, 2);  // idx 2
+    bag.apply(StatusEffectKind::Heated, 2); // idx 0
+    bag.apply(StatusEffectKind::Slowed, 2); // idx 1
+    bag.apply(StatusEffectKind::Paralyzed, 2); // idx 2
     let removed = bag.cleanse_n(Some(2));
     assert_eq!(
         removed,

@@ -19,9 +19,9 @@ use rstest::rstest;
 /// cross return false. Covers what the properties.rs clamp-invariant does not:
 /// the boolean "newly ready" signal that drives ult-fire eligibility.
 #[rstest]
-#[case::crosses_from_below(0,   100, 150, 100, true)]
-#[case::already_ready_no_new_cross(100, 100, 150,  10, false)]
-#[case::below_and_stays_below(0,   100, 150,  10, false)]
+#[case::crosses_from_below(0, 100, 150, 100, true)]
+#[case::already_ready_no_new_cross(100, 100, 150, 10, false)]
+#[case::below_and_stays_below(0, 100, 150, 10, false)]
 fn try_add_crossed_flag(
     #[case] start: i32,
     #[case] trigger: i32,
@@ -46,8 +46,8 @@ fn try_add_crossed_flag(
 /// Delta = new_current - old_current. UltGain events emit this delta; it must
 /// equal the actual clamped change, never the requested amount.
 #[rstest]
-#[case::full_increase(0,   100, 150,  10, 10)]
-#[case::clamps_at_cap(145, 100, 150,  10, 5)]
+#[case::full_increase(0, 100, 150, 10, 10)]
+#[case::clamps_at_cap(145, 100, 150, 10, 5)]
 #[case::zero_when_at_cap(150, 100, 150, 10, 0)]
 fn ult_gain_delta_matches_actual_increase(
     #[case] start: i32,

@@ -1,11 +1,11 @@
 use super::{
-    command::validate_command, predicate::validate_predicate, AnimationValidationCatalogs,
-    AnimationValidationDiagnostic, AnimationValidationFailure, AnimationValidationReport,
+    AnimationValidationCatalogs, AnimationValidationDiagnostic, AnimationValidationFailure,
+    AnimationValidationReport, command::validate_command, predicate::validate_predicate,
 };
 use crate::animation::{
-    AnimGraph, AnimationValidationCheck, AnimationValidationContext,
-    AnimationValidationReason, AnimationValidationSeverity, Clip, ClipId, ClipRange,
-    Command, FrameCueCommand, TransitionTarget,
+    AnimGraph, AnimationValidationCheck, AnimationValidationContext, AnimationValidationReason,
+    AnimationValidationSeverity, Clip, ClipId, ClipRange, Command, FrameCueCommand,
+    TransitionTarget,
 };
 
 pub fn validate_anim_graph(
@@ -44,7 +44,14 @@ pub fn validate_anim_graph(
         });
     }
 
-    validate_graph_nodes(graph, clip, catalogs, &clip_id, clip_range, &mut diagnostics);
+    validate_graph_nodes(
+        graph,
+        clip,
+        catalogs,
+        &clip_id,
+        clip_range,
+        &mut diagnostics,
+    );
     validate_graph_transitions(graph, catalogs, &clip_id, &mut diagnostics);
 
     AnimationValidationReport { diagnostics }
@@ -131,7 +138,14 @@ fn validate_graph_nodes(
         }
 
         for (command_index, command) in node.on_enter.iter().enumerate() {
-            validate_command(command, catalogs, clip_id, node_id, command_index, diagnostics);
+            validate_command(
+                command,
+                catalogs,
+                clip_id,
+                node_id,
+                command_index,
+                diagnostics,
+            );
             if is_gameplay_command(command) {
                 diagnostics.push(AnimationValidationDiagnostic {
                     severity: AnimationValidationSeverity::Error,

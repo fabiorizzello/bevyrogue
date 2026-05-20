@@ -26,7 +26,10 @@ fn player_cycles_idle_through_loop_modifier() {
     let range_len = 6u32; // frames 53-58
     for _ in 0..range_len * 3 {
         let frame = player.advance(&graph);
-        assert!((53..=58).contains(&frame), "idle frame must stay within 53-58, got {frame}");
+        assert!(
+            (53..=58).contains(&frame),
+            "idle frame must stay within 53-58, got {frame}"
+        );
     }
 }
 
@@ -50,7 +53,11 @@ fn player_returns_zero_for_missing_current_node() {
 
     player.fire_kernel_cue();
 
-    assert_eq!(player.advance(&graph), 0, "missing nodes must keep the safe frame-0 fallback");
+    assert_eq!(
+        player.advance(&graph),
+        0,
+        "missing nodes must keep the safe frame-0 fallback"
+    );
     assert_eq!(player.current_node.0, "missing");
     assert_eq!(player.elapsed_anim_frames, 0);
 }
@@ -59,7 +66,8 @@ fn player_returns_zero_for_missing_current_node() {
 
 #[test]
 fn player_transitions_on_time_in_node() {
-    let graph = parse_graph(r#"(
+    let graph = parse_graph(
+        r#"(
         id: "test",
         clip: "skill",
         entry: "cast",
@@ -71,7 +79,8 @@ fn player_transitions_on_time_in_node() {
             (from: "cast", to: Node("recover"), when: TimeInNode),
             (from: "recover", to: Exit, when: TimeInNode),
         ]
-    )"#);
+    )"#,
+    );
 
     let mut player = AnimGraphPlayer::new(graph.entry.clone());
     // cast: 4 frames (0-3), elapsed reaches 4 after the 4th advance.
@@ -89,7 +98,8 @@ fn player_transitions_on_time_in_node() {
 
 #[test]
 fn player_kernel_cue_transition_waits_for_signal() {
-    let graph = parse_graph(r#"(
+    let graph = parse_graph(
+        r#"(
         id: "test",
         clip: "skill",
         entry: "strike",
@@ -101,24 +111,40 @@ fn player_kernel_cue_transition_waits_for_signal() {
             (from: "strike", to: Node("recover"), when: KernelCue),
             (from: "recover", to: Exit, when: TimeInNode),
         ]
-    )"#);
+    )"#,
+    );
 
     let mut player = AnimGraphPlayer::new(graph.entry.clone());
     let frames: Vec<u32> = (0..5).map(|_| player.advance(&graph)).collect();
-    assert_eq!(frames, vec![0, 1, 2, 2, 2], "strike must clamp on its last frame before release");
+    assert_eq!(
+        frames,
+        vec![0, 1, 2, 2, 2],
+        "strike must clamp on its last frame before release"
+    );
     assert_eq!(player.current_node.0, "strike");
-    assert_eq!(player.elapsed_anim_frames, 5, "elapsed ticks should keep climbing while the cue is blocked");
+    assert_eq!(
+        player.elapsed_anim_frames, 5,
+        "elapsed ticks should keep climbing while the cue is blocked"
+    );
 
     player.fire_kernel_cue();
 
-    assert_eq!(player.advance(&graph), 3, "release should jump to recover's first frame");
+    assert_eq!(
+        player.advance(&graph),
+        3,
+        "release should jump to recover's first frame"
+    );
     assert_eq!(player.current_node.0, "recover");
-    assert_eq!(player.elapsed_anim_frames, 0, "transitioning on KernelCue must reset elapsed ticks");
+    assert_eq!(
+        player.elapsed_anim_frames, 0,
+        "transitioning on KernelCue must reset elapsed ticks"
+    );
 }
 
 #[test]
 fn player_kernel_cue_consumes_signal_once() {
-    let graph = parse_graph(r#"(
+    let graph = parse_graph(
+        r#"(
         id: "test",
         clip: "skill",
         entry: "windup",
@@ -132,7 +158,8 @@ fn player_kernel_cue_consumes_signal_once() {
             (from: "strike", to: Node("recover"), when: KernelCue),
             (from: "recover", to: Exit, when: TimeInNode),
         ]
-    )"#);
+    )"#,
+    );
 
     let mut player = AnimGraphPlayer::new(graph.entry.clone());
 
@@ -141,7 +168,11 @@ fn player_kernel_cue_consumes_signal_once() {
     assert_eq!(player.current_node.0, "strike");
     assert_eq!(player.elapsed_anim_frames, 0);
 
-    assert_eq!(player.advance(&graph), 2, "stale cue must not satisfy strike -> recover");
+    assert_eq!(
+        player.advance(&graph),
+        2,
+        "stale cue must not satisfy strike -> recover"
+    );
     assert_eq!(player.current_node.0, "strike");
     assert_eq!(player.elapsed_anim_frames, 1);
 
@@ -155,7 +186,8 @@ fn player_kernel_cue_consumes_signal_once() {
 
 #[test]
 fn player_always_transition_fires_immediately() {
-    let graph = parse_graph(r#"(
+    let graph = parse_graph(
+        r#"(
         id: "test",
         clip: "skill",
         entry: "a",
@@ -167,7 +199,8 @@ fn player_always_transition_fires_immediately() {
             (from: "a", to: Node("b"), when: Always),
             (from: "b", to: Exit, when: Always),
         ]
-    )"#);
+    )"#,
+    );
 
     let mut player = AnimGraphPlayer::new(graph.entry.clone());
     // First advance: Always fires, transitions to "b"
@@ -179,7 +212,8 @@ fn player_always_transition_fires_immediately() {
 
 #[test]
 fn hold_modifier_extends_last_frame() {
-    let graph = parse_graph(r#"(
+    let graph = parse_graph(
+        r#"(
         id: "test",
         clip: "skill",
         entry: "hit",
@@ -187,7 +221,8 @@ fn hold_modifier_extends_last_frame() {
             "hit": (frames: (0, 1), modifier: Some(Hold(extra_frames: 3))),
         },
         transitions: []
-    )"#);
+    )"#,
+    );
 
     let mut player = AnimGraphPlayer::new(graph.entry.clone());
     let frames: Vec<u32> = (0..6).map(|_| player.advance(&graph)).collect();
@@ -200,7 +235,8 @@ fn hold_modifier_extends_last_frame() {
 
 #[test]
 fn reverse_flag_plays_range_backwards() {
-    let graph = parse_graph(r#"(
+    let graph = parse_graph(
+        r#"(
         id: "test",
         clip: "skill",
         entry: "back",
@@ -208,7 +244,8 @@ fn reverse_flag_plays_range_backwards() {
             "back": (frames: (0, 2), reverse: true),
         },
         transitions: []
-    )"#);
+    )"#,
+    );
 
     let mut player = AnimGraphPlayer::new(graph.entry.clone());
     assert_eq!(player.advance(&graph), 2); // frame 2 first
@@ -220,7 +257,8 @@ fn reverse_flag_plays_range_backwards() {
 
 #[test]
 fn speed_mul_200pct_advances_two_anim_frames_per_tick() {
-    let graph = parse_graph(r#"(
+    let graph = parse_graph(
+        r#"(
         id: "test",
         clip: "skill",
         entry: "fast",
@@ -228,7 +266,8 @@ fn speed_mul_200pct_advances_two_anim_frames_per_tick() {
             "fast": (frames: (0, 9), modifier: Some(SpeedMul(pct: 200))),
         },
         transitions: []
-    )"#);
+    )"#,
+    );
 
     let mut player = AnimGraphPlayer::new(graph.entry.clone());
     // At 200%, tick 0 → anim frame 0*200/100=0, tick 1 → 1*200/100=2

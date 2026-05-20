@@ -8,6 +8,8 @@ use bevy_egui::{EguiContexts, egui};
 use moonshine_kind::Instance;
 
 #[cfg(feature = "windowed")]
+use crate::combat::runtime::SuspendedTimelineState;
+#[cfg(feature = "windowed")]
 use crate::combat::{
     action_query::{
         ActionStatus, TargetStatus, build_snapshot_from_ecs_with_sp, first_enabled_target_id,
@@ -23,8 +25,6 @@ use crate::combat::{
     types::UnitId,
     unit::Unit,
 };
-#[cfg(feature = "windowed")]
-use crate::combat::runtime::SuspendedTimelineState;
 use crate::data::skills_ron::SkillBook;
 
 #[cfg(feature = "windowed")]

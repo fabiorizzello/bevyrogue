@@ -1,7 +1,7 @@
-use super::*;
-use crate::combat::runtime::intent::CastId;
 use super::av::{AV_PER_SPEED, ActionValue, ActionValueUpdated, MAX_AV};
+use super::*;
 use crate::combat::buffs::DrBag;
+use crate::combat::runtime::intent::CastId;
 use crate::combat::{
     StatusBag,
     energy::RoundEnergyTracker,
@@ -63,33 +63,15 @@ pub fn advance_turn_system(
     let snapshots: Vec<Snap> = query
         .iter_mut()
         .map(
-            |(
+            |(entity, unit, team, _, _, _, stunned, status_bag, _, _, _, _, _, _, _)| Snap {
                 entity,
-                unit,
-                team,
-                _,
-                _,
-                _,
-                stunned,
-                status_bag,
-                _,
-                _,
-                _,
-                _,
-                _,
-                _,
-                _,
-            )| {
-                Snap {
-                    entity,
-                    id: unit.id,
-                    team: *team,
-                    is_stunned: stunned.is_some(),
-                    is_paralyzed: status_bag
-                        .as_ref()
-                        .map(|b| b.has(&StatusEffectKind::Paralyzed))
-                        .unwrap_or(false),
-                }
+                id: unit.id,
+                team: *team,
+                is_stunned: stunned.is_some(),
+                is_paralyzed: status_bag
+                    .as_ref()
+                    .map(|b| b.has(&StatusEffectKind::Paralyzed))
+                    .unwrap_or(false),
             },
         )
         .collect();
@@ -354,4 +336,3 @@ pub fn advance_turn_system(
         }
     }
 }
-

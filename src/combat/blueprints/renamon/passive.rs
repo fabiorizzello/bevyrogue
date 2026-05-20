@@ -11,9 +11,7 @@ use crate::combat::{
     unit::Unit,
 };
 
-use super::{
-    OWNER, PASSIVE_OWNER, PASSIVE_SIGNAL_NAME, PASSIVE_TIMELINE_ID, PASSIVE_TRIGGER_KEY,
-};
+use super::{OWNER, PASSIVE_OWNER, PASSIVE_SIGNAL_NAME, PASSIVE_TIMELINE_ID, PASSIVE_TRIGGER_KEY};
 
 pub fn register_passive_runtime(app: &mut App) {
     register_passive_hooks(app);

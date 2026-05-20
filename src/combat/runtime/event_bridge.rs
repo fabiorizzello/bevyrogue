@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
 use crate::combat::{
-    runtime::signal::{Signal, SignalBus, SignalPayload},
     events::{CombatEvent, CombatEventKind},
+    runtime::signal::{Signal, SignalBus, SignalPayload},
 };
 
 /// Mirrors kernel combat events onto the passive signal bus.

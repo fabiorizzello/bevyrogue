@@ -1,12 +1,12 @@
 use bevy::prelude::*;
-use bevyrogue::combat::runtime::SignalPayload;
-use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::blueprints;
 use bevyrogue::combat::blueprints::dorumon::{PredatorLoopState, PredatorLoopTransition};
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::kernel::{CombatKernelTransition, register_combat_kernel_runtime};
 use bevyrogue::combat::log::ActionLog;
 use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
+use bevyrogue::combat::runtime::SignalPayload;
+use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::sp::SpPool;
 use bevyrogue::combat::state::{CombatState, ResolvedAction, UltEffect};
 use bevyrogue::combat::team::Team;

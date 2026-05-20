@@ -437,8 +437,9 @@ fn skill_resolution_emits_twin_core_signals_through_blueprints() {
         follow_up: None,
     };
 
-    let resolved = bevyrogue::combat::resolution::resolve_action(&intent, &agumon_kit, Some(&skills))
-        .expect("should resolve sharp_claws");
+    let resolved =
+        bevyrogue::combat::resolution::resolve_action(&intent, &agumon_kit, Some(&skills))
+            .expect("should resolve sharp_claws");
 
     assert_eq!(resolved.skill_id, SkillId("sharp_claws".into()));
     assert!(!resolved.custom_signals.is_empty());

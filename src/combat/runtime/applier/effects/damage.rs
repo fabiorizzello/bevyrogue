@@ -2,21 +2,21 @@ use bevy::log;
 use bevy::prelude::*;
 
 use crate::combat::{
-    runtime::{intent::CastId, ExtRegistries},
     buffs::DrBag,
-    damage::{calculate_damage, AttackContext},
+    damage::{AttackContext, calculate_damage},
     events::CombatEventKind,
     modifiers::{DamageModifierLedger, ModifierChain, ModifierLayer},
     round_flags::RoundFlags,
+    runtime::{ExtRegistries, intent::CastId},
     status_effect::{StatusBag, StatusEffectKind},
     stun::Stunned,
     team::Team,
-    toughness::{can_apply_toughness_damage, DamageKind, Toughness},
+    toughness::{DamageKind, Toughness, can_apply_toughness_damage},
     types::{DamageTag, UnitId},
     unit::{Ko, Unit},
 };
 
-use super::super::{emit_event, find_unit_snapshot, UnitSnapshot};
+use super::super::{UnitSnapshot, emit_event, find_unit_snapshot};
 
 pub(in crate::combat::runtime::applier) fn apply_deal_damage(
     world: &mut World,
@@ -76,9 +76,7 @@ pub(in crate::combat::runtime::applier) fn apply_deal_damage(
             .get_resource::<ExtRegistries>()
             .map(|regs| regs.pre_damage_reactions.iter().map(|(_, f)| *f).collect())
             .unwrap_or_default();
-        fns.iter()
-            .filter_map(|f| f(world, target, cast_id))
-            .next()
+        fns.iter().filter_map(|f| f(world, target, cast_id)).next()
     };
 
     let reaction_chain = world

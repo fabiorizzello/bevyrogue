@@ -9,5 +9,8 @@ pub use anim_graph::*;
 pub use clip::*;
 pub use player::AnimGraphPlayer;
 pub use plugin::*;
-pub use registry::{AnimationStancePaths, SkillGraphRegistry, StanceGraphRegistry, SkillGraphPaths, StanceGraphPaths};
+pub use registry::{
+    AnimationStancePaths, SkillGraphPaths, SkillGraphRegistry, StanceGraphPaths,
+    StanceGraphRegistry,
+};
 pub use validation::*;

@@ -66,8 +66,8 @@ fn effect_roundtrip_damage_struct_variant() {
         s.contains("amount:18") && s.contains("target:Single"),
         "unexpected serialized form: {s}"
     );
-    let back: Effect = ron::from_str("Damage(amount: 18, target: Single)")
-        .expect("parse with default per_hop");
+    let back: Effect =
+        ron::from_str("Damage(amount: 18, target: Single)").expect("parse with default per_hop");
     assert_eq!(back, effect);
 }
 

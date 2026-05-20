@@ -9,7 +9,6 @@ use bevy::app::ScheduleRunnerPlugin;
 use bevy::prelude::*;
 use moonshine_kind::Instance;
 
-use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::bootstrap::{
     EncounterPreset, SelectionRequest, apply_composition, bootstrap_encounter,
 };
@@ -21,6 +20,7 @@ use bevyrogue::combat::jsonl_logger::jsonl_logger_system;
 use bevyrogue::combat::log::ActionLog;
 use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
 use bevyrogue::combat::rng::CombatRng;
+use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::sp::SpPool;
 use bevyrogue::combat::state::{CombatPhase, CombatState};
 use bevyrogue::combat::stun::Stunned;

@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+use crate::combat::StatusBag;
 use crate::combat::buffs::DrBag;
 use crate::combat::counterplay::EnemyCounterplayKit;
 use crate::combat::kit::UnitSkills;
@@ -10,7 +11,6 @@ use crate::combat::toughness::Toughness;
 use crate::combat::types::{SkillId, UnitId};
 use crate::combat::ultimate::UltimateCharge;
 use crate::combat::unit::{BasicStreak, Commander, Ko, SlotIndex, Unit};
-use crate::combat::StatusBag;
 
 #[derive(Message, Debug, Clone, PartialEq, Eq)]
 pub enum ActionIntent {
