@@ -1,15 +1,38 @@
 use bevyrogue::animation::{AnimGraph, FrameCueCommand, ReleaseKernelCue};
+use rstest::rstest;
 
-#[test]
-fn id_required_field_enforced() {
-    let without_id = r#"(
-        clip: "skill",
-        entry: "idle",
-        nodes: { "idle": (frames: (0, 3)) },
-        transitions: []
-    )"#;
-    let result = ron::from_str::<AnimGraph>(without_id);
-    assert!(result.is_err(), "missing id field must be rejected");
+#[rstest]
+#[case::missing_id_field(r#"(
+    clip: "skill",
+    entry: "idle",
+    nodes: { "idle": (frames: (0, 3)) },
+    transitions: []
+)"#)]
+#[case::unknown_frame_cue_variant(r#"(
+    id: "test_graph",
+    clip: "skill",
+    entry: "idle",
+    nodes: {
+        "idle": (
+            frames: (0, 3),
+            cues: [(at: 1, command: UnknownVariant)]
+        )
+    },
+    transitions: []
+)"#)]
+#[case::unknown_top_level_field(r#"(
+    id: "test_graph",
+    clip: "skill",
+    entry: "idle",
+    nodes: { "idle": (frames: (0, 3)) },
+    transitions: [],
+    unknown_field: "should_fail"
+)"#)]
+fn anim_graph_rejects_invalid_ron(#[case] input: &str) {
+    assert!(
+        ron::from_str::<AnimGraph>(input).is_err(),
+        "AnimGraph deserialization should have failed"
+    );
 }
 
 #[test]
@@ -82,38 +105,6 @@ fn graph_with_presentation_cue_parses() {
         matches!(cues[0].command, FrameCueCommand::Presentation(_)),
         "command should be Presentation"
     );
-}
-
-#[test]
-fn unknown_frame_cue_command_variant_rejected() {
-    let ron_str = r#"(
-        id: "test_graph",
-        clip: "skill",
-        entry: "idle",
-        nodes: {
-            "idle": (
-                frames: (0, 3),
-                cues: [(at: 1, command: UnknownVariant)]
-            )
-        },
-        transitions: []
-    )"#;
-    let result = ron::from_str::<AnimGraph>(ron_str);
-    assert!(result.is_err(), "unknown FrameCueCommand variant must be rejected");
-}
-
-#[test]
-fn unknown_top_level_field_rejected() {
-    let ron_str = r#"(
-        id: "test_graph",
-        clip: "skill",
-        entry: "idle",
-        nodes: { "idle": (frames: (0, 3)) },
-        transitions: [],
-        unknown_field: "should_fail"
-    )"#;
-    let result = ron::from_str::<AnimGraph>(ron_str);
-    assert!(result.is_err(), "unknown AnimGraph field must be rejected (deny_unknown_fields)");
 }
 
 #[test]

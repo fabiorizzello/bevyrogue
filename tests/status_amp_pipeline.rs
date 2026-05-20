@@ -6,6 +6,8 @@
 ///   C — Ice base=100 on Chilled defender      → final damage = 115
 ///   D — Heated unit takes turn                → OnDamageDealt{amount:4, damage_tag:Fire}
 use bevy::prelude::*;
+use rstest::rstest;
+
 use bevyrogue::combat::{
     StatusBag, StatusEffectKind,
     av::ActionValueUpdated,
@@ -149,106 +151,52 @@ fn setup_amp_app() -> (App, Entity, Entity) {
     (app, attacker, defender)
 }
 
-// ─── case A: Fire base=100 on non-Heated defender → 100 ───────────────────────
+// ─── cases A/B/C: status-amp pipeline on incoming damage ──────────────────────
+//
+// A — Fire base=100 on non-Heated defender → 100 (no amp)
+// B — Fire base=100 on Heated defender     → 115 (+15% via Heated amp)
+// C — Ice  base=100 on Chilled defender    → 115 (+15% via Chilled amp)
 
-#[test]
-fn fire_base100_non_heated_deals_100() {
-    let (mut app, _, _) = setup_amp_app();
-
-    app.world_mut().write_message(ActionIntent::Skill {
-        attacker: UnitId(1),
-        skill_id: SkillId("fire100".into()),
-        target: UnitId(2),
-    });
-    app.update();
-
-    let events = read_combat_events(&mut app);
-    let damage_event = events.iter().find(|e| {
-        matches!(
-            &e.kind,
-            CombatEventKind::OnDamageDealt {
-                damage_tag: DamageTag::Fire,
-                ..
-            }
-        )
-    });
-    let amount = match damage_event.map(|e| &e.kind) {
-        Some(CombatEventKind::OnDamageDealt { amount, .. }) => *amount,
-        _ => panic!("expected OnDamageDealt Fire event"),
-    };
-    assert_eq!(amount, 100, "non-Heated: fire100 base must deal 100");
-}
-
-// ─── case B: Fire base=100 on Heated defender → 115 ──────────────────────────
-
-#[test]
-fn fire_base100_heated_defender_deals_115() {
+#[rstest]
+#[case::fire_non_heated(None, "fire100", DamageTag::Fire, 100)]
+#[case::fire_heated(Some(StatusEffectKind::Heated), "fire100", DamageTag::Fire, 115)]
+#[case::ice_chilled(Some(StatusEffectKind::Chilled), "ice100", DamageTag::Ice, 115)]
+fn status_amp_pipeline_deals_expected_damage(
+    #[case] pre_status: Option<StatusEffectKind>,
+    #[case] skill: &str,
+    #[case] expected_tag: DamageTag,
+    #[case] expected_amount: i32,
+) {
     let (mut app, _, defender) = setup_amp_app();
 
-    // Pre-apply Heated to defender.
-    app.world_mut()
-        .get_mut::<StatusBag>(defender)
-        .unwrap()
-        .apply(StatusEffectKind::Heated, 3);
+    if let Some(ref kind) = pre_status {
+        app.world_mut()
+            .get_mut::<StatusBag>(defender)
+            .unwrap()
+            .apply(kind.clone(), 3);
+    }
 
     app.world_mut().write_message(ActionIntent::Skill {
         attacker: UnitId(1),
-        skill_id: SkillId("fire100".into()),
+        skill_id: SkillId(skill.into()),
         target: UnitId(2),
     });
     app.update();
 
     let events = read_combat_events(&mut app);
-    let damage_event = events.iter().find(|e| {
-        matches!(
-            &e.kind,
+    let amount = events
+        .iter()
+        .find_map(|e| match &e.kind {
             CombatEventKind::OnDamageDealt {
-                damage_tag: DamageTag::Fire,
-                ..
-            }
-        )
-    });
-    let amount = match damage_event.map(|e| &e.kind) {
-        Some(CombatEventKind::OnDamageDealt { amount, .. }) => *amount,
-        _ => panic!("expected OnDamageDealt Fire event"),
-    };
-    assert_eq!(amount, 115, "Heated defender: fire100 base must deal 115");
-}
-
-// ─── case C: Ice base=100 on Chilled defender → 115 ──────────────────────────
-
-#[test]
-fn ice_base100_chilled_defender_deals_115() {
-    let (mut app, _, defender) = setup_amp_app();
-
-    // Pre-apply Chilled to defender.
-    app.world_mut()
-        .get_mut::<StatusBag>(defender)
-        .unwrap()
-        .apply(StatusEffectKind::Chilled, 3);
-
-    app.world_mut().write_message(ActionIntent::Skill {
-        attacker: UnitId(1),
-        skill_id: SkillId("ice100".into()),
-        target: UnitId(2),
-    });
-    app.update();
-
-    let events = read_combat_events(&mut app);
-    let damage_event = events.iter().find(|e| {
-        matches!(
-            &e.kind,
-            CombatEventKind::OnDamageDealt {
-                damage_tag: DamageTag::Ice,
-                ..
-            }
-        )
-    });
-    let amount = match damage_event.map(|e| &e.kind) {
-        Some(CombatEventKind::OnDamageDealt { amount, .. }) => *amount,
-        _ => panic!("expected OnDamageDealt Ice event"),
-    };
-    assert_eq!(amount, 115, "Chilled defender: ice100 base must deal 115");
+                amount, damage_tag, ..
+            } if *damage_tag == expected_tag => Some(*amount),
+            _ => None,
+        })
+        .unwrap_or_else(|| panic!("expected OnDamageDealt {expected_tag:?} event"));
+    assert_eq!(
+        amount, expected_amount,
+        "pre_status={pre_status:?} skill={skill} tag={expected_tag:?}: expected {expected_amount}"
+    );
 }
 
 // ─── case D: Heated unit takes turn → DoT event amount=4, tag=Fire ───────────
