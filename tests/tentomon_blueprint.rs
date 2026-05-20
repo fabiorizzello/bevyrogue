@@ -3,12 +3,13 @@ use bevyrogue::combat::blueprints::tentomon::{
     OWNER as TENTOMON_OWNER, SIG_BUILD_CIRCUIT_CHARGE, SIG_BUILD_STATIC_CHARGE,
     SIG_SPEND_CIRCUIT_CHARGE,
 };
+use bevyrogue::combat::blueprints::{self, tentomon::BatteryLoopState};
 use bevyrogue::combat::kernel::CombatKernelTransition;
 use bevyrogue::combat::plugin::CombatPlugin;
 use bevyrogue::combat::state::{ResolvedAction, UltEffect};
 use bevyrogue::combat::types::{DamageTag, SkillId, UnitId};
-use bevyrogue::combat::blueprints::{self, tentomon::BatteryLoopState};
 use bevyrogue::data::skills_ron::{CustomSignalPayload, SkillCustomSignal, TargetShape};
+use rstest::rstest;
 
 fn base_action() -> ResolvedAction {
     ResolvedAction {
@@ -45,12 +46,19 @@ fn signal(owner: &str, signal: &str, amount: u16) -> SkillCustomSignal {
     )
 }
 
-#[test]
-fn tentomon_blueprint_maps_static_charge() {
+#[rstest]
+#[case::static_charge("build_static_charge", SIG_BUILD_STATIC_CHARGE, 1)]
+#[case::circuit_charge("build_circuit_charge", SIG_BUILD_CIRCUIT_CHARGE, 1)]
+#[case::spend_circuit_charge("spend_circuit_charge", SIG_SPEND_CIRCUIT_CHARGE, 2)]
+fn tentomon_blueprint_dispatch(
+    #[case] signal_name: &str,
+    #[case] expected_name: &str,
+    #[case] amount: u16,
+) {
     let mut action = base_action();
     action
         .custom_signals
-        .push(signal("tentomon", "build_static_charge", 1));
+        .push(signal("tentomon", signal_name, amount));
 
     let transitions = blueprints::transitions_for_action(&action);
     assert_eq!(transitions.len(), 1);
@@ -58,46 +66,8 @@ fn tentomon_blueprint_maps_static_charge() {
         transitions[0],
         CombatKernelTransition::Blueprint {
             owner: TENTOMON_OWNER.to_string(),
-            name: SIG_BUILD_STATIC_CHARGE.to_string(),
-            payload: bevyrogue::combat::runtime::SignalPayload::Amount(1),
-        }
-    );
-}
-
-#[test]
-fn tentomon_blueprint_maps_circuit_charge() {
-    let mut action = base_action();
-    action
-        .custom_signals
-        .push(signal("tentomon", "build_circuit_charge", 1));
-
-    let transitions = blueprints::transitions_for_action(&action);
-    assert_eq!(transitions.len(), 1);
-    assert_eq!(
-        transitions[0],
-        CombatKernelTransition::Blueprint {
-            owner: TENTOMON_OWNER.to_string(),
-            name: SIG_BUILD_CIRCUIT_CHARGE.to_string(),
-            payload: bevyrogue::combat::runtime::SignalPayload::Amount(1),
-        }
-    );
-}
-
-#[test]
-fn tentomon_blueprint_maps_spend_circuit_charge() {
-    let mut action = base_action();
-    action
-        .custom_signals
-        .push(signal("tentomon", "spend_circuit_charge", 2));
-
-    let transitions = blueprints::transitions_for_action(&action);
-    assert_eq!(transitions.len(), 1);
-    assert_eq!(
-        transitions[0],
-        CombatKernelTransition::Blueprint {
-            owner: TENTOMON_OWNER.to_string(),
-            name: SIG_SPEND_CIRCUIT_CHARGE.to_string(),
-            payload: bevyrogue::combat::runtime::SignalPayload::Amount(2),
+            name: expected_name.to_string(),
+            payload: bevyrogue::combat::runtime::SignalPayload::Amount(amount as i64),
         }
     );
 }
@@ -121,8 +91,8 @@ fn integration_blueprint_to_kernel_state() {
         .push(signal("tentomon", "build_static_charge", 1));
 
     let transitions = blueprints::transitions_for_action(&action);
-    use bevyrogue::combat::runtime::intent::CastId;
     use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
+    use bevyrogue::combat::runtime::intent::CastId;
     for transition in transitions {
         app.world_mut().write_message(CombatEvent {
             kind: CombatEventKind::OnKernelTransition { transition },
