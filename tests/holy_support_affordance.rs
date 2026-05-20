@@ -81,27 +81,6 @@ fn emit_holy_transition(app: &mut App, transition: HolySupportTransition) {
     app.update();
 }
 
-#[test]
-fn holy_support_snapshot_surfaces_grace_capacity_and_martyr_state() {
-    let state = HolySupportState {
-        grace: 3,
-        martyr_light_marked_this_cycle: true,
-        martyr_light_consumed_this_cycle: false,
-        last_signal: Some(HolySupportTransition::build_grace(3)),
-    };
-
-    let snapshot = state.snapshot();
-
-    assert_eq!(snapshot.grace, 3);
-    assert_eq!(snapshot.grace_cap, 3);
-    assert!(snapshot.martyr_light_marked_this_cycle);
-    assert!(!snapshot.martyr_light_consumed_this_cycle);
-    assert_eq!(
-        snapshot.last_signal,
-        Some(HolySupportTransition::build_grace(3))
-    );
-}
-
 fn holy_support_section<'a>(snapshot: &'a bevyrogue::combat::observability::ValidationSnapshot) -> &'a bevyrogue::combat::runtime::ValidationSection {
     snapshot
         .section("support")

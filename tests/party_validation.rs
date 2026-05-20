@@ -2,7 +2,9 @@ use bevyrogue::combat::bootstrap::{
     EncounterPreset, SelectionError, SelectionRequest, bootstrap_encounter,
 };
 use bevyrogue::combat::types::UnitId;
+use bevyrogue::data::party_ron::PartyConfig;
 use bevyrogue::data::units_ron::UnitRoster;
+use bevyrogue::party_validation::{PartyConfigError, validate_party_config};
 
 fn canonical_roster() -> UnitRoster {
     bevyrogue::data::aggregate_unit_roster()
@@ -10,6 +12,26 @@ fn canonical_roster() -> UnitRoster {
 
 // MVP v5.3 roster (D039): valid IDs are 1, 2, 5, 7, 9, 11, 12, 13, 14, 15, 16, 17.
 // IDs 3, 4, 6, 8, 10 were removed in the cleanup of deprecated lines.
+
+#[test]
+fn party_ron_deserializes_and_validates() {
+    let raw = include_str!("../assets/data/party.ron");
+    let p: PartyConfig = ron::from_str(raw).expect("party.ron must parse");
+    assert!(validate_party_config(&p).is_ok());
+    // MVP v5.3 party: Agumon, Gabumon, Tentomon, Patamon (D039)
+    assert_eq!(p.ally_ids, [UnitId(1), UnitId(2), UnitId(11), UnitId(9)]);
+    assert_eq!(p.tamer_id, UnitId(0));
+}
+
+#[test]
+fn party_config_wrong_tamer_is_rejected() {
+    let cfg = PartyConfig {
+        ally_ids: [UnitId(1), UnitId(2), UnitId(3), UnitId(4)],
+        tamer_id: UnitId(1),
+    };
+    let err = validate_party_config(&cfg).unwrap_err();
+    assert_eq!(err, PartyConfigError::WrongTamer { got: UnitId(1) });
+}
 
 #[test]
 fn happy_path_select_four_rookies() {
