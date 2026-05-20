@@ -2,36 +2,20 @@ use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::{
     energy::{Energy, RoundEnergyTracker},
     events::{CombatEvent, CombatEventKind},
-    follow_up::{
-        FollowUpIntent, FollowUpTrace, follow_up_listener_system, form_identity_listener_system,
-        resolve_follow_up_action_system,
-    },
+    follow_up::FollowUpTrace,
     kit::{FormIdentityKit, UnitSkills},
-    log::ActionLog,
     round_flags::RoundFlags,
-    sp::SpPool,
-    state::CombatState,
     team::Team,
     toughness::Toughness,
-    turn_order::TurnOrder,
-    turn_system::{ActionIntent, resolve_action_system},
+    turn_system::ActionIntent,
     types::{Attribute, DamageTag, EvoStage, SkillId, UnitId},
     ultimate::{UltAccumulationTrigger, UltimateCharge},
     unit::{BasicStreak, Unit},
 };
-use bevyrogue::data::{
-    SkillBookHandle,
-    skills_ron::SkillBook,
-    units_ron::{UnitDef, UnitRoster},
-};
+use bevyrogue::data::units_ron::{UnitDef, UnitRoster};
 
-fn load_roster() -> UnitRoster {
-    bevyrogue::data::aggregate_unit_roster()
-}
-
-fn load_skill_book() -> SkillBook {
-    bevyrogue::data::aggregate_skill_book()
-}
+mod common;
+use common::{app::form_identity_runtime_app as setup_app, load_roster, load_skill_book};
 
 fn pilot(roster: &UnitRoster, name: &str) -> UnitDef {
     roster
@@ -40,36 +24,6 @@ fn pilot(roster: &UnitRoster, name: &str) -> UnitDef {
         .find(|unit| unit.name == name)
         .cloned()
         .unwrap_or_else(|| panic!("missing pilot {name}"))
-}
-
-fn setup_app(skill_book: SkillBook) -> App {
-    let mut app = App::new();
-    app.init_resource::<CombatState>()
-        .init_resource::<TurnOrder>()
-        .init_resource::<SpPool>()
-        .init_resource::<ActionLog>()
-        .init_resource::<Time>()
-        .add_message::<ActionIntent>()
-        .add_message::<CombatEvent>()
-        .add_message::<FollowUpIntent>()
-        .add_message::<FollowUpTrace>()
-        .add_systems(
-            Update,
-            (
-                resolve_action_system,
-                follow_up_listener_system,
-                form_identity_listener_system,
-                resolve_follow_up_action_system,
-            )
-                .chain(),
-        );
-
-    let mut assets = Assets::<SkillBook>::default();
-    let handle = assets.add(skill_book);
-    app.insert_resource(assets);
-    app.insert_resource(SkillBookHandle(handle));
-    app.world_mut().resource_mut::<SpPool>().current = 999;
-    app
 }
 
 fn spawn_greymon(app: &mut App, def: &UnitDef) -> Entity {

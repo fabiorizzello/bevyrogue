@@ -4,7 +4,6 @@ use bevyrogue::combat::{
         ExtRegistries, SignalBus, SignalTaxonomy, register_kernel_builtins,
         timeline::{Beat, BeatEdge, BeatKind, BeatPayload, TimelineLibrary},
     },
-    blueprints::register_all_blueprint_exts,
     events::{CombatEvent, CombatEventKind},
     follow_up::{
         FollowUpDecision, FollowUpIntent, FollowUpTrace, follow_up_listener_system,
@@ -33,13 +32,8 @@ use bevyrogue::data::{
     units_ron::{UnitDef, UnitRoster},
 };
 
-fn load_roster() -> UnitRoster {
-    bevyrogue::data::aggregate_unit_roster()
-}
-
-fn load_skill_book() -> SkillBook {
-    bevyrogue::data::aggregate_skill_book()
-}
+mod common;
+use common::{app::skill_book_runtime_app as setup_app, load_roster, load_skill_book};
 
 fn pilot(roster: &UnitRoster, name: &str) -> UnitDef {
     roster
@@ -48,45 +42,6 @@ fn pilot(roster: &UnitRoster, name: &str) -> UnitDef {
         .find(|unit| unit.name == name)
         .cloned()
         .unwrap_or_else(|| panic!("missing pilot {name}"))
-}
-
-fn setup_app(skill_book: SkillBook) -> App {
-    let mut app = App::new();
-    app.init_resource::<CombatState>()
-        .init_resource::<TurnOrder>()
-        .init_resource::<SpPool>()
-        .init_resource::<ActionLog>()
-        .init_resource::<Time>()
-        .insert_resource(TimelineLibrary::<String>::default())
-        .init_resource::<ExtRegistries>()
-        .add_message::<ActionIntent>()
-        .add_message::<CombatEvent>()
-        .add_message::<FollowUpIntent>()
-        .add_message::<FollowUpTrace>()
-        .add_systems(
-            Update,
-            (
-                resolve_action_system,
-                follow_up_listener_system,
-                resolve_follow_up_action_system,
-            )
-                .chain(),
-        );
-
-    let mut assets = Assets::<SkillBook>::default();
-    let handle = assets.add(skill_book.clone());
-    app.insert_resource(assets);
-    app.insert_resource(SkillBookHandle(handle));
-    {
-        let mut regs = app.world_mut().resource_mut::<ExtRegistries>();
-        register_kernel_builtins(&mut regs);
-        register_all_blueprint_exts(&mut regs);
-        let compiled = compile_skill_book_timelines(&skill_book, &regs)
-            .expect("follow_up_triggers test book must compile");
-        app.world_mut().resource_mut::<TimelineLibrary<String>>().timelines = compiled;
-    }
-    app.world_mut().resource_mut::<SpPool>().current = 999;
-    app
 }
 
 fn spawn_from_def(

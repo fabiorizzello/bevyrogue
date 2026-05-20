@@ -30,18 +30,29 @@
 
 use bevy::prelude::*;
 use bevyrogue::combat::{
-    blueprints::add_runtime_plugins,
+    blueprints::{add_runtime_plugins, register_all_blueprint_exts},
     events::CombatEvent,
+    follow_up::{
+        FollowUpIntent, FollowUpTrace, follow_up_listener_system, form_identity_listener_system,
+        resolve_follow_up_action_system,
+    },
     kernel::register_combat_kernel_runtime,
+    log::ActionLog,
     modifiers::DamageModifierLedger,
     plugin::CombatPlugin,
     rng::CombatRng,
     runtime::{
         BlueprintState, CastIdGen, ExtRegistries, IntentQueue, PassiveListeners, SignalBus,
         SignalTaxonomy, applier::intent_applier, combat_event_to_signal_system,
-        passive_dispatch_system,
+        passive_dispatch_system, register_kernel_builtins,
+        timeline::TimelineLibrary,
     },
+    sp::SpPool,
+    state::CombatState,
+    turn_order::TurnOrder,
+    turn_system::{ActionIntent, resolve_action_system},
 };
+use bevyrogue::data::{SkillBookHandle, skill_timeline::compile_skill_book_timelines, skills_ron::SkillBook};
 
 /// Chainable test-app builder. Default is empty `App::new()` carrying just the
 /// `CombatEvent` message; opt into layers via the `with_*` methods.
@@ -167,4 +178,84 @@ pub fn kernel_app(seed: u64) -> App {
         .with_rng(seed)
         .with_kernel()
         .build()
+}
+
+/// Convenience: shape-D skill-book runtime app — `resolve_action +
+/// follow_up_listener + resolve_follow_up_action` chain with a compiled
+/// `TimelineLibrary` populated from `book`. Used by tests/follow_up_chains.rs,
+/// tests/follow_up_triggers.rs, and tests/pipeline_dispatch.rs.
+///
+/// `SpPool::current` is preset to `999` so callers don't need to top it up.
+pub fn skill_book_runtime_app(book: SkillBook) -> App {
+    let mut app = App::new();
+    app.init_resource::<CombatState>()
+        .init_resource::<TurnOrder>()
+        .init_resource::<SpPool>()
+        .init_resource::<ActionLog>()
+        .init_resource::<Time>()
+        .insert_resource(TimelineLibrary::<String>::default())
+        .init_resource::<ExtRegistries>()
+        .add_message::<ActionIntent>()
+        .add_message::<CombatEvent>()
+        .add_message::<FollowUpIntent>()
+        .add_message::<FollowUpTrace>()
+        .add_systems(
+            Update,
+            (
+                resolve_action_system,
+                follow_up_listener_system,
+                resolve_follow_up_action_system,
+            )
+                .chain(),
+        );
+
+    let mut assets = Assets::<SkillBook>::default();
+    let handle = assets.add(book.clone());
+    app.insert_resource(assets);
+    app.insert_resource(SkillBookHandle(handle));
+    {
+        let mut regs = app.world_mut().resource_mut::<ExtRegistries>();
+        register_kernel_builtins(&mut regs);
+        register_all_blueprint_exts(&mut regs);
+        let compiled = compile_skill_book_timelines(&book, &regs)
+            .expect("skill_book_runtime_app: book must compile");
+        app.world_mut().resource_mut::<TimelineLibrary<String>>().timelines = compiled;
+    }
+    app.world_mut().resource_mut::<SpPool>().current = 999;
+    app
+}
+
+/// Convenience: shape-D' follow-up engine app — same systems as
+/// [`skill_book_runtime_app`] plus `form_identity_listener_system`, and
+/// WITHOUT `TimelineLibrary`/`ExtRegistries`/skill-book compilation. Used by
+/// tests/form_identity.rs, which exercises the follow-up resolver without
+/// running compiled timelines.
+pub fn form_identity_runtime_app(book: SkillBook) -> App {
+    let mut app = App::new();
+    app.init_resource::<CombatState>()
+        .init_resource::<TurnOrder>()
+        .init_resource::<SpPool>()
+        .init_resource::<ActionLog>()
+        .init_resource::<Time>()
+        .add_message::<ActionIntent>()
+        .add_message::<CombatEvent>()
+        .add_message::<FollowUpIntent>()
+        .add_message::<FollowUpTrace>()
+        .add_systems(
+            Update,
+            (
+                resolve_action_system,
+                follow_up_listener_system,
+                form_identity_listener_system,
+                resolve_follow_up_action_system,
+            )
+                .chain(),
+        );
+
+    let mut assets = Assets::<SkillBook>::default();
+    let handle = assets.add(book);
+    app.insert_resource(assets);
+    app.insert_resource(SkillBookHandle(handle));
+    app.world_mut().resource_mut::<SpPool>().current = 999;
+    app
 }
