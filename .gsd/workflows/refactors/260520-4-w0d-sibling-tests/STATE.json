@@ -1,0 +1,28 @@
+{
+  "workflow": "260520-4-w0d-sibling-tests",
+  "parent": "260520-3-w0c-tier-c-residue",
+  "status": "closed",
+  "phase": "complete",
+  "created": "2026-05-20",
+  "closed": "2026-05-20",
+  "head_at_start": "89728ae",
+  "head_at_close": "b123dd2",
+  "audit_finding": "all 3 files were pure-relocate; super::* glob was sloppy import style, not real private access",
+  "waves": {
+    "W0d-1": { "source": "src/combat/turn_system/tests.rs", "loc": 303, "tests": 4, "status": "complete", "target": "tests/turn_system_internals.rs", "commit": "1cadf20" },
+    "W0d-2": { "source": "src/combat/runtime/builtins/tests.rs", "loc": 329, "tests": 7, "status": "complete", "target": "tests/runtime_builtins_internals.rs", "commit": "9cc9d93" },
+    "W0d-3": { "source": "src/combat/runtime/runner/tests.rs", "loc": 389, "tests": 6, "status": "complete", "target": "tests/runtime_runner_internals.rs", "commit": "b123dd2" }
+  },
+  "verify_gates": {
+    "cargo_test_tests": "green",
+    "cargo_test_features_windowed_tests": "green",
+    "cargo_check_tests": "exit 0",
+    "cargo_check_features_windowed_tests": "exit 0",
+    "scripts_check_loc_cap": "0 offenders"
+  },
+  "relocated_loc": 1021,
+  "tests_relocated": 17,
+  "src_inline_residue_loc": 131,
+  "src_inline_residue_files": 4,
+  "sibling_tests_rs_remaining": 0
+}
