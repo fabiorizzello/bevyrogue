@@ -8,10 +8,10 @@ Append-only register. Agents read this before every unit.
 cargo check                   # headless (default)
 cargo test                    # integration suite (tests/)
 cargo run                     # headless run
-cargo run --features windowed # egui UI
+cargo run --features windowed # egui UI (== `cargo winx`; includes bevy/dynamic_linking)
 ```
 
-Toolchain: `rust-toolchain.toml`. Dev profile: cranelift (`Cargo.toml`).
+Toolchain: `rust-toolchain.toml`. Dev profile: cranelift on the workspace member, LLVM at `opt-level=0` on all dependencies (`Cargo.toml`). The `windowed` feature pulls `bevy/dynamic_linking`, so incremental rebuilds skip the static relink of the bevy_* graph. Resulting binary requires the bevy `.so` from `target/` — dev-only, not distributable.
 Test workflow (nextest `agent` profile, seeded `bevy_rand`, insta snapshots): `docs/agent-testing.md`.
 ## Rules
 

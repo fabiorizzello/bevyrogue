@@ -1,5 +1,15 @@
 # Agent Testing Workflow
 
+## Visual verification (`windowed`)
+Headless is the default and what CI/agent loops run. For human visual checks:
+
+```bash
+cargo run --features windowed   # egui UI
+cargo winx                      # alias, identical (.cargo/config.toml)
+```
+
+The `windowed` feature gates winit/wgpu/bevy_ui/egui *and* `bevy/dynamic_linking`. First build is heavy (full rendering stack); subsequent rebuilds skip the static bevy_* relink. Dependency crates compile at `opt-level=0` (LLVM), workspace member at `opt-level=1` (cranelift).
+
 ## Snapshot tests (`insta`)
 `.snap` in `tests/snapshots/` are contracts. Diff is a product change; verify behavior, don't auto-accept.
 

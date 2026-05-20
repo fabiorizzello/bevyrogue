@@ -30,7 +30,10 @@ moonshine-kind = "0.4.2"
 [features]
 default = []
 # Pulls winit + wgpu + bevy_ui + egui only when building for visual inspection.
-windowed = ["dep:bevy_egui", "bevy/2d"]
+# Includes `bevy/dynamic_linking` so incremental rebuilds don't statically relink
+# the entire bevy_* graph. Dev-only; produces a non-distributable binary that
+# requires the bevy .so from target/.
+windowed = ["dep:bevy_egui", "bevy/2d", "bevy/dynamic_linking"]
 dev = ["bevy/dynamic_linking"]
 
 [dev-dependencies]
@@ -133,4 +136,5 @@ codegen-backend = "cranelift"
 # incremental builds. Remove the wildcard override when nightly fixes the ICE.
 [profile.dev.package."*"]
 codegen-backend = "llvm"
+opt-level = 0
 
