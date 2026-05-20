@@ -28,6 +28,16 @@ use rstest::rstest;
     transitions: [],
     unknown_field: "should_fail"
 )"#)]
+#[case::asset_like_truncated(r#"(
+    id: "broken",
+    clip: "all",
+    entry: "cast",
+    nodes: {
+        "cast": (frames: (0, 1)),
+    },
+    transitions: [
+        (from: "cast", to: Exit, when: Always)
+"#)]
 fn anim_graph_rejects_invalid_ron(#[case] input: &str) {
     assert!(
         ron::from_str::<AnimGraph>(input).is_err(),
