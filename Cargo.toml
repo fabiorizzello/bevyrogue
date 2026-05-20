@@ -68,10 +68,6 @@ name = "anim_gameplay_command_forbidden"
 path = "tests/anim_gameplay_command_forbidden.rs"
 
 [[test]]
-name = "anim_registry"
-path = "tests/anim_registry.rs"
-
-[[test]]
 name = "anim_stance_asset"
 path = "tests/anim_stance_asset.rs"
 

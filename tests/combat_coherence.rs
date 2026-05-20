@@ -658,12 +658,6 @@ fn break_follow_up_and_ult_timing_trace() {
         "timeline-backed root breaks leave the allied follow-up ultimate window empty until the follow-up cast resolves"
     );
 
-    assert_eq!(
-        ult_current(&mut app, renamon.id),
-        0,
-        "timeline-backed root breaks leave the allied follow-up ultimate window empty until the follow-up cast resolves"
-    );
-
     app.world_mut().write_message(ActionIntent::Ultimate {
         attacker: renamon.id,
         target: UnitId(101),

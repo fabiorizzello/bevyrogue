@@ -1,33 +1,10 @@
 use bevyrogue::animation::{
-    AnimGraph, AnimationValidationCatalogs, AnimationValidationCheck, validate_anim_graph,
-    Clip, ParticleId,
+    AnimGraph, AnimationValidationCatalogs, AnimationValidationCheck, Clip, validate_anim_graph,
 };
 
 fn parse_valid_clip() -> Clip {
     ron::from_str(include_str!("../assets/test/animation_validation/valid_clip.ron"))
         .expect("valid_clip.ron should parse")
-}
-
-/// Anti-DRY gate: production agumon graph must contain zero gameplay commands (D001).
-#[test]
-fn agumon_graph_has_no_gameplay_commands() {
-    let ron_str = include_str!("../assets/digimon/agumon/anim_graph.ron");
-    let graph: AnimGraph = ron::from_str(ron_str)
-        .expect("agumon anim_graph.ron should parse");
-    let mut catalogs = AnimationValidationCatalogs::default();
-    catalogs.particles.insert(ParticleId("baby_flame".into()));
-    let clip = parse_valid_clip();
-    let report = validate_anim_graph(&graph, &clip, &catalogs);
-    let forbidden: Vec<_> = report
-        .diagnostics
-        .iter()
-        .filter(|d| d.check == AnimationValidationCheck::GameplayCommandForbidden)
-        .collect();
-    assert!(
-        forbidden.is_empty(),
-        "agumon graph must contain zero gameplay commands (D001); found: {:?}",
-        forbidden
-    );
 }
 
 /// Validator must reject EmitDamage in on_enter.

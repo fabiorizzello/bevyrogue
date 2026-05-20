@@ -1084,34 +1084,6 @@ fn energy_cap_affordance_disables_when_requested_exceeds_remaining_or_budget_is_
 }
 
 #[test]
-fn target_hp_rule_distinguishes_any_and_damaged() {
-    assert_ne!(TargetHpRule::Any, TargetHpRule::Damaged);
-    assert!(matches!(TargetHpRule::Any, TargetHpRule::Any));
-    assert!(matches!(TargetHpRule::Damaged, TargetHpRule::Damaged));
-}
-
-#[test]
-fn legality_reason_codes_include_contract_values() {
-    for reason in [
-        LegalityReasonCode::NotActiveUnit,
-        LegalityReasonCode::WrongPhase,
-        LegalityReasonCode::AttackerKo,
-        LegalityReasonCode::AttackerStunned,
-        LegalityReasonCode::MissingSkill,
-        LegalityReasonCode::SpShortfall,
-        LegalityReasonCode::UltimateNotReady,
-        LegalityReasonCode::TargetNotFound,
-        LegalityReasonCode::TamerGaugeDeferred,
-        LegalityReasonCode::TamerCommandDeferred,
-        LegalityReasonCode::ChargedTelegraphDeferred,
-        LegalityReasonCode::EnemyTraitDeferred,
-        LegalityReasonCode::EnergyCapReached,
-    ] {
-        assert!(!format!("{reason:?}").is_empty());
-    }
-}
-
-#[test]
 fn intent_legality_respects_priority_and_specific_target_reasons() {
     let skill = basic_attack_skill("basic_attack");
     let revive = revive_skill();

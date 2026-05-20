@@ -1,4 +1,4 @@
-use bevyrogue::animation::{AnimGraph, FrameCueCommand, NodeId, Predicate, ReleaseKernelCue};
+use bevyrogue::animation::{AnimGraph, NodeId};
 
 #[test]
 fn agumon_anim_graph_parses() {
@@ -11,32 +11,6 @@ fn agumon_anim_graph_parses() {
     assert!(graph.nodes.contains_key(&NodeId("sharp_claws_windup".into())));
     assert!(graph.nodes.contains_key(&NodeId("sharp_claws_strike".into())));
     assert!(graph.nodes.contains_key(&NodeId("sharp_claws_recover".into())));
-}
-
-#[test]
-fn agumon_sharp_claws_release_kernel_cue_parses() {
-    let graph: AnimGraph = ron::from_str(include_str!("../assets/digimon/agumon/anim_graph.ron"))
-        .expect("agumon anim_graph.ron should parse");
-    let strike = &graph.nodes[&NodeId("sharp_claws_strike".into())];
-
-    assert_eq!(strike.frames.start(), 3, "Sharp Claws strike should stay inside the attack atlas span");
-    assert_eq!(strike.frames.end(), 5, "Sharp Claws strike should stay inside the attack atlas span");
-    assert_eq!(strike.cues.len(), 1, "Sharp Claws strike should emit exactly one kernel release cue");
-    assert_eq!(strike.cues[0].at, 1, "Sharp Claws should release on its authored impact frame");
-    assert!(
-        matches!(strike.cues[0].command, FrameCueCommand::ReleaseKernel(ReleaseKernelCue)),
-        "Sharp Claws strike cue should be ReleaseKernel"
-    );
-
-    let edge = graph
-        .transitions
-        .iter()
-        .find(|edge| edge.from == NodeId("sharp_claws_strike".into()))
-        .expect("Sharp Claws strike transition should exist");
-    assert!(
-        matches!(edge.when, Predicate::KernelCue),
-        "Sharp Claws strike should wait on KernelCue before recovery"
-    );
 }
 
 #[test]

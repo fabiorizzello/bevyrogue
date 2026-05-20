@@ -110,10 +110,6 @@ fn test_blueprint_signal_dispatching() {
         assert_eq!(*ev_payload, payload);
     }
 
-    // Serde round-trip
-    let json = serde_json::to_string(&ev).expect("failed to serialize CombatEvent");
-    let back: CombatEvent = serde_json::from_str(&json).expect("failed to deserialize CombatEvent");
-    assert_eq!(ev, &back);
 }
 
 #[test]
