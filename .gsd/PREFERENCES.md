@@ -5,7 +5,7 @@ git:
   auto_push: true
   main_branch: master
   isolation: none
-widget_mode: full
+widget_mode: small
 ---
 # GSD Project Preferences
 

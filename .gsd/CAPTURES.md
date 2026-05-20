@@ -96,7 +96,12 @@
   ┃  Beneficio: refactor interni di src/combat/ smettono di toccare tests/. Costo: ~150 file da migrare a regime, più la disciplina di mantenere test_api minimale (non
   ┃  diventi un "ri-export tutto").
 **Captured:** 2026-05-20T13:58:15.476Z
-**Status:** pending
+**Status:** resolved
+**Classification:** defer
+**Resolution:** Defer the typed test-API proposal to a future architectural/testing-debt slice; likely affected areas include `tests/`, `tests/common/app.rs`, a future `src/test_api` or test-support crate, and `DECISIONS.md`.
+**Rationale:** This is a broad architectural testing-boundary change with large migration impact, not a quick task and not part of the current M002/S03 gate-evaluation work.
+**Resolved:** 2026-05-20T20:31:31Z
+**Milestone:** M002
 
 ### CAP-3e6c589c
 **Text:** #4 — R003 inversa (tests/ → src/) per unit-test puri
@@ -113,4 +118,9 @@
   ┃
   ┃  Perché architetturale: cambia R003. Va in DECISIONS.md come emendamento esplicito, non come deroga silenziosa.
 **Captured:** 2026-05-20T13:58:26.908Z
-**Status:** pending
+**Status:** resolved
+**Classification:** defer
+**Resolution:** Defer the R003 inline-unit-test amendment to a future testing-policy/refactor slice; likely affected areas include `tests/`, selected `src/...` modules, `scripts/check_loc_cap.sh`, and `DECISIONS.md`.
+**Rationale:** This changes an architectural testing rule and requires deliberate policy/design work, so it should not be injected into the current M002/S03 gate-evaluation unit.
+**Resolved:** 2026-05-20T20:31:31Z
+**Milestone:** M002

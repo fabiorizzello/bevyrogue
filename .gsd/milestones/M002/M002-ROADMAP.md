@@ -7,10 +7,10 @@
 - [x] **S01: S01** `risk:high` `depends:[]`
   > After this: cargo run --features windowed shows Agumon cycling idle via the stance graph (not hardcoded); M001 headless tests green; clip-atlas geometry parity test present and passing.
 
-- [ ] **S02: S02** `risk:high` `depends:[]`
+- [x] **S02: S02** `risk:high` `depends:[]`
   > After this: Sharp Claws windup to strike to recovery on screen; damage falls on the impact frame via ReleaseKernelCue; telegraph chip visible; I3 extended green.
 
-- [ ] **S03: Section 9 phase strip live (event-driven)** `risk:medium` `depends:[S01]`
+- [ ] **S03: S03** `risk:medium` `depends:[]`
   > After this: §9 phase strip updates from EventReader<CombatEvent>; a structural test asserts the UI path never mutates combat state.
 
 - [ ] **S04: Baby Burner reactive detonate + flash VFX** `risk:medium` `depends:[S02]`
