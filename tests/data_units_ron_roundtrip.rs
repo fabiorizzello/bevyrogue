@@ -1,8 +1,14 @@
-use super::*;
-use crate::combat::counterplay::{ChargedAttackDeclaration, EnemyTraitDeclaration};
-use crate::combat::kit::FollowUpTrigger;
-use crate::combat::types::DamageTag;
-use crate::data::skills_ron::LegalityReasonCode;
+use bevyrogue::combat::counterplay::{ChargedAttackDeclaration, EnemyTraitDeclaration};
+use bevyrogue::combat::kit::{FollowUpConfig, FollowUpTrigger};
+use bevyrogue::combat::team::Team;
+use bevyrogue::combat::toughness::ToughnessCategory;
+use bevyrogue::combat::types::{Attribute, DamageTag, EvoLineId, EvoStage, SkillId, UnitId};
+use bevyrogue::combat::ultimate::UltAccumulationTrigger;
+use bevyrogue::data::skills_ron::LegalityReasonCode;
+use bevyrogue::data::units_ron::{
+    BlueprintRoster, BlueprintRosterPayload, EnemyCounterplayKind,
+    EnemyCounterplayStatus, UnitDef, UnitRoster,
+};
 use std::collections::BTreeMap;
 
 #[test]

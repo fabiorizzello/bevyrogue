@@ -1,5 +1,49 @@
-use super::*;
-use crate::combat::status_effect::StatusEffectKind;
+use bevyrogue::combat::status_effect::StatusEffectKind;
+use bevyrogue::combat::types::{DamageTag, SkillId};
+use bevyrogue::data::skills_ron::{
+    DamageCurve, Effect, LegalityReasonCode, SelfTargetRule, SkillDef, SkillImplementation,
+    SkillTargeting, TargetLife, TargetShape, TargetSide,
+};
+
+fn offensive_targeting(shape: TargetShape) -> SkillTargeting {
+    SkillTargeting {
+        shape,
+        side: TargetSide::Enemy,
+        life: TargetLife::Alive,
+        self_rule: SelfTargetRule::Forbid,
+        ..Default::default()
+    }
+}
+
+fn revive_targeting() -> SkillTargeting {
+    SkillTargeting {
+        shape: TargetShape::Single,
+        side: TargetSide::Ally,
+        life: TargetLife::Ko,
+        self_rule: SelfTargetRule::Forbid,
+        ..Default::default()
+    }
+}
+
+fn sample_skill() -> SkillDef {
+    SkillDef {
+        id: SkillId("baby_flame".into()),
+        name: "Baby Flame".into(),
+        damage_tag: DamageTag::Fire,
+        sp_cost: 4,
+        targeting: offensive_targeting(TargetShape::Single),
+        implementation: SkillImplementation::Implemented,
+        legacy_ops: vec![
+            Effect::Damage {
+                amount: 18,
+                target: TargetShape::Single,
+                per_hop: DamageCurve::Constant,
+            },
+            Effect::ToughnessHit(10),
+        ],
+        ..Default::default()
+    }
+}
 
 #[test]
 fn round_trip_skill_def() {

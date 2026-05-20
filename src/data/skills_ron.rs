@@ -9,6 +9,3 @@ pub use types::{
 pub use validation::{
     validate_skill_book, SkillBookValidationCategory, SkillBookValidationError,
 };
-
-#[cfg(test)]
-mod tests;

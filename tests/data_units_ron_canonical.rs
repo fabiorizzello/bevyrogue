@@ -1,8 +1,31 @@
-use super::*;
-use crate::combat::counterplay::ImplementationStatus;
-use crate::combat::kit::FollowUpTrigger;
-use crate::data::skills_ron::LegalityReasonCode;
+use bevyrogue::combat::counterplay::ImplementationStatus;
+use bevyrogue::combat::kit::{FollowUpConfig, FollowUpTrigger};
+use bevyrogue::combat::team::Team;
+use bevyrogue::combat::types::{EvoStage, SkillId};
+use bevyrogue::data::skills_ron::{LegalityReasonCode, SkillBook};
+use bevyrogue::data::units_ron::{EnemyCounterplayKind, UnitRoster};
+use bevyrogue::data::{aggregate_skill_book, aggregate_unit_roster};
 use std::collections::HashSet;
+
+fn canonical_roster() -> UnitRoster {
+    aggregate_unit_roster()
+}
+
+fn canonical_skill_book() -> SkillBook {
+    aggregate_skill_book()
+}
+
+fn expected_unit_names() -> [&'static str; 15] {
+    [
+        "Agumon", "Greymon",
+        "Gabumon", "Garurumon",
+        "Dorumon", "DORUgamon",
+        "Renamon", "Kyubimon",
+        "Patamon", "Angemon",
+        "Tentomon", "Kabuterimon",
+        "Devimon", "Goblimon", "Ogremon",
+    ]
+}
 
 #[test]
 fn parse_canonical_units_ron() {

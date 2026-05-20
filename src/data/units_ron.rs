@@ -68,6 +68,3 @@ pub struct UnitDef {
 #[derive(Asset, TypePath, Debug, Clone, Deserialize)]
 #[serde(transparent)]
 pub struct UnitRoster(pub Vec<UnitDef>);
-
-#[cfg(test)]
-mod tests;

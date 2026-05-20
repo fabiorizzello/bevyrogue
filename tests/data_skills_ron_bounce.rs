@@ -1,4 +1,47 @@
-use super::*;
+use bevyrogue::combat::types::{DamageTag, SkillId};
+use bevyrogue::data::skills_ron::{
+    BounceSelector, DamageCurve, Effect, LegalityReasonCode, RepeatPolicy, SelfTargetRule,
+    SkillBook, SkillDef, SkillImplementation, SkillTargeting, TargetLife, TargetShape, TargetSide,
+    validate_skill_book,
+};
+
+fn offensive_targeting(shape: TargetShape) -> SkillTargeting {
+    SkillTargeting {
+        shape,
+        side: TargetSide::Enemy,
+        life: TargetLife::Alive,
+        self_rule: SelfTargetRule::Forbid,
+        ..Default::default()
+    }
+}
+
+fn chain_bolt_skill() -> SkillDef {
+    SkillDef {
+        id: SkillId("chain_bolt".into()),
+        name: "Chain Bolt".into(),
+        damage_tag: DamageTag::Electric,
+        sp_cost: 3,
+        targeting: offensive_targeting(TargetShape::Bounce {
+            hops: 3,
+            selector: BounceSelector::LowestHpPctAlive,
+            repeat: RepeatPolicy::NoRepeat,
+        }),
+        implementation: SkillImplementation::Implemented,
+        legacy_ops: vec![
+            Effect::Damage {
+                amount: 20,
+                target: TargetShape::Bounce {
+                    hops: 3,
+                    selector: BounceSelector::LowestHpPctAlive,
+                    repeat: RepeatPolicy::NoRepeat,
+                },
+                per_hop: DamageCurve::Falloff { pct: 80 },
+            },
+            Effect::ToughnessHit(8),
+        ],
+        ..Default::default()
+    }
+}
 
 #[test]
 fn chain_bolt_fixture_validates() {

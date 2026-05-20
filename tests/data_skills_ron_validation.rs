@@ -1,5 +1,15 @@
-use super::*;
+use bevyrogue::combat::types::{DamageTag, SkillId};
+use bevyrogue::data::aggregate_skill_book;
+use bevyrogue::data::skills_ron::{
+    DamageCurve, Effect, LegalityReasonCode, SelfTargetRule, SkillBook, SkillBookValidationCategory,
+    SkillDef, SkillImplementation, SkillTargeting, TargetLife, TargetShape, TargetSide,
+    validate_skill_book,
+};
 use std::collections::HashSet;
+
+fn canonical_skill_book() -> SkillBook {
+    aggregate_skill_book()
+}
 
 #[test]
 fn validate_rejects_row_damage_against_single_targeting() {
