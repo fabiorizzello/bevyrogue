@@ -6,7 +6,7 @@
 /// - R007 regression: Taichi still charges via OnOffensivePartyEvent
 /// - Turn-order front-insert on successful ultimate fire (via resolve_action_system)
 /// - Negative paths: ult not ready, commander defender
-use bevy::prelude::*;
+use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::{
     events::{CombatEvent, CombatEventKind},
@@ -297,8 +297,11 @@ fn taichi_still_charges_on_offensive_party_events() {
 
 /// Turn-order interruption: after a successful ultimate fire, the attacker is front-inserted
 /// into the queue so their next turn arrives before any unit that was ahead of them.
+///
+/// Also asserts the `UltimateUsed { unit_id: attacker }` observability event is emitted
+/// exactly once (M020/S01 surface — gated by `UltEffect::Reset` on the ult skill path).
 #[test]
-fn ultimate_fire_resets_meter_and_damages_target() {
+fn ultimate_fire_resets_meter_damages_target_and_emits_ultimate_used() {
     let mut app = setup_resolve_app(SkillBook(vec![ult_skill(), basic_skill()]));
 
     // unit 1: the attacker — ult ready
@@ -315,6 +318,12 @@ fn ultimate_fire_resets_meter_and_damages_target() {
         Team::Enemy,
         Toughness::new(200, vec![]),
     ));
+
+    let mut cursor: MessageCursor<CombatEvent> = app
+        .world_mut()
+        .resource_mut::<Messages<CombatEvent>>()
+        .get_cursor();
+
     // Fire the ultimate
     app.world_mut().write_message(ActionIntent::Ultimate {
         attacker: UnitId(1),
@@ -337,6 +346,20 @@ fn ultimate_fire_resets_meter_and_damages_target() {
             );
         }
     }
+
+    let messages = app.world().resource::<Messages<CombatEvent>>();
+    let used: Vec<UnitId> = cursor
+        .read(messages)
+        .filter_map(|ev| match ev.kind {
+            CombatEventKind::UltimateUsed { unit_id } => Some(unit_id),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(
+        used,
+        vec![UnitId(1)],
+        "expected exactly one UltimateUsed event with attacker id"
+    );
 }
 
 /// Negative: when the ultimate meter is not ready, the ult is rejected and the
