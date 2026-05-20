@@ -1,16 +1,28 @@
 {
   "workflow": "260520-3-w0c-tier-c-residue",
   "parent": "260520-2-w0c-tier-b-inline-tests",
-  "status": "in-progress",
-  "phase": "execution",
+  "status": "closed",
+  "phase": "complete",
   "created": "2026-05-20",
+  "closed": "2026-05-20",
   "head_at_start": "f42a5f3",
+  "head_at_close": "676085b",
   "waves": {
     "W0c-12": { "source": "src/headless.rs", "loc": 30, "status": "skipped", "reason": "binary-private" },
-    "W0c-13": { "source": "src/combat/mechanics/buffs.rs", "loc": 29, "status": "pending", "target": "tests/buffs_internals.rs" },
-    "W0c-14": { "source": "src/combat/mechanics/stun.rs", "loc": 28, "status": "pending", "target": "tests/stun_internals.rs" },
-    "W0c-15": { "source": "src/combat/encounter/bootstrap.rs", "loc": 27, "status": "pending", "target": "tests/encounter_bootstrap_internals.rs" },
+    "W0c-13": { "source": "src/combat/mechanics/buffs.rs", "loc": 29, "status": "complete", "target": "tests/buffs_internals.rs", "commit": "c7bec9e" },
+    "W0c-14": { "source": "src/combat/mechanics/stun.rs", "loc": 28, "status": "complete", "target": "tests/stun_internals.rs", "commit": "2958aee" },
+    "W0c-15": { "source": "src/combat/encounter/bootstrap.rs", "loc": 27, "status": "complete", "target": "tests/encounter_bootstrap_internals.rs", "commit": "e5d09ed" },
     "W0c-16": { "source": "src/bin/combat_cli.rs", "loc": 25, "status": "skipped", "reason": "binary-private" },
-    "W0c-17": { "source": "src/combat/observability/log.rs", "loc": 20, "status": "pending", "target": "tests/observability_log_internals.rs" }
-  }
+    "W0c-17": { "source": "src/combat/observability/log.rs", "loc": 20, "status": "complete", "target": "tests/observability_log_internals.rs", "commit": "676085b" }
+  },
+  "verify_gates": {
+    "cargo_test_tests": "green",
+    "cargo_test_features_windowed_tests": "green",
+    "cargo_check_tests": "exit 0",
+    "cargo_check_features_windowed_tests": "exit 0",
+    "scripts_check_loc_cap": "0 offenders"
+  },
+  "relocated_loc": 104,
+  "skipped_loc": 55,
+  "library_side_inline_residue_loc": 0
 }
