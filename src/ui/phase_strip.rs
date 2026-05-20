@@ -96,6 +96,35 @@ pub const fn phase_strip_label(beat: CombatBeatId) -> &'static str {
     phase_strip_phase(beat).label()
 }
 
+/// Returns the latest combat beat from an event stream, if any.
+///
+/// This helper is pure over the event payloads: it ignores all non-beat events
+/// and does not touch combat resources, components, or world state.
+#[cfg(feature = "windowed")]
+pub fn latest_observed_combat_beat<'a>(events: impl IntoIterator<Item = &'a CombatEvent>) -> Option<CombatBeatId> {
+    let mut latest_beat = None;
+
+    for event in events {
+        if let CombatEventKind::OnCombatBeat { beat } = event.kind {
+            latest_beat = Some(beat);
+        }
+    }
+
+    latest_beat
+}
+
+/// Read-only system seam for the combat-facing side of the phase-strip ingest path.
+///
+/// This function exists to make the boundary executable in tests via
+/// `assert_is_read_only_system`: the combat bus may be read, but no combat
+/// resource or component writer is part of the contract.
+#[cfg(feature = "windowed")]
+pub fn read_latest_observed_combat_beat(
+    mut events: MessageReader<CombatEvent>,
+) -> Option<CombatBeatId> {
+    latest_observed_combat_beat(events.read())
+}
+
 /// Scans the combat event bus and updates only the UI-owned phase display.
 ///
 /// The last `OnCombatBeat` message in the reader window wins. All other combat
@@ -106,15 +135,7 @@ pub fn observe_combat_beats(
     mut events: MessageReader<CombatEvent>,
     mut display: ResMut<PhaseStripDisplay>,
 ) {
-    let mut latest_beat = None;
-
-    for event in events.read() {
-        if let CombatEventKind::OnCombatBeat { beat } = event.kind {
-            latest_beat = Some(beat);
-        }
-    }
-
-    if let Some(beat) = latest_beat {
+    if let Some(beat) = latest_observed_combat_beat(events.read()) {
         display.observe(beat);
     }
 }
