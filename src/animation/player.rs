@@ -1,5 +1,6 @@
 use super::anim_graph::{
-    AnimEdge, AnimGraph, AnimNode, NodeId, PlaybackModifier, Predicate, TransitionTarget,
+    AnimEdge, AnimGraph, AnimGraphInput, AnimNode, NodeId, PlaybackModifier, Predicate,
+    TransitionTarget,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -43,11 +44,25 @@ impl AnimGraphPlayer {
     /// Evaluates `TimeInNode`, `Always`, and `KernelCue` transitions.
     /// Returns the sprite-sheet frame index for the current animation state.
     pub fn advance(&mut self, graph: &AnimGraph) -> u32 {
-        self.advance_result(graph).frame
+        self.advance_with_input(graph, &AnimGraphInput::default())
+    }
+
+    /// Advance one animation tick with explicit typed graph input.
+    pub fn advance_with_input(&mut self, graph: &AnimGraph, input: &AnimGraphInput) -> u32 {
+        self.advance_result_with_input(graph, input).frame
     }
 
     /// Advance one animation tick and surface whether the graph exited.
     pub fn advance_result(&mut self, graph: &AnimGraph) -> AnimAdvanceResult {
+        self.advance_result_with_input(graph, &AnimGraphInput::default())
+    }
+
+    /// Advance one animation tick with explicit typed input and surface whether the graph exited.
+    pub fn advance_result_with_input(
+        &mut self,
+        graph: &AnimGraph,
+        input: &AnimGraphInput,
+    ) -> AnimAdvanceResult {
         let Some(node) = graph.nodes.get(&self.current_node) else {
             return AnimAdvanceResult {
                 frame: 0,
@@ -56,7 +71,7 @@ impl AnimGraphPlayer {
         };
 
         let duration = node_duration(node);
-        let transition = self.select_transition(graph, duration);
+        let transition = self.select_transition(graph, duration, input);
 
         if let Some(edge) = transition {
             if matches!(edge.when, Predicate::KernelCue) {
@@ -95,16 +110,26 @@ impl AnimGraphPlayer {
         }
     }
 
-    fn select_transition<'a>(&self, graph: &'a AnimGraph, duration: u32) -> Option<&'a AnimEdge> {
+    fn select_transition<'a>(
+        &self,
+        graph: &'a AnimGraph,
+        duration: u32,
+        input: &AnimGraphInput,
+    ) -> Option<&'a AnimEdge> {
         graph
             .transitions
             .iter()
             .filter(|edge| edge.from == self.current_node)
-            .filter(|edge| self.predicate_matches(&edge.when, duration))
+            .filter(|edge| self.predicate_matches(&edge.when, duration, input))
             .max_by_key(|edge| edge.priority.map_or(0, |priority| priority.0))
     }
 
-    fn predicate_matches(&self, predicate: &Predicate, duration: u32) -> bool {
+    fn predicate_matches(
+        &self,
+        predicate: &Predicate,
+        duration: u32,
+        _input: &AnimGraphInput,
+    ) -> bool {
         match predicate {
             Predicate::Always => true,
             Predicate::TimeInNode => self.elapsed_anim_frames >= duration,

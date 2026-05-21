@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use bevy::prelude::{Asset, TypePath};
 use serde::{Deserialize, Serialize};
@@ -29,6 +29,45 @@ pub struct ClipId(pub String);
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct NodeId(pub String);
+
+/// Closed role vocabulary injected by the kernel at cast time.
+///
+/// Graphs and players stay pure by talking only in terms of these typed roles,
+/// never world entities, coordinates, or ad-hoc string labels.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+pub enum AnimGraphRole {
+    Caster,
+    PrimaryTarget,
+    AdjacentLeftTarget,
+    AdjacentRightTarget,
+}
+
+/// Read-only, typed input surface for graph/player evaluation.
+///
+/// This stays intentionally small for M002: the contract proves the runtime
+/// consumes explicit role input without granting world access or a mutable
+/// graph context object.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AnimGraphInput {
+    #[serde(default)]
+    pub roles: BTreeSet<AnimGraphRole>,
+}
+
+impl AnimGraphInput {
+    pub fn new<I>(roles: I) -> Self
+    where
+        I: IntoIterator<Item = AnimGraphRole>,
+    {
+        Self {
+            roles: roles.into_iter().collect(),
+        }
+    }
+
+    pub fn contains(&self, role: AnimGraphRole) -> bool {
+        self.roles.contains(&role)
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
