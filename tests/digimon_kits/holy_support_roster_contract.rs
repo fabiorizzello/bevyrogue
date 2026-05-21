@@ -91,11 +91,32 @@ fn patamon_roster_references_the_seeded_blueprint_skill() {
 }
 
 #[test]
-fn blueprint_metadata_remains_optional_for_backward_compatibility() {
+fn blueprint_metadata_stays_optional_for_legacy_units_while_agumon_opts_in() {
     let roster = canonical_roster();
-    let agumon = roster.0.iter().find(|u| u.name == "Agumon").unwrap();
+
+    let agumon = roster
+        .0
+        .iter()
+        .find(|u| u.name == "Agumon")
+        .expect("Agumon in roster");
+    assert_eq!(
+        agumon
+            .blueprint_metadata
+            .0
+            .get("agumon")
+            .and_then(|owner| owner.0.get("ult_gauge"))
+            .map(String::as_str),
+        Some("energy"),
+        "Agumon should opt into the energy-backed ult gauge through owner-keyed blueprint metadata"
+    );
+
+    let gabumon = roster
+        .0
+        .iter()
+        .find(|u| u.name == "Gabumon")
+        .expect("Gabumon in roster");
     assert!(
-        agumon.blueprint_metadata.0.is_empty(),
-        "generic blueprint metadata should remain absent when not declared"
+        gabumon.blueprint_metadata.0.is_empty(),
+        "generic blueprint metadata should remain absent when not declared for legacy units"
     );
 }
