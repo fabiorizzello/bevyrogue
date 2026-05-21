@@ -3,13 +3,13 @@ use rstest::rstest;
 
 #[rstest]
 #[case::agumon(
-    include_str!("../assets/digimon/agumon/anim_graph.ron"),
+    include_str!("../../assets/digimon/agumon/anim_graph.ron"),
     "agumon_skill",
     Some("all"),
     &["baby_flame_cast", "sharp_claws_windup", "sharp_claws_strike", "sharp_claws_recover"],
 )]
 #[case::renamon(
-    include_str!("../assets/digimon/renamon/anim_graph.ron"),
+    include_str!("../../assets/digimon/renamon/anim_graph.ron"),
     "renamon_skill",
     None,
     &["diamond_storm_cast"],

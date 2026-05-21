@@ -46,7 +46,7 @@ fn skill_def<'a>(book: &'a SkillBook, id: &str) -> &'a SkillDef {
 
 fn parse_valid_clip() -> Clip {
     ron::from_str(include_str!(
-        "../assets/test/animation_validation/valid_clip.ron"
+        "../../assets/test/animation_validation/valid_clip.ron"
     ))
     .expect("valid animation clip fixture should parse")
 }
@@ -220,7 +220,7 @@ fn sharp_claws_reports_bad_selector_with_existing_compile_error_path() {
 
 #[test]
 fn agumon_anim_graph_keeps_kernel_release_separate_from_gameplay_commands() {
-    let graph: AnimGraph = ron::from_str(include_str!("../assets/digimon/agumon/anim_graph.ron"))
+    let graph: AnimGraph = ron::from_str(include_str!("../../assets/digimon/agumon/anim_graph.ron"))
         .expect("agumon anim graph should parse");
     let mut catalogs = AnimationValidationCatalogs::default();
     catalogs.particles.insert(ParticleId("baby_flame".into()));

@@ -1,7 +1,7 @@
 use bevyrogue::animation::{AnimGraph, AnimGraphPlayer, NodeId};
 
 fn parse_stance() -> AnimGraph {
-    ron::from_str(include_str!("../assets/digimon/agumon/stance.ron"))
+    ron::from_str(include_str!("../../assets/digimon/agumon/stance.ron"))
         .expect("stance.ron should parse")
 }
 

@@ -4,7 +4,7 @@ use bevyrogue::animation::{
 
 fn parse_valid_clip() -> Clip {
     ron::from_str(include_str!(
-        "../assets/test/animation_validation/valid_clip.ron"
+        "../../assets/test/animation_validation/valid_clip.ron"
     ))
     .expect("valid_clip.ron should parse")
 }

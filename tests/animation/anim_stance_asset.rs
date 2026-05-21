@@ -4,12 +4,12 @@ use bevyrogue::animation::{
 };
 
 fn parse_agumon_clip() -> Clip {
-    ron::from_str(include_str!("../assets/digimon/agumon/clip.ron"))
+    ron::from_str(include_str!("../../assets/digimon/agumon/clip.ron"))
         .expect("agumon clip.ron should parse")
 }
 
 fn parse_stance() -> AnimGraph {
-    ron::from_str(include_str!("../assets/digimon/agumon/stance.ron"))
+    ron::from_str(include_str!("../../assets/digimon/agumon/stance.ron"))
         .expect("stance.ron should parse")
 }
 
