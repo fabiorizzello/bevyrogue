@@ -145,6 +145,21 @@ pub(super) fn advance_agumon_presentation(
         .and_then(|handle| graphs.get(handle));
     let active_barrier = barrier.active_status().cloned();
 
+    if let Some(status) = active_barrier.as_ref() {
+        if status.awaiting_release && status.skill_id.0 != SHARP_CLAWS_SKILL_ID {
+            warn!(
+                target: "windowed.agumon_playback",
+                skill_id = %status.skill_id.0,
+                beat_id = status.beat_id,
+                cue_id = status.cue_id,
+                hop_index = ?status.hop_index,
+                "unsupported windowed cue bridge; auto-releasing barrier to avoid stalled resolve"
+            );
+            let _ = barrier.request_release(status.cue_id);
+            return;
+        }
+    }
+
     for mut sprite in &mut sprites {
         sync_agumon_mode(
             &mut sprite,

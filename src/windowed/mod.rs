@@ -22,7 +22,8 @@ use bevyrogue::combat::observability::{capture_validation_snapshot, format_valid
 use bevyrogue::combat::runtime::{Clock, SuspendedTimelineState, TimelineClock};
 use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::sp::SpPool;
-use bevyrogue::combat::turn_order::TurnAdvanced;
+use bevyrogue::combat::state::{CombatPhase, CombatState};
+use bevyrogue::combat::turn_order::{TurnAdvanced, TurnOrder};
 use bevyrogue::combat::turn_system::{
     advance_turn_system, check_victory_system, continue_suspended_timeline_system,
     resolve_action_system, resolve_enemy_turn_action_system,
@@ -79,19 +80,16 @@ impl Plugin for UiPlugin {
                 )
                     .chain(),
             )
-            .add_systems(EguiPrimaryContextPass, roster_panel)
-            .add_systems(EguiPrimaryContextPass, turn_order_panel)
             .add_systems(
                 EguiPrimaryContextPass,
                 (
+                    roster_panel,
+                    turn_order_panel,
                     bevyrogue::ui::phase_strip::observe_combat_beats,
                     bevyrogue::ui::phase_strip::render_phase_strip,
+                    bevyrogue::ui::combat_panel::combat_panel,
                 )
                     .chain(),
-            )
-            .add_systems(
-                EguiPrimaryContextPass,
-                bevyrogue::ui::combat_panel::combat_panel,
             );
     }
 }
@@ -169,6 +167,7 @@ fn windowed_bootstrap_system(
     roster_handle: Option<Res<data::UnitRosterHandle>>,
     rosters: Res<Assets<data::units_ron::UnitRoster>>,
     units: Query<&Unit>,
+    mut combat_state: ResMut<CombatState>,
     mut combat_events: MessageWriter<CombatEvent>,
     mut sp: ResMut<SpPool>,
     mut talent_ranks: ResMut<TalentRanks>,
@@ -190,6 +189,7 @@ fn windowed_bootstrap_system(
         Ok(composition) => {
             let ally_ids: Vec<UnitId> = composition.allies.iter().map(|d| d.id).collect();
             let seeded_ids = apply_composition(&mut commands, &composition);
+            combat_state.phase = CombatPhase::WaitingForTurn;
             sp.current = 999;
             sp.max = 999;
             talent_ranks.0.insert("agumon::bouncing_fire".into(), 1);
@@ -336,31 +336,57 @@ fn turn_order_panel(
     mut contexts: EguiContexts,
     av_units: Query<(&Unit, &ActionValue)>,
     units: Query<&Unit>,
+    order: Res<TurnOrder>,
+    combat_state: Res<CombatState>,
     mut turn_advanced: MessageWriter<TurnAdvanced>,
 ) -> Result {
     let ctx = contexts.ctx_mut()?;
     let preview = av_preview(&av_units, 5);
-    egui::TopBottomPanel::top("av_bar").show(ctx, |ui| {
-        ui.heading("AV Bar (next 5)");
-        ui.horizontal(|ui| {
-            for id in &preview {
-                let (label, color) = unit_chip(*id, &units);
-                let bg = egui::Frame::default()
-                    .fill(color)
-                    .inner_margin(egui::Margin::symmetric(6, 4));
-                bg.show(ui, |ui| {
-                    ui.label(label);
-                });
-            }
-        });
-        ui.horizontal(|ui| {
-            if ui.button("Advance").clicked() {
-                if let Some(id) = preview.first().copied() {
-                    turn_advanced.write(TurnAdvanced::of(id));
+    let can_advance = combat_state.phase == CombatPhase::WaitingForTurn
+        && order.active_unit.is_none()
+        && !preview.is_empty();
+
+    egui::TopBottomPanel::top("av_bar")
+        .resizable(false)
+        .show(ctx, |ui| {
+            ui.heading("AV Bar (next 5)");
+            ui.horizontal(|ui| {
+                for id in &preview {
+                    let (label, color) = unit_chip(*id, &units);
+                    let bg = egui::Frame::default()
+                        .fill(color)
+                        .inner_margin(egui::Margin::symmetric(6, 4));
+                    bg.show(ui, |ui| {
+                        ui.label(label);
+                    });
                 }
-            }
+            });
+            ui.horizontal(|ui| {
+                let response = ui
+                    .add_enabled(can_advance, egui::Button::new("Advance (debug)"))
+                    .on_hover_text(
+                        "Only valid while waiting for the next turn. Once an active actor exists, choose an action instead.",
+                    );
+                if response.clicked() {
+                    if let Some(id) = preview.first().copied() {
+                        turn_advanced.write(TurnAdvanced::of(id));
+                    }
+                }
+
+                match combat_state.phase {
+                    CombatPhase::WaitingForTurn => {
+                        ui.label("Waiting for next actor selection");
+                    }
+                    CombatPhase::WaitingAction => {
+                        ui.label("Actor selected; choose an action and click a target");
+                    }
+                    CombatPhase::Resolving => {
+                        ui.label("Resolving action...");
+                    }
+                    CombatPhase::Victory | CombatPhase::Defeat => {}
+                }
+            });
         });
-    });
     Ok(())
 }
 

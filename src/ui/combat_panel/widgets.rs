@@ -20,7 +20,7 @@ use super::display::{FdDisplay, UnitDisplay};
 #[cfg(feature = "windowed")]
 use super::labels::{
     TelegraphChip, action_button_label, action_status_label, action_tooltip, attr_color,
-    pending_label, target_button_label, target_status_label,
+    attr_text_color, pending_label, target_button_label, target_status_label,
 };
 #[cfg(feature = "windowed")]
 use super::{PendingAction, PendingKind, PreviewDamageCache};
@@ -145,20 +145,32 @@ pub(super) fn render_action_bar(
 
         if let Some(kind) = pending_action.kind.as_ref() {
             if let Some(affordance) = selected_action_affordance.as_ref() {
+                let enabled_target_count = affordance
+                    .targets
+                    .iter()
+                    .filter(|(_, target)| matches!(target.status, TargetStatus::Enabled))
+                    .count();
+                let hint = if enabled_target_count > 1 {
+                    " · click a highlighted target"
+                } else {
+                    ""
+                };
                 if let Some(preview) =
                     preview_cache.label_for(active_actor_id, Some(kind), selected_target_id)
                 {
                     ui.label(format!(
-                        "Pending: {} [{}] · {}",
+                        "Pending: {} [{}] · {}{}",
                         pending_label(kind),
                         action_status_label(&affordance.action),
                         preview,
+                        hint,
                     ));
                 } else {
                     ui.label(format!(
-                        "Pending: {} [{}]",
+                        "Pending: {} [{}]{}",
                         pending_label(kind),
-                        action_status_label(&affordance.action)
+                        action_status_label(&affordance.action),
+                        hint,
                     ));
                 }
             } else {
@@ -382,8 +394,12 @@ HP: {}/{}
         for enemy in enemies {
             cols[2].group(|ui| {
                 let chip =
-                    egui::Button::new(egui::RichText::new(&enemy.name).color(egui::Color32::BLACK))
-                        .fill(attr_color(enemy.attribute));
+                    egui::Button::new(
+                        egui::RichText::new(&enemy.name)
+                            .color(attr_text_color(enemy.attribute))
+                            .strong(),
+                    )
+                    .fill(attr_color(enemy.attribute));
                 let enemy_target = pending_targets.and_then(|affordance| {
                     affordance
                         .targets

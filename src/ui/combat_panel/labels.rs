@@ -218,6 +218,14 @@ pub fn attr_color(a: Attribute) -> egui::Color32 {
 }
 
 #[cfg(feature = "windowed")]
+pub fn attr_text_color(a: Attribute) -> egui::Color32 {
+    match a {
+        Attribute::Data | Attribute::Free => egui::Color32::BLACK,
+        Attribute::Vaccine | Attribute::Virus => egui::Color32::WHITE,
+    }
+}
+
+#[cfg(feature = "windowed")]
 pub(crate) fn target_button_label(
     unit_name: &str,
     affordance: Option<&TargetAffordance>,
