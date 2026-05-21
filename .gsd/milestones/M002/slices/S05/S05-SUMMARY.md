@@ -3,11 +3,21 @@ id: S05
 parent: M002
 milestone: M002
 provides:
-  - (none)
+  - A full-kit Agumon-vs-Agumon-dummy windowed encounter bootstrap (`AGUMON_DUMMY_ID = UnitId(9001)`) that S06's UAT runbook, regression matrix, and R016 invariant gate all consume.
+  - Windowed HUD surfaces — HP bar view, floating damage numbers, twin-core badge — driven exclusively by `CombatEvent`, available for reuse by future encounter UIs.
+  - `timeline_loop_hop_cue_parity` evidence that the multi-hit loop on screen matches kernel hop count, anchoring the two-clock contract for downstream multi-hit skills.
+  - Baby Burner Ultimate timeline + reactive detonate end-to-end proof (`agumon_baby_burner_primary`) that integrates S04's post-action reaction seam under a full kit.
 requires:
-  []
+  - slice: S01
+    provides: `AnimGraphPlayer` FSM, stance graph runtime, and the `windowed.rs` render path used to drive Agumon visuals during the encounter.
+  - slice: S02
+    provides: Two-clock cue-barrier contract and Sharp Claws timeline that the full-kit loop reuses for per-hit cue handshake.
+  - slice: S03
+    provides: Read-only `CombatEvent` UI ingress pattern (`PhaseStripDisplay` / `assert_is_read_only_system`) extended here to HP bars, floating damage, and twin-core badge.
+  - slice: S04
+    provides: Owner-neutral post-action reaction seam + `OnKernelTransition::Blueprint` projection that Baby Burner's reactive detonate and the windowed flash projection rely on.
 affects:
-  []
+  - S06
 key_files:
   - src/combat/encounter/bootstrap.rs
   - src/windowed/mod.rs

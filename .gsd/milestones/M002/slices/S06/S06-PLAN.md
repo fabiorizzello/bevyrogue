@@ -35,7 +35,7 @@ Upstream surfaces consumed: windowed bootstrap (`src/windowed/mod.rs`), encounte
   - Files: `scripts/repomix-review.sh`, `.gsd/milestones/M002/slices/S06/repomix-pack.xml`, `.gsd/milestones/M002/slices/S06/S06-ARCHITECTURAL-REVIEW.md`
   - Verify: test -x scripts/repomix-review.sh && test -s .gsd/milestones/M002/slices/S06/repomix-pack.xml && test -s .gsd/milestones/M002/slices/S06/S06-ARCHITECTURAL-REVIEW.md && grep -q 'Maintainability' .gsd/milestones/M002/slices/S06/S06-ARCHITECTURAL-REVIEW.md && grep -q 'Scalability' .gsd/milestones/M002/slices/S06/S06-ARCHITECTURAL-REVIEW.md && grep -q 'Extensibility' .gsd/milestones/M002/slices/S06/S06-ARCHITECTURAL-REVIEW.md && grep -q 'Findings' .gsd/milestones/M002/slices/S06/S06-ARCHITECTURAL-REVIEW.md && grep -q 'Verdict' .gsd/milestones/M002/slices/S06/S06-ARCHITECTURAL-REVIEW.md
 
-- [ ] **T03: R016 invariant gate + final M002 regression matrix** `est:45m`
+- [x] **T03: R016 invariant gate + final M002 regression matrix** `est:45m`
   Why: R016 requires that R002 (headless-first), R004 (determinism), R005 (windowed dep-gating), R006 (no .md in repo root), and I3 two-clock parity all hold at M002 closeout. This task is the mechanical proof.
   - Files: `.gsd/milestones/M002/slices/S06/regression-matrix.md`
   - Verify: test -s .gsd/milestones/M002/slices/S06/regression-matrix.md && grep -q 'cargo test' .gsd/milestones/M002/slices/S06/regression-matrix.md && grep -q 'R005' .gsd/milestones/M002/slices/S06/regression-matrix.md && grep -q 'R006' .gsd/milestones/M002/slices/S06/regression-matrix.md && grep -q 'I3' .gsd/milestones/M002/slices/S06/regression-matrix.md && grep -q 'PASS' .gsd/milestones/M002/slices/S06/regression-matrix.md

@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T03",
+  "unitId": "M002/S06/T03",
+  "timestamp": 1779365092206,
+  "passed": true,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "test -s .gsd/milestones/M002/slices/S06/regression-matrix.md",
+      "exitCode": 0,
+      "durationMs": 4,
+      "verdict": "pass"
+    },
+    {
+      "command": "grep -q 'cargo test' .gsd/milestones/M002/slices/S06/regression-matrix.md",
+      "exitCode": 0,
+      "durationMs": 2,
+      "verdict": "pass"
+    },
+    {
+      "command": "grep -q 'R005' .gsd/milestones/M002/slices/S06/regression-matrix.md",
+      "exitCode": 0,
+      "durationMs": 2,
+      "verdict": "pass"
+    },
+    {
+      "command": "grep -q 'R006' .gsd/milestones/M002/slices/S06/regression-matrix.md",
+      "exitCode": 0,
+      "durationMs": 2,
+      "verdict": "pass"
+    },
+    {
+      "command": "grep -q 'I3' .gsd/milestones/M002/slices/S06/regression-matrix.md",
+      "exitCode": 0,
+      "durationMs": 2,
+      "verdict": "pass"
+    },
+    {
+      "command": "grep -q 'PASS' .gsd/milestones/M002/slices/S06/regression-matrix.md",
+      "exitCode": 0,
+      "durationMs": 2,
+      "verdict": "pass"
+    }
+  ]
+}

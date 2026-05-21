@@ -19,9 +19,22 @@
 - [x] **S05: Full kit: Agumon vs Agumon dummy** `risk:medium` `depends:[]`
   > After this: Agumon vs Agumon dummy at full kit; multi-hit loop visibly = kernel hop count; target blink/hurt driven by CombatEvent.
 
-- [ ] **S06: S06** `risk:low` `depends:[]`
+- [x] **S06: S06** `risk:low` `depends:[]`
   > After this: A windowed session with no panic, stable FPS, hot-reload mid-skill not corrupting world state, captured console output; plus a repomix-grounded architectural review report.
 
 ## Boundary Map
 
-Not provided.
+| Producer → Consumer | Surface | Contract |
+|---------------------|---------|----------|
+| S01 → S02 | Agumon graph/registry/schema groundwork; clip↔atlas parity; baseline windowed stance presentation | `SkillGraphRegistry`, `StanceGraphRegistry`, `AnimationStancePaths`, `clip_atlas_parity` |
+| S01 → S03 | `windowed.rs` egui boot + `UiPlugin` split | `EguiPrimaryContextPass` hook surface used by the phase strip |
+| S01 → S05 | `AnimGraphPlayer` FSM + windowed render path | Agumon visuals during the full-kit encounter |
+| S02 → S03 | `CombatEvent::OnCombatBeat` event stream from the two-clock cue-barrier pipeline | Read-only event source for `PhaseStripDisplay` |
+| S02 → S04 | Two-clock cue-barrier contract + `UnitDied` payload semantics | Reaction seam preconditions for post-action dispatch |
+| S02 → S05 | Sharp Claws timeline + per-hit cue handshake | Multi-hit loop hop-cue parity (`timeline_loop_hop_cue_parity`) |
+| S02 → S06 | Two-clock cue-barrier contract | I3 parity verified by R016 invariant matrix |
+| S03 → S05 | Read-only UI ingress pattern (`assert_is_read_only_system`) | Reused by HP bars, floating damage, twin-core badge |
+| S03 → S06 | Phase strip live surface | Smoke session visual check |
+| S04 → S05 | Owner-neutral post-action reaction seam + `OnKernelTransition::Blueprint` projection | Baby Burner reactive detonate + flash projection end-to-end under full kit |
+| S04 → S06 | Reactive detonate + flash VFX path | Smoke session no-panic / no-corruption probe under reactions |
+| S05 → S06 | Full-kit Agumon-vs-Agumon-dummy bootstrap (`AGUMON_DUMMY_ID = UnitId(9001)`), HUD HP bars, floating damage, twin-core badge | The session driven by `capture-windowed-smoke.sh` and the UAT runbook; consumed by R016 invariant gate |

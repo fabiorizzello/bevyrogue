@@ -39,3 +39,5 @@ mod timeline_loop_hop_cue_parity;
 mod timeline_two_clock_parity;
 #[path = "timeline/timeline_validate_loop_internals.rs"]
 mod timeline_validate_loop_internals;
+#[path = "timeline/r013_failure_visibility.rs"]
+mod r013_failure_visibility;

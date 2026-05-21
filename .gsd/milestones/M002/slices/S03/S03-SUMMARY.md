@@ -6,10 +6,15 @@ provides:
   - A top-center windowed phase strip driven exclusively by `CombatEventKind::OnCombatBeat` messages.
   - A UI-owned `PhaseStripDisplay` resource and pure label helpers that can be inspected without a display server.
   - Structural regression proof that the phase-strip ingress never mutates `CombatState`.
+  - A reusable read-only UI ingress pattern (`assert_is_read_only_system`) that downstream HUD/HP-bar slices reuse to keep presentation off the combat-write path.
 requires:
-  []
+  - slice: S01
+    provides: The `windowed.rs` egui boot and `UiPlugin` split that the phase strip's `EguiPrimaryContextPass` chain hooks into.
+  - slice: S02
+    provides: The `CombatEvent::OnCombatBeat` stream produced by the two-clock cue-barrier pipeline, which the phase strip consumes read-only.
 affects:
-  []
+  - S05
+  - S06
 key_files:
   - src/ui/phase_strip.rs
   - src/ui/mod.rs
