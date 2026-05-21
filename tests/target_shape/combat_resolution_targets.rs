@@ -1,9 +1,7 @@
-mod common;
-
 use bevyrogue::combat::resolution::resolve_targets;
 use bevyrogue::combat::{team::Team, types::UnitId};
 use bevyrogue::data::skills_ron::TargetShape;
-use common::resolution_helpers::snap;
+use crate::common::resolution_helpers::snap;
 
 // ── resolve_targets table-driven tests ──────────────────────────────────
 

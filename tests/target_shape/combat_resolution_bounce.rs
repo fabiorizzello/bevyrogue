@@ -1,9 +1,7 @@
-mod common;
-
 use bevyrogue::combat::resolution::select_bounce_hop;
 use bevyrogue::combat::{team::Team, types::UnitId};
 use bevyrogue::data::skills_ron::{BounceSelector, RepeatPolicy};
-use common::resolution_helpers::snap_hp;
+use crate::common::resolution_helpers::snap_hp;
 use std::collections::HashSet;
 
 // ── select_bounce_hop dispatcher tests ──────────────────────────────────
