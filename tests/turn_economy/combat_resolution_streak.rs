@@ -1,4 +1,3 @@
-mod common;
 
 use bevyrogue::combat::events::CombatEventKind;
 use bevyrogue::combat::kit::UnitSkills;
@@ -13,7 +12,7 @@ use bevyrogue::combat::{
     unit::BasicStreak,
 };
 use bevyrogue::data::skills_ron::SkillBook;
-use common::resolution_helpers::{
+use crate::common::resolution_helpers::{
     basic_intent, child_unit, default_ult, grant_free_skill_def, grant_free_skill_events, resolved,
     revive_skill, skill, unit,
 };
