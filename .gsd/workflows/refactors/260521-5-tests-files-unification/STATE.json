@@ -1,0 +1,32 @@
+{
+  "template": "refactor",
+  "templateName": "Refactor / Migration",
+  "description": "tests files unification",
+  "branch": "master",
+  "phases": [
+    {
+      "name": "inventory",
+      "index": 0,
+      "status": "active"
+    },
+    {
+      "name": "plan",
+      "index": 1,
+      "status": "pending"
+    },
+    {
+      "name": "migrate",
+      "index": 2,
+      "status": "pending"
+    },
+    {
+      "name": "verify",
+      "index": 3,
+      "status": "pending"
+    }
+  ],
+  "currentPhase": 0,
+  "startedAt": "2026-05-21T09:45:13.597Z",
+  "updatedAt": "2026-05-21T09:45:13.597Z",
+  "artifactDir": "/home/fabio/dev/bevyrogue/.gsd/workflows/refactors/260521-5-tests-files-unification"
+}

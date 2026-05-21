@@ -27,6 +27,15 @@ rustflags = [
 [unstable]
 codegen-backend = true
 
+# Incremental ON di default — riduce a secondi i rebuild su modifiche locali.
+# Il rovescio è che `target/debug/incremental/` cresce nel tempo (in questo
+# repo facilmente 15–20 GB). Periodicamente:
+#   cargo sweep --time 14    # cancella artefatti orfani > 14 giorni
+#   cargo sweep --installed  # tieni solo artefatti dell'ultima toolchain
+# Su scenari batch (CI puri) si può forzare `incremental = false`.
+[build]
+incremental = true
+
 # Alias — agenti (claude/gsd) usano SEMPRE il profilo headless.
 # `cargo dev`  = headless + dynamic linking (iterazione veloce, no finestra)
 # `cargo winx` = con finestra — SOLO per uso umano in verifica visiva, mai da agente
