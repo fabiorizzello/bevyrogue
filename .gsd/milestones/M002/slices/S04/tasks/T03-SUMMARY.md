@@ -6,47 +6,46 @@ key_files:
   - src/ui/combat_panel/mod.rs
   - src/ui/combat_panel/labels.rs
   - src/ui/combat_panel/render.rs
-  - src/ui/combat_panel/widgets.rs
   - src/windowed/mod.rs
   - tests/windowed_preview_cache.rs
 key_decisions:
-  - Projected Baby Burner detonate `OnKernelTransition::Blueprint` messages into a windowed-only `BabyBurnerFlashState` with a fixed six-frame lifetime so presentation remains deterministic and combat-state-free.
-  - Kept flash projection as separate observe/tick systems and render-only label helpers, then collapsed the preview/flash resources into a tuple system param to stay within Bevy's system-parameter arity limit for `combat_panel`.
+  - Project Agumon detonate observability from generic `CombatEventKind::OnKernelTransition` payloads into a feature-gated `BabyBurnerFlashState` with a fixed frame lifetime instead of introducing presentation-driven combat logic.
+  - Render the detonate proof through the existing combat-panel chip/tooltip path so windowed diagnostics expose source/cast/signal/targets while headless combat state remains immutable.
 duration: 
 verification_result: passed
-completed_at: 2026-05-21T06:05:09.720Z
+completed_at: 2026-05-21T06:35:26.694Z
 blocker_discovered: false
 ---
 
-# T03: Added a windowed-only Baby Burner detonate flash chip that projects generic Agumon transitions into deterministic combat-panel state without mutating combat.
+# T03: Verified and recorded the existing windowed-only Baby Burner detonate flash projection that mirrors generic Agumon detonate transitions into deterministic combat-panel chip state without mutating combat.
 
-**Added a windowed-only Baby Burner detonate flash chip that projects generic Agumon transitions into deterministic combat-panel state without mutating combat.**
+**Verified and recorded the existing windowed-only Baby Burner detonate flash projection that mirrors generic Agumon detonate transitions into deterministic combat-panel chip state without mutating combat.**
 
 ## What Happened
 
-Added a windowed-only Baby Burner flash projection seam to the combat panel. In `src/ui/combat_panel/mod.rs` I introduced `BabyBurnerFlashState`, a pure `latest_baby_burner_flash_trigger` extractor over `CombatEvent` messages, and deterministic `advance_baby_burner_flash_state` / `observe_baby_burner_flash` systems that only mutate presentation-owned state. In `src/ui/combat_panel/labels.rs` I added reusable label/tooltip helpers that surface signal owner/name, cast id, and target ids without depending on egui widgets. In `src/ui/combat_panel/render.rs` and `src/ui/combat_panel/widgets.rs` I threaded that state into the existing action-bar chip row so the flash renders alongside the existing cue-barrier telegraph without touching combat mutation. In `src/windowed/mod.rs` I registered the resource plus the fixed-order `advance -> refresh preview cache -> observe flash` update chain. In `tests/windowed_preview_cache.rs` I extended the feature-gated headless suite to inject synthetic Baby Burner detonate transitions, assert the flash appears immediately, persists for the configured frame budget, hides on expiry, aggregates multiple deterministic targets from the same cast, and leaves HP/combat state unchanged. During verification, the first compile surfaced a Bevy system-arity issue after adding one more `Res` to `combat_panel`; I resolved that by grouping the preview and flash resources into a single tuple system parameter before rerunning the full slice verification set.
+I audited the planned T03 touchpoints and confirmed the feature was already implemented in the working tree. `src/ui/combat_panel/mod.rs` defines `BabyBurnerFlashState`, a fixed-frame `BabyBurnerFlashDisplay`, and the `latest_baby_burner_flash_trigger`/`observe_baby_burner_flash` helpers that fold `OnKernelTransition::Blueprint(owner="agumon", name="baby_burner_detonate", payload=UnitTarget)` events into deterministic windowed-only presentation state. `src/ui/combat_panel/labels.rs` formats the flash chip text and tooltip with source, cast, signal, targets, and frame counters, while `src/ui/combat_panel/render.rs` threads that chip through the combat action bar without writing back into combat state. `src/windowed/mod.rs` already registers the flash resource and chains `advance_baby_burner_flash_state`, `refresh_preview_damage_cache`, and `observe_baby_burner_flash` in the windowed schedule. `tests/windowed_preview_cache.rs` already injects synthetic detonate transitions, asserts show/decrement/hide behavior across the fixed frame budget, checks tooltip contents, and verifies HP plus `CombatState` remain unchanged. Because the local code already satisfied the task contract, no additional source edits were required; I completed the task by validating the behavior and recording the existing implementation.
 
 ## Verification
 
-Verified the new windowed flash behavior directly with `cargo test --features windowed --test windowed_preview_cache`, including show/decrement/hide semantics and unchanged HP/combat state. Then ran the full S04 slice verification suite: Agumon reactive detonate, UnitDied payload, timeline cue barrier pipeline, two-clock parity, animation/atlas regressions, the windowed preview/flash suite, `cargo test --lib`, `cargo build --no-default-features`, and `cargo build --features windowed`; all passed.
+Ran the task-specific feature-gated test plus the full S04 verification set from the slice plan. `cargo test --features windowed --test windowed_preview_cache` passed, proving the flash appears from the detonate transition, persists for a deterministic number of frames, hides on expiry, and leaves HP/combat state unchanged. The broader detonate, payload, timeline, animation/atlas, library, and headless/windowed build checks also passed: `cargo test --test agumon_baby_burner_reactive`, `cargo test --test unit_died_payload`, `cargo test --test timeline_cue_barrier_pipeline`, `cargo test --test timeline_two_clock_parity`, `cargo test --test anim_player_fsm --test anim_graph_asset --test anim_gameplay_command_forbidden --test clip_atlas_parity`, `cargo test --lib`, `cargo build --no-default-features`, and `cargo build --features windowed`.
 
 ## Verification Evidence
 
 | # | Command | Exit Code | Verdict | Duration |
 |---|---------|-----------|---------|----------|
-| 1 | `cargo test --test agumon_baby_burner_reactive` | 0 | ✅ pass | 4590ms |
-| 2 | `cargo test --test unit_died_payload` | 0 | ✅ pass | 4878ms |
-| 3 | `cargo test --test timeline_cue_barrier_pipeline` | 0 | ✅ pass | 756ms |
-| 4 | `cargo test --test timeline_two_clock_parity` | 0 | ✅ pass | 1057ms |
-| 5 | `cargo test --test anim_player_fsm --test anim_graph_asset --test anim_gameplay_command_forbidden --test clip_atlas_parity` | 0 | ✅ pass | 988ms |
-| 6 | `cargo test --features windowed --test windowed_preview_cache` | 0 | ✅ pass | 3306ms |
-| 7 | `cargo test --lib` | 0 | ✅ pass | 8240ms |
-| 8 | `cargo build --no-default-features` | 0 | ✅ pass | 6411ms |
-| 9 | `cargo build --features windowed` | 0 | ✅ pass | 18138ms |
+| 1 | `cargo test --features windowed --test windowed_preview_cache` | 0 | ✅ pass | 292ms |
+| 2 | `cargo test --test agumon_baby_burner_reactive` | 0 | ✅ pass | 150ms |
+| 3 | `cargo test --test unit_died_payload` | 0 | ✅ pass | 143ms |
+| 4 | `cargo test --test timeline_cue_barrier_pipeline` | 0 | ✅ pass | 148ms |
+| 5 | `cargo test --test timeline_two_clock_parity` | 0 | ✅ pass | 162ms |
+| 6 | `cargo test --test anim_player_fsm --test anim_graph_asset --test anim_gameplay_command_forbidden --test clip_atlas_parity` | 0 | ✅ pass | 248ms |
+| 7 | `cargo test --lib` | 0 | ✅ pass | 167ms |
+| 8 | `cargo build --no-default-features` | 0 | ✅ pass | 139ms |
+| 9 | `cargo build --features windowed` | 0 | ✅ pass | 195ms |
 
 ## Deviations
 
-Also updated `src/ui/combat_panel/widgets.rs` and `src/windowed/mod.rs` to render the new chip and register the windowed-only flash resource/systems in the existing UI plugin schedule.
+None. The implementation was already present in the local tree, so execution focused on auditing, verification, and canonical task recording rather than additional code changes.
 
 ## Known Issues
 
@@ -57,6 +56,5 @@ None.
 - `src/ui/combat_panel/mod.rs`
 - `src/ui/combat_panel/labels.rs`
 - `src/ui/combat_panel/render.rs`
-- `src/ui/combat_panel/widgets.rs`
 - `src/windowed/mod.rs`
 - `tests/windowed_preview_cache.rs`

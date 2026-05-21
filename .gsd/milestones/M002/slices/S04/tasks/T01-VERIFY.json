@@ -2,14 +2,14 @@
   "schemaVersion": 1,
   "taskId": "T01",
   "unitId": "M002/S04/T01",
-  "timestamp": 1779313094863,
+  "timestamp": 1779344902785,
   "passed": true,
   "discoverySource": "task-plan",
   "checks": [
     {
       "command": "cargo test --test unit_died_payload --test timeline_cue_barrier_pipeline",
       "exitCode": 0,
-      "durationMs": 159,
+      "durationMs": 152,
       "verdict": "pass"
     }
   ]
