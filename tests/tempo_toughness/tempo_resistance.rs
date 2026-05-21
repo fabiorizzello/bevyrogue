@@ -3,12 +3,10 @@
 //! T02: pure-logic curve tests (no Bevy world needed).
 //! T03: boss-spawn scenario tests (TempoResistance wired via UnitDef.tempo_resistant).
 
-mod common;
-
 use bevy::prelude::*;
 use bevyrogue::combat::av::{ActionValue, MAX_AV};
 use bevyrogue::combat::resistance::{TempoResistance, apply_advance, apply_delay};
-use common::app::turn_av_base_app;
+use crate::common::app::turn_av_base_app;
 use rstest::rstest;
 
 // ──────────────────────────────────────────────────────────────────────────────
