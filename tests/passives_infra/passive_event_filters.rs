@@ -1,5 +1,3 @@
-mod common;
-
 use std::sync::Arc;
 
 use bevy::prelude::*;
@@ -11,7 +9,7 @@ use bevyrogue::combat::{
     },
     types::UnitId,
 };
-use common::app::passive_dispatch_app;
+use crate::common::app::passive_dispatch_app;
 
 const OWNER: UnitId = UnitId(10);
 const TARGET: UnitId = UnitId(11);

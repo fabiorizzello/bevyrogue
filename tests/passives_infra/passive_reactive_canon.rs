@@ -1,5 +1,3 @@
-mod common;
-
 use bevy::prelude::*;
 use bevyrogue::combat::{
     blueprints::dorumon::PredatorLoopState,
@@ -11,7 +9,7 @@ use bevyrogue::combat::{
     types::{Attribute, DamageTag, EvoStage, UnitId},
     unit::Unit,
 };
-use common::app::kernel_app;
+use crate::common::app::kernel_app;
 
 fn setup_app(seed: u64) -> App {
     kernel_app(seed)
