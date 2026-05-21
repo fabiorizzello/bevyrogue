@@ -16,7 +16,6 @@
 //! A second test case flips the spawned HP so the predicate does NOT fire, routing
 //! through the normal branch — proving the predicate is live, not dead.
 
-mod common;
 
 use bevy::prelude::*;
 use bevyrogue::combat::{
@@ -31,7 +30,7 @@ use bevyrogue::combat::{
     types::{Attribute, DamageTag, EvoStage, UnitId},
     unit::Unit,
 };
-use common::app::minimal_intent_app;
+use crate::common::app::minimal_intent_app;
 use std::collections::VecDeque;
 use std::sync::Arc;
 

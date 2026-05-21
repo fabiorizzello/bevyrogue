@@ -12,7 +12,6 @@
 //! - 3 `OnDamageDealt` events emitted after `app.update()`.
 
 use bevy::prelude::*;
-mod common;
 
 use bevyrogue::combat::{
     events::{CombatEvent, CombatEventKind},
@@ -27,7 +26,7 @@ use bevyrogue::combat::{
     types::{Attribute, DamageTag, EvoStage, UnitId},
     unit::Unit,
 };
-use common::app::minimal_intent_app;
+use crate::common::app::minimal_intent_app;
 use std::collections::VecDeque;
 use std::sync::Arc;
 
