@@ -1,0 +1,8 @@
+//! Aggregated harness for the windowed_only domain. See .gsd/KNOWLEDGE.md R003.
+//!
+//! Hosts tests for windowed-only UI features (phase strip, preview cache).
+
+#[path = "windowed_only/phase_strip_readonly.rs"]
+mod phase_strip_readonly;
+#[path = "windowed_only/windowed_preview_cache.rs"]
+mod windowed_preview_cache;
