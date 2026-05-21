@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use bevy::prelude::*;
 
 use bevyrogue::animation::{
@@ -5,7 +7,10 @@ use bevyrogue::animation::{
     StanceGraphRegistry,
 };
 use bevyrogue::combat::runtime::{CueBarrierStatus, CueReleaseResult, SuspendedTimelineState};
+use bevyrogue::combat::team::Team;
 use bevyrogue::combat::turn_system::{continue_suspended_timeline_system, resolve_action_system};
+use bevyrogue::combat::types::UnitId;
+use bevyrogue::combat::unit::Unit;
 
 use super::{
     AGUMON_SKILL_GRAPH_ID, AGUMON_STANCE_GRAPH_ID, SHARP_CLAWS_SKILL_ID, SHARP_CLAWS_STRIKE_NODE,
@@ -15,6 +20,7 @@ use super::{
 /// Marker + FSM state for the on-screen Agumon preview actor.
 #[derive(Component, Debug, Clone)]
 pub(super) struct AgumonSprite {
+    pub(super) unit_id: UnitId,
     pub(super) player: AnimGraphPlayer,
     mode: AgumonPlaybackMode,
     last_release_frame: Option<ReleaseFrameKey>,
@@ -38,8 +44,9 @@ pub(super) struct ReleaseFrameKey {
 }
 
 impl AgumonSprite {
-    pub(super) fn idle(entry: NodeId) -> Self {
+    pub(super) fn idle_for(unit_id: UnitId, entry: NodeId) -> Self {
         Self {
+            unit_id,
             player: AnimGraphPlayer::new(entry),
             mode: AgumonPlaybackMode::Idle,
             last_release_frame: None,
@@ -71,12 +78,15 @@ pub struct RenderPlugin;
 
 impl Plugin for RenderPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup_camera).add_systems(
-            Update,
-            advance_agumon_presentation
-                .after(resolve_action_system)
-                .before(continue_suspended_timeline_system),
-        );
+        app.add_systems(Startup, setup_camera)
+            .add_systems(Update, spawn_unit_sprites)
+            .add_systems(
+                Update,
+                advance_agumon_presentation
+                    .after(spawn_unit_sprites)
+                    .after(resolve_action_system)
+                    .before(continue_suspended_timeline_system),
+            );
     }
 }
 
@@ -84,8 +94,43 @@ fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera2d);
 }
 
-pub(super) fn advance_agumon_presentation(
+/// Spawns one `AgumonSprite` entity per unit that does not yet have one.
+/// Runs every frame but is idempotent: once a sprite exists for a unit it is skipped.
+/// Waits for the stance graph to be loaded before spawning anything.
+fn spawn_unit_sprites(
     mut commands: Commands,
+    stance_reg: Res<StanceGraphRegistry>,
+    graphs: Res<Assets<AnimGraph>>,
+    units: Query<(&Unit, &Team)>,
+    sprites: Query<&AgumonSprite>,
+) {
+    let Some(stance_graph) = stance_reg
+        .resolve(&AnimGraphId(AGUMON_STANCE_GRAPH_ID.into()))
+        .and_then(|handle| graphs.get(handle))
+    else {
+        return;
+    };
+
+    let spawned: HashSet<UnitId> = sprites.iter().map(|s| s.unit_id).collect();
+
+    for (unit, team) in &units {
+        if spawned.contains(&unit.id) {
+            continue;
+        }
+        let flip_x = *team == Team::Enemy;
+        let x = if flip_x { 200.0_f32 } else { -200.0_f32 };
+        commands.spawn((
+            AgumonSprite::idle_for(unit.id, stance_graph.entry.clone()),
+            Sprite {
+                flip_x,
+                ..default()
+            },
+            Transform::from_xyz(x, 0.0, 0.0),
+        ));
+    }
+}
+
+pub(super) fn advance_agumon_presentation(
     stance_reg: Res<StanceGraphRegistry>,
     skill_reg: Res<SkillGraphRegistry>,
     graphs: Res<Assets<AnimGraph>>,
@@ -99,14 +144,6 @@ pub(super) fn advance_agumon_presentation(
         .resolve(&AnimGraphId(AGUMON_SKILL_GRAPH_ID.into()))
         .and_then(|handle| graphs.get(handle));
     let active_barrier = barrier.active_status().cloned();
-
-    if sprites.is_empty() {
-        if let Some(stance_graph) = stance_graph {
-            commands.spawn(AgumonSprite::idle(stance_graph.entry.clone()));
-        } else {
-            return;
-        }
-    }
 
     for mut sprite in &mut sprites {
         sync_agumon_mode(

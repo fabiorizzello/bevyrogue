@@ -41,6 +41,9 @@ pub enum SelectionError {
     UnselectableEntry { id: UnitId, reason: String },
 }
 
+/// Stable `UnitId` for the Agumon-shaped enemy dummy used by `AgumonTrainingDummy`.
+pub const AGUMON_DUMMY_ID: UnitId = UnitId(9001);
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum EncounterPreset {
     /// Three Goblimon minions (UnitId 102 ×3).
@@ -49,6 +52,8 @@ pub enum EncounterPreset {
     MiniBossEncounter,
     /// Devimon boss solo (UnitId 101).
     BossEncounter,
+    /// One ally Agumon vs one enemy Agumon-shaped dummy; windowed demo preset.
+    AgumonTrainingDummy,
 }
 
 impl std::fmt::Display for EncounterPreset {
@@ -59,6 +64,7 @@ impl std::fmt::Display for EncounterPreset {
                 write!(f, "Mini-Boss Encounter (Ogremon + 2× Goblimon)")
             }
             EncounterPreset::BossEncounter => write!(f, "Boss Encounter (Devimon)"),
+            EncounterPreset::AgumonTrainingDummy => write!(f, "Agumon vs Agumon Dummy"),
         }
     }
 }
@@ -68,6 +74,10 @@ pub fn bootstrap_encounter(
     request: &SelectionRequest,
     preset: EncounterPreset,
 ) -> Result<EncounterComposition, SelectionError> {
+    if preset == EncounterPreset::AgumonTrainingDummy {
+        return bootstrap_agumon_training_dummy(roster);
+    }
+
     if request.rookie_ids.len() != 4 {
         return Err(SelectionError::WrongPickCount {
             expected: 4,
@@ -108,6 +118,8 @@ pub fn bootstrap_encounter(
         EncounterPreset::MinionWave => vec![UnitId(102), UnitId(102), UnitId(102)],
         EncounterPreset::MiniBossEncounter => vec![UnitId(103), UnitId(102), UnitId(102)],
         EncounterPreset::BossEncounter => vec![UnitId(101)],
+        // AgumonTrainingDummy is handled by the early return above.
+        EncounterPreset::AgumonTrainingDummy => unreachable!(),
     };
 
     let mut enemies = Vec::new();
@@ -119,6 +131,27 @@ pub fn bootstrap_encounter(
     }
 
     Ok(EncounterComposition { allies, enemies })
+}
+
+fn bootstrap_agumon_training_dummy(
+    roster: &UnitRoster,
+) -> Result<EncounterComposition, SelectionError> {
+    let agumon_ally = roster
+        .0
+        .iter()
+        .find(|d| d.id == UnitId(1) && d.team == Team::Ally)
+        .ok_or(SelectionError::UnknownRookie { id: UnitId(1) })?
+        .clone();
+
+    let mut dummy = agumon_ally.clone();
+    dummy.id = AGUMON_DUMMY_ID;
+    dummy.team = Team::Enemy;
+    dummy.name = "Agumon (Dummy)".into();
+
+    Ok(EncounterComposition {
+        allies: vec![agumon_ally],
+        enemies: vec![dummy],
+    })
 }
 
 pub fn spawn_unit_from_def(commands: &mut Commands, def: &UnitDef) -> Entity {

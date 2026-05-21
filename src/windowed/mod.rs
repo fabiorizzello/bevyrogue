@@ -10,11 +10,18 @@ use bevy_egui::{EguiContexts, EguiPlugin, EguiPrimaryContextPass, egui};
 
 use bevyrogue::animation::AnimationAssetPlugin;
 use bevyrogue::combat::av::ActionValue;
+use bevyrogue::combat::blueprints::agumon::TalentRanks;
+use bevyrogue::combat::bootstrap::{
+    EncounterPreset, SelectionRequest, apply_composition, bootstrap_encounter,
+};
+use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::follow_up::{
     follow_up_listener_system, form_identity_listener_system, resolve_follow_up_action_system,
 };
 use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
 use bevyrogue::combat::runtime::{Clock, SuspendedTimelineState, TimelineClock};
+use bevyrogue::combat::runtime::intent::CastId;
+use bevyrogue::combat::sp::SpPool;
 use bevyrogue::combat::turn_order::TurnAdvanced;
 use bevyrogue::combat::turn_system::{
     advance_turn_system, check_victory_system, continue_suspended_timeline_system,
@@ -136,12 +143,69 @@ pub fn register(app: &mut App, validation: Option<WindowedValidationConfig>) {
     .insert_resource(TimelineClock(Clock::Windowed))
     .init_resource::<SuspendedTimelineState>()
     .add_plugins(render::RenderPlugin)
-    .add_plugins(UiPlugin);
+    .add_plugins(UiPlugin)
+    .add_systems(Update, windowed_bootstrap_system);
 
     if let Some(config) = validation {
         app.insert_resource(config)
             .init_resource::<WindowedValidationState>()
             .add_systems(Update, windowed_validation_tick);
+    }
+}
+
+fn windowed_bootstrap_system(
+    mut commands: Commands,
+    data_ready: Option<Res<data::DataReady>>,
+    roster_handle: Option<Res<data::UnitRosterHandle>>,
+    rosters: Res<Assets<data::units_ron::UnitRoster>>,
+    units: Query<&Unit>,
+    mut combat_events: MessageWriter<CombatEvent>,
+    mut sp: ResMut<SpPool>,
+    mut talent_ranks: ResMut<TalentRanks>,
+) {
+    if data_ready.is_none() || !units.is_empty() {
+        return;
+    }
+
+    let Some(rhandle) = roster_handle else { return };
+    let Some(roster) = rosters.get(&rhandle.0) else {
+        return;
+    };
+
+    match bootstrap_encounter(
+        roster,
+        &SelectionRequest { rookie_ids: vec![] },
+        EncounterPreset::AgumonTrainingDummy,
+    ) {
+        Ok(composition) => {
+            let ally_ids: Vec<UnitId> = composition.allies.iter().map(|d| d.id).collect();
+            let seeded_ids = apply_composition(&mut commands, &composition);
+            sp.current = 999;
+            sp.max = 999;
+            talent_ranks.0.insert("agumon::bouncing_fire".into(), 1);
+            combat_events.write(CombatEvent {
+                source: UnitId(0),
+                target: UnitId(0),
+                kind: CombatEventKind::PartySelected {
+                    ally_ids,
+                    tamer_id: UnitId(0),
+                },
+                follow_up_depth: 0,
+                cast_id: CastId::ROOT,
+            });
+            combat_events.write(CombatEvent {
+                source: UnitId(0),
+                target: UnitId(0),
+                kind: CombatEventKind::TurnOrderSeeded {
+                    unit_ids: seeded_ids,
+                },
+                follow_up_depth: 0,
+                cast_id: CastId::ROOT,
+            });
+        }
+        Err(err) => {
+            error!("windowed bootstrap error: {err}");
+        }
     }
 }
 
