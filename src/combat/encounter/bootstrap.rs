@@ -1,5 +1,6 @@
 use crate::combat::team::Team;
 use crate::combat::types::UnitId;
+use crate::combat::ult_gauge::UltGaugeMetadata;
 use crate::data::units_ron::{UnitDef, UnitRoster};
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -192,6 +193,7 @@ pub fn spawn_unit_from_def(commands: &mut Commands, def: &UnitDef) -> Entity {
         Energy::default(),
         RoundEnergyTracker::default(),
         BasicStreak::default(),
+        UltGaugeMetadata(def.blueprint_metadata.clone()),
     ));
 
     if def.role_tags.contains(&"commander".to_string()) {

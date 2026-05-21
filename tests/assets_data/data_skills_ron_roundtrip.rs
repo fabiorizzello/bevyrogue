@@ -30,7 +30,7 @@ fn sample_skill() -> SkillDef {
         id: SkillId("baby_flame".into()),
         name: "Baby Flame".into(),
         damage_tag: DamageTag::Fire,
-        sp_cost: 4,
+        sp_cost: 1,
         targeting: offensive_targeting(TargetShape::Single),
         implementation: SkillImplementation::Implemented,
         legacy_ops: vec![

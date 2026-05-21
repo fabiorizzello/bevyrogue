@@ -5,16 +5,16 @@ fn canonical_roster() -> UnitRoster {
 }
 
 #[test]
-fn add_new_digimon_roster_metadata_stays_optional_for_existing_units() {
+fn add_new_digimon_roster_metadata_stays_optional_for_non_opted_in_units() {
     let roster = canonical_roster();
-    let agumon = roster
+    let gabumon = roster
         .0
         .iter()
-        .find(|unit| unit.name == "Agumon")
-        .expect("Agumon in roster");
+        .find(|unit| unit.name == "Gabumon")
+        .expect("Gabumon in roster");
 
     assert!(
-        agumon.blueprint_metadata.0.is_empty(),
-        "adding a new digimon must not require shared roster edits for existing units"
+        gabumon.blueprint_metadata.0.is_empty(),
+        "adding owner-keyed ult metadata for one Digimon must not force shared roster edits for non-opted-in units"
     );
 }

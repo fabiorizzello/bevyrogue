@@ -147,7 +147,7 @@ pub(super) fn advance_agumon_presentation(
 
     if let Some(status) = active_barrier.as_ref() {
         if status.awaiting_release && status.skill_id.0 != SHARP_CLAWS_SKILL_ID {
-            warn!(
+            debug!(
                 target: "windowed.agumon_playback",
                 skill_id = %status.skill_id.0,
                 beat_id = status.beat_id,

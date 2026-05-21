@@ -37,6 +37,8 @@ use crate::combat::{
     ultimate::UltimateCharge,
     unit::{Commander, Ko, Unit},
 };
+#[cfg(feature = "windowed")]
+use crate::combat::ult_gauge::UltGaugeMetadata;
 
 #[cfg(feature = "windowed")]
 use bevy::prelude::*;
@@ -245,6 +247,7 @@ pub(crate) type CombatPanelUnitsQuery<'w, 's> = Query<
         Option<&'static Stunned>,
         Option<&'static Energy>,
         Option<&'static RoundEnergyTracker>,
+        Option<&'static UltGaugeMetadata>,
     ),
 >;
 

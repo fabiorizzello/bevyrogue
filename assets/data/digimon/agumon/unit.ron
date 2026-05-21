@@ -15,6 +15,11 @@
             trigger: OnEnemyBreak,
             action: SkillId("agumon_follow_up"),
         )),
+        blueprint_metadata: {
+            "agumon": {
+                "ult_gauge": "energy",
+            },
+        },
         resists: [],
         toughness_max: 50,
         weaknesses: [Ice],

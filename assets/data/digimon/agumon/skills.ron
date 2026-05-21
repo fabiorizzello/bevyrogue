@@ -3,7 +3,7 @@
         id: SkillId("baby_flame"),
         name: "Baby Flame",
         damage_tag: Fire,
-        sp_cost: 4,
+        sp_cost: 1,
         targeting: SkillTargeting(
             shape: Single,
             side: Enemy,
@@ -12,7 +12,7 @@
             target_hp_rule: Any,
         ),
         implementation: Implemented,
-        legacy_ops: [Damage(amount: 18, target: Single), ToughnessHit(10)],
+        legacy_ops: [Damage(amount: 18, target: Single), ToughnessHit(10), GrantEnergy(9)],
         custom_signals: [(owner: "agumon", signal: "apply_heated", payload: Amount(amount: 3))],
         timeline: Some((
             entry: "cast",
@@ -56,7 +56,7 @@
             target_hp_rule: Any,
         ),
         implementation: Implemented,
-        legacy_ops: [Damage(amount: 18, target: Single), ToughnessHit(10)],
+        legacy_ops: [Damage(amount: 18, target: Single), ToughnessHit(10), GrantEnergy(6)],
         custom_signals: [(owner: "agumon", signal: "apply_heated", payload: Amount(amount: 3))],
         timeline: Some((
             entry: "cast",

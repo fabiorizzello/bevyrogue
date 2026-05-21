@@ -262,18 +262,31 @@ pub(super) fn render_columns(
                         .text(format!("{}/{}", ally.hp_cur, ally.hp_max)),
                 );
                 let ult_ratio = ally.ult_cur as f32 / ally.ult_cap.max(1) as f32;
-                let ult_label = if ally.ult_cur >= ally.ult_trigger {
-                    "READY".to_string()
+                let gauge_name = if ally.ult_backing == "energy" {
+                    "ULT gauge (energy-backed)"
                 } else {
-                    format!("{}/{}", ally.ult_cur, ally.ult_cap)
+                    "ULT charge (runtime)"
                 };
-                ui.add(egui::ProgressBar::new(ult_ratio).text(ult_label));
-                if let (Some(current), Some(max)) = (ally.energy_cur, ally.energy_max) {
-                    ui.label(format!("Energy: {current}/{max}"));
-                    if let (Some(sec), Some(ext)) =
-                        (ally.energy_secondary_gained, ally.energy_external_gained)
-                    {
-                        ui.label(format!("Round energy: +sec {sec} / +ext {ext}"));
+                let ult_label = if ally.ult_cur >= ally.ult_trigger {
+                    format!("{gauge_name} READY ({}/{})", ally.ult_cur, ally.ult_cap)
+                } else {
+                    format!("{gauge_name} {}/{}", ally.ult_cur, ally.ult_cap)
+                };
+                ui.add(egui::ProgressBar::new(ult_ratio).text(ult_label))
+                    .on_hover_text(if ally.ult_backing == "energy" {
+                        "This unit opts into an energy-backed ultimate gauge via owner metadata. Runtime readiness still migrates separately."
+                    } else {
+                        "Current runtime source for ultimate readiness. This is still backed by UltimateCharge, not Energy."
+                    });
+                if ally.ult_backing != "energy" {
+                    if let (Some(current), Some(max)) = (ally.energy_cur, ally.energy_max) {
+                        ui.label(format!("Energy (separate resource): {current}/{max}"))
+                            .on_hover_text("Separate per-unit resource. Present in the model today, but not yet wired as this unit's ult gauge.");
+                        if let (Some(sec), Some(ext)) =
+                            (ally.energy_secondary_gained, ally.energy_external_gained)
+                        {
+                            ui.label(format!("Round energy caps used: secondary {sec}/10 · external {ext}/30"));
+                        }
                     }
                 }
                 if ally.is_stunned {

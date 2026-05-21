@@ -34,6 +34,8 @@ pub mod team;
 pub mod types;
 /// `Unit` component (HP, attribute), markers `Ko`, `Commander`.
 pub mod unit;
+/// Effective ultimate-gauge view + owner-keyed metadata seam.
+pub mod ult_gauge;
 
 // ─── Turn pipeline ───────────────────────────────────────────────────────────
 // AV gauge, order queue, intent resolution, speed / tempo modifiers.

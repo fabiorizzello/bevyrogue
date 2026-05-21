@@ -7,6 +7,7 @@ use bevyrogue::combat::team::Team;
 use bevyrogue::combat::toughness::{Toughness, exposes_toughness_affordance};
 use bevyrogue::combat::turn_order::TurnOrder;
 use bevyrogue::combat::types::{EvoLineId, EvoStage, SkillId, UnitId};
+use bevyrogue::combat::ult_gauge::UltGaugeMetadata;
 use bevyrogue::combat::ultimate::UltAccumulationTrigger;
 use bevyrogue::combat::unit::Unit;
 use bevyrogue::data::units_ron::{UnitDef, UnitRoster};
@@ -282,4 +283,11 @@ fn test_bootstrap_spawn_composition() {
         .world_mut()
         .query::<&bevyrogue::combat::av::ActionValue>();
     assert_eq!(av_query.iter(app.world()).count(), 6);
+
+    let mut gauge_meta_query = app.world_mut().query::<&UltGaugeMetadata>();
+    assert_eq!(
+        gauge_meta_query.iter(app.world()).count(),
+        6,
+        "all spawned units should retain owner-keyed ult gauge metadata"
+    );
 }

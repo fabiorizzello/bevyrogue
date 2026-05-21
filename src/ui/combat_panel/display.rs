@@ -24,6 +24,7 @@ pub(super) struct UnitDisplay {
     pub(super) ult_cur: i32,
     pub(super) ult_trigger: i32,
     pub(super) ult_cap: i32,
+    pub(super) ult_backing: &'static str,
     pub(super) skills: Vec<SkillDisplay>,
     pub(super) is_ko: bool,
     pub(super) is_stunned: bool,

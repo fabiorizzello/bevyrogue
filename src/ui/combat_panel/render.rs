@@ -10,6 +10,8 @@ use moonshine_kind::Instance;
 #[cfg(feature = "windowed")]
 use crate::combat::runtime::SuspendedTimelineState;
 #[cfg(feature = "windowed")]
+use crate::combat::ult_gauge::effective_ult_gauge;
+#[cfg(feature = "windowed")]
 use crate::combat::{
     action_query::{
         ActionStatus, TargetStatus, build_snapshot_from_ecs_with_sp, first_enabled_target_id,
@@ -70,8 +72,20 @@ pub fn combat_panel(
 
     let mut unit_displays: Vec<UnitDisplay> = Vec::new();
     let mut units_data = Vec::new();
-    for (unit, team, tough, counterplay, ult, kit, ko, commander, stunned, energy, tracker) in
-        &units_q
+    for (
+        unit,
+        team,
+        tough,
+        counterplay,
+        ult,
+        kit,
+        ko,
+        commander,
+        stunned,
+        energy,
+        tracker,
+        gauge_meta,
+    ) in &units_q
     {
         units_data.push((
             unit.id,
@@ -88,6 +102,8 @@ pub fn combat_panel(
             tracker,
         ));
 
+        let effective_gauge = effective_ult_gauge(gauge_meta, energy, Some(ult));
+
         unit_displays.push(UnitDisplay {
             id: unit.id,
             team: *team,
@@ -95,9 +111,10 @@ pub fn combat_panel(
             attribute: unit.attribute,
             hp_cur: unit.hp_current,
             hp_max: unit.hp_max,
-            ult_cur: ult.current,
-            ult_trigger: ult.trigger,
-            ult_cap: ult.cap,
+            ult_cur: effective_gauge.current,
+            ult_trigger: effective_gauge.trigger,
+            ult_cap: effective_gauge.cap,
+            ult_backing: effective_gauge.backing,
             skills: kit
                 .skills
                 .iter()

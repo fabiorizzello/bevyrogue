@@ -190,8 +190,8 @@ fn windowed_bootstrap_system(
             let ally_ids: Vec<UnitId> = composition.allies.iter().map(|d| d.id).collect();
             let seeded_ids = apply_composition(&mut commands, &composition);
             combat_state.phase = CombatPhase::WaitingForTurn;
-            sp.current = 999;
-            sp.max = 999;
+            sp.current = 3;
+            sp.max = 3;
             talent_ranks.0.insert("agumon::bouncing_fire".into(), 1);
             combat_events.write(CombatEvent {
                 source: UnitId(0),
