@@ -5,28 +5,28 @@ milestone: M002
 key_files: []
 key_decisions: []
 duration: 
-verification_result: passed
-completed_at: 2026-05-21T17:56:08.047Z
+verification_result: untested
+completed_at: 2026-05-21T21:19:47.308Z
 blocker_discovered: false
 ---
 
-# T04: Per-hop kernel cue: visible Baby Flame loop iterations = kernel hop_index count
+# T04: Per-hop kernel cue: visible loop iterations = kernel hop_index
 
-**Per-hop kernel cue: visible Baby Flame loop iterations = kernel hop_index count**
+****
 
 ## What Happened
 
-Baby Flame multi-hit loop iterates exactly the kernel hop_index count via per-hop kernel cues. loop-hop cue parity test passes. bouncing_fire_off_baseline unchanged.
+No summary recorded.
 
 ## Verification
 
-loop-hop cue parity test passes; bouncing_fire_off_baseline passes
+No verification recorded.
 
 ## Verification Evidence
 
 | # | Command | Exit Code | Verdict | Duration |
 |---|---------|-----------|---------|----------|
-| 1 | `cargo test` | 0 | pass | 0ms |
+| — | No verification commands discovered | — | — | — |
 
 ## Deviations
 

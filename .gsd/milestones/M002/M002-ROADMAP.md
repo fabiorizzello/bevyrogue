@@ -1,4 +1,4 @@
-# M002: M002: First on-screen combat (Agumon-only)
+# M002: M002: M002: First on-screen combat (Agumon-only)
 
 **Vision:** The first time bevyrogue's combat appears on screen: AnimGraph runtime player + wgpu sprite render + §9 UI core + two-clock impact sync, Agumon-only, ending in a playable cargo run --features windowed of Agumon vs an Agumon dummy at full kit, with damage landing on the visible impact frame, gated at closeout by a repomix architectural review. The animation/skill seam must be complete and extensible so M003-M007 and a future RON editor lean on it without rewrites.
 
@@ -25,7 +25,7 @@
 - [x] **S07: S07** `risk:medium` `depends:[]`
   > After this: cargo run --features windowed --bin bevyrogue — barra ult Agumon sale solo da energy, Ultimate si abilita esattamente quando energy=max, fire ult azzera la barra
 
-- [ ] **S08: Remediate graph purity and failure visibility** `risk:high` `depends:[]`
+- [x] **S08: S08** `risk:high` `depends:[]`
   > After this: After this: R009 has executable proof of typed pure graph input with no world globals or mutable graph context; R013 has structured failure visibility for cue timeout, missing skill-id, hot reload at next spawn, and dead target mid-loop.
 
 - [ ] **S09: Remediate validation evidence and operational closeout** `risk:medium` `depends:[S08]`
@@ -34,5 +34,3 @@
 ## Boundary Map
 
 ## Boundary Map
-
-Not provided.

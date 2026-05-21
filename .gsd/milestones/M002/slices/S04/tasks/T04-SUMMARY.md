@@ -5,28 +5,28 @@ milestone: M002
 key_files: []
 key_decisions: []
 duration: 
-verification_result: passed
-completed_at: 2026-05-21T17:55:36.999Z
+verification_result: untested
+completed_at: 2026-05-21T21:19:47.308Z
 blocker_discovered: false
 ---
 
-# T04: S04 regression matrix run; live-smoke limits documented
+# T04: Run S04 regression matrix and document live-smoke limits
 
-**S04 regression matrix run; live-smoke limits documented**
+****
 
 ## What Happened
 
-Ran full S04 regression matrix. Live windowed soak is environment-limited in gsd_exec (MEM053) and documented as such. All headless tests pass.
+No summary recorded.
 
 ## Verification
 
-All S04 headless tests pass; windowed build passes; live-smoke limitation documented per K001
+No verification recorded.
 
 ## Verification Evidence
 
 | # | Command | Exit Code | Verdict | Duration |
 |---|---------|-----------|---------|----------|
-| 1 | `cargo test && cargo build --features windowed` | 0 | pass | 0ms |
+| — | No verification commands discovered | — | — | — |
 
 ## Deviations
 

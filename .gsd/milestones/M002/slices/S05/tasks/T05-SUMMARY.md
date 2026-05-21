@@ -5,28 +5,28 @@ milestone: M002
 key_files: []
 key_decisions: []
 duration: 
-verification_result: passed
-completed_at: 2026-05-21T17:56:13.246Z
+verification_result: untested
+completed_at: 2026-05-21T21:19:47.308Z
 blocker_discovered: false
 ---
 
-# T05: Baby Burner primary timeline + anim graph + Heated/ToughnessHit on impact; S04 detonate chains
+# T05: Baby Burner primary timeline + animation graph + thermal stack on impact
 
-**Baby Burner primary timeline + anim graph + Heated/ToughnessHit on impact; S04 detonate chains**
+****
 
 ## What Happened
 
-Baby Burner primary timeline: windup→impact (Heated+ToughnessHit applied)+recovery. When target is Heated and lethal, chains S04 reactive detonate flash. Baby Burner primary timeline test passes.
+No summary recorded.
 
 ## Verification
 
-Baby Burner primary timeline test passes; detonate chain test passes
+No verification recorded.
 
 ## Verification Evidence
 
 | # | Command | Exit Code | Verdict | Duration |
 |---|---------|-----------|---------|----------|
-| 1 | `cargo test` | 0 | pass | 0ms |
+| — | No verification commands discovered | — | — | — |
 
 ## Deviations
 

@@ -5,28 +5,28 @@ milestone: M002
 key_files: []
 key_decisions: []
 duration: 
-verification_result: passed
-completed_at: 2026-05-21T17:53:30.828Z
+verification_result: untested
+completed_at: 2026-05-21T21:19:47.307Z
 blocker_discovered: false
 ---
 
-# T03: SkillGraphRegistry + StanceGraphRegistry with id→Handle resolution via map lookup
+# T03: SkillGraphRegistry + StanceGraphRegistry (pure id->Handle resolution, R008)
 
-**SkillGraphRegistry + StanceGraphRegistry with id→Handle resolution via map lookup**
+****
 
 ## What Happened
 
-Created src/animation/registry.rs with SkillGraphRegistry and StanceGraphRegistry resources wrapping AnimGraphId→Handle<AnimGraph> maps. Added system to insert entries once handles resolve. Registered both in AnimationAssetPlugin.
+No summary recorded.
 
 ## Verification
 
-cargo test green; registry resolves loaded graph ids correctly
+No verification recorded.
 
 ## Verification Evidence
 
 | # | Command | Exit Code | Verdict | Duration |
 |---|---------|-----------|---------|----------|
-| 1 | `cargo test` | 0 | pass | 0ms |
+| — | No verification commands discovered | — | — | — |
 
 ## Deviations
 

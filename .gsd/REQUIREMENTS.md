@@ -54,16 +54,6 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: CompiledTimeline.id = skill_id confirmed (skill_timeline.rs:73); animation-side registry resolves skill-id→graph with zero if-else dispatch.
 - Notes: cues: Vec<FrameCue> on AnimNode and ReleaseKernelCue are NEW S01 deliverables (AnimNode currently has only frames/on_enter/modifier/reverse).
 
-### R009 — Typed graph input (xstate input lens): the AnimGraph is a pure function of (typed input, kernel cue, frame clock) and never reads world globals. Input is a closed Role enum (Caster, PrimaryTarget, …) injected read-only by the kernel at cast; cues/guards reference roles, never literals/numbers/coordinates.
-- Class: quality-attribute
-- Status: active
-- Description: Typed graph input (xstate input lens): the AnimGraph is a pure function of (typed input, kernel cue, frame clock) and never reads world globals. Input is a closed Role enum (Caster, PrimaryTarget, …) injected read-only by the kernel at cast; cues/guards reference roles, never literals/numbers/coordinates.
-- Why it matters: Pure-function-of-input makes the graph deterministic, testable, and a known contract for the future editor — the flexibility the user wanted from xstate without xstate's mutable context.
-- Source: user
-- Primary owning slice: M002/S02
-- Validation: Graph evaluation takes typed input + kernel cues + frame clock only; no world-singleton reads; mutable context / assign / parallel explicitly rejected.
-- Notes: Stated as M002 design model, not a pre-existing type (repomix delta: drop "exists" framing for GraphInput/Vec<Role>/xstate).
-
 ### R010 — §9 phase strip (turn order) live, driven by EventReader<CombatEvent>; the UI never mutates combat state (D008 enforced structurally, not by convention).
 - Class: primary-user-loop
 - Status: active
@@ -93,16 +83,6 @@ This file is the explicit capability and coverage contract for the project.
 - Primary owning slice: M002/S04
 - Validation: Baby Burner reactive detonate + flash VFX via Rust-configured entity; no custom RON/editor; swapping the backing implementation would not touch anim graph or kernel.
 - Notes: bevy_enoki / Omagari evaluation is explicitly outside M002.
-
-### R013 — Failure visibility: cue-never-released → safety timeout in frame-budget forces resume_cue + structured error log (graph/cue/node/frame); missing skill-id → strict-on-boot for the known M002 set, runtime fallback to a degenerate instant graph + error log; hot-reload mid-skill takes effect at next spawn; target dead mid-loop → presentation completes without branching on liveness. No silent swallow; combat headless stays authoritative.
-- Class: failure-visibility
-- Status: active
-- Description: Failure visibility: cue-never-released → safety timeout in frame-budget forces resume_cue + structured error log (graph/cue/node/frame); missing skill-id → strict-on-boot for the known M002 set, runtime fallback to a degenerate instant graph + error log; hot-reload mid-skill takes effect at next spawn; target dead mid-loop → presentation completes without branching on liveness. No silent swallow; combat headless stays authoritative.
-- Why it matters: A deadlocked AwaitingCue with no signal is the worst failure for an unattended runtime; every failure mode must be noisy and non-corrupting.
-- Source: user
-- Primary owning slice: M002/S02
-- Validation: Each failure mode produces a structured log and the game does not deadlock or corrupt world state; timeout/fallback are runtime-player mechanisms, not authored if-else branches.
-- Notes: Supporting slices: S01 (strict-on-boot registry), S06 (hot-reload mid-skill stress).
 
 ### R014 — Windowed smoke end-to-end: cargo run --features windowed runs Agumon vs dummy Agumon at full kit with no panic, stable FPS (qualitative — no perceptible stutter, no unbounded VFX entity growth), and hot-reload mid-skill does not corrupt world state.
 - Class: launchability
@@ -144,6 +124,26 @@ This file is the explicit capability and coverage contract for the project.
 - Source: inferred
 - Validation: cargo test --test clip_geometry_parity passes (1 test: agumon_clip_ron_matches_authoritative_atlas_geometry). clip.ron corrected to frame_size w=512/h=512, total_frames=93, ranges heavy_attack 23-45, hurt 46-52, idle 53-58, skill 59-75, victory 76-92 — matching agumon_atlas.json exactly. anim_graph.ron node frame references updated to match. Validated in M001 remediation before milestone completion (2026-05-19).
 - Notes: Pre-existing S02 geometry regression (w=557,h=561,total_frames=95) corrected in working tree before M001 milestone closeout. The clip_geometry_parity test is the only guard against silent authoring errors; it must be run and pass before any clip authoring task is marked complete (see MEM010, MEM013).
+
+### R009 — Typed graph input (xstate input lens): the AnimGraph is a pure function of (typed input, kernel cue, frame clock) and never reads world globals. Input is a closed Role enum (Caster, PrimaryTarget, …) injected read-only by the kernel at cast; cues/guards reference roles, never literals/numbers/coordinates.
+- Class: quality-attribute
+- Status: validated
+- Description: Typed graph input (xstate input lens): the AnimGraph is a pure function of (typed input, kernel cue, frame clock) and never reads world globals. Input is a closed Role enum (Caster, PrimaryTarget, …) injected read-only by the kernel at cast; cues/guards reference roles, never literals/numbers/coordinates.
+- Why it matters: Pure-function-of-input makes the graph deterministic, testable, and a known contract for the future editor — the flexibility the user wanted from xstate without xstate's mutable context.
+- Source: user
+- Primary owning slice: M002/S02
+- Validation: Verified by cargo test --test animation anim_graph_input_purity and the windowed regression sweep. Tests prove AnimGraph evaluation uses a closed typed AnimGraphRole/AnimGraphInput seam, rejects stringly or unknown roles, and keeps player advancement behaviorally equivalent without any world-global or mutable graph-context read path.
+- Notes: S08 supplied executable purity proof for the typed input lens and preserved legacy wrappers as default-input shims.
+
+### R013 — Failure visibility: cue-never-released → safety timeout in frame-budget forces resume_cue + structured error log (graph/cue/node/frame); missing skill-id → strict-on-boot for the known M002 set, runtime fallback to a degenerate instant graph + error log; hot-reload mid-skill takes effect at next spawn; target dead mid-loop → presentation completes without branching on liveness. No silent swallow; combat headless stays authoritative.
+- Class: failure-visibility
+- Status: validated
+- Description: Failure visibility: cue-never-released → safety timeout in frame-budget forces resume_cue + structured error log (graph/cue/node/frame); missing skill-id → strict-on-boot for the known M002 set, runtime fallback to a degenerate instant graph + error log; hot-reload mid-skill takes effect at next spawn; target dead mid-loop → presentation completes without branching on liveness. No silent swallow; combat headless stays authoritative.
+- Why it matters: A deadlocked AwaitingCue with no signal is the worst failure for an unattended runtime; every failure mode must be noisy and non-corrupting.
+- Source: user
+- Primary owning slice: M002/S02
+- Validation: Verified by cargo test --test timeline r013_failure_visibility, cargo test --test animation anim_registry_failure_visibility, and cargo test --features windowed --test animation --test timeline --test windowed_only. Tests prove cue timeout force-resume with structured diagnostics, missing skill graph runtime fallback plus boot-time load-state visibility, hot reload applying only to newly spawned/resolved players, and dead-target mid-loop remaining observable without branching presentation flow on liveness.
+- Notes: S08 hardened structured diagnostic surfaces across cue barriers, animation registry fallback, boot load-state reporting, and post-KO overshoot observability.
 
 ### R021 — The animation system must live behind one cohesive generic module boundary covering schema, loading, validation, orchestration, and future runtime/player behavior without hardcoded Digimon-specific logic.
 - Class: quality-attribute
@@ -351,11 +351,11 @@ This file is the explicit capability and coverage contract for the project.
 | R006 | core-capability | active | M002/S02 | none | Sharp Claws windup→strike→recovery on screen; damage falls on the impact frame via ReleaseKernelCue; invariant I3 extended to the new handshake stays green (identical Intent stream headless vs windowed, only timing differs). |
 | R007 | constraint | active | M002/S02 | none | A test fails if anim_graph.ron contains any gameplay Command (EmitDamage/EmitStatus/EmitHeal); the M001 mul:18 duplicate at agumon/anim_graph.ron:20 is remediated behind that test. |
 | R008 | differentiator | active | M002/S01 | none | CompiledTimeline.id = skill_id confirmed (skill_timeline.rs:73); animation-side registry resolves skill-id→graph with zero if-else dispatch. |
-| R009 | quality-attribute | active | M002/S02 | none | Graph evaluation takes typed input + kernel cues + frame clock only; no world-singleton reads; mutable context / assign / parallel explicitly rejected. |
+| R009 | quality-attribute | validated | M002/S02 | none | Verified by cargo test --test animation anim_graph_input_purity and the windowed regression sweep. Tests prove AnimGraph evaluation uses a closed typed AnimGraphRole/AnimGraphInput seam, rejects stringly or unknown roles, and keeps player advancement behaviorally equivalent without any world-global or mutable graph-context read path. |
 | R010 | primary-user-loop | active | M002/S03 | none | Phase strip updates from EventReader<CombatEvent>; a structural test asserts the UI path never mutates combat state. |
 | R011 | core-capability | active | M002/S05 | none | Agumon vs dummy Agumon at full kit on screen; multi-hit loop visibly = kernel hop count; target blink/hurt driven by CombatEvent. |
 | R012 | integration | active | M002/S04 | none | Baby Burner reactive detonate + flash VFX via Rust-configured entity; no custom RON/editor; swapping the backing implementation would not touch anim graph or kernel. |
-| R013 | failure-visibility | active | M002/S02 | none | Each failure mode produces a structured log and the game does not deadlock or corrupt world state; timeout/fallback are runtime-player mechanisms, not authored if-else branches. |
+| R013 | failure-visibility | validated | M002/S02 | none | Verified by cargo test --test timeline r013_failure_visibility, cargo test --test animation anim_registry_failure_visibility, and cargo test --features windowed --test animation --test timeline --test windowed_only. Tests prove cue timeout force-resume with structured diagnostics, missing skill graph runtime fallback plus boot-time load-state visibility, hot reload applying only to newly spawned/resolved players, and dead-target mid-loop remaining observable without branching presentation flow on liveness. |
 | R014 | launchability | active | M002/S06 | none | Operational UAT with captured console output (not just a documented procedure): a windowed session showing no panic, stable FPS, and hot-reload mid-skill leaving world state intact. |
 | R015 | operability | active | M002/S06 | none | A repomix-grounded architectural review report (maintainability/scalability/extensibility) is produced at closeout and attached as S06 evidence; findings are triaged before milestone completion. |
 | R016 | constraint | active | M002/S06 | none | cargo test green (M001 suite intact); extended I3 parity test green; no winit/wgpu/egui deps outside windowed; no .md added to repo root. |
@@ -382,7 +382,7 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Coverage Summary
 
-- Active requirements: 13
-- Mapped to slices: 13
-- Validated: 9 (R003, R021, R022, R023, R024, R025, R026, R027, R028)
+- Active requirements: 11
+- Mapped to slices: 11
+- Validated: 11 (R003, R009, R013, R021, R022, R023, R024, R025, R026, R027, R028)
 - Unmapped active requirements: 0

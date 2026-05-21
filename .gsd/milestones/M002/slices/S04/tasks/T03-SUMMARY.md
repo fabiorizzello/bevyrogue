@@ -5,28 +5,28 @@ milestone: M002
 key_files: []
 key_decisions: []
 duration: 
-verification_result: passed
-completed_at: 2026-05-21T17:55:31.364Z
+verification_result: untested
+completed_at: 2026-05-21T21:19:47.308Z
 blocker_discovered: false
 ---
 
-# T03: Detonate transitions projected into windowed flash indicator (feature-gated)
+# T03: Project detonate transitions into a windowed flash indicator
 
-**Detonate transitions projected into windowed flash indicator (feature-gated)**
+****
 
 ## What Happened
 
-Added feature-gated windowed flash indicator projecting generic combat transition from detonate without mutating combat state. Flash chip renders via CombatEvent projection only.
+No summary recorded.
 
 ## Verification
 
-cargo build --features windowed compiles; flash indicator visible windowed
+No verification recorded.
 
 ## Verification Evidence
 
 | # | Command | Exit Code | Verdict | Duration |
 |---|---------|-----------|---------|----------|
-| 1 | `cargo build --features windowed` | 0 | pass | 0ms |
+| — | No verification commands discovered | — | — | — |
 
 ## Deviations
 

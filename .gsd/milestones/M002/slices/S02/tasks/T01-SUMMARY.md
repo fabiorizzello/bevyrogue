@@ -5,28 +5,28 @@ milestone: M002
 key_files: []
 key_decisions: []
 duration: 
-verification_result: passed
-completed_at: 2026-05-21T17:54:00.142Z
+verification_result: untested
+completed_at: 2026-05-21T21:19:47.307Z
 blocker_discovered: false
 ---
 
 # T01: Deterministic cue-awaiting runner contract exposed
 
-**Deterministic cue-awaiting runner contract exposed**
+****
 
 ## What Happened
 
-Exposed the deterministic cue-awaiting runner contract for the two-clock impact barrier. Headless tests green.
+No summary recorded.
 
 ## Verification
 
-cargo test green
+No verification recorded.
 
 ## Verification Evidence
 
 | # | Command | Exit Code | Verdict | Duration |
 |---|---------|-----------|---------|----------|
-| 1 | `cargo test` | 0 | pass | 0ms |
+| — | No verification commands discovered | — | — | — |
 
 ## Deviations
 

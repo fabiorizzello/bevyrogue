@@ -5,28 +5,28 @@ milestone: M002
 key_files: []
 key_decisions: []
 duration: 
-verification_result: passed
-completed_at: 2026-05-21T17:53:21.851Z
+verification_result: untested
+completed_at: 2026-05-21T21:19:47.307Z
 blocker_discovered: false
 ---
 
 # T01: Closed-enum schema extensions (AnimGraphId, FrameCue, ReleaseKernelCue, KernelCue predicate) + atomic asset/test migration
 
-**Closed-enum schema extensions (AnimGraphId, FrameCue, ReleaseKernelCue, KernelCue predicate) + atomic asset/test migration**
+****
 
 ## What Happened
 
-Added required `id: AnimGraphId` field to AnimGraph, `cues: Vec<FrameCue>` with serde default to AnimNode, closed FrameCueCommand enum with ReleaseKernelCue, and KernelCue variant to Predicate enum. Updated all RON assets and test fixtures atomically.
+No summary recorded.
 
 ## Verification
 
-cargo test green headless; all RON assets parse without error
+No verification recorded.
 
 ## Verification Evidence
 
 | # | Command | Exit Code | Verdict | Duration |
 |---|---------|-----------|---------|----------|
-| 1 | `cargo test` | 0 | pass | 0ms |
+| — | No verification commands discovered | — | — | — |
 
 ## Deviations
 
