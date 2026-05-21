@@ -51,10 +51,16 @@ impl Plugin for UiPlugin {
         app.add_plugins(EguiPlugin::default())
             .init_resource::<bevyrogue::ui::combat_panel::PendingAction>()
             .init_resource::<bevyrogue::ui::combat_panel::PreviewDamageCache>()
+            .init_resource::<bevyrogue::ui::combat_panel::BabyBurnerFlashState>()
             .init_resource::<bevyrogue::ui::phase_strip::PhaseStripDisplay>()
             .add_systems(
                 Update,
-                bevyrogue::ui::combat_panel::refresh_preview_damage_cache,
+                (
+                    bevyrogue::ui::combat_panel::advance_baby_burner_flash_state,
+                    bevyrogue::ui::combat_panel::refresh_preview_damage_cache,
+                    bevyrogue::ui::combat_panel::observe_baby_burner_flash,
+                )
+                    .chain(),
             )
             .add_systems(EguiPrimaryContextPass, roster_panel)
             .add_systems(EguiPrimaryContextPass, turn_order_panel)

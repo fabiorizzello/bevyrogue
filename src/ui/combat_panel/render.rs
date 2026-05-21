@@ -30,11 +30,15 @@ use crate::data::skills_ron::SkillBook;
 #[cfg(feature = "windowed")]
 use super::display::{FdDisplay, SkillDisplay, UnitDisplay};
 #[cfg(feature = "windowed")]
-use super::labels::{cue_barrier_chip, query_pending_action_affordance, skill_name};
+use super::labels::{
+    baby_burner_flash_chip, cue_barrier_chip, query_pending_action_affordance, skill_name,
+};
 #[cfg(feature = "windowed")]
 use super::widgets::{render_action_bar, render_columns, render_floating};
 #[cfg(feature = "windowed")]
-use super::{CombatPanelUnitsQuery, PendingAction, PendingKind, PreviewDamageCache};
+use super::{
+    BabyBurnerFlashState, CombatPanelUnitsQuery, PendingAction, PendingKind, PreviewDamageCache,
+};
 
 #[cfg(feature = "windowed")]
 #[allow(clippy::too_many_arguments)]
@@ -48,7 +52,7 @@ pub fn combat_panel(
     mut combat_state: ResMut<CombatState>,
     mut sp: ResMut<SpPool>,
     mut log: ResMut<ActionLog>,
-    preview_cache: Res<PreviewDamageCache>,
+    panel_state: (Res<PreviewDamageCache>, Res<BabyBurnerFlashState>),
     skill_books: Res<Assets<SkillBook>>,
     barrier: Res<SuspendedTimelineState>,
     mut action_intent: MessageWriter<ActionIntent>,
@@ -57,6 +61,7 @@ pub fn combat_panel(
     mut despawn_q: ParamSet<(Query<Instance<Unit>>, Query<Instance<FloatingDamage>>)>,
 ) -> Result {
     let fallback_skill_book = SkillBook(Vec::new());
+    let (preview_cache, flash_state) = panel_state;
     let skill_book = skill_books
         .iter()
         .next()
@@ -180,6 +185,7 @@ pub fn combat_panel(
         .collect();
 
     let telegraph_chip = cue_barrier_chip(barrier.active_status(), Some(skill_book));
+    let flash_chip = baby_burner_flash_chip(flash_state.active());
 
     let mut pending_request: Option<Option<PendingKind>> = None;
     let mut clicked_target: Option<UnitId> = None;
@@ -216,6 +222,7 @@ pub fn combat_panel(
             &selected_action_affordance,
             selected_target_id,
             telegraph_chip.as_ref(),
+            flash_chip.as_ref(),
             &mut pending_request,
         );
         ui.separator();

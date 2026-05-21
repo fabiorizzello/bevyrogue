@@ -2,9 +2,12 @@
 
 use bevy::prelude::*;
 use bevyrogue::combat::{
+    events::{CombatEvent, CombatEventKind, CombatKernelTransition},
     kit::UnitSkills,
     preview::{query_skill_preview, summarize_preview_damage},
-    runtime::{CastId, CastIdGen, CueBarrierStatus, ExtRegistries, register_kernel_builtins},
+    runtime::{
+        CastId, CastIdGen, CueBarrierStatus, ExtRegistries, SignalPayload, register_kernel_builtins,
+    },
     sp::SpPool,
     state::CombatState,
     team::Team,
@@ -22,8 +25,10 @@ use bevyrogue::data::{
     },
 };
 use bevyrogue::ui::combat_panel::{
-    PendingAction, PendingKind, PreviewDamageCache, cue_barrier_chip, refresh_preview_damage_cache,
-    telegraph_chip_text, telegraph_chip_tooltip,
+    BABY_BURNER_FLASH_LIFETIME_FRAMES, BabyBurnerFlashState, PendingAction, PendingKind,
+    PreviewDamageCache, advance_baby_burner_flash_state, baby_burner_flash_chip, cue_barrier_chip,
+    observe_baby_burner_flash, refresh_preview_damage_cache, telegraph_chip_text,
+    telegraph_chip_tooltip,
 };
 
 const CASTER_ID: UnitId = UnitId(11);
@@ -48,7 +53,9 @@ fn build_app(pending_kind: PendingKind, basic_skill: SkillId) -> App {
         .insert_resource(PendingAction {
             kind: Some(pending_kind),
         })
-        .insert_resource(PreviewDamageCache::default());
+        .insert_resource(PreviewDamageCache::default())
+        .init_resource::<BabyBurnerFlashState>()
+        .add_message::<CombatEvent>();
 
     let mut regs = ExtRegistries::default();
     register_kernel_builtins(&mut regs);
@@ -239,8 +246,25 @@ fn build_app(pending_kind: PendingKind, basic_skill: SkillId) -> App {
         order.active_unit = Some(CASTER_ID);
     }
 
-    app.add_systems(Update, refresh_preview_damage_cache);
+    app.add_systems(
+        Update,
+        (
+            advance_baby_burner_flash_state,
+            refresh_preview_damage_cache,
+            observe_baby_burner_flash,
+        )
+            .chain(),
+    );
     app
+}
+
+fn unit_hp(app: &mut App, id: UnitId) -> i32 {
+    let mut query = app.world_mut().query::<&Unit>();
+    query
+        .iter(app.world())
+        .find(|unit| unit.id == id)
+        .map(|unit| unit.hp_current)
+        .unwrap_or_else(|| panic!("unit {id:?} missing"))
 }
 
 #[test]
@@ -311,6 +335,94 @@ fn windowed_basic_preview_uses_sharp_claws_damage_data() {
         )),
         Some("preview: 18 dmg across 1 hit(s)".to_string())
     );
+}
+
+#[test]
+fn baby_burner_flash_state_projects_detonate_transitions_for_fixed_frames_without_touching_hp() {
+    let mut app = build_app(
+        PendingKind::Skill(preview_skill_id()),
+        SkillId("caster_basic".into()),
+    );
+    let combat_before = app.world().resource::<CombatState>().clone();
+    let target_hp_before = unit_hp(&mut app, TARGET_ID);
+    let cast_id = {
+        let mut cast_id_gen = app.world_mut().resource_mut::<CastIdGen>();
+        cast_id_gen.next()
+    };
+
+    app.world_mut().write_message(CombatEvent {
+        kind: CombatEventKind::OnKernelTransition {
+            transition: CombatKernelTransition::Blueprint {
+                owner: "agumon".into(),
+                name: "baby_burner_detonate".into(),
+                payload: SignalPayload::UnitTarget(TARGET_ID),
+            },
+        },
+        source: CASTER_ID,
+        target: TARGET_ID,
+        follow_up_depth: 1,
+        cast_id,
+    });
+    app.world_mut().write_message(CombatEvent {
+        kind: CombatEventKind::OnKernelTransition {
+            transition: CombatKernelTransition::Blueprint {
+                owner: "agumon".into(),
+                name: "baby_burner_detonate".into(),
+                payload: SignalPayload::UnitTarget(UnitId(23)),
+            },
+        },
+        source: CASTER_ID,
+        target: UnitId(23),
+        follow_up_depth: 1,
+        cast_id,
+    });
+
+    app.update();
+
+    let flash = app.world().resource::<BabyBurnerFlashState>().clone();
+    let active = flash
+        .active
+        .expect("flash should be visible after detonate transition");
+    assert_eq!(active.source, CASTER_ID);
+    assert_eq!(active.cast_id, cast_id);
+    assert_eq!(active.targets, vec![TARGET_ID, UnitId(23)]);
+    assert_eq!(active.remaining_frames, BABY_BURNER_FLASH_LIFETIME_FRAMES);
+    assert_eq!(active.total_frames, BABY_BURNER_FLASH_LIFETIME_FRAMES);
+
+    let chip = baby_burner_flash_chip(Some(&active)).expect("flash chip");
+    assert!(chip.label.contains("2 target(s)"));
+    assert!(chip.tooltip.contains("signal=agumon/baby_burner_detonate"));
+    assert!(chip.tooltip.contains("targets=[UnitId(22), UnitId(23)]"));
+
+    assert_eq!(
+        *app.world().resource::<CombatState>(),
+        combat_before,
+        "windowed flash projection must not mutate combat state"
+    );
+    let target_hp_after_first_update = unit_hp(&mut app, TARGET_ID);
+    assert_eq!(target_hp_after_first_update, target_hp_before);
+
+    for expected_remaining in (1..BABY_BURNER_FLASH_LIFETIME_FRAMES).rev() {
+        app.update();
+        let active = app
+            .world()
+            .resource::<BabyBurnerFlashState>()
+            .active
+            .clone()
+            .expect("flash should stay visible until the final frame expires");
+        assert_eq!(active.remaining_frames, expected_remaining);
+    }
+
+    app.update();
+    assert!(
+        app.world()
+            .resource::<BabyBurnerFlashState>()
+            .active()
+            .is_none(),
+        "flash must hide once the deterministic frame budget expires"
+    );
+    let target_hp_after_expiry = unit_hp(&mut app, TARGET_ID);
+    assert_eq!(target_hp_after_expiry, target_hp_before);
 }
 
 #[test]

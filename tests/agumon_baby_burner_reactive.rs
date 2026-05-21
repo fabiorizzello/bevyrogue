@@ -2,6 +2,9 @@ mod common;
 
 use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::blueprints::agumon::baby_burner;
+use bevyrogue::combat::runtime::{
+    PostActionContext, PostActionQueue, PostActionUnitDied, PostActionUnitSnapshot, SignalPayload,
+};
 use bevyrogue::combat::{
     CombatPlugin, StatusBag, StatusEffectKind,
     events::{CombatEvent, CombatEventKind, CombatKernelTransition},
@@ -15,10 +18,6 @@ use bevyrogue::combat::{
     types::{Attribute, DamageTag, EvoStage, SkillId, UnitId},
     ultimate::{UltAccumulationTrigger, UltimateCharge},
     unit::{SlotIndex, Unit},
-};
-use bevyrogue::combat::runtime::{
-    PostActionContext, PostActionQueue, PostActionUnitDied, PostActionUnitSnapshot,
-    SignalPayload,
 };
 use bevyrogue::data::{
     SkillBookHandle,
@@ -219,7 +218,11 @@ fn baby_burner_reaction_maps_ko_context_to_adjacent_targets() {
 
     baby_burner::enqueue_reactive_detonate(&ctx, &mut out);
 
-    assert_eq!(out.intents.len(), 4, "2 damage + 2 blueprint-signal intents");
+    assert_eq!(
+        out.intents.len(),
+        4,
+        "2 damage + 2 blueprint-signal intents"
+    );
 }
 
 #[test]
@@ -277,7 +280,11 @@ fn lethal_heated_baby_burner_detonates_adjacent_alive_enemies_once() {
     );
     assert_eq!(unit_hp(&mut app, LEFT_ID), 84);
     assert_eq!(unit_hp(&mut app, RIGHT_ID), 84);
-    assert_eq!(unit_hp(&mut app, FAR_ID), 100, "non-adjacent enemy untouched");
+    assert_eq!(
+        unit_hp(&mut app, FAR_ID),
+        100,
+        "non-adjacent enemy untouched"
+    );
     assert!(unit_hp(&mut app, PRIMARY_ID) <= 0, "primary remains KO'd");
 
     app.update();

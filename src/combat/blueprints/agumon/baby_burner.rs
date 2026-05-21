@@ -61,15 +61,19 @@ pub fn enqueue_reactive_detonate(ctx: &PostActionContext, out: &mut PostActionQu
 }
 
 fn detonate_targets(ctx: &PostActionContext, source_team: Team) -> Vec<UnitId> {
-    resolve_targets(&TargetShape::Blast, ctx.primary_target, &targetable_snapshot(ctx))
-        .into_iter()
-        .filter(|target_id| {
-            *target_id != ctx.primary_target
-                && ctx
-                    .unit(*target_id)
-                    .is_some_and(|unit| unit.alive && unit.team != source_team)
-        })
-        .collect()
+    resolve_targets(
+        &TargetShape::Blast,
+        ctx.primary_target,
+        &targetable_snapshot(ctx),
+    )
+    .into_iter()
+    .filter(|target_id| {
+        *target_id != ctx.primary_target
+            && ctx
+                .unit(*target_id)
+                .is_some_and(|unit| unit.alive && unit.team != source_team)
+    })
+    .collect()
 }
 
 fn targetable_snapshot(ctx: &PostActionContext) -> TargetableSnapshot {

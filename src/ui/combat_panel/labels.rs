@@ -22,7 +22,7 @@ pub struct TelegraphChip {
 }
 
 #[cfg(feature = "windowed")]
-use super::PendingKind;
+use super::{BabyBurnerFlashDisplay, PendingKind};
 
 #[cfg(feature = "windowed")]
 pub(crate) fn pending_label(kind: &PendingKind) -> String {
@@ -132,6 +132,47 @@ pub fn cue_barrier_chip(
     Some(TelegraphChip {
         label: telegraph_chip_text(&skill_label),
         tooltip: telegraph_chip_tooltip(status),
+    })
+}
+
+#[cfg(feature = "windowed")]
+pub fn baby_burner_flash_text(display: &BabyBurnerFlashDisplay) -> String {
+    format!(
+        "Detonate flash · {} target(s) · {}/{}f",
+        display.targets.len(),
+        display.remaining_frames,
+        display.total_frames
+    )
+}
+
+#[cfg(feature = "windowed")]
+pub fn baby_burner_flash_tooltip(display: &BabyBurnerFlashDisplay) -> String {
+    let targets = display
+        .targets
+        .iter()
+        .map(|target| format!("{:?}", target))
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    format!(
+        "source={:?}\ncast={:?}\nsignal={}/{}\ntargets=[{}]\nframes={}/{}",
+        display.source,
+        display.cast_id,
+        display.signal_owner,
+        display.signal_name,
+        targets,
+        display.remaining_frames,
+        display.total_frames,
+    )
+}
+
+#[cfg(feature = "windowed")]
+pub fn baby_burner_flash_chip(display: Option<&BabyBurnerFlashDisplay>) -> Option<TelegraphChip> {
+    let display = display?;
+
+    Some(TelegraphChip {
+        label: baby_burner_flash_text(display),
+        tooltip: baby_burner_flash_tooltip(display),
     })
 }
 

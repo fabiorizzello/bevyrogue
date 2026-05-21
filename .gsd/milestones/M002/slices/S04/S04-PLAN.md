@@ -59,7 +59,7 @@ Consumes S02's deterministic cue-barrier/runtime contract and existing `UnitDied
   - Files: `src/combat/runtime/post_action.rs`, `src/combat/runtime/registry.rs`, `src/combat/runtime/mod.rs`, `src/combat/turn_system/pipeline/paths/single_target.rs`, `tests/registry_internals.rs`
   - Verify: cargo test --test unit_died_payload --test timeline_cue_barrier_pipeline
 
-- [ ] **T02: Register Agumon Baby Burner detonate with headless tests** `est:3h`
+- [x] **T02: Register Agumon Baby Burner detonate with headless tests** `est:3h`
   ---
   estimated_steps: 9
   estimated_files: 4
@@ -73,7 +73,7 @@ Consumes S02's deterministic cue-barrier/runtime contract and existing `UnitDied
   - Files: `src/combat/blueprints/agumon/mod.rs`, `src/combat/blueprints/agumon/baby_burner.rs`, `tests/agumon_baby_burner_reactive.rs`, `tests/common/app.rs`
   - Verify: cargo test --test agumon_baby_burner_reactive --test unit_died_payload
 
-- [ ] **T03: Project detonate transitions into a windowed flash indicator** `est:2h`
+- [x] **T03: Project detonate transitions into a windowed flash indicator** `est:2h`
   ---
   estimated_steps: 7
   estimated_files: 4

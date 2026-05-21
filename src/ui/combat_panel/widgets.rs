@@ -38,6 +38,7 @@ pub(super) fn render_action_bar(
     selected_action_affordance: &Option<ActionAffordance<'_>>,
     selected_target_id: Option<UnitId>,
     telegraph_chip: Option<&TelegraphChip>,
+    flash_chip: Option<&TelegraphChip>,
     pending_request: &mut Option<Option<PendingKind>>,
 ) {
     ui.horizontal_wrapped(|ui| {
@@ -181,6 +182,26 @@ pub(super) fn render_action_bar(
                         egui::RichText::new(&chip.label)
                             .small()
                             .color(egui::Color32::from_rgb(255, 232, 200))
+                            .strong(),
+                    )
+                    .on_hover_text(&chip.tooltip);
+                });
+        }
+
+        if let Some(chip) = flash_chip {
+            egui::Frame::default()
+                .fill(egui::Color32::from_rgb(120, 28, 18))
+                .stroke(egui::Stroke::new(
+                    1.0_f32,
+                    egui::Color32::from_rgb(255, 170, 110),
+                ))
+                .corner_radius(6.0)
+                .inner_margin(egui::Margin::symmetric(8, 4))
+                .show(ui, |ui| {
+                    ui.label(
+                        egui::RichText::new(&chip.label)
+                            .small()
+                            .color(egui::Color32::from_rgb(255, 238, 220))
                             .strong(),
                     )
                     .on_hover_text(&chip.tooltip);

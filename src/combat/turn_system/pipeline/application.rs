@@ -5,9 +5,7 @@ use crate::combat::events::CombatEvent;
 use crate::combat::kernel::CombatKernelRegistry;
 use crate::combat::log::ActionLog;
 use crate::combat::rng::{CombatEntropy, CombatRng};
-use crate::combat::runtime::{
-    ExtRegistries, IntentExecutionMeta, IntentQueue, intent::CastId,
-};
+use crate::combat::runtime::{ExtRegistries, IntentExecutionMeta, IntentQueue, intent::CastId};
 use crate::combat::sp::SpPool;
 use crate::combat::state::{CombatState, InFlightAction};
 use crate::combat::turn_order::TurnOrder;
