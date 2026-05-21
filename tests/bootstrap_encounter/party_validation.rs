@@ -15,7 +15,7 @@ fn canonical_roster() -> UnitRoster {
 
 #[test]
 fn party_ron_deserializes_and_validates() {
-    let raw = include_str!("../assets/data/party.ron");
+    let raw = include_str!("../../assets/data/party.ron");
     let p: PartyConfig = ron::from_str(raw).expect("party.ron must parse");
     assert!(validate_party_config(&p).is_ok());
     // MVP v5.3 party: Agumon, Gabumon, Tentomon, Patamon (D039)
