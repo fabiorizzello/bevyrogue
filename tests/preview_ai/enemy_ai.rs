@@ -5,7 +5,6 @@
 /// no SkillBook asset is required — all inputs are inline Rust.
 ///
 /// Enemy UnitIds use the 101+ range to avoid collisions with ally IDs 0–10 (MEM030).
-mod common;
 
 use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::{
@@ -20,7 +19,7 @@ use bevyrogue::combat::{
     ultimate::{UltAccumulationTrigger, UltimateCharge},
     unit::Unit,
 };
-use common::app::turn_av_base_app;
+use crate::common::app::turn_av_base_app;
 
 // ---------------------------------------------------------------------------
 // Helpers

@@ -20,8 +20,7 @@ use bevyrogue::combat::{
 };
 use rstest::rstest;
 
-mod common;
-use common::{
+use crate::common::{
     build_app, drain_events, is_ally_alive, live_enemy_ids, load_roster, load_skill_book,
     message_cursor,
 };
