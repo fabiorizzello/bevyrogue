@@ -1,0 +1,17 @@
+---
+source: tests/follow_up/follow_up_triggers.rs
+assertion_line: 376
+expression: snapshot
+---
+{"type":"combat_event","source":1,"target":4,"follow_up_depth":0,"event":{"kind":"OnDamageDealt","amount":23,"damage_kind":"Normal"}}
+{"type":"combat_event","source":1,"target":4,"follow_up_depth":0,"event":{"kind":"OnBreak","element":"Fire"}}
+{"type":"combat_event","source":1,"target":4,"follow_up_depth":0,"event":{"kind":"OnSkillCast","skill_id":"sharp_claws"}}
+{"type":"combat_event","source":1,"target":4,"follow_up_depth":1,"event":{"kind":"OnDamageDealt","amount":28,"damage_kind":"Weak"}}
+{"type":"combat_event","source":1,"target":4,"follow_up_depth":1,"event":{"kind":"OnHitTaken","amount":28}}
+{"type":"combat_event","source":1,"target":4,"follow_up_depth":1,"event":{"kind":"OnSkillCast","skill_id":"agumon_follow_up"}}
+{"type":"follow_up_trace","follower":1,"trigger":"OnEnemyBreak","action":"agumon_follow_up","origin_source":1,"origin_target":4,"origin_kind":{"kind":"OnBreak","element":"Fire"},"follow_up_target":4,"decision":{"decision":"scheduled"}}
+{"type":"follow_up_trace","follower":7,"trigger":"OnAllyLowHp","action":"renamon_follow_up","origin_source":1,"origin_target":4,"origin_kind":{"kind":"OnBreak","element":"Fire"},"follow_up_target":null,"decision":{"decision":"suppressed","reason":"TriggerMismatch"}}
+{"type":"action_log","entry":{"kind":"BasicHit","attacker":1,"target":4,"amount":23,"damage_kind":"Normal"}}
+{"type":"action_log","entry":{"kind":"Break","target":4,"element":"Fire"}}
+{"type":"action_log","entry":{"kind":"BasicHit","attacker":1,"target":4,"amount":28,"damage_kind":"Weak"}}
+{"type":"unit_hp","unit_id":4,"hp":49}
