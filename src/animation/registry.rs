@@ -3,7 +3,83 @@ use std::collections::HashMap;
 use bevy::prelude::*;
 
 use super::AnimGraphId;
-use super::anim_graph::AnimGraph;
+use super::anim_graph::{AnimGraph, AnimEdge, AnimNode, FrameRange, NodeId, Predicate, TransitionTarget};
+
+/// Deterministic node id used by the runtime fallback graph when a requested
+/// skill/stance graph is unavailable.
+pub const MISSING_GRAPH_FALLBACK_NODE_ID: &str = "__missing_graph_instant__";
+
+/// Structured classification of where a resolved graph came from.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ResolvedAnimGraphSource {
+    Registry,
+    InstantFallback,
+}
+
+/// Cloned graph snapshot handed to runtime callers.
+///
+/// Cloning here intentionally decouples in-flight players from subsequent asset
+/// hot reloads. Existing players keep their current graph identity/state while
+/// newly spawned players can resolve a fresh snapshot from the registry.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ResolvedAnimGraph {
+    pub requested_id: AnimGraphId,
+    pub source: ResolvedAnimGraphSource,
+    graph: AnimGraph,
+}
+
+impl ResolvedAnimGraph {
+    pub fn graph(&self) -> &AnimGraph {
+        &self.graph
+    }
+}
+
+/// Structured missing-graph diagnostic persisted for later inspection.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MissingGraphDiagnostic {
+    pub registry: &'static str,
+    pub requested_id: AnimGraphId,
+    pub fallback_node: NodeId,
+    pub message: String,
+}
+
+/// Inspectable lookup diagnostics for runtime graph resolution.
+#[derive(Resource, Debug, Default, Clone, PartialEq, Eq)]
+pub struct AnimationGraphLookupDiagnostics {
+    pub last_missing_skill_graph: Option<MissingGraphDiagnostic>,
+    pub last_missing_stance_graph: Option<MissingGraphDiagnostic>,
+    pub last_message: Option<String>,
+}
+
+impl AnimationGraphLookupDiagnostics {
+    pub fn note_missing_skill_graph(&mut self, requested_id: &AnimGraphId) {
+        self.note_missing("skill", requested_id);
+    }
+
+    pub fn note_missing_stance_graph(&mut self, requested_id: &AnimGraphId) {
+        self.note_missing("stance", requested_id);
+    }
+
+    fn note_missing(&mut self, registry: &'static str, requested_id: &AnimGraphId) {
+        let fallback_node = NodeId(MISSING_GRAPH_FALLBACK_NODE_ID.into());
+        let message = format!(
+            "animation graph runtime fallback: registry={registry} graph_id={} fallback=instant_exit entry={} reason=missing_or_unloaded",
+            requested_id.0, fallback_node.0
+        );
+        let diagnostic = MissingGraphDiagnostic {
+            registry,
+            requested_id: requested_id.clone(),
+            fallback_node,
+            message: message.clone(),
+        };
+        match registry {
+            "skill" => self.last_missing_skill_graph = Some(diagnostic),
+            "stance" => self.last_missing_stance_graph = Some(diagnostic),
+            _ => {}
+        }
+        self.last_message = Some(message);
+    }
+}
 
 /// Maps `AnimGraphId` → `Handle<AnimGraph>` for graphs loaded from skill asset paths.
 ///
@@ -16,6 +92,36 @@ impl SkillGraphRegistry {
     pub fn resolve(&self, id: &AnimGraphId) -> Option<&Handle<AnimGraph>> {
         self.0.get(id)
     }
+
+    pub fn resolve_snapshot(
+        &self,
+        id: &AnimGraphId,
+        graphs: &Assets<AnimGraph>,
+    ) -> Option<ResolvedAnimGraph> {
+        let handle = self.resolve(id)?;
+        let graph = graphs.get(handle)?.clone();
+        Some(ResolvedAnimGraph {
+            requested_id: id.clone(),
+            source: ResolvedAnimGraphSource::Registry,
+            graph,
+        })
+    }
+
+    pub fn resolve_snapshot_or_instant_fallback(
+        &self,
+        id: &AnimGraphId,
+        graphs: &Assets<AnimGraph>,
+        diagnostics: &mut AnimationGraphLookupDiagnostics,
+    ) -> ResolvedAnimGraph {
+        self.resolve_snapshot(id, graphs).unwrap_or_else(|| {
+            diagnostics.note_missing_skill_graph(id);
+            ResolvedAnimGraph {
+                requested_id: id.clone(),
+                source: ResolvedAnimGraphSource::InstantFallback,
+                graph: instant_fallback_graph(id),
+            }
+        })
+    }
 }
 
 /// Maps `AnimGraphId` → `Handle<AnimGraph>` for graphs loaded from stance asset paths.
@@ -25,6 +131,63 @@ pub struct StanceGraphRegistry(pub HashMap<AnimGraphId, Handle<AnimGraph>>);
 impl StanceGraphRegistry {
     pub fn resolve(&self, id: &AnimGraphId) -> Option<&Handle<AnimGraph>> {
         self.0.get(id)
+    }
+
+    pub fn resolve_snapshot(
+        &self,
+        id: &AnimGraphId,
+        graphs: &Assets<AnimGraph>,
+    ) -> Option<ResolvedAnimGraph> {
+        let handle = self.resolve(id)?;
+        let graph = graphs.get(handle)?.clone();
+        Some(ResolvedAnimGraph {
+            requested_id: id.clone(),
+            source: ResolvedAnimGraphSource::Registry,
+            graph,
+        })
+    }
+
+    pub fn resolve_snapshot_or_instant_fallback(
+        &self,
+        id: &AnimGraphId,
+        graphs: &Assets<AnimGraph>,
+        diagnostics: &mut AnimationGraphLookupDiagnostics,
+    ) -> ResolvedAnimGraph {
+        self.resolve_snapshot(id, graphs).unwrap_or_else(|| {
+            diagnostics.note_missing_stance_graph(id);
+            ResolvedAnimGraph {
+                requested_id: id.clone(),
+                source: ResolvedAnimGraphSource::InstantFallback,
+                graph: instant_fallback_graph(id),
+            }
+        })
+    }
+}
+
+fn instant_fallback_graph(requested_id: &AnimGraphId) -> AnimGraph {
+    let entry = NodeId(MISSING_GRAPH_FALLBACK_NODE_ID.into());
+    AnimGraph {
+        id: requested_id.clone(),
+        clip: super::anim_graph::ClipId("missing_graph_fallback".into()),
+        entry: entry.clone(),
+        nodes: [(
+            entry.clone(),
+            AnimNode {
+                frames: FrameRange(0, 0),
+                on_enter: Vec::new(),
+                cues: Vec::new(),
+                modifier: None,
+                reverse: false,
+            },
+        )]
+        .into_iter()
+        .collect(),
+        transitions: vec![AnimEdge {
+            from: entry,
+            to: TransitionTarget::Exit,
+            when: Predicate::Always,
+            priority: None,
+        }],
     }
 }
 

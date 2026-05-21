@@ -3,8 +3,9 @@ use std::collections::HashSet;
 use bevy::prelude::*;
 
 use bevyrogue::animation::{
-    AnimGraph, AnimGraphId, AnimGraphPlayer, FrameCueCommand, NodeId, SkillGraphRegistry,
-    StanceGraphRegistry,
+    AnimGraph, AnimGraphId, AnimGraphPlayer, FrameCueCommand, NodeId,
+    ResolvedAnimGraph, ResolvedAnimGraphSource, SkillGraphRegistry, StanceGraphRegistry,
+    AnimationGraphLookupDiagnostics,
 };
 use bevyrogue::combat::runtime::{CueBarrierStatus, CueReleaseResult, SuspendedTimelineState};
 use bevyrogue::combat::team::Team;
@@ -22,6 +23,7 @@ use super::{
 pub(super) struct AgumonSprite {
     pub(super) unit_id: UnitId,
     pub(super) player: AnimGraphPlayer,
+    graph: ResolvedAnimGraph,
     mode: AgumonPlaybackMode,
     last_release_frame: Option<ReleaseFrameKey>,
     last_missing_skill_graph_cue: Option<String>,
@@ -44,18 +46,26 @@ pub(super) struct ReleaseFrameKey {
 }
 
 impl AgumonSprite {
-    pub(super) fn idle_for(unit_id: UnitId, entry: NodeId) -> Self {
+    pub(super) fn idle_for(unit_id: UnitId, graph: ResolvedAnimGraph) -> Self {
+        let entry = graph.graph().entry.clone();
         Self {
             unit_id,
             player: AnimGraphPlayer::new(entry),
+            graph,
             mode: AgumonPlaybackMode::Idle,
             last_release_frame: None,
             last_missing_skill_graph_cue: None,
         }
     }
 
-    fn start_sharp_claws(&mut self, cue_id: &str, presentation_node: &str) {
+    fn start_sharp_claws(
+        &mut self,
+        cue_id: &str,
+        presentation_node: &str,
+        graph: ResolvedAnimGraph,
+    ) {
         self.player = AnimGraphPlayer::new(sharp_claws_start_node(presentation_node));
+        self.graph = graph;
         self.mode = AgumonPlaybackMode::SharpClaws {
             cue_id: cue_id.to_string(),
             presentation_node: presentation_node.to_string(),
@@ -64,11 +74,17 @@ impl AgumonSprite {
         self.last_missing_skill_graph_cue = None;
     }
 
-    pub(super) fn return_to_idle(&mut self, stance_entry: NodeId) {
-        self.player = AnimGraphPlayer::new(stance_entry);
+    pub(super) fn return_to_idle(
+        &mut self,
+        graph: ResolvedAnimGraph,
+        preserve_missing_skill_graph_cue: Option<String>,
+    ) {
+        let entry = graph.graph().entry.clone();
+        self.player = AnimGraphPlayer::new(entry);
+        self.graph = graph;
         self.mode = AgumonPlaybackMode::Idle;
         self.last_release_frame = None;
-        self.last_missing_skill_graph_cue = None;
+        self.last_missing_skill_graph_cue = preserve_missing_skill_graph_cue;
     }
 }
 
@@ -104,10 +120,10 @@ fn spawn_unit_sprites(
     units: Query<(&Unit, &Team)>,
     sprites: Query<&AgumonSprite>,
 ) {
-    let Some(stance_graph) = stance_reg
-        .resolve(&AnimGraphId(AGUMON_STANCE_GRAPH_ID.into()))
-        .and_then(|handle| graphs.get(handle))
-    else {
+    let Some(stance_graph) = stance_reg.resolve_snapshot(
+        &AnimGraphId(AGUMON_STANCE_GRAPH_ID.into()),
+        &graphs,
+    ) else {
         return;
     };
 
@@ -120,7 +136,7 @@ fn spawn_unit_sprites(
         let flip_x = *team == Team::Enemy;
         let x = if flip_x { 200.0_f32 } else { -200.0_f32 };
         commands.spawn((
-            AgumonSprite::idle_for(unit.id, stance_graph.entry.clone()),
+            AgumonSprite::idle_for(unit.id, stance_graph.clone()),
             Sprite {
                 flip_x,
                 ..default()
@@ -134,15 +150,11 @@ pub(super) fn advance_agumon_presentation(
     stance_reg: Res<StanceGraphRegistry>,
     skill_reg: Res<SkillGraphRegistry>,
     graphs: Res<Assets<AnimGraph>>,
+    mut lookup_diagnostics: ResMut<AnimationGraphLookupDiagnostics>,
     mut barrier: ResMut<SuspendedTimelineState>,
     mut sprites: Query<&mut AgumonSprite>,
 ) {
-    let stance_graph = stance_reg
-        .resolve(&AnimGraphId(AGUMON_STANCE_GRAPH_ID.into()))
-        .and_then(|handle| graphs.get(handle));
-    let skill_graph = skill_reg
-        .resolve(&AnimGraphId(AGUMON_SKILL_GRAPH_ID.into()))
-        .and_then(|handle| graphs.get(handle));
+    let stance_graph = stance_reg.resolve_snapshot(&AnimGraphId(AGUMON_STANCE_GRAPH_ID.into()), &graphs);
     let active_barrier = barrier.active_status().cloned();
 
     if let Some(status) = active_barrier.as_ref() {
@@ -164,17 +176,16 @@ pub(super) fn advance_agumon_presentation(
         sync_agumon_mode(
             &mut sprite,
             active_barrier.as_ref(),
-            skill_graph,
-            stance_graph,
+            &skill_reg,
+            &stance_reg,
+            &graphs,
+            &mut lookup_diagnostics,
         );
 
-        let Some(graph) = current_graph_for_mode(&sprite, stance_graph, skill_graph) else {
-            continue;
-        };
-
-        let advance = sprite.player.advance_result(graph);
+        let graph = sprite.graph.graph().clone();
+        let advance = sprite.player.advance_result(&graph);
         let current_node = sprite.player.current_node.0.clone();
-        let local_frame = local_frame_for(graph, &sprite.player.current_node, advance.frame);
+        let local_frame = local_frame_for(&graph, &sprite.player.current_node, advance.frame);
 
         if active_barrier.is_some() {
             barrier.annotate_active_animation(&current_node, advance.frame as usize);
@@ -189,6 +200,7 @@ pub(super) fn advance_agumon_presentation(
         trace!(
             target: "windowed.agumon_playback",
             mode = ?sprite.mode,
+            graph_source = ?sprite.graph.source,
             node = current_node.as_str(),
             clip_frame = advance.frame,
             local_frame,
@@ -246,8 +258,13 @@ pub(super) fn advance_agumon_presentation(
         }
 
         if advance.exited {
-            if let Some(stance_graph) = stance_graph {
-                sprite.return_to_idle(stance_graph.entry.clone());
+            if let Some(stance_graph) = stance_graph.clone() {
+                let preserve_missing = active_barrier.as_ref().and_then(|status| {
+                    (sprite.graph.source == ResolvedAnimGraphSource::InstantFallback
+                        && sprite.last_missing_skill_graph_cue.as_deref() == Some(status.cue_id))
+                        .then(|| status.cue_id.to_string())
+                });
+                sprite.return_to_idle(stance_graph, preserve_missing);
                 trace!(
                     target: "windowed.agumon_playback",
                     "agumon playback returned to idle"
@@ -260,8 +277,10 @@ pub(super) fn advance_agumon_presentation(
 fn sync_agumon_mode(
     sprite: &mut AgumonSprite,
     active_barrier: Option<&CueBarrierStatus>,
-    skill_graph: Option<&AnimGraph>,
-    stance_graph: Option<&AnimGraph>,
+    skill_reg: &SkillGraphRegistry,
+    stance_reg: &StanceGraphRegistry,
+    graphs: &Assets<AnimGraph>,
+    lookup_diagnostics: &mut AnimationGraphLookupDiagnostics,
 ) {
     let Some(status) = sharp_claws_barrier(active_barrier) else {
         return;
@@ -280,42 +299,51 @@ fn sync_agumon_mode(
         return;
     }
 
-    if skill_graph.is_none() {
-        if sprite.last_missing_skill_graph_cue.as_deref() != Some(status.cue_id) {
-            warn!(
-                target: "windowed.agumon_playback",
-                cue_id = status.cue_id,
-                skill_id = %status.skill_id.0,
-                graph_id = AGUMON_SKILL_GRAPH_ID,
-                "Sharp Claws presentation graph missing; staying/falling back to idle while the kernel barrier remains suspended"
-            );
-        }
-        sprite.last_missing_skill_graph_cue = Some(status.cue_id.to_string());
-        if let Some(stance_graph) = stance_graph {
-            sprite.return_to_idle(stance_graph.entry.clone());
-        }
+    if sprite.last_missing_skill_graph_cue.as_deref() == Some(status.cue_id) {
         return;
     }
 
-    sprite.start_sharp_claws(status.cue_id, presentation_node);
+    let resolved_graph = skill_reg.resolve_snapshot_or_instant_fallback(
+        &AnimGraphId(AGUMON_SKILL_GRAPH_ID.into()),
+        graphs,
+        lookup_diagnostics,
+    );
+
+    if resolved_graph.source == ResolvedAnimGraphSource::InstantFallback {
+        warn!(
+            target: "windowed.agumon_playback",
+            cue_id = status.cue_id,
+            skill_id = %status.skill_id.0,
+            graph_id = AGUMON_SKILL_GRAPH_ID,
+            diagnostic = lookup_diagnostics.last_message.as_deref().unwrap_or("missing"),
+            "Sharp Claws presentation graph missing; running deterministic instant fallback"
+        );
+        sprite.last_missing_skill_graph_cue = Some(status.cue_id.to_string());
+    }
+
+    sprite.start_sharp_claws(status.cue_id, presentation_node, resolved_graph);
     trace!(
         target: "windowed.agumon_playback",
         cue_id = status.cue_id,
         skill_id = %status.skill_id.0,
         presentation_node,
         start_node = %sprite.player.current_node.0,
+        graph_source = ?sprite.graph.source,
         "Sharp Claws playback entered windup"
     );
-}
 
-fn current_graph_for_mode<'a>(
-    sprite: &AgumonSprite,
-    stance_graph: Option<&'a AnimGraph>,
-    skill_graph: Option<&'a AnimGraph>,
-) -> Option<&'a AnimGraph> {
-    match sprite.mode {
-        AgumonPlaybackMode::Idle => stance_graph,
-        AgumonPlaybackMode::SharpClaws { .. } => skill_graph.or(stance_graph),
+    if sprite.graph.source == ResolvedAnimGraphSource::InstantFallback {
+        if let Some(stance_graph) = stance_reg.resolve_snapshot(
+            &AnimGraphId(AGUMON_STANCE_GRAPH_ID.into()),
+            graphs,
+        ) {
+            trace!(
+                target: "windowed.agumon_playback",
+                graph_id = AGUMON_STANCE_GRAPH_ID,
+                stance_entry = %stance_graph.graph().entry.0,
+                "stance snapshot remains available for post-fallback idle restore"
+            );
+        }
     }
 }
 

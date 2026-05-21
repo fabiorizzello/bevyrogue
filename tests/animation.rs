@@ -14,6 +14,8 @@ mod anim_graph_parse;
 mod anim_graph_input_purity;
 #[path = "animation/anim_player_fsm.rs"]
 mod anim_player_fsm;
+#[path = "animation/anim_registry_failure_visibility.rs"]
+mod anim_registry_failure_visibility;
 #[path = "animation/anim_stance_asset.rs"]
 mod anim_stance_asset;
 #[path = "animation/anim_validation.rs"]

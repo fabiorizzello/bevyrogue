@@ -4,8 +4,8 @@ use bevy::{ecs::system::Local, prelude::*};
 use bevy_common_assets::ron::RonAssetPlugin;
 
 use super::registry::{
-    AnimationStancePaths, SkillGraphPaths, SkillGraphRegistry, StanceGraphPaths,
-    StanceGraphRegistry, has_matching_asset_event, populate_graph_registries,
+    AnimationGraphLookupDiagnostics, AnimationStancePaths, SkillGraphPaths, SkillGraphRegistry,
+    StanceGraphPaths, StanceGraphRegistry, has_matching_asset_event, populate_graph_registries,
 };
 use super::{
     AnimGraph, AnimationValidationCatalogs, AnimationValidationCheck, AnimationValidationContext,
@@ -67,9 +67,22 @@ pub struct AnimationClipHandles(pub Vec<Handle<Clip>>);
 pub struct AnimationGraphLoadState {
     /// Per-handle event observation state; index-aligned with [`AnimationGraphHandles`].
     pub loaded: Vec<bool>,
+    /// Configured asset paths that failed during boot-time load and therefore
+    /// left the canonical registry surface incomplete.
+    pub failed_paths: Vec<String>,
     /// True only after every configured asset has emitted a load/modify event and is readable
     /// through `Assets<AnimGraph>`.
     pub ready: bool,
+}
+
+impl AnimationGraphLoadState {
+    pub fn has_boot_failures(&self) -> bool {
+        !self.failed_paths.is_empty()
+    }
+
+    pub fn failed_paths(&self) -> &[String] {
+        &self.failed_paths
+    }
 }
 
 /// Load-state surface for clip geometry assets.
@@ -99,6 +112,7 @@ impl Plugin for AnimationAssetPlugin {
         .init_resource::<StanceGraphPaths>()
         .init_resource::<SkillGraphRegistry>()
         .init_resource::<StanceGraphRegistry>()
+        .init_resource::<AnimationGraphLookupDiagnostics>()
         .add_systems(Startup, (load_animation_graphs, load_animation_clips))
         .add_systems(
             Update,
@@ -135,6 +149,7 @@ fn load_animation_graphs(
 
     commands.insert_resource(AnimationGraphLoadState {
         loaded: vec![false; handles.len()],
+        failed_paths: Vec::new(),
         ready: false,
     });
     commands.insert_resource(AnimationGraphHandles(handles));
@@ -217,7 +232,10 @@ fn track_animation_graph_loads(
                     .get(index)
                     .map(String::as_str)
                     .unwrap_or("<unknown>");
-                warn!("animation graph missing or failed: {path} — skipping");
+                if !state.failed_paths.iter().any(|failed| failed == path) {
+                    state.failed_paths.push(path.to_string());
+                }
+                warn!("animation graph missing or failed: {path} — canonical boot registry entry unavailable");
             }
         }
     }
@@ -234,9 +252,10 @@ fn track_animation_graph_loads(
         .count();
     state.ready = true;
     info!(
-        "animation graphs ready: loaded={}, total={}",
+        "animation graphs ready: loaded={}, total={}, failed_paths={}",
         loaded_count,
-        handles.0.len()
+        handles.0.len(),
+        state.failed_paths.len()
     );
 }
 
