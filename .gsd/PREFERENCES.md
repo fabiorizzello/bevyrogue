@@ -19,6 +19,20 @@ discuss_preparation: true
 discuss_web_research: true
 discuss_depth: thorough
 planning_depth: deep
+avoid_skills:
+  - accessibility
+  - agent-browser
+  - core-web-vitals
+  - frontend-design
+  - heroui-react
+  - make-interfaces-feel-better
+  - react-best-practices
+  - ui-ux-pro-max
+  - userinterface-wiki
+  - web-design-guidelines
+  - web-quality-audit
+  - api-design
+  - create-mcp-server
 ---
 
 # GSD Project Preferences
