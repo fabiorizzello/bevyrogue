@@ -25,8 +25,7 @@ use bevyrogue::data::skills_ron::{
     TargetShape, TargetSide,
 };
 
-mod common;
-use common::app::skill_resolve_app;
+use crate::common::app::skill_resolve_app;
 
 // ---------------------------------------------------------------------------
 // Helpers

@@ -10,9 +10,8 @@
 use bevyrogue::combat::{StatusBag, StatusEffectKind};
 use rstest::rstest;
 
-mod common;
-use common::actions::{basic_resolved, ready_ult, ult_resolved};
-use common::apply::{ApplyOpts, LegacyOpsHarness, run_damage, run_ult_delta};
+use crate::common::actions::{basic_resolved, ready_ult, ult_resolved};
+use crate::common::apply::{ApplyOpts, LegacyOpsHarness, run_damage, run_ult_delta};
 
 // ──────────────────────────────────────────────────────────────────────────────
 // §H.1.a — Offensive ×1.15 multiplier

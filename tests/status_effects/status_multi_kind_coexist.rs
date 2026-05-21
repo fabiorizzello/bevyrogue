@@ -1,5 +1,6 @@
-/// Integration test for §H.1 refresh_max_dur policy via the skill-apply pipeline.
-/// Neutral matchup (Vaccine vs Vaccine) so accuracy never gates (threshold=100).
+/// Integration test for multi-kind coexistence in StatusBag via the skill-apply pipeline.
+/// Applies Heated, Chilled, and Blessed to the same target sequentially and asserts
+/// all three instances survive with correct durations.
 use bevy::prelude::*;
 use bevyrogue::combat::{
     StatusBag, StatusEffectKind,
@@ -16,10 +17,9 @@ use bevyrogue::data::skills_ron::{
     TargetShape, TargetSide,
 };
 
-mod common;
-use common::app::skill_resolve_app;
+use crate::common::app::skill_resolve_app;
 
-fn heated_skill(id: &str, duration: u32) -> SkillDef {
+fn status_skill(id: &str, kind: StatusEffectKind, duration: u32) -> SkillDef {
     SkillDef {
         id: SkillId(id.into()),
         name: id.into(),
@@ -40,10 +40,7 @@ fn heated_skill(id: &str, duration: u32) -> SkillDef {
                 per_hop: Default::default(),
             },
             Effect::ToughnessHit(0),
-            Effect::ApplyStatus {
-                kind: StatusEffectKind::Heated,
-                duration,
-            },
+            Effect::ApplyStatus { kind, duration },
         ],
         ..Default::default()
     }
@@ -52,9 +49,9 @@ fn heated_skill(id: &str, duration: u32) -> SkillDef {
 fn setup_app() -> (App, Entity) {
     let mut app = skill_resolve_app(
         SkillBook(vec![
-            heated_skill("h2", 2),
-            heated_skill("h1", 1),
-            heated_skill("h5", 5),
+            status_skill("heated", StatusEffectKind::Heated, 3),
+            status_skill("chilled", StatusEffectKind::Chilled, 2),
+            status_skill("blessed", StatusEffectKind::Blessed, 4),
         ]),
         0,
     );
@@ -71,9 +68,9 @@ fn setup_app() -> (App, Entity) {
         },
         Team::Ally,
         UnitSkills {
-            basic: SkillId("h2".into()),
-            skills: vec![SkillId("h1".into()), SkillId("h5".into())],
-            ultimate: SkillId("h2".into()),
+            basic: SkillId("heated".into()),
+            skills: vec![SkillId("chilled".into()), SkillId("blessed".into())],
+            ultimate: SkillId("heated".into()),
             follow_up: None,
         },
         UltimateCharge {
@@ -109,62 +106,50 @@ fn setup_app() -> (App, Entity) {
 }
 
 #[test]
-fn refresh_max_dur_keeps_longer_and_replaces_with_longer() {
+fn three_different_kinds_coexist_in_bag() {
     let (mut app, defender) = setup_app();
 
-    // Apply Heated(dur=2).
+    // Apply Heated(3).
     app.world_mut().write_message(ActionIntent::Skill {
         attacker: UnitId(1),
-        skill_id: SkillId("h2".into()),
+        skill_id: SkillId("heated".into()),
+        target: UnitId(2),
+    });
+    app.update();
+
+    // Apply Chilled(2).
+    app.world_mut().write_message(ActionIntent::Skill {
+        attacker: UnitId(1),
+        skill_id: SkillId("chilled".into()),
+        target: UnitId(2),
+    });
+    app.update();
+
+    // Apply Blessed(4).
+    app.world_mut().write_message(ActionIntent::Skill {
+        attacker: UnitId(1),
+        skill_id: SkillId("blessed".into()),
         target: UnitId(2),
     });
     app.update();
 
     let bag = app.world().get::<StatusBag>(defender).unwrap();
-    assert_eq!(
-        bag.get_dur(&StatusEffectKind::Heated),
-        Some(2),
-        "initial apply: dur must be 2"
-    );
-    assert_eq!(bag.iter().count(), 1, "single instance after first apply");
 
-    // Re-apply Heated(dur=1): refresh_max_dur must keep max(2, 1) = 2.
-    app.world_mut().write_message(ActionIntent::Skill {
-        attacker: UnitId(1),
-        skill_id: SkillId("h1".into()),
-        target: UnitId(2),
-    });
-    app.update();
-
-    let bag = app.world().get::<StatusBag>(defender).unwrap();
-    assert_eq!(
-        bag.get_dur(&StatusEffectKind::Heated),
-        Some(2),
-        "re-apply with shorter dur: refresh_max_dur must keep max(2,1)=2"
-    );
     assert_eq!(
         bag.iter().count(),
-        1,
-        "re-apply must not duplicate the instance"
+        3,
+        "all three distinct kinds must coexist"
     );
-
-    // Apply Heated(dur=5): refresh_max_dur must update to max(2, 5) = 5.
-    app.world_mut().write_message(ActionIntent::Skill {
-        attacker: UnitId(1),
-        skill_id: SkillId("h5".into()),
-        target: UnitId(2),
-    });
-    app.update();
-
-    let bag = app.world().get::<StatusBag>(defender).unwrap();
-    assert_eq!(
-        bag.get_dur(&StatusEffectKind::Heated),
-        Some(5),
-        "re-apply with longer dur: refresh_max_dur must update to max(2,5)=5"
+    assert!(bag.has(&StatusEffectKind::Heated), "Heated must be present");
+    assert!(
+        bag.has(&StatusEffectKind::Chilled),
+        "Chilled must be present"
     );
-    assert_eq!(
-        bag.iter().count(),
-        1,
-        "still exactly one instance after three applies"
+    assert!(
+        bag.has(&StatusEffectKind::Blessed),
+        "Blessed must be present"
     );
+    assert_eq!(bag.get_dur(&StatusEffectKind::Heated), Some(3));
+    assert_eq!(bag.get_dur(&StatusEffectKind::Chilled), Some(2));
+    assert_eq!(bag.get_dur(&StatusEffectKind::Blessed), Some(4));
 }
