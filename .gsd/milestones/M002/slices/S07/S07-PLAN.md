@@ -45,7 +45,7 @@ Slice chiusa quando il loop Agumon basic->energy->ult->drain e osservabile sia h
   - Files: `tests/digimon_kits/agumon_energy_gauge.rs`, `tests/digimon_kits.rs`
   - Verify: cargo test --features windowed --test digimon_kits agumon_energy_gauge
 
-- [ ] **T05: Fixture sweep UnitQuerySnapshot callsite nei test** `est:M`
+- [x] **T05: Fixture sweep UnitQuerySnapshot callsite nei test** `est:M`
   Aggiornare le fixture e i test esistenti che costruiscono UnitQuerySnapshot a mano o hard-codano la tuple units_data per il nuovo shape (gauge_meta + energy opzionali). Mantenere None/None nelle fixture legacy per non opt-in nessun comportamento nuovo.
   - Files: `tests/action_query/action_affordance_consumers.rs`, `tests/action_query/action_affordance_query.rs`
   - Verify: cargo test --features windowed

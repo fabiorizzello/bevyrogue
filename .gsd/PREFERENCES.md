@@ -33,6 +33,9 @@ avoid_skills:
   - web-quality-audit
   - api-design
   - create-mcp-server
+commit_policy: per-task
+branch_model: single
+workflow_prefs_captured: true
 ---
 
 # GSD Project Preferences
