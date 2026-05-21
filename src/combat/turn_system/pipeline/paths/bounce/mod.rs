@@ -9,6 +9,7 @@ use crate::combat::sp::SpPool;
 use crate::combat::state::{CombatPhase, CombatState, InFlightAction, UltEffect};
 use crate::combat::turn_order::TurnOrder;
 use crate::combat::types::{EvoStage, UnitId};
+use crate::combat::ult_gauge::UltGaugeMetadata;
 use crate::data::skills_ron::TargetShape;
 
 use super::super::super::{ResolveActorsQuery, emit_combat_beat, emit_combat_event, set_phase};
@@ -29,6 +30,7 @@ pub(in crate::combat::turn_system::pipeline) fn run(
     registry: Option<&CombatKernelRegistry>,
     actors: &mut ResolveActorsQuery,
     energy_q: &mut Query<(&mut Energy, Option<&mut RoundEnergyTracker>)>,
+    gauge_meta_q: &Query<&UltGaugeMetadata>,
     cast_id: CastId,
     attacker_entity: Entity,
     _target_entity: Entity,
@@ -197,6 +199,7 @@ pub(in crate::combat::turn_system::pipeline) fn run(
         registry,
         actors,
         energy_q,
+        gauge_meta_q,
         cast_id,
         attacker_entity,
         attacker_id,

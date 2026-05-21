@@ -6,17 +6,20 @@ skills_used: []
 
 # T02: GameplayCommandForbidden validation check + anti-DRY test + EmitDamage remediation
 
-In src/animation/validation/types.rs add AnimationValidationCheck::GameplayCommandForbidden and AnimationValidationReason::GameplayCommandInAnimGraph. In validation/graph.rs add check that EmitDamage/EmitStatus/EmitHeal in node.on_enter OR node.cues produces an Error diagnostic. Remove EmitDamage block from both production anim_graph.ron files. Add executable anti-DRY test asserting the live loaded agumon graph contains zero gameplay commands.
-
 ## Inputs
 
 - None specified.
 
 ## Expected Output
 
-- `cargo test green`
-- `Both production graphs gameplay-command-free`
-- `Anti-DRY test enforces D001`
+- `src/animation/validation/types.rs`
+- `src/animation/validation/command.rs`
+- `src/animation/validation/graph.rs`
+- `assets/digimon/agumon/anim_graph.ron`
+- `assets/digimon/renamon/anim_graph.ron`
+- `tests/anim_graph_asset.rs`
+- `tests/anim_validation.rs`
+- `tests/anim_gameplay_command_forbidden.rs`
 
 ## Verification
 

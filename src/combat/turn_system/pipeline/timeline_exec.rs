@@ -2,6 +2,7 @@ use std::collections::VecDeque;
 
 use bevy::prelude::*;
 
+use crate::combat::energy::{Energy, EnergyGainSource, RoundEnergyTracker};
 use crate::combat::events::{CombatEvent, CombatEventKind};
 use crate::combat::kernel::{CombatKernelRegistry, CombatKernelTransition};
 use crate::combat::runtime::applier::{IntentExecutionMeta, IntentQueue};
@@ -356,6 +357,57 @@ fn finalize_timeline_action(
                 }
                 break;
             }
+        }
+
+        // S07/T03: when the attacker is energy-backed, drain `Energy.current`
+        // alongside the legacy `UltimateCharge.current = 0` so an Ult cast
+        // consumes the new energy resource. Legacy `UltimateCharge` is kept at
+        // 0 above for back-compat until the old gauge is fully smantellato.
+        if matches!(ult_effect, UltEffect::Reset) {
+            let mut q = world.query::<(
+                &crate::combat::unit::Unit,
+                &mut crate::combat::energy::Energy,
+                &crate::combat::ult_gauge::UltGaugeMetadata,
+            )>();
+            for (unit, mut energy, meta) in q.iter_mut(world) {
+                if unit.id == attacker_id {
+                    crate::combat::ult_gauge::drain_energy_on_ult_reset(
+                        Some(meta),
+                        Some(energy.as_mut()),
+                    );
+                    break;
+                }
+            }
+        }
+    }
+
+    if inflight.action.energy_grant > 0 {
+        let mut q = world.query::<(&crate::combat::unit::Unit, &mut Energy, Option<&mut RoundEnergyTracker>)>();
+        for (unit, mut energy, tracker) in q.iter_mut(world) {
+            if unit.id != attacker_id {
+                continue;
+            }
+            let granted_by_round_cap = tracker
+                .map(|mut tracker| {
+                    tracker.try_gain(EnergyGainSource::SecondaryAction, inflight.action.energy_grant)
+                })
+                .unwrap_or(inflight.action.energy_grant);
+            let applied = energy.gain_capped(granted_by_round_cap);
+            if applied > 0 {
+                world
+                    .resource_mut::<bevy::ecs::message::Messages<CombatEvent>>()
+                    .write(CombatEvent {
+                        kind: CombatEventKind::EnergyGained {
+                            unit_id: attacker_id,
+                            amount: applied,
+                        },
+                        source: attacker_id,
+                        target: attacker_id,
+                        follow_up_depth: inflight.follow_up_depth,
+                        cast_id,
+                    });
+            }
+            break;
         }
     }
 

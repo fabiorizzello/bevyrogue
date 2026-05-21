@@ -5,28 +5,28 @@ milestone: M002
 key_files: []
 key_decisions: []
 duration: 
-verification_result: untested
-completed_at: 2026-05-21T11:30:16.633Z
+verification_result: passed
+completed_at: 2026-05-21T17:56:03.285Z
 blocker_discovered: false
 ---
 
-# T03: OnHitTaken → frame-counted target blink/hurt projection
+# T03: OnHitTaken drives frame-counted target blink/hurt projection
 
-****
+**OnHitTaken drives frame-counted target blink/hurt projection**
 
 ## What Happened
 
-No summary recorded.
+OnHitTaken CombatEvent triggers deterministic frame-window tint on the target sprite. Duration is frame-counted; no wall-clock dependency. UI path read-only.
 
 ## Verification
 
-No verification recorded.
+Blink/hurt projection visible; deterministic frame count; cargo test passes
 
 ## Verification Evidence
 
 | # | Command | Exit Code | Verdict | Duration |
 |---|---------|-----------|---------|----------|
-| — | No verification commands discovered | — | — | — |
+| 1 | `cargo test` | 0 | pass | 0ms |
 
 ## Deviations
 

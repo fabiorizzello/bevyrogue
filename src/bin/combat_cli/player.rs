@@ -16,6 +16,7 @@ use bevyrogue::combat::turn_order::TurnOrder;
 use bevyrogue::combat::turn_system::ActionIntent;
 use bevyrogue::combat::types::UnitId;
 use bevyrogue::combat::ultimate::UltimateCharge;
+use bevyrogue::combat::ult_gauge::UltGaugeMetadata;
 use bevyrogue::combat::unit::{Commander, Ko, Unit};
 use bevyrogue::data::SkillBookHandle;
 use bevyrogue::data::skills_ron::SkillBook;
@@ -43,6 +44,7 @@ pub fn player_action_system(
         Option<&Stunned>,
         Option<&Energy>,
         Option<&RoundEnergyTracker>,
+        Option<&UltGaugeMetadata>,
     )>,
     sp_pool: Res<SpPool>,
     skill_books: Res<Assets<SkillBook>>,
@@ -86,9 +88,10 @@ pub fn player_action_system(
         _,
         _,
         _,
+        _,
     )) = units
         .iter()
-        .find(|(u, _, _, _, _, _, _, _, _, _, _)| u.id == actor_id)
+        .find(|(u, _, _, _, _, _, _, _, _, _, _, _)| u.id == actor_id)
     else {
         return;
     };
@@ -121,6 +124,7 @@ pub fn player_action_system(
                 stunned,
                 energy,
                 tracker,
+                ult_metadata,
             )| {
                 (
                     unit.id,
@@ -135,6 +139,7 @@ pub fn player_action_system(
                     commander.is_some(),
                     energy,
                     tracker,
+                    ult_metadata,
                 )
             },
         )
@@ -268,8 +273,8 @@ pub fn player_action_system(
         .filter_map(|(target_id, affordance)| {
             units
                 .iter()
-                .find(|(unit, _, _, _, _, _, _, _, _, _, _)| unit.id == *target_id)
-                .map(|(unit, team, _, _, _, _, _, _, _, _, _)| {
+                .find(|(unit, _, _, _, _, _, _, _, _, _, _, _)| unit.id == *target_id)
+                .map(|(unit, team, _, _, _, _, _, _, _, _, _, _)| {
                     (*target_id, target_entry_label(unit, team, affordance))
                 })
         })

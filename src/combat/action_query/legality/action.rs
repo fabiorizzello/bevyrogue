@@ -7,7 +7,7 @@ use super::super::types::{
     ResourceStatus, TargetAffordance, TargetStatus, ToughnessAffordance, UnitQuerySnapshot,
 };
 use super::resources::build_resource_details;
-use super::shared::{implementation_status, resolve_action_skill};
+use super::shared::{implementation_status, resolve_action_skill, ult_readiness_from_snapshot};
 use super::targeting::{query_all_target_affordances, target_status_for_unit};
 
 fn aggregate_target_status(
@@ -100,7 +100,10 @@ fn action_and_resource_status_for_snapshot(
                 );
             }
 
-            if !actor.ultimate_ready || actor.ultimate_current < actor.ultimate_trigger {
+            // Use effective_ult_gauge so energy-backed gauges (e.g. Agumon) derive
+            // readiness from Energy, while legacy units continue to read UltimateCharge.
+            let (gauge_current, gauge_trigger, gauge_ready) = ult_readiness_from_snapshot(actor);
+            if !gauge_ready || gauge_current < gauge_trigger {
                 return (
                     ActionStatus::Disabled {
                         reason: LegalityReasonCode::UltimateNotReady,

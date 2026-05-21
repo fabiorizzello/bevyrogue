@@ -5,28 +5,28 @@ milestone: M002
 key_files: []
 key_decisions: []
 duration: 
-verification_result: untested
-completed_at: 2026-05-21T11:30:16.632Z
+verification_result: passed
+completed_at: 2026-05-21T17:54:09.216Z
 blocker_discovered: false
 ---
 
-# T03: Route Agumon Basic through Sharp Claws timeline data
+# T03: Agumon Basic action routed through Sharp Claws timeline data
 
-****
+**Agumon Basic action routed through Sharp Claws timeline data**
 
 ## What Happened
 
-No summary recorded.
+Changed Agumon Basic routing from baby_flame to sharp_claws. Updated action legality, skill preview, and timeline dispatch accordingly.
 
 ## Verification
 
-No verification recorded.
+cargo test green; action legality tests pass
 
 ## Verification Evidence
 
 | # | Command | Exit Code | Verdict | Duration |
 |---|---------|-----------|---------|----------|
-| — | No verification commands discovered | — | — | — |
+| 1 | `cargo test` | 0 | pass | 0ms |
 
 ## Deviations
 

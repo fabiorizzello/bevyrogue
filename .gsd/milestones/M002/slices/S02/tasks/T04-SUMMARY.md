@@ -5,28 +5,28 @@ milestone: M002
 key_files: []
 key_decisions: []
 duration: 
-verification_result: untested
-completed_at: 2026-05-21T11:30:16.632Z
+verification_result: passed
+completed_at: 2026-05-21T17:54:14.515Z
 blocker_discovered: false
 ---
 
-# T04: Persist suspended timelines and resume only after cue release
+# T04: Suspended timelines persisted; resume only after ReleaseKernelCue fires
 
-****
+**Suspended timelines persisted; resume only after ReleaseKernelCue fires**
 
 ## What Happened
 
-No summary recorded.
+Implemented timeline suspension at impact barrier: combat timeline stalls until AnimGraph emits ReleaseKernelCue, then resumes and commits damage. Deterministic two-clock ordering preserved.
 
 ## Verification
 
-No verification recorded.
+timeline_two_clock_parity test passes; timeline_cue_barrier_pipeline test passes
 
 ## Verification Evidence
 
 | # | Command | Exit Code | Verdict | Duration |
 |---|---------|-----------|---------|----------|
-| — | No verification commands discovered | — | — | — |
+| 1 | `cargo test` | 0 | pass | 0ms |
 
 ## Deviations
 

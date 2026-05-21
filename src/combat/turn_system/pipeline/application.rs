@@ -9,6 +9,7 @@ use crate::combat::runtime::{ExtRegistries, IntentExecutionMeta, IntentQueue, in
 use crate::combat::sp::SpPool;
 use crate::combat::state::{CombatState, InFlightAction};
 use crate::combat::turn_order::TurnOrder;
+use crate::combat::ult_gauge::UltGaugeMetadata;
 use crate::combat::unit::Unit;
 
 use super::super::ResolveActorsQuery;
@@ -29,6 +30,7 @@ pub(crate) fn step_app(
     rng: &mut Option<ResMut<CombatRng>>,
     entropy_q: &mut Query<&mut CombatEntropy, With<Unit>>,
     energy_q: &mut Query<(&mut Energy, Option<&mut RoundEnergyTracker>)>,
+    gauge_meta_q: &Query<&UltGaugeMetadata>,
     ext_regs: Option<&ExtRegistries>,
     intent_queue: &mut Option<ResMut<IntentQueue>>,
     intent_execution_meta: &mut Option<ResMut<IntentExecutionMeta>>,
@@ -83,6 +85,7 @@ pub(crate) fn step_app(
         registry,
         actors,
         energy_q,
+        gauge_meta_q,
         cast_id,
         attacker_entity,
         target_entity,
@@ -104,6 +107,7 @@ pub(crate) fn step_app(
         registry,
         actors,
         energy_q,
+        gauge_meta_q,
         cast_id,
         attacker_entity,
         target_entity,
@@ -125,6 +129,7 @@ pub(crate) fn step_app(
         registry,
         actors,
         energy_q,
+        gauge_meta_q,
         cast_id,
         attacker_entity,
         target_entity,
@@ -148,6 +153,7 @@ pub(crate) fn step_app(
         rng,
         entropy_q,
         energy_q,
+        gauge_meta_q,
         ext_regs,
         intent_queue,
         intent_execution_meta,

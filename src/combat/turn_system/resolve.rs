@@ -46,6 +46,7 @@ pub fn resolve_action_system(
     mut event_writer: MessageWriter<CombatEvent>,
     registry: Option<Res<CombatKernelRegistry>>,
     mut actors: ResolveActorsQuery,
+    gauge_meta_q: Query<&'static crate::combat::ult_gauge::UltGaugeMetadata>,
     mut runtime: ActionRuntimeParams,
 ) {
     if state.phase == CombatPhase::Resolving {
@@ -115,6 +116,7 @@ pub fn resolve_action_system(
                         let energy_data = energy_readonly.get(entity).ok();
                         let energy = energy_data.map(|(e, _)| e);
                         let tracker = energy_data.and_then(|(_, t)| t);
+                        let gauge_meta = gauge_meta_q.get(entity).ok();
                         (
                             unit.id,
                             *team,
@@ -128,6 +130,7 @@ pub fn resolve_action_system(
                             commander.is_some(),
                             energy,
                             tracker,
+                            gauge_meta,
                         )
                     },
                 )
@@ -247,6 +250,7 @@ pub fn resolve_action_system(
                 &mut runtime.combat_rng,
                 &mut runtime.entropy_q,
                 &mut runtime.energy_q,
+                &gauge_meta_q,
                 runtime.ext_regs.as_deref(),
                 &mut runtime.intent_queue,
                 &mut runtime.intent_execution_meta,

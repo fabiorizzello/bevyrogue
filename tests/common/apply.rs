@@ -81,6 +81,8 @@ impl LegacyOpsHarness {
             opts.defender_status,
             opts.attacker_status,
             opts.defender_dr,
+            None,
+            None,
         )
     }
 }

@@ -2,6 +2,7 @@ use crate::combat::{
     StatusEffectKind,
     buffs::DrBag,
     damage::{AttackContext, DamageBreakdown, calculate_damage},
+    energy::Energy,
     events::CombatEventKind,
     sp::RoundSpTracker,
     state::{ResolvedAction, UltEffect},
@@ -9,6 +10,7 @@ use crate::combat::{
     team::Team,
     toughness::{Toughness, can_apply_toughness_damage, classify},
     types::EvoStage,
+    ult_gauge::{UltGaugeMetadata, drain_energy_on_ult_reset},
     ultimate::UltimateCharge,
     unit::{BasicStreak, Unit},
 };
@@ -222,6 +224,10 @@ pub fn apply_legacy_ops(
     defender_status: Option<&StatusBag>,
     attacker_statuses: Option<&StatusBag>,
     defender_dr: Option<&DrBag>,
+    // S07/T03: optional energy/metadata so energy-backed Ult casts also drain
+    // `Energy.current` alongside the legacy `UltimateCharge.current = 0`.
+    attacker_energy: Option<&mut Energy>,
+    attacker_gauge_meta: Option<&UltGaugeMetadata>,
 ) -> (ResolutionOutcome, Vec<CombatEventKind>) {
     let mut events = Vec::new();
 
@@ -405,6 +411,10 @@ pub fn apply_legacy_ops(
         UltEffect::None => {}
         UltEffect::Reset => {
             attacker_ult.current = 0;
+            // S07/T03: drain energy alongside legacy charge for energy-backed
+            // attackers (e.g. Agumon). Legacy units (None metadata or non-energy
+            // backing) are unaffected.
+            drain_energy_on_ult_reset(attacker_gauge_meta, attacker_energy);
         }
     }
 

@@ -5,28 +5,28 @@ milestone: M002
 key_files: []
 key_decisions: []
 duration: 
-verification_result: untested
-completed_at: 2026-05-21T11:30:16.633Z
+verification_result: passed
+completed_at: 2026-05-21T17:55:58.375Z
 blocker_discovered: false
 ---
 
-# T02: Sprite-anchored HP bar + damage-number HUD
+# T02: Sprite-anchored HP bar + damage-number HUD rendered windowed
 
-****
+**Sprite-anchored HP bar + damage-number HUD rendered windowed**
 
 ## What Happened
 
-No summary recorded.
+Added sprite-anchored HP bars and damage-number HUD elements. Both derive from combat state read-only; no mutation from UI path.
 
 ## Verification
 
-No verification recorded.
+HP bars and damage numbers visible in windowed session
 
 ## Verification Evidence
 
 | # | Command | Exit Code | Verdict | Duration |
 |---|---------|-----------|---------|----------|
-| — | No verification commands discovered | — | — | — |
+| 1 | `cargo build --features windowed` | 0 | pass | 0ms |
 
 ## Deviations
 

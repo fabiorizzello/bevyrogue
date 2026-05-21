@@ -18,6 +18,7 @@ use crate::combat::status_effect::{StatusBag, StatusEffectKind};
 use crate::combat::stun::Stunned;
 use crate::combat::turn_order::TurnOrder;
 use crate::combat::types::UnitId;
+use crate::combat::ult_gauge::UltGaugeMetadata;
 use crate::combat::unit::{BasicStreak, Ko, Unit};
 
 use super::super::super::{ResolveActorsQuery, emit_combat_beat, emit_combat_event, set_phase};
@@ -38,6 +39,7 @@ pub(in crate::combat::turn_system::pipeline) fn run(
     rng: &mut Option<ResMut<CombatRng>>,
     entropy_q: &mut Query<&mut CombatEntropy, With<Unit>>,
     energy_q: &mut Query<(&mut Energy, Option<&mut RoundEnergyTracker>)>,
+    gauge_meta_q: &Query<&UltGaugeMetadata>,
     ext_regs: Option<&crate::combat::runtime::ExtRegistries>,
     intent_queue: &mut Option<ResMut<IntentQueue>>,
     intent_execution_meta: &mut Option<ResMut<IntentExecutionMeta>>,
@@ -198,6 +200,13 @@ pub(in crate::combat::turn_system::pipeline) fn run(
         .as_ref()
         .map(|f| f.break_sealed)
         .unwrap_or(false);
+    // S07/T03: borrow attacker energy + read metadata so apply_legacy_ops can
+    // drain `Energy.current` on UltEffect::Reset for energy-backed units.
+    let attacker_gauge_meta = gauge_meta_q.get(attacker_entity).ok();
+    let mut attacker_energy_borrow = energy_q.get_mut(attacker_entity).ok();
+    let attacker_energy_ref = attacker_energy_borrow
+        .as_mut()
+        .map(|(energy, _)| energy.as_mut());
     let (outcome, core_events) = apply_legacy_ops(
         &inflight.action,
         &attacker_unit,
@@ -213,7 +222,10 @@ pub(in crate::combat::turn_system::pipeline) fn run(
         defender_bag.as_deref(),
         attacker_bag.as_deref(),
         defender_dr.as_deref(),
+        attacker_energy_ref,
+        attacker_gauge_meta,
     );
+    drop(attacker_energy_borrow);
 
     if !outcome.sp_ok {
         emit_combat_event(

@@ -100,6 +100,7 @@ pub fn combat_panel(
             commander.is_some(),
             energy,
             tracker,
+            gauge_meta,
         ));
 
         let effective_gauge = effective_ult_gauge(gauge_meta, energy, Some(ult));

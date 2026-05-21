@@ -187,6 +187,7 @@ fn snapshot_from_fixtures(
                 fixture.is_commander,
                 fixture.energy.as_ref(),
                 fixture.tracker.as_ref(),
+                None,
             )
         })
         .collect();
@@ -333,6 +334,7 @@ fn explicit_sp_snapshot_blocks_revive_but_bypass_snapshot_remains_separate() {
                 fixture.is_commander,
                 fixture.energy.as_ref(),
                 fixture.tracker.as_ref(),
+                None,
             )
         })
         .collect();

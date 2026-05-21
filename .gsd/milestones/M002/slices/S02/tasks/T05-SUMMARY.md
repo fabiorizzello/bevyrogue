@@ -5,28 +5,28 @@ milestone: M002
 key_files: []
 key_decisions: []
 duration: 
-verification_result: untested
-completed_at: 2026-05-21T11:30:16.632Z
+verification_result: passed
+completed_at: 2026-05-21T17:54:20.767Z
 blocker_discovered: false
 ---
 
-# T05: Wire windowed Sharp Claws playback and telegraph chip
+# T05: Windowed Sharp Claws playback wired; telegraph chip visible
 
-****
+**Windowed Sharp Claws playback wired; telegraph chip visible**
 
 ## What Happened
 
-No summary recorded.
+Wired windowed Sharp Claws playback through RenderPlugin. Telegraph chip UI element visible during windup phase, feature-gated behind windowed. Intent streams deterministic and identical headless/windowed.
 
 ## Verification
 
-No verification recorded.
+cargo build --features windowed compiles; windowed_preview_cache test passes
 
 ## Verification Evidence
 
 | # | Command | Exit Code | Verdict | Duration |
 |---|---------|-----------|---------|----------|
-| — | No verification commands discovered | — | — | — |
+| 1 | `cargo build --features windowed` | 0 | pass | 0ms |
 
 ## Deviations
 

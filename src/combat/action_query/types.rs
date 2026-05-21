@@ -33,6 +33,9 @@ pub struct UnitQuerySnapshot {
     pub ultimate_trigger: i32,
     pub ultimate_ready: bool,
     pub energy: i32,
+    pub energy_max: i32,
+    pub gauge_meta: Option<crate::combat::ult_gauge::UltGaugeMetadata>,
+    pub energy_data: Option<Energy>,
     pub energy_secondary_gained: i32,
     pub energy_external_gained: i32,
     pub skills: Option<UnitSkills>,
@@ -55,6 +58,9 @@ impl Default for UnitQuerySnapshot {
             ultimate_trigger: 100,
             ultimate_ready: false,
             energy: 0,
+            energy_max: 10,
+            gauge_meta: None,
+            energy_data: None,
             energy_secondary_gained: 0,
             energy_external_gained: 0,
             skills: None,
@@ -82,6 +88,7 @@ pub fn build_snapshot_from_ecs(
         bool, // is_commander
         Option<&Energy>,
         Option<&RoundEnergyTracker>,
+        Option<&crate::combat::ult_gauge::UltGaugeMetadata>,
     )>,
 ) -> CombatQuerySnapshot {
     build_snapshot_from_ecs_with_sp(state, turn_order, i32::MAX, actor_id, target_id, units_data)
@@ -111,6 +118,7 @@ pub fn build_snapshot_from_ecs_with_sp(
         bool, // is_commander
         Option<&Energy>,
         Option<&RoundEnergyTracker>,
+        Option<&crate::combat::ult_gauge::UltGaugeMetadata>,
     )>,
 ) -> CombatQuerySnapshot {
     let mut units = Vec::new();
@@ -128,6 +136,7 @@ pub fn build_snapshot_from_ecs_with_sp(
         is_commander,
         energy,
         energy_tracker,
+        gauge_meta,
     ) in units_data
     {
         let is_active = if let Some(active) = turn_order.active_unit {
@@ -150,6 +159,9 @@ pub fn build_snapshot_from_ecs_with_sp(
             ultimate_trigger: ult.map(|u| u.trigger).unwrap_or(100),
             ultimate_ready: ult.map(|u| u.ready()).unwrap_or(false),
             energy: energy.map(|e| e.current).unwrap_or(0),
+            energy_max: energy.map(|e| e.max).unwrap_or(10),
+            gauge_meta: gauge_meta.cloned(),
+            energy_data: energy.copied(),
             energy_secondary_gained: energy_tracker.map(|t| t.secondary_gained).unwrap_or(0),
             energy_external_gained: energy_tracker.map(|t| t.external_gained).unwrap_or(0),
             skills: skills.cloned(),
@@ -165,22 +177,11 @@ pub fn build_snapshot_from_ecs_with_sp(
             // Fallback for missing actor (should be caught by query)
             UnitQuerySnapshot {
                 id: actor_id,
-                team: Team::Ally,
                 is_active: true,
-                is_ko: false,
-                is_stunned: false,
-                is_commander: false,
                 hp_current: 100,
                 hp_max: 100,
                 sp: sp_current,
-                ultimate_current: 0,
-                ultimate_trigger: 100,
-                ultimate_ready: false,
-                energy: 0,
-                energy_secondary_gained: 0,
-                energy_external_gained: 0,
-                skills: None,
-                toughness: None,
+                ..Default::default()
             }
         });
 

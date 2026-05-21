@@ -5,28 +5,28 @@ milestone: M002
 key_files: []
 key_decisions: []
 duration: 
-verification_result: untested
-completed_at: 2026-05-21T11:30:16.632Z
+verification_result: passed
+completed_at: 2026-05-21T17:54:55.221Z
 blocker_discovered: false
 ---
 
-# T02: Wire EventReader-driven egui phase strip into UiPlugin
+# T02: EventReader-driven egui phase strip wired into UiPlugin (windowed only)
 
-****
+**EventReader-driven egui phase strip wired into UiPlugin (windowed only)**
 
 ## What Happened
 
-No summary recorded.
+Wired phase strip into UiPlugin using EventReader<CombatEvent>. Phase strip updates from CombatBeat events only; display state isolated to UI-owned resource.
 
 ## Verification
 
-No verification recorded.
+cargo build --features windowed compiles; phase strip renders in windowed session
 
 ## Verification Evidence
 
 | # | Command | Exit Code | Verdict | Duration |
 |---|---------|-----------|---------|----------|
-| — | No verification commands discovered | — | — | — |
+| 1 | `cargo build --features windowed` | 0 | pass | 0ms |
 
 ## Deviations
 

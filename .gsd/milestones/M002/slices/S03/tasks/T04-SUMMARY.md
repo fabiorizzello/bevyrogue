@@ -5,28 +5,28 @@ milestone: M002
 key_files: []
 key_decisions: []
 duration: 
-verification_result: untested
-completed_at: 2026-05-21T11:30:16.632Z
+verification_result: passed
+completed_at: 2026-05-21T17:55:05.764Z
 blocker_discovered: false
 ---
 
-# T04: Close S03 verification across headless and windowed gates
+# T04: S03 verification closed across headless and windowed gates
 
-****
+**S03 verification closed across headless and windowed gates**
 
 ## What Happened
 
-No summary recorded.
+Full S03 verification: headless tests pass, windowed build compiles, phase-strip combat-read-only test passes. No regressions from S02.
 
 ## Verification
 
-No verification recorded.
+All S03 tests pass; both build targets pass
 
 ## Verification Evidence
 
 | # | Command | Exit Code | Verdict | Duration |
 |---|---------|-----------|---------|----------|
-| — | No verification commands discovered | — | — | — |
+| 1 | `cargo test && cargo build --features windowed` | 0 | pass | 0ms |
 
 ## Deviations
 

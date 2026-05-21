@@ -1,5 +1,6 @@
 use crate::combat::kit::UnitSkills;
 use crate::combat::types::{SkillId, UnitId};
+use crate::combat::ult_gauge::is_energy_backed;
 use crate::data::skills_ron::{LegalityReasonCode, SkillBook, SkillDef, SkillImplementation};
 
 use super::super::types::{
@@ -27,6 +28,25 @@ pub(super) fn resolve_unit(
     snapshot_units(snapshot)
         .into_iter()
         .find(|unit| unit.id == unit_id)
+}
+
+/// Mirrors `effective_ult_gauge` but works from the snapshot's scalar fields so callers
+/// don't need to reconstruct a full `UltimateCharge` component.
+///
+/// Returns `(current, trigger, ready)`. When `gauge_meta` is energy-backed and
+/// `energy_data` is present, derives readiness from Energy; otherwise falls back to
+/// the legacy UltimateCharge-derived scalars in the snapshot.
+pub(super) fn ult_readiness_from_snapshot(actor: &UnitQuerySnapshot) -> (i32, i32, bool) {
+    if is_energy_backed(actor.gauge_meta.as_ref()) {
+        if let Some(energy) = actor.energy_data.as_ref() {
+            return (energy.current, energy.max, energy.current >= energy.max);
+        }
+    }
+    (
+        actor.ultimate_current,
+        actor.ultimate_trigger,
+        actor.ultimate_ready && actor.ultimate_current >= actor.ultimate_trigger,
+    )
 }
 
 pub(super) fn implementation_status(skill_def: &SkillDef) -> ImplementationStatus {

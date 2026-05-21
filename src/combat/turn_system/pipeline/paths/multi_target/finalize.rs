@@ -9,6 +9,7 @@ use crate::combat::sp::SpPool;
 use crate::combat::state::{CombatPhase, CombatState, InFlightAction, UltEffect};
 use crate::combat::status_effect::StatusEffectKind;
 use crate::combat::types::UnitId;
+use crate::combat::ult_gauge::{UltGaugeMetadata, drain_energy_on_ult_reset};
 
 use super::super::super::super::{ResolveActorsQuery, emit_combat_event, set_phase};
 use super::super::dispatch_blueprint_transitions;
@@ -23,6 +24,7 @@ pub(super) fn finalize(
     registry: Option<&CombatKernelRegistry>,
     actors: &mut ResolveActorsQuery,
     energy_q: &mut Query<(&mut Energy, Option<&mut RoundEnergyTracker>)>,
+    gauge_meta_q: &Query<&UltGaugeMetadata>,
     cast_id: CastId,
     attacker_entity: Entity,
     attacker_id: UnitId,
@@ -69,6 +71,15 @@ pub(super) fn finalize(
 
         att_ult.current - before
     };
+
+    // S07/T03: drain `Energy.current` alongside legacy `UltimateCharge`
+    // when the attacker is energy-backed. Legacy units are unaffected.
+    if matches!(inflight.action.ult_effect, UltEffect::Reset) {
+        let meta = gauge_meta_q.get(attacker_entity).ok();
+        if let Ok((mut energy, _)) = energy_q.get_mut(attacker_entity) {
+            drain_energy_on_ult_reset(meta, Some(energy.as_mut()));
+        }
+    }
 
     // Once-per-cast events (not per-target)
     emit_combat_event(

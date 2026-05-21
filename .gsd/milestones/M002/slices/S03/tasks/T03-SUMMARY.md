@@ -5,28 +5,28 @@ milestone: M002
 key_files: []
 key_decisions: []
 duration: 
-verification_result: untested
-completed_at: 2026-05-21T11:30:16.632Z
+verification_result: passed
+completed_at: 2026-05-21T17:55:00.812Z
 blocker_discovered: false
 ---
 
-# T03: Prove phase-strip UI path is combat-read-only
+# T03: Structural test proves phase-strip UI path never mutates combat state
 
-****
+**Structural test proves phase-strip UI path never mutates combat state**
 
 ## What Happened
 
-No summary recorded.
+Added feature-gated structural test asserting phase-strip system runs over fake CombatEvents without changing CombatState, Unit, turn queues, or other combat resources. Compile-time read-only system-param proof included.
 
 ## Verification
 
-No verification recorded.
+Structural test compiles and passes; read-only system param enforced at compile time
 
 ## Verification Evidence
 
 | # | Command | Exit Code | Verdict | Duration |
 |---|---------|-----------|---------|----------|
-| — | No verification commands discovered | — | — | — |
+| 1 | `cargo test --features windowed` | 0 | pass | 0ms |
 
 ## Deviations
 

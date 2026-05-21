@@ -50,3 +50,34 @@ pub fn is_energy_backed(metadata: Option<&UltGaugeMetadata>) -> bool {
         .and_then(|payload| payload.0.get("ult_gauge"))
         .is_some_and(|value| value == "energy")
 }
+
+/// S07/T03: drain `Energy.current` to 0 when the attacker is energy-backed.
+/// Invoked at every `UltEffect::Reset` finalize site alongside the legacy
+/// `UltimateCharge.current = 0` reset. Legacy ult charge is kept at 0 for
+/// back-compat until the old gauge is fully smantellato.
+pub fn drain_energy_on_ult_reset(metadata: Option<&UltGaugeMetadata>, energy: Option<&mut Energy>) {
+    if is_energy_backed(metadata) {
+        if let Some(energy) = energy {
+            energy.current = 0;
+        }
+    }
+}
+
+/// S07/T03: world-level convenience used at finalize sites that have
+/// deferred access to the World (via `Commands::queue`). Drains
+/// `Energy.current` for `attacker_entity` if it is energy-backed.
+pub fn drain_energy_on_ult_reset_for_entity(
+    world: &mut bevy::prelude::World,
+    attacker_entity: bevy::prelude::Entity,
+) {
+    let is_backed = world
+        .get::<UltGaugeMetadata>(attacker_entity)
+        .map(|meta| is_energy_backed(Some(meta)))
+        .unwrap_or(false);
+    if !is_backed {
+        return;
+    }
+    if let Some(mut energy) = world.get_mut::<Energy>(attacker_entity) {
+        energy.current = 0;
+    }
+}

@@ -1,3 +1,5 @@
+gsd snapshot: pre-dispatch, uncommitted changes after 32m inactivity
+
 # M002 / S06 — Windowed Smoke UAT Runbook
 
 This runbook drives the manual windowed smoke for slice S06. Auto-mode does

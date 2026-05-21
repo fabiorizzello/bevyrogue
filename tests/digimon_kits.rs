@@ -9,6 +9,8 @@ mod common;
 mod agumon_baby_burner_primary;
 #[path = "digimon_kits/agumon_baby_burner_reactive.rs"]
 mod agumon_baby_burner_reactive;
+#[path = "digimon_kits/agumon_energy_gauge.rs"]
+mod agumon_energy_gauge;
 #[path = "digimon_kits/battery_loop_kernel.rs"]
 mod battery_loop_kernel;
 #[path = "digimon_kits/bouncing_fire_off_baseline.rs"]

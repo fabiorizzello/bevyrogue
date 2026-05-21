@@ -4,9 +4,7 @@ estimated_files: 7
 skills_used: []
 ---
 
-# T01: Closed-enum schema extensions + atomic id/asset/test migration
-
-In src/animation/anim_graph.rs add a required `id: AnimGraphId` field to AnimGraph (closed transparent newtype). Add `cues: Vec<FrameCue>` with #[serde(default)] to AnimNode. Add `FrameCue { at: u32, command: FrameCueCommand }` where FrameCueCommand is a CLOSED enum carrying either a presentation Command or ReleaseKernelCue. Add ReleaseKernelCue. Add KernelCue variant to the closed Predicate enum. Update all test files and RON assets atomically.
+# T01: Closed-enum schema extensions (AnimGraphId, FrameCue, ReleaseKernelCue, KernelCue predicate) + atomic asset/test migration
 
 ## Inputs
 
@@ -14,8 +12,13 @@ In src/animation/anim_graph.rs add a required `id: AnimGraphId` field to AnimGra
 
 ## Expected Output
 
-- `cargo test passes headless with id required everywhere`
-- `New round-trip seam test green: cues-absent graph loads, graph with cues parses, unknown variant rejected`
+- `src/animation/anim_graph.rs`
+- `src/animation/mod.rs`
+- `assets/digimon/agumon/anim_graph.ron`
+- `assets/digimon/renamon/anim_graph.ron`
+- `tests/anim_graph_asset.rs`
+- `tests/anim_graph_parse.rs`
+- `tests/anim_validation.rs`
 
 ## Verification
 

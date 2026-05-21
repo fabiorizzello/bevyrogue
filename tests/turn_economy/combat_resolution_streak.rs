@@ -91,7 +91,9 @@ fn test_apply_revive_fails_on_active() {
         None,
         None,
         None,
-    );
+            None,
+            None,
+        );
 
     assert_eq!(defender.hp_current, 50); // No change
     assert!(
@@ -128,7 +130,9 @@ fn child_gets_minus1_sp_after_2_consecutive_basics() {
         None,
         None,
         None,
-    );
+            None,
+            None,
+        );
     apply_legacy_ops(
         &basic_resolved,
         &attacker,
@@ -144,7 +148,9 @@ fn child_gets_minus1_sp_after_2_consecutive_basics() {
         None,
         None,
         None,
-    );
+            None,
+            None,
+        );
     assert_eq!(streak.count, 2);
     assert!(streak.qualifies_for_discount());
 
@@ -171,7 +177,9 @@ fn child_gets_minus1_sp_after_2_consecutive_basics() {
         None,
         None,
         None,
-    );
+            None,
+            None,
+        );
 
     assert!(outcome.sp_ok, "skill should succeed with discounted cost");
     assert_eq!(sp.current, 1, "paid 2 SP not 3 (discount applied)");
@@ -214,7 +222,9 @@ fn adult_gets_no_discount_after_consecutive_basics() {
         None,
         None,
         None,
-    );
+            None,
+            None,
+        );
 
     assert_eq!(sp.current, 0, "Adult paid full 3 SP, no discount");
     assert_eq!(
@@ -256,7 +266,9 @@ fn child_1_basic_not_enough_for_discount() {
         None,
         None,
         None,
-    );
+            None,
+            None,
+        );
 
     assert!(outcome.sp_ok);
     assert_eq!(sp.current, 3, "paid full 2 SP, no discount for 1 basic");
@@ -297,7 +309,9 @@ fn child_discount_resets_streak_needs_2_more_basics() {
         None,
         None,
         None,
-    );
+            None,
+            None,
+        );
     assert_eq!(streak.count, 0, "streak reset after discount use");
 
     // 1 more basic → still not enough
@@ -350,7 +364,9 @@ fn adult_5_consecutive_basics_no_discount() {
         None,
         None,
         None,
-    );
+            None,
+            None,
+        );
 
     assert!(outcome.sp_ok);
     assert_eq!(sp.current, 2, "Adult paid full 3 SP even with 5 basics");

@@ -5,6 +5,7 @@ use super::super::types::{
     ActionQueryKind, ImplementationStatus, ResourceAffordanceDetail, ResourceKind, ResourceStatus,
     UnitQuerySnapshot,
 };
+use super::shared::ult_readiness_from_snapshot;
 
 // Consumed by tests/action_affordance_query.rs.
 pub fn query_energy_cap_affordance(
@@ -109,13 +110,12 @@ pub(super) fn build_resource_details(
             },
         ],
         ImplementationStatus::Implemented => {
+            // Derive Ultimate detail from the unified gauge seam so energy-backed units
+            // (e.g. Agumon) report Energy values; legacy units stay on UltimateCharge.
+            let (ult_current, ult_trigger, _) = ult_readiness_from_snapshot(actor);
             vec![
                 resource_detail_status(ResourceKind::Sp, actor.sp, skill_def.sp_cost),
-                resource_detail_status(
-                    ResourceKind::Ultimate,
-                    actor.ultimate_current,
-                    actor.ultimate_trigger,
-                ),
+                resource_detail_status(ResourceKind::Ultimate, ult_current, ult_trigger),
             ]
         }
     }

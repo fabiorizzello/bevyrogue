@@ -93,7 +93,9 @@ fn unit_died_carries_defender_status_snapshot() {
         Some(&defender_bag),
         None,
         None,
-    );
+            None,
+            None,
+        );
 
     let died = events
         .iter()
@@ -172,7 +174,9 @@ fn unit_died_not_emitted_on_survival() {
         None,
         None,
         None,
-    );
+            None,
+            None,
+        );
 
     assert!(
         !events

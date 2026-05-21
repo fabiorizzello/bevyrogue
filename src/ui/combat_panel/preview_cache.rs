@@ -16,6 +16,7 @@ use crate::combat::{
     toughness::Toughness,
     turn_order::TurnOrder,
     types::{SkillId, UnitId},
+    ult_gauge::UltGaugeMetadata,
     ultimate::UltimateCharge,
     unit::{Commander, Ko, Unit},
 };
@@ -75,6 +76,7 @@ pub fn refresh_preview_damage_cache(world: &mut World) {
                 Option<&'static Stunned>,
                 Option<&'static Energy>,
                 Option<&'static RoundEnergyTracker>,
+                Option<&'static UltGaugeMetadata>,
             )>();
             for (
                 unit,
@@ -88,6 +90,7 @@ pub fn refresh_preview_damage_cache(world: &mut World) {
                 stunned,
                 energy,
                 tracker,
+                gauge_meta,
             ) in units_q.iter(world)
             {
                 if unit.id == active_actor_id {
@@ -106,6 +109,7 @@ pub fn refresh_preview_damage_cache(world: &mut World) {
                     commander.is_some(),
                     energy,
                     tracker,
+                    gauge_meta,
                 ));
             }
 

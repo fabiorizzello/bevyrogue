@@ -75,6 +75,7 @@ pub fn resolve_follow_up_action_system(
     mut event_writer: MessageWriter<CombatEvent>,
     registry: Option<Res<CombatKernelRegistry>>,
     mut actors: ResolveActorsQuery,
+    gauge_meta_q: Query<&'static crate::combat::ult_gauge::UltGaugeMetadata>,
     mut runtime: FollowUpRuntimeParams,
 ) {
     if let Some(intent) = intents.read().next() {
@@ -180,6 +181,7 @@ pub fn resolve_follow_up_action_system(
             &mut runtime.combat_rng,
             &mut runtime.entropy_q,
             &mut runtime.energy_q,
+            &gauge_meta_q,
             runtime.ext_regs.as_deref(),
             &mut runtime.intent_queue,
             &mut runtime.intent_execution_meta,
