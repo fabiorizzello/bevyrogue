@@ -464,6 +464,7 @@ fn t3_spawn_unit(app: &mut App, id: UnitId, team: Team, hp: i32) {
 #[test]
 fn target_dead_mid_loop_emits_unit_died_and_observable_overshoot() {
     let mut app = minimal_intent_app();
+    app.init_resource::<ActionLog>();
 
     let caster = UnitId(101);
     let target = UnitId(102);
@@ -539,12 +540,22 @@ fn target_dead_mid_loop_emits_unit_died_and_observable_overshoot() {
     let mut cursor = messages.get_cursor();
     let events: Vec<CombatEvent> = cursor.read(messages).cloned().collect();
 
+    let relevant_events: Vec<&CombatEvent> = events
+        .iter()
+        .filter(|event| {
+            matches!(
+                event.kind,
+                CombatEventKind::OnDamageDealt { .. } | CombatEventKind::UnitDied { .. }
+            )
+        })
+        .collect();
+
     // (a) UnitDied is emitted at least once — the death is visible in the event
     // stream rather than being silently swallowed. The current applier re-emits
     // UnitDied on every post-death hit; the contract guaranteed by this test is
     // "death is observable", not a specific dedup count. The repeated UnitDied
     // events are themselves a visible signature of "loop continued past death".
-    let died_count = events
+    let died_count = relevant_events
         .iter()
         .filter(|e| matches!(e.kind, CombatEventKind::UnitDied { .. }))
         .count();
@@ -554,23 +565,66 @@ fn target_dead_mid_loop_emits_unit_died_and_observable_overshoot() {
         died_count
     );
 
-    // (b) The applier keeps emitting OnDamageDealt past the killing hop because
-    // the runner has no world-HP introspection inside the loop body. This is the
-    // observable surface of R013's "target-dead-mid-loop" failure mode: a future
-    // skill author seeing damage_events > target_hp in the JSONL stream knows
-    // the loop overshot the death. The contract is "the overshoot is visible",
-    // not "the applier gates on alive".
-    let damage_events = events
+    // (b) The event stream must make the non-liveness-gated overshoot inspectable:
+    // all combat events stay on the same cast, and at least one damage event lands
+    // after the first visible death event.
+    let damage_events = relevant_events
         .iter()
         .filter(|e| matches!(e.kind, CombatEventKind::OnDamageDealt { .. }))
         .count();
+    assert_eq!(
+        damage_events, queued_damage,
+        "applier should emit one damage event per queued hop, even after death"
+    );
     assert!(
         damage_events > T3_TARGET_HP as usize,
         "loop must overshoot the killing hop so the failure is observable: \
          damage_events={damage_events}, target_hp={T3_TARGET_HP}"
     );
+    assert!(
+        relevant_events.iter().all(|event| {
+            event.cast_id == cast_id && event.source == caster && event.target == target
+        }),
+        "damage/death observability should stay within a single cast against the same target"
+    );
+    let first_death_ix = relevant_events
+        .iter()
+        .position(|event| matches!(event.kind, CombatEventKind::UnitDied { .. }))
+        .expect("death must be present in the event stream");
+    assert!(
+        relevant_events[first_death_ix + 1..]
+            .iter()
+            .any(|event| matches!(event.kind, CombatEventKind::OnDamageDealt { .. })),
+        "event stream must show at least one damage event after the first UnitDied so the overshoot is inspectable"
+    );
 
-    // (c) Sanity: target really is at or below zero HP after the run.
+    // (c) The durable action log tail should retain the same signature: a KO entry
+    // followed by a later hit entry, proving the presentation/runtime flow did not
+    // branch on liveness and that the overshoot remains inspectable after the
+    // message reader has advanced.
+    let action_log: Vec<bevyrogue::combat::log::LogEntry> = app
+        .world()
+        .resource::<ActionLog>()
+        .events
+        .iter()
+        .cloned()
+        .collect();
+    let first_ko_ix = action_log
+        .iter()
+        .position(|entry| matches!(entry, bevyrogue::combat::log::LogEntry::Ko { target: ko_target } if *ko_target == target))
+        .expect("ActionLog tail must retain a KO entry for the dead target");
+    assert!(
+        action_log[first_ko_ix + 1..].iter().any(|entry| {
+            matches!(
+                entry,
+                bevyrogue::combat::log::LogEntry::BasicHit { target: hit_target, .. }
+                    if *hit_target == target
+            )
+        }),
+        "ActionLog tail must retain a post-KO hit so the overshoot remains inspectable"
+    );
+
+    // (d) Sanity: target really is at or below zero HP after the run.
     let mut q = app.world_mut().query::<&Unit>();
     let final_hp = q
         .iter(app.world())
