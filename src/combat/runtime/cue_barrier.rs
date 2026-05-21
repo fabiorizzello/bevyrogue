@@ -39,6 +39,9 @@ pub struct CueBarrierStatus {
     pub released: bool,
     pub animation_node: Option<String>,
     pub animation_frame: Option<usize>,
+    /// `Some(n)` when the barrier is inside a loop body at iteration `n`.
+    /// `None` for linear (non-loop) presentation beats.
+    pub hop_index: Option<u32>,
 }
 
 impl CueBarrierStatus {
@@ -48,6 +51,7 @@ impl CueBarrierStatus {
         timeline_id: &'static str,
         beat_id: &'static str,
         cue_id: &'static str,
+        hop_index: Option<u32>,
     ) -> Self {
         Self {
             cast_id,
@@ -59,6 +63,7 @@ impl CueBarrierStatus {
             released: false,
             animation_node: None,
             animation_frame: None,
+            hop_index,
         }
     }
 
@@ -101,6 +106,7 @@ impl SuspendedTimeline {
             runner.timeline_id(),
             awaiting.beat_id,
             awaiting.cue_id,
+            awaiting.hop_index,
         );
         if let Some(animation_node) = awaiting.animation_node {
             status.animation_node = Some(animation_node.to_string());
@@ -144,12 +150,13 @@ impl SuspendedTimelineState {
     pub fn suspend(&mut self, suspended: SuspendedTimeline) {
         let status = suspended.status.clone();
         let msg = format!(
-            "timeline cue barrier awaiting cast_id={:?} skill_id={:?} timeline={} beat_id={} cue_id={} anim_node={} anim_frame={}",
+            "timeline cue barrier awaiting cast_id={:?} skill_id={:?} timeline={} beat_id={} cue_id={} hop_index={} anim_node={} anim_frame={}",
             status.cast_id,
             status.skill_id,
             status.timeline_id,
             status.beat_id,
             status.cue_id,
+            status.hop_index.map(|h| h.to_string()).unwrap_or_else(|| "none".to_string()),
             status.animation_node.as_deref().unwrap_or("none"),
             status
                 .animation_frame

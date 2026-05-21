@@ -177,6 +177,37 @@ pub fn baby_burner_flash_chip(display: Option<&BabyBurnerFlashDisplay>) -> Optio
 }
 
 #[cfg(feature = "windowed")]
+pub fn twin_core_badge_text(state: &super::TwinCoreBadgeState) -> String {
+    format!(
+        "Twin Core · {}/{}f",
+        state.primed_for_frames,
+        super::TWIN_CORE_BADGE_FRAMES
+    )
+}
+
+#[cfg(feature = "windowed")]
+pub fn twin_core_badge_tooltip(state: &super::TwinCoreBadgeState) -> String {
+    let signal = state.last_signal_name.as_deref().unwrap_or("?");
+    format!(
+        "owner=twin_core\nsignal={}\nframes={}/{}",
+        signal,
+        state.primed_for_frames,
+        super::TWIN_CORE_BADGE_FRAMES,
+    )
+}
+
+#[cfg(feature = "windowed")]
+pub fn twin_core_badge_chip(state: &super::TwinCoreBadgeState) -> Option<TelegraphChip> {
+    if !state.is_primed() {
+        return None;
+    }
+    Some(TelegraphChip {
+        label: twin_core_badge_text(state),
+        tooltip: twin_core_badge_tooltip(state),
+    })
+}
+
+#[cfg(feature = "windowed")]
 pub fn attr_color(a: Attribute) -> egui::Color32 {
     match a {
         Attribute::Vaccine => egui::Color32::from_rgb(80, 140, 220),

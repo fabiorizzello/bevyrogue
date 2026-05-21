@@ -39,8 +39,8 @@ fn canonical_asset_compiles_timeline_backed_skills_into_library_shape() {
         .collect();
     assert_eq!(
         ids.len(),
-        16,
-        "expected 16 timeline-backed canon skills after Agumon Sharp Claws routing"
+        17,
+        "expected 17 timeline-backed canon skills (Agumon Sharp Claws + Baby Burner T05)"
     );
 
     // child basic/active skills

@@ -24,32 +24,32 @@ Closes M002's user-facing loop. Upstream surfaces consumed: S02 two-clock cue ba
 
 ## Tasks
 
-- [ ] **T01: Bootstrap a windowed Agumon-vs-Agumon-dummy encounter with two on-screen sprites** `est:2h`
+- [x] **T01: Bootstrap a windowed Agumon-vs-Agumon-dummy encounter with two on-screen sprites** `est:2h`
   Why: today the windowed app starts with no units on screen and no party selection, so the slice cannot show any combat. Establish the smallest end-to-end pass that lights up the visible scene and gives every later task something to verify against.
   - Files: `src/combat/encounter/bootstrap.rs`, `src/bin/combat_cli.rs`, `src/bin/combat_cli/config.rs`, `src/windowed/mod.rs`, `src/windowed/render.rs`, `tests/encounter_bootstrap_windowed.rs`
   - Verify: cargo test --test encounter_bootstrap_windowed --features windowed
 
-- [ ] **T02: Sprite-anchored HP bar + damage-number HUD** `est:2h`
+- [x] **T02: Sprite-anchored HP bar + damage-number HUD** `est:2h`
   Why: CONTEXT requires HP visibly depleting via a minimal HUD anchored near each sprite; today HP is only textual in the roster panel and damage numbers render only in egui overlays decoupled from sprite position.
   - Files: `src/windowed/render.rs`, `src/ui/combat_panel/display.rs`, `src/ui/combat_panel/render.rs`, `tests/windowed_preview_cache.rs`, `tests/windowed_hud_hp_bar.rs`
   - Verify: cargo test --features windowed --test windowed_preview_cache --test windowed_hud_hp_bar
 
-- [ ] **T03: OnHitTaken → frame-counted target blink/hurt projection** `est:1h30m`
+- [x] **T03: OnHitTaken → frame-counted target blink/hurt projection** `est:1h30m`
   Why: the milestone demo requires targets to visibly react to hits; today there is no consumer of `CombatEventKind::OnHitTaken` in the render/animation layer.
   - Files: `src/ui/combat_panel/mod.rs`, `src/ui/combat_panel/labels.rs`, `src/windowed/mod.rs`, `src/windowed/render.rs`, `tests/windowed_preview_cache.rs`, `tests/windowed_target_hurt.rs`
   - Verify: cargo test --features windowed --test windowed_preview_cache --test windowed_target_hurt
 
-- [ ] **T04: Per-hop kernel cue: visible loop iterations = kernel hop_index** `est:4h`
+- [x] **T04: Per-hop kernel cue: visible loop iterations = kernel hop_index** `est:4h`
   Why: Baby Flame's `BeatKind::Loop` body fires N hops via `BeatEvent { hop_index }`, but the AnimGraphPlayer today only knows `PlaybackModifier::Loop { count }`, and writing the kernel hop count into a `count: N` field on the animation graph would leak gameplay numbers into presentation (anti-DRY invariant guarded by `tests/anim_gameplay_command_forbidden.rs`). The runtime must drive each visible iteration via a kernel cue.
   - Files: `src/combat/runtime/runner.rs`, `src/combat/runtime/cue_barrier.rs`, `src/combat/runtime/mod.rs`, `src/combat/turn_system/pipeline/timeline_exec.rs`, `src/animation/player.rs`, `assets/digimon/agumon/anim_graph.ron`, `tests/timeline_loop_hop_cue_parity.rs`
   - Verify: cargo test --test timeline_loop_hop_cue_parity --test timeline_two_clock_parity --test timeline_cue_barrier_pipeline --test anim_gameplay_command_forbidden --test anim_player_fsm --test bouncing_fire_off_baseline --test clip_atlas_parity
 
-- [ ] **T05: Baby Burner primary timeline + animation graph + thermal stack on impact** `est:3h`
+- [x] **T05: Baby Burner primary timeline + animation graph + thermal stack on impact** `est:3h`
   Why: `agumon_ult` (`Baby Burner`) has `implementation: Implemented` but no `timeline` field and no animation graph nodes, so the Ultimate button in the egui combat panel produces no visible beats — the kit demo cannot land its Ultimate.
   - Files: `assets/data/digimon/agumon/skills.ron`, `assets/digimon/agumon/anim_graph.ron`, `tests/agumon_baby_burner_primary.rs`
   - Verify: cargo test --test agumon_baby_burner_primary --test agumon_baby_burner_reactive --test data_skills_ron_validation --test data_skills_ron_roundtrip --test anim_graph_asset --test anim_player_fsm --test anim_gameplay_command_forbidden --test clip_atlas_parity
 
-- [ ] **T06: Twin Core synergy badge + slice verification matrix** `est:2h`
+- [x] **T06: Twin Core synergy badge + slice verification matrix** `est:2h`
   Why: Twin Core is the milestone's placeholder ally signal; the demo needs visible proof that the Ultimate resolves into the Twin Core synergy without actually spawning a second unit (M003+ territory). This task also runs the slice verification matrix and records environment limitations explicitly per MEM048/MEM053.
   - Files: `src/ui/combat_panel/mod.rs`, `src/ui/combat_panel/render.rs`, `src/ui/combat_panel/labels.rs`, `src/windowed/mod.rs`, `tests/windowed_twin_core_badge.rs`
   - Verify: cargo test --features windowed --test windowed_twin_core_badge --test windowed_preview_cache --test windowed_hud_hp_bar --test windowed_target_hurt

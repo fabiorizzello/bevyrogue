@@ -32,12 +32,30 @@
         "sharp_claws_recover": (
             frames: (6, 8),
         ),
+        "baby_burner_charge": (
+            frames: (23, 30),
+        ),
+        "baby_burner_launch": (
+            frames: (31, 37),
+            cues: [
+                (at: 1, command: ReleaseKernel(())),
+            ],
+        ),
+        "baby_burner_recovery": (
+            frames: (38, 45),
+        ),
     },
     transitions: [
         (
             from: "baby_flame_cast",
             to: Node("baby_flame_impact"),
             when: TimeInNode,
+            priority: Some((10)),
+        ),
+        (
+            from: "baby_flame_impact",
+            to: Node("baby_flame_impact"),
+            when: KernelCue,
             priority: Some((10)),
         ),
         (
@@ -62,6 +80,21 @@
         ),
         (
             from: "sharp_claws_recover",
+            to: Exit,
+            when: TimeInNode,
+        ),
+        (
+            from: "baby_burner_charge",
+            to: Node("baby_burner_launch"),
+            when: KernelCue,
+        ),
+        (
+            from: "baby_burner_launch",
+            to: Node("baby_burner_recovery"),
+            when: KernelCue,
+        ),
+        (
+            from: "baby_burner_recovery",
             to: Exit,
             when: TimeInNode,
         ),

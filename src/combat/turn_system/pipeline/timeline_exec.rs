@@ -3,16 +3,69 @@ use std::collections::VecDeque;
 use bevy::prelude::*;
 
 use crate::combat::events::{CombatEvent, CombatEventKind};
+use crate::combat::kernel::{CombatKernelRegistry, CombatKernelTransition};
 use crate::combat::runtime::applier::{IntentExecutionMeta, IntentQueue};
 use crate::combat::runtime::cue_barrier::{
     SuspendedTimeline, SuspendedTimelineState, TimelineClock,
 };
 use crate::combat::runtime::intent::CastId;
+use crate::combat::runtime::post_action::{
+    PostActionContext, PostActionUnitDied, PostActionUnitSnapshot, dispatch_post_action_reactions,
+};
 use crate::combat::runtime::runner::{BeatRunner, StepOutcome};
 use crate::combat::sp::SpPool;
 use crate::combat::state::{CombatPhase, InFlightAction, UltEffect};
+use crate::combat::status_effect::StatusBag;
+use crate::combat::team::Team;
+use crate::combat::types::UnitId;
+use crate::combat::unit::{SlotIndex, Unit};
 
 use super::super::set_phase;
+
+/// Compact pre/post-cast snapshot of a unit used to construct the
+/// `PostActionContext` for timeline-backed actions.
+#[derive(Clone)]
+struct PostActionUnitSlice {
+    unit_id: UnitId,
+    team: Team,
+    slot_index: Option<u8>,
+    hp_current: i32,
+    hp_max: i32,
+    alive: bool,
+    heated_remaining: u32,
+    status_remaining: Vec<crate::combat::status_effect::StatusEffectKind>,
+}
+
+fn snapshot_post_action_units(world: &mut World) -> Vec<PostActionUnitSlice> {
+    let mut q = world.query::<(
+        &Unit,
+        &Team,
+        Option<&SlotIndex>,
+        Option<&StatusBag>,
+    )>();
+    q.iter(world)
+        .map(|(unit, team, slot, status)| {
+            let (status_remaining, heated_remaining) = match status {
+                Some(b) => (
+                    b.iter().map(|inst| inst.kind.clone()).collect(),
+                    b.get_dur(&crate::combat::status_effect::StatusEffectKind::Heated)
+                        .unwrap_or(0),
+                ),
+                None => (vec![], 0),
+            };
+            PostActionUnitSlice {
+                unit_id: unit.id,
+                team: *team,
+                slot_index: slot.map(|s| s.0),
+                hp_current: unit.hp_current,
+                hp_max: unit.hp_max,
+                alive: unit.hp_current > 0,
+                heated_remaining,
+                status_remaining,
+            }
+        })
+        .collect()
+}
 
 const MAX_TIMELINE_STEPS: usize = 1024;
 
@@ -264,8 +317,18 @@ fn finalize_timeline_action(
     pending: VecDeque<crate::combat::runtime::Intent>,
 ) {
     prepare_timeline_intent_runtime(world, cast_id, inflight.follow_up_depth);
+
+    // Snapshot pre-cast unit state so we can compute the `UnitDied` payload
+    // for the primary target (heated/status remaining at moment of KO) and
+    // detect who actually died during this cast.
+    let pre_units = snapshot_post_action_units(world);
+
     world.resource_mut::<IntentQueue>().0.extend(pending);
     crate::combat::runtime::applier::intent_applier(world);
+
+    // Dispatch post-action reactions (e.g. Baby Burner reactive detonate).
+    dispatch_timeline_post_action(world, &inflight, cast_id, &pre_units);
+
     world
         .resource_mut::<IntentExecutionMeta>()
         .follow_up_depths
@@ -388,6 +451,93 @@ fn prepare_timeline_intent_runtime(world: &mut World, cast_id: CastId, follow_up
         .resource_mut::<IntentExecutionMeta>()
         .follow_up_depths
         .insert(cast_id, follow_up_depth);
+}
+
+fn dispatch_timeline_post_action(
+    world: &mut World,
+    inflight: &InFlightAction,
+    cast_id: CastId,
+    pre_units: &[PostActionUnitSlice],
+) {
+    let mut fallback_regs = None;
+    let regs_ptr = resolve_regs_ptr(world, &mut fallback_regs);
+
+    let post_units = snapshot_post_action_units(world);
+
+    let primary_target = inflight.action.target;
+    let unit_died = pre_units
+        .iter()
+        .find(|u| u.unit_id == primary_target && u.alive)
+        .and_then(|pre| {
+            post_units
+                .iter()
+                .find(|u| u.unit_id == primary_target && !u.alive)
+                .map(|_| {
+                    PostActionUnitDied::new(pre.status_remaining.clone(), pre.heated_remaining)
+                })
+        });
+
+    let roster: Vec<PostActionUnitSnapshot> = post_units
+        .iter()
+        .map(|u| {
+            PostActionUnitSnapshot::new(
+                u.unit_id,
+                u.team,
+                u.slot_index,
+                u.hp_current,
+                u.hp_max,
+                u.alive,
+            )
+        })
+        .collect();
+
+    let ctx = PostActionContext::new(
+        inflight.action.skill_id.clone(),
+        inflight.action.source,
+        primary_target,
+        cast_id,
+        inflight.follow_up_depth,
+        unit_died,
+        roster,
+    );
+
+    // SAFETY: resolve_regs_ptr returns either a pointer into `world` or into
+    // the local `fallback_regs`. `dispatch_post_action_reactions` only reads.
+    let queue = unsafe { dispatch_post_action_reactions(&*regs_ptr, &ctx) };
+
+    if !queue.intents.is_empty() {
+        world.resource_mut::<IntentQueue>().0.extend(queue.intents);
+        crate::combat::runtime::applier::intent_applier(world);
+    }
+
+    if !queue.transitions.is_empty() {
+        // Expand each transition through the kernel registry first (immutable
+        // read), then write the resulting events. The registry and the
+        // messages resource cannot be borrowed simultaneously.
+        let registry_ptr = world
+            .get_resource::<CombatKernelRegistry>()
+            .map(|r| r as *const CombatKernelRegistry);
+        let mut expanded: Vec<CombatKernelTransition> = Vec::new();
+        for transition in queue.transitions {
+            match registry_ptr {
+                Some(p) => unsafe { expanded.extend((*p).dispatch(transition)) },
+                None => expanded.push(transition),
+            }
+        }
+        let mut events = world.resource_mut::<bevy::ecs::message::Messages<CombatEvent>>();
+        for transition in expanded {
+            events.write(CombatEvent {
+                kind: CombatEventKind::OnKernelTransition { transition },
+                source: inflight.action.source,
+                target: primary_target,
+                follow_up_depth: inflight.follow_up_depth,
+                cast_id,
+            });
+        }
+    }
+
+    // Touch fallback_regs to keep its lifetime in scope until regs_ptr is unused.
+    let _ = (regs_ptr, &fallback_regs);
 }
 
 fn resolve_regs_ptr<'a>(

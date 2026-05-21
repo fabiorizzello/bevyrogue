@@ -61,6 +61,9 @@ pub struct AwaitingCueInfo {
     pub beat_id: BeatId,
     pub cue_id: &'static str,
     pub animation_node: Option<&'static str>,
+    /// `Some(n)` when the barrier is inside a `BeatKind::Loop` body at iteration `n`.
+    /// `None` for linear (non-loop) presentation beats.
+    pub hop_index: Option<u32>,
 }
 
 /// FSM engine that drives a `CompiledTimeline` beat-by-beat.
@@ -90,6 +93,10 @@ pub struct BeatRunner {
     /// Some(beat_id) when we fired a Presentation-bearing beat (Windowed) and are
     /// waiting for `resume_cue()`. `step()` returns `AwaitingCue` while this is set.
     awaiting_cue: Option<BeatId>,
+    /// Cached presentation of the stalled beat so loop-body beats (not in
+    /// `timeline.beats`) can be inspected via `awaiting_cue_info()` without a
+    /// `find_beat` lookup that only searches top-level beats.
+    awaiting_presentation: Option<crate::combat::runtime::timeline::Presentation>,
     /// Set by `resume_cue()`. Tells the next `step()` to skip re-firing the
     /// already-fired presentation beat and advance cursor/body_cursor directly.
     cue_just_resumed: bool,
@@ -114,6 +121,7 @@ impl BeatRunner {
             last_beat_targets: Vec::new(),
             clock: Clock::HeadlessAuto,
             awaiting_cue: None,
+            awaiting_presentation: None,
             cue_just_resumed: false,
         }
     }
@@ -141,12 +149,15 @@ impl BeatRunner {
 
     pub fn awaiting_cue_info(&self) -> Option<AwaitingCueInfo> {
         let beat_id = self.awaiting_cue?;
-        let beat = find_beat(&self.timeline, beat_id);
-        let presentation = beat.presentation.as_ref()?;
+        // Use the cached presentation — loop body beats are not in `timeline.beats`
+        // so `find_beat` would panic on them.
+        let presentation = self.awaiting_presentation.as_ref()?;
+        let hop_index = self.loop_stack.last().map(|f| f.hop_index);
         Some(AwaitingCueInfo {
             beat_id,
             cue_id: presentation.cue_id,
             animation_node: presentation.anim,
+            hop_index,
         })
     }
 
@@ -225,6 +236,7 @@ impl BeatRunner {
                 // Windowed stall: presentation beat fired once, now latch.
                 if cur_beat.presentation.is_some() && self.clock == Clock::Windowed {
                     self.awaiting_cue = Some(cur_beat.id);
+                    self.awaiting_presentation = cur_beat.presentation.clone();
                     return StepOutcome::AwaitingCue;
                 }
             }
@@ -317,6 +329,7 @@ impl BeatRunner {
                     // Windowed stall: presentation beat fired once, now latch.
                     if beat.presentation.is_some() && self.clock == Clock::Windowed {
                         self.awaiting_cue = Some(beat_id);
+                        self.awaiting_presentation = beat.presentation.clone();
                         return StepOutcome::AwaitingCue;
                     }
                 }
@@ -351,6 +364,7 @@ impl BeatRunner {
     pub fn resume_cue(&mut self) {
         if self.awaiting_cue.is_some() {
             self.awaiting_cue = None;
+            self.awaiting_presentation = None;
             self.cue_just_resumed = true;
         }
     }

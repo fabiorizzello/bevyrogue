@@ -457,6 +457,7 @@ fn telegraph_chip_helpers_surface_and_hide_sharp_claws_barriers_without_egui() {
         released: false,
         animation_node: Some("sharp_claws_strike".into()),
         animation_frame: Some(4),
+        hop_index: None,
     };
 
     assert_eq!(

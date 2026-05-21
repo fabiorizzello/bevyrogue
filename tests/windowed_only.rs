@@ -4,5 +4,11 @@
 
 #[path = "windowed_only/phase_strip_readonly.rs"]
 mod phase_strip_readonly;
+#[path = "windowed_only/windowed_hud_hp_bar.rs"]
+mod windowed_hud_hp_bar;
 #[path = "windowed_only/windowed_preview_cache.rs"]
 mod windowed_preview_cache;
+#[path = "windowed_only/windowed_target_hurt.rs"]
+mod windowed_target_hurt;
+#[path = "windowed_only/windowed_twin_core_badge.rs"]
+mod windowed_twin_core_badge;

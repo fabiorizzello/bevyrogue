@@ -34,7 +34,8 @@ Done-when: the new badge test passes; the verification matrix is green; environm
 
 ## Verification
 
-cargo test --features windowed --test windowed_twin_core_badge --test windowed_preview_cache --test windowed_hud_hp_bar --test windowed_target_hurt
+cargo test --features windowed --test windowed_only
+cargo test --test timeline --test digimon_kits --test animation --test assets_data --test bootstrap_encounter
 
 ## Observability Impact
 

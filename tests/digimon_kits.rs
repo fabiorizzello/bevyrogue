@@ -5,6 +5,8 @@
 #[path = "common/mod.rs"]
 mod common;
 
+#[path = "digimon_kits/agumon_baby_burner_primary.rs"]
+mod agumon_baby_burner_primary;
 #[path = "digimon_kits/agumon_baby_burner_reactive.rs"]
 mod agumon_baby_burner_reactive;
 #[path = "digimon_kits/battery_loop_kernel.rs"]

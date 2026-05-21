@@ -154,11 +154,22 @@ pub(in crate::combat::runtime::applier) fn apply_deal_damage(
 
     if hp_after.is_some_and(|hp| hp <= 0) {
         world.entity_mut(tgt_entity).insert(Ko);
+        // Read the live StatusBag at KO time so reactive seams (e.g.
+        // Baby Burner) see the Heated count that was on the target at death.
+        let (status_remaining, heated_remaining) = world
+            .get::<StatusBag>(tgt_entity)
+            .map(|b| {
+                (
+                    b.iter().map(|inst| inst.kind.clone()).collect::<Vec<_>>(),
+                    b.get_dur(&StatusEffectKind::Heated).unwrap_or(0),
+                )
+            })
+            .unwrap_or_else(|| (vec![], 0));
         emit_event(
             world,
             CombatEventKind::UnitDied {
-                status_remaining: vec![],
-                heated_remaining: 0,
+                status_remaining,
+                heated_remaining,
             },
             source,
             target,

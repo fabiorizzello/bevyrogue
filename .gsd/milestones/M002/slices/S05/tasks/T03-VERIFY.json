@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T03",
+  "unitId": "M002/S05/T03",
+  "timestamp": 1779359540914,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "cargo test --features windowed --test windowed_preview_cache --test windowed_target_hurt",
+      "exitCode": 101,
+      "durationMs": 194,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}

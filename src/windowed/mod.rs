@@ -59,6 +59,10 @@ impl Plugin for UiPlugin {
             .init_resource::<bevyrogue::ui::combat_panel::PendingAction>()
             .init_resource::<bevyrogue::ui::combat_panel::PreviewDamageCache>()
             .init_resource::<bevyrogue::ui::combat_panel::BabyBurnerFlashState>()
+            .init_resource::<bevyrogue::ui::combat_panel::HpBarView>()
+            .init_resource::<bevyrogue::ui::combat_panel::FloatingDamageView>()
+            .init_resource::<bevyrogue::ui::combat_panel::TargetHurtState>()
+            .init_resource::<bevyrogue::ui::combat_panel::TwinCoreBadgeState>()
             .init_resource::<bevyrogue::ui::phase_strip::PhaseStripDisplay>()
             .add_systems(
                 Update,
@@ -66,6 +70,12 @@ impl Plugin for UiPlugin {
                     bevyrogue::ui::combat_panel::advance_baby_burner_flash_state,
                     bevyrogue::ui::combat_panel::refresh_preview_damage_cache,
                     bevyrogue::ui::combat_panel::observe_baby_burner_flash,
+                    bevyrogue::ui::combat_panel::compute_hp_bar_view,
+                    bevyrogue::ui::combat_panel::compute_floating_damage_view,
+                    bevyrogue::ui::combat_panel::observe_target_hurt,
+                    bevyrogue::ui::combat_panel::tick_target_hurt_state,
+                    bevyrogue::ui::combat_panel::observe_twin_core_badge,
+                    bevyrogue::ui::combat_panel::tick_twin_core_badge,
                 )
                     .chain(),
             )

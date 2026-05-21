@@ -16,7 +16,7 @@
 - [x] **S04: S04** `risk:medium` `depends:[]`
   > After this: Baby Burner reactive detonate with a flash VFX (Rust code, no RON/editor); zero non-determinism, R004 intact, headless tests unchanged.
 
-- [ ] **S05: Full kit: Agumon vs Agumon dummy** `risk:medium` `depends:[S02,S04]`
+- [x] **S05: S05** `risk:medium` `depends:[]`
   > After this: Agumon vs Agumon dummy at full kit; multi-hit loop visibly = kernel hop count; target blink/hurt driven by CombatEvent.
 
 - [ ] **S06: Windowed smoke end-to-end + repomix review gate** `risk:low` `depends:[S03,S05]`
