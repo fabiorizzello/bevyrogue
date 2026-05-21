@@ -7,7 +7,6 @@
 //! cast_id propagation on the event is verified in T03 (additive non-breaking
 //! field on `CombatEvent` arrives there).
 
-mod common;
 
 use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::{
@@ -17,7 +16,7 @@ use bevyrogue::combat::{
     types::{Attribute, DamageTag, EvoStage, UnitId},
     unit::Unit,
 };
-use common::app::minimal_intent_app;
+use crate::common::app::minimal_intent_app;
 
 fn spawn_unit(app: &mut App, id: UnitId, team: Team, attribute: Attribute, hp: i32) {
     app.world_mut().spawn((

@@ -1,4 +1,3 @@
-mod common;
 
 use bevyrogue::combat::events::CombatEventKind;
 use bevyrogue::combat::resolution::apply_legacy_ops;
@@ -17,7 +16,7 @@ use bevyrogue::data::skills_ron::{
     Effect, LegalityReasonCode, SelfTargetRule, SkillDef, SkillImplementation, SkillTargeting,
     TargetLife, TargetShape, TargetSide,
 };
-use common::resolution_helpers::{basic_intent, resolved, revive_skill, skill, unit};
+use crate::common::resolution_helpers::{basic_intent, resolved, revive_skill, skill, unit};
 
 #[test]
 fn resolve_action_uses_targeting_shape_over_damage_effect_shape() {
