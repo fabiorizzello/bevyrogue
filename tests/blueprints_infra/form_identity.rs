@@ -14,8 +14,7 @@ use bevyrogue::combat::{
 };
 use bevyrogue::data::units_ron::{UnitDef, UnitRoster};
 
-mod common;
-use common::{app::form_identity_runtime_app as setup_app, load_roster, load_skill_book};
+use crate::common::{app::form_identity_runtime_app as setup_app, load_roster, load_skill_book};
 
 fn pilot(roster: &UnitRoster, name: &str) -> UnitDef {
     roster

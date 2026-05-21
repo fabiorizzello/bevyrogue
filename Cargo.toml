@@ -28,7 +28,12 @@ inquire = "0.7"
 moonshine-kind = "0.4.2"
 
 [features]
-default = []
+# Default to `dev` so plain `cargo check`/`cargo test`/`cargo run` pick up
+# `bevy/dynamic_linking`. Avoids static relink of the bevy_* graph on every
+# rebuild and stops duplicating bevy symbols across every integration-test
+# binary. Resulting binaries require the bevy `.so` from `target/` — dev-only,
+# not distributable. Use `--no-default-features` for any future release path.
+default = ["dev"]
 # Pulls winit + wgpu + bevy_ui + egui only when building for visual inspection.
 # Includes `bevy/dynamic_linking` so incremental rebuilds don't statically relink
 # the entire bevy_* graph. Dev-only; produces a non-distributable binary that
@@ -114,9 +119,6 @@ path = "tests/tentomon_blueprint.rs"
 name = "renamon_precision_runtime"
 path = "tests/renamon_precision_runtime.rs"
 
-[[test]]
-name = "digimon_signal_registry"
-path = "tests/digimon_signal_registry.rs"
 
 [[test]]
 name = "dorumon_predator_runtime"
@@ -129,6 +131,10 @@ path = "tests/dorumon_blueprint.rs"
 [profile.dev]
 opt-level = 1
 codegen-backend = "cranelift"
+# Trim DWARF to line tables only: backtraces stay usable (file:line) but
+# variable/type entries are dropped. Roughly -40/60% on the `.rlib`s in
+# `target/debug/deps`, which dominate disk usage for this project.
+debug = "line-tables-only"
 
 # Cranelift backend ICEs on many third-party crates (rustc nightly bug,
 # concurrency_limiter.rs:84 `Option::unwrap() on None`). Force LLVM for ALL
@@ -137,4 +143,7 @@ codegen-backend = "cranelift"
 [profile.dev.package."*"]
 codegen-backend = "llvm"
 opt-level = 0
+# 95% of `target/debug/deps` weight lives in third-party crates — strip their
+# DWARF too. If you ever need gdb/lldb inside a dep, flip this to "full".
+debug = "line-tables-only"
 
