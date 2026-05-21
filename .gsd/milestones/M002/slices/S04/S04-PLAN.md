@@ -86,7 +86,7 @@ Consumes S02's deterministic cue-barrier/runtime contract and existing `UnitDied
   - Files: `src/ui/combat_panel/mod.rs`, `src/ui/combat_panel/labels.rs`, `src/ui/combat_panel/render.rs`, `tests/windowed_preview_cache.rs`
   - Verify: cargo test --features windowed --test windowed_preview_cache
 
-- [ ] **T04: Run S04 regression matrix and document live-smoke limits** `est:1h`
+- [x] **T04: Run S04 regression matrix and document live-smoke limits** `est:1h`
   ---
   estimated_steps: 5
   estimated_files: 0
