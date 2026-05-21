@@ -23,6 +23,7 @@ Test workflow (nextest `agent` profile, seeded `bevy_rand`, insta snapshots): `d
 | R004 | Determinism | No wall-clock, no unseeded RNG. Seeded `bevy_rand` + insta depend on it. | 2026-05-18 |
 | R005 | Dep gating | No winit/wgpu/egui deps outside `windowed`. | 2026-05-18 |
 | R006 | Repo hygiene | No `.md` in repo root — use `docs/` or `.gsd/`. | 2026-05-18 |
+| K001 | global | never execute the windowed binary from auto mode, if verification is needed demand the user to verify manually | — | manual |
 
 ## Patterns
 
