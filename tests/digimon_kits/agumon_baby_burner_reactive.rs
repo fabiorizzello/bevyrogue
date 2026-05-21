@@ -1,4 +1,3 @@
-mod common;
 
 use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::blueprints::agumon::baby_burner;

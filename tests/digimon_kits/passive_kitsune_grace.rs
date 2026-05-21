@@ -1,4 +1,3 @@
-mod common;
 
 use bevy::{ecs::message::MessageCursor, ecs::system::RunSystemOnce, prelude::*};
 use bevyrogue::combat::{
@@ -13,7 +12,7 @@ use bevyrogue::combat::{
     types::{Attribute, EvoStage, UnitId},
     unit::Unit,
 };
-use common::app::passive_dispatch_app;
+use crate::common::app::passive_dispatch_app;
 use std::sync::Arc;
 
 const RENAMON_ID: UnitId = UnitId(10);

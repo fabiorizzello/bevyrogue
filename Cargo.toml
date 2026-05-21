@@ -61,46 +61,7 @@ path = "examples/dump_schedule.rs"
 
 
 
-[[test]]
-name = "holy_support_mechanics"
-path = "tests/holy_support_mechanics.rs"
 
-[[test]]
-name = "holy_support_resolution"
-path = "tests/holy_support_resolution.rs"
-
-[[test]]
-name = "holy_support_affordance"
-path = "tests/holy_support_affordance.rs"
-
-[[test]]
-name = "holy_support_roster_contract"
-path = "tests/holy_support_roster_contract.rs"
-
-[[test]]
-name = "battery_loop_kernel"
-path = "tests/battery_loop_kernel.rs"
-
-[[test]]
-name = "predator_loop_kernel"
-path = "tests/predator_loop_kernel.rs"
-
-[[test]]
-name = "tentomon_blueprint"
-path = "tests/tentomon_blueprint.rs"
-
-[[test]]
-name = "renamon_precision_runtime"
-path = "tests/renamon_precision_runtime.rs"
-
-
-[[test]]
-name = "dorumon_predator_runtime"
-path = "tests/dorumon_predator_runtime.rs"
-
-[[test]]
-name = "dorumon_blueprint"
-path = "tests/dorumon_blueprint.rs"
 
 [profile.dev]
 opt-level = 1
