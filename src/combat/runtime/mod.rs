@@ -46,8 +46,8 @@ pub use blueprint_state::BlueprintState;
 pub use builtins::register_kernel_builtins;
 pub use clock::Clock;
 pub use cue_barrier::{
-    CueBarrierStatus, CueReleaseResult, SuspendedTimelineState, TimelineClock,
-    request_timeline_cue_release,
+    CUE_BARRIER_TIMEOUT_FRAMES, CueBarrierStatus, CueReleaseResult, SuspendedTimelineState,
+    TimelineClock, request_timeline_cue_release,
 };
 pub use event_bridge::combat_event_to_signal_system;
 pub use event_filter::EventFilter;

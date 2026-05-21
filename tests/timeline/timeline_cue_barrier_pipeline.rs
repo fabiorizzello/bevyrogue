@@ -7,8 +7,9 @@ use bevyrogue::combat::{
     log::{ActionLog, LogEntry},
     rng::CombatRng,
     runtime::{
-        Clock, CueReleaseResult, ExtRegistries, SuspendedTimelineState, TimelineClock,
-        register_kernel_builtins, request_timeline_cue_release,
+        Clock, CUE_BARRIER_TIMEOUT_FRAMES, CueReleaseResult, ExtRegistries,
+        SuspendedTimelineState, TimelineClock, register_kernel_builtins,
+        request_timeline_cue_release,
         timeline::{Beat, BeatEdge, BeatKind, BeatPayload, TimelineLibrary},
     },
     sp::SpPool,
@@ -412,6 +413,88 @@ fn windowed_basic_action_suspends_until_release_then_matches_headless() {
         "resume must not replay damage on later frames"
     );
     assert_eq!(target_hp(&mut windowed), expected_hp);
+}
+
+#[test]
+fn windowed_basic_action_times_out_then_force_resumes_with_structured_diagnostics() {
+    let expected_hp = expected_barrier_basic_final_hp();
+    let book = SkillBook(vec![barrier_basic_skill("barrier_basic")]);
+    let mut app = build_app(book, Clock::Windowed, false);
+    spawn_actor(&mut app, SkillId("barrier_basic".into()));
+    spawn_target(&mut app);
+    let mut cursor = app
+        .world_mut()
+        .resource_mut::<Messages<CombatEvent>>()
+        .get_cursor_current();
+
+    fire_basic(&mut app);
+    let first_frame = collect_events(&app, &mut cursor);
+    assert_eq!(damage_event_count(&first_frame), 0);
+
+    let initial = app
+        .world()
+        .resource::<SuspendedTimelineState>()
+        .active_status()
+        .expect("windowed action should suspend before timeout");
+    assert_eq!(initial.cue_id, IMPACT_CUE);
+    assert_eq!(initial.waited_frames, 0);
+    assert_eq!(initial.timeout_frames, CUE_BARRIER_TIMEOUT_FRAMES);
+
+    for frame in 0..(CUE_BARRIER_TIMEOUT_FRAMES - 1) {
+        app.update();
+        let frame_events = collect_events(&app, &mut cursor);
+        assert_eq!(damage_event_count(&frame_events), 0);
+
+        let active = app
+            .world()
+            .resource::<SuspendedTimelineState>()
+            .active_status()
+            .expect("barrier should remain active until the timeout frame");
+        assert_eq!(active.waited_frames, frame + 1);
+        assert!(active.awaiting_release);
+        assert!(!active.released);
+        assert!(!active.timed_out);
+        assert_eq!(
+            app.world().resource::<CombatState>().phase,
+            CombatPhase::Resolving
+        );
+    }
+
+    app.update();
+    let timeout_frame = collect_events(&app, &mut cursor);
+    assert_eq!(damage_event_count(&timeout_frame), 1);
+    assert_eq!(target_hp(&mut app), expected_hp);
+    assert_eq!(
+        app.world().resource::<CombatState>().phase,
+        CombatPhase::WaitingAction
+    );
+
+    let barrier = app.world().resource::<SuspendedTimelineState>();
+    assert!(barrier.active_status().is_none());
+    let last = barrier
+        .last_status()
+        .expect("timeout should persist barrier diagnostics after resume");
+    assert_eq!(last.cue_id, IMPACT_CUE);
+    assert_eq!(last.beat_id, "impact");
+    assert!(last.timed_out);
+    assert!(last.released);
+    assert!(!last.awaiting_release);
+    assert_eq!(last.waited_frames, CUE_BARRIER_TIMEOUT_FRAMES);
+    assert_eq!(last.timeout_frames, CUE_BARRIER_TIMEOUT_FRAMES);
+    assert_eq!(barrier.last_release_result(), Some(CueReleaseResult::TimedOut));
+    let msg = barrier
+        .last_message()
+        .expect("timeout recovery should keep a diagnostic message");
+    assert!(msg.contains("timed out: force-resuming"));
+    assert!(msg.contains("timeline=barrier_basic"));
+    assert!(msg.contains("beat_id=impact"));
+    assert!(msg.contains(&format!("cue_id={IMPACT_CUE}")));
+    assert!(msg.contains(&format!("waited_frames={CUE_BARRIER_TIMEOUT_FRAMES}")));
+    assert!(msg.contains("post_timeout_outcome=completed"));
+
+    app.update();
+    let after_done = collect_events(&app, &mut cursor);
+    assert!(after_done.is_empty(), "timeout resume must not replay damage");
 }
 
 #[test]

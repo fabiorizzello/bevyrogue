@@ -140,6 +140,11 @@ pub fn continue_suspended_timeline_system(world: &mut World) {
 pub fn continue_suspended_timeline(world: &mut World) {
     world.init_resource::<SuspendedTimelineState>();
 
+    {
+        let mut barrier = world.resource_mut::<SuspendedTimelineState>();
+        barrier.tick_timeout();
+    }
+
     let Some(mut suspended) = ({
         let mut barrier = world.resource_mut::<SuspendedTimelineState>();
         barrier.take_released()

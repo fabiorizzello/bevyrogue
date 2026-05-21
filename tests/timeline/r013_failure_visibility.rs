@@ -26,8 +26,8 @@ use bevyrogue::combat::{
     log::ActionLog,
     rng::CombatRng,
     runtime::{
-        CastIdGen, Clock, ExtRegistries, Intent, IntentQueue, SuspendedTimelineState,
-        TimelineClock, register_kernel_builtins,
+        CUE_BARRIER_TIMEOUT_FRAMES, CastIdGen, Clock, ExtRegistries, Intent, IntentQueue,
+        SuspendedTimelineState, TimelineClock, register_kernel_builtins,
         runner::{BeatRunner, StepOutcome},
         skill_ctx::{SkillCtx, SkillCtxMode},
         timeline::{
@@ -222,7 +222,7 @@ fn t1_target_hp(app: &mut App) -> i32 {
 }
 
 #[test]
-fn cue_never_released_keeps_suspension_visible_across_frames() {
+fn cue_never_released_times_out_force_resumes_with_structured_state() {
     let mut app = t1_build_app();
 
     app.world_mut().write_message(ActionIntent::Basic {
@@ -231,7 +231,6 @@ fn cue_never_released_keeps_suspension_visible_across_frames() {
     });
     app.update();
 
-    // The barrier must latch on the impact cue.
     let active = app
         .world()
         .resource::<SuspendedTimelineState>()
@@ -241,20 +240,22 @@ fn cue_never_released_keeps_suspension_visible_across_frames() {
     assert_eq!(active.beat_id, "impact");
     assert!(active.awaiting_release);
     assert!(!active.released);
+    assert!(!active.timed_out);
+    assert_eq!(active.waited_frames, 0);
+    assert_eq!(active.timeout_frames, CUE_BARRIER_TIMEOUT_FRAMES);
+    let initial_cast_id = active.cast_id;
     assert_eq!(t1_target_hp(&mut app), 200);
     assert_eq!(
         app.world().resource::<CombatState>().phase,
         CombatPhase::Resolving
     );
 
-    // Tick many frames without ever calling `request_timeline_cue_release`.
-    // The kernel must NOT silently advance, NOT panic, NOT timeout — the
-    // observable surface must stay populated so an operator can see the stall.
     let mut cursor = app
         .world_mut()
         .resource_mut::<Messages<CombatEvent>>()
         .get_cursor_current();
-    for _ in 0..200 {
+
+    for frame in 0..(CUE_BARRIER_TIMEOUT_FRAMES - 1) {
         app.update();
         let frame_events: Vec<CombatEvent> = cursor
             .read(app.world().resource::<Messages<CombatEvent>>())
@@ -266,25 +267,81 @@ fn cue_never_released_keeps_suspension_visible_across_frames() {
             .count();
         assert_eq!(
             damage_count, 0,
-            "damage must not land while the cue is never released"
+            "damage must not land before the timeout budget expires"
+        );
+
+        let active = app
+            .world()
+            .resource::<SuspendedTimelineState>()
+            .active_status()
+            .expect("barrier should remain active until the timeout frame");
+        assert_eq!(active.waited_frames, frame + 1);
+        assert!(active.awaiting_release);
+        assert!(!active.released);
+        assert!(!active.timed_out);
+        assert_eq!(
+            app.world().resource::<CombatState>().phase,
+            CombatPhase::Resolving,
+            "phase must stay Resolving until forced resume fires"
         );
     }
 
-    let still_active = app
-        .world()
-        .resource::<SuspendedTimelineState>()
-        .active_status()
-        .expect("suspension must remain observable after 200 idle frames");
-    assert_eq!(still_active.cue_id, T1_CUE);
-    assert_eq!(still_active.beat_id, "impact");
-    assert!(still_active.awaiting_release);
-    assert!(!still_active.released);
-    assert_eq!(t1_target_hp(&mut app), 200);
+    app.update();
+    let timeout_frame: Vec<CombatEvent> = cursor
+        .read(app.world().resource::<Messages<CombatEvent>>())
+        .cloned()
+        .collect();
+    assert_eq!(
+        timeout_frame
+            .iter()
+            .filter(|e| matches!(e.kind, CombatEventKind::OnDamageDealt { .. }))
+            .count(),
+        1,
+        "timeout frame should force-resume exactly once and land the queued damage"
+    );
+    assert!(
+        t1_target_hp(&mut app) < 200,
+        "forced resume should let the queued impact land exactly once"
+    );
     assert_eq!(
         app.world().resource::<CombatState>().phase,
-        CombatPhase::Resolving,
-        "phase must stay Resolving so the failure is visible to upstream observers"
+        CombatPhase::WaitingAction,
+        "forced resume must let combat continue normally"
     );
+
+    let barrier = app.world().resource::<SuspendedTimelineState>();
+    assert!(
+        barrier.active_status().is_none(),
+        "forced resume should clear the active suspension once the timeline finishes"
+    );
+    let last = barrier
+        .last_status()
+        .expect("timeout should persist the last barrier snapshot");
+    assert_eq!(last.cast_id, initial_cast_id);
+    assert_eq!(last.skill_id, SkillId("r013_never_release".into()));
+    assert_eq!(last.timeline_id, "r013_never_release");
+    assert_eq!(last.beat_id, "impact");
+    assert_eq!(last.cue_id, T1_CUE);
+    assert!(last.released);
+    assert!(!last.awaiting_release);
+    assert!(last.timed_out);
+    assert_eq!(last.waited_frames, CUE_BARRIER_TIMEOUT_FRAMES);
+    assert_eq!(last.timeout_frames, CUE_BARRIER_TIMEOUT_FRAMES);
+    assert_eq!(barrier.last_release_result(), Some(bevyrogue::combat::runtime::CueReleaseResult::TimedOut));
+    let msg = barrier
+        .last_message()
+        .expect("timeout recovery should leave a diagnostic message");
+    assert!(msg.contains("timed out: force-resuming"));
+    assert!(msg.contains("cast_id=CastId(1)"));
+    assert!(msg.contains("skill_id=SkillId(\"r013_never_release\")"));
+    assert!(msg.contains("timeline=r013_never_release"));
+    assert!(msg.contains("beat_id=impact"));
+    assert!(msg.contains(&format!("cue_id={T1_CUE}")));
+    assert!(msg.contains(&format!("waited_frames={CUE_BARRIER_TIMEOUT_FRAMES}")));
+    assert!(msg.contains(&format!("timeout_frames={CUE_BARRIER_TIMEOUT_FRAMES}")));
+    assert!(msg.contains("anim_node=none"));
+    assert!(msg.contains("anim_frame=none"));
+    assert!(msg.contains("post_timeout_outcome=completed"));
 }
 
 // ────────────────────────────────────────────────────────────────────────────
