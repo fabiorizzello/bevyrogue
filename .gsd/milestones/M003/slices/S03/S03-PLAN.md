@@ -21,7 +21,7 @@ Upstream consumed: Command::SpawnParticle/ParticleId/VfxLocus/VfxMotion (src/ani
 
 ## Tasks
 
-- [ ] **T01: Add Bevy-free VfxSpawnDescriptor + resolve_locus and its headless structural test** `est:1h`
+- [x] **T01: Add Bevy-free VfxSpawnDescriptor + resolve_locus and its headless structural test** `est:1h`
   Why: the VFX seam (Command::SpawnParticle) is fully defined but has no renderable counterpart and nothing in src/ consumes it; the lib needs a pure, Bevy-free descriptor so tests/ (lib-only link) can prove the seam yields a renderable spawn rather than an opaque ParticleId — this is the slice's only CI-provable deliverable and de-risks the windowed split, exactly as S01's AtlasGeometry did.
   - Files: `src/animation/vfx.rs`, `src/animation/mod.rs`, `tests/animation/vfx_spawn_descriptor.rs`, `tests/animation.rs`
   - Verify: cargo test --test animation
