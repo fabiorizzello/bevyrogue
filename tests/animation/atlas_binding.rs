@@ -15,6 +15,15 @@ fn parse_clip(path: &str) -> Clip {
 const IDLE_RANGE: std::ops::RangeInclusive<u32> = 53..=58;
 /// Agumon attack clip range, authored in `clip.ron` as `attack: (0, 8)`.
 const ATTACK_RANGE: std::ops::RangeInclusive<u32> = 0..=8;
+/// Agumon skill clip range, authored in `clip.ron` as `skill: (59, 75)`.
+const SKILL_RANGE: std::ops::RangeInclusive<u32> = 59..=75;
+/// Agumon heavy_attack clip range, authored in `clip.ron` as `heavy_attack: (23, 45)`.
+const HEAVY_ATTACK_RANGE: std::ops::RangeInclusive<u32> = 23..=45;
+/// Union of the Baby Flame node ranges authored in `anim_graph.ron`
+/// (`baby_flame_cast` 60-68, `baby_flame_impact` 69-72, `baby_flame_recover` 73-77).
+/// Frames 76/77 overshoot the coarse `skill` clip label end of 75 — the parity
+/// drive asserts against the authored node union, not the clip label.
+const BABY_FLAME_NODE_UNION: std::ops::RangeInclusive<u32> = 60..=77;
 
 const AGUMON_STANCE_RON: &str = include_str!("../../assets/digimon/agumon/stance.ron");
 const AGUMON_SKILL_RON: &str = include_str!("../../assets/digimon/agumon/anim_graph.ron");
@@ -155,4 +164,148 @@ fn sharp_claws_release_cue_resolves_to_in_range_impact_atlas_tile() {
         Some(impact_frame),
         "rendered atlas tile at the release cue must be the identity-mapped impact frame"
     );
+}
+
+/// Baby Flame impact-frame invariant: the atlas tile rendered at the Baby Flame
+/// `ReleaseKernel` cue is an in-`skill`-range impact frame, resolved from the
+/// loaded graph rather than hardcoded.
+#[test]
+fn baby_flame_impact_release_cue_resolves_to_in_range_impact_atlas_tile() {
+    let clip = parse_clip("agumon");
+    let geometry = AtlasGeometry::from_clip_meta(&clip.meta);
+    let graph = parse_graph(AGUMON_SKILL_RON);
+
+    let (node_id, node, cue_at) = graph
+        .nodes
+        .iter()
+        .filter(|(id, _)| id.0.starts_with("baby_flame"))
+        .find_map(|(id, node)| {
+            node.cues
+                .iter()
+                .find(|cue| matches!(cue.command, FrameCueCommand::ReleaseKernel(_)))
+                .map(|cue| (id, node, cue.at))
+        })
+        .expect("a baby_flame node must carry a ReleaseKernel cue");
+
+    let impact_frame = clip_frame_at_cue(node, cue_at);
+
+    assert!(
+        SKILL_RANGE.contains(&impact_frame),
+        "impact frame {impact_frame} for node {} outside skill range {SKILL_RANGE:?}",
+        node_id.0
+    );
+    assert_eq!(
+        geometry.atlas_index(impact_frame),
+        Some(impact_frame),
+        "rendered atlas tile at the Baby Flame release cue must be the identity-mapped impact frame"
+    );
+}
+
+/// Baby Burner impact-frame invariant: every `baby_burner` node carrying a
+/// `ReleaseKernel` cue resolves to an in-`heavy_attack`-range, identity-mapped
+/// atlas tile. Multiple barriers exist (charge windup end, launch impact,
+/// recovery end) — assert each rather than the first match.
+#[test]
+fn baby_burner_launch_release_cue_resolves_to_in_range_impact_atlas_tile() {
+    let clip = parse_clip("agumon");
+    let geometry = AtlasGeometry::from_clip_meta(&clip.meta);
+    let graph = parse_graph(AGUMON_SKILL_RON);
+
+    let mut release_nodes = 0;
+    for (id, node) in graph
+        .nodes
+        .iter()
+        .filter(|(id, _)| id.0.starts_with("baby_burner"))
+    {
+        for cue in node
+            .cues
+            .iter()
+            .filter(|cue| matches!(cue.command, FrameCueCommand::ReleaseKernel(_)))
+        {
+            release_nodes += 1;
+            let impact_frame = clip_frame_at_cue(node, cue.at);
+            assert!(
+                HEAVY_ATTACK_RANGE.contains(&impact_frame),
+                "impact frame {impact_frame} for node {} outside heavy_attack range {HEAVY_ATTACK_RANGE:?}",
+                id.0
+            );
+            assert_eq!(
+                geometry.atlas_index(impact_frame),
+                Some(impact_frame),
+                "rendered atlas tile at the {} release cue must be the identity-mapped impact frame",
+                id.0
+            );
+        }
+    }
+    assert!(
+        release_nodes >= 1,
+        "at least one baby_burner node must carry a ReleaseKernel cue"
+    );
+}
+
+/// Baby Burner parity drive: stepping charge -> launch -> recovery -> exit and
+/// firing the kernel cue at each `KernelCue` boundary keeps every player frame
+/// inside `heavy_attack` [23,45] and identity-mapped through to exit.
+#[test]
+fn baby_burner_player_frames_map_identity_within_heavy_attack_range() {
+    let clip = parse_clip("agumon");
+    let geometry = AtlasGeometry::from_clip_meta(&clip.meta);
+    let graph = parse_graph(AGUMON_SKILL_RON);
+
+    let mut player = AnimGraphPlayer::new(NodeId("baby_burner_charge".into()));
+    for tick in 0..48 {
+        // Fire the cue once each node has played its full frame span so the
+        // KernelCue boundaries advance charge->launch then launch->recovery.
+        let node = player.current_node.0.clone();
+        if (node == "baby_burner_charge" && player.elapsed_anim_frames >= 8)
+            || (node == "baby_burner_launch" && player.elapsed_anim_frames >= 7)
+        {
+            player.fire_kernel_cue();
+        }
+        let result = player.advance_result(&graph);
+        assert!(
+            HEAVY_ATTACK_RANGE.contains(&result.frame),
+            "tick {tick}: frame {} outside heavy_attack range {HEAVY_ATTACK_RANGE:?}",
+            result.frame
+        );
+        assert_eq!(
+            geometry.atlas_index(result.frame),
+            Some(result.frame),
+            "tick {tick}: atlas index must be identity for frame {}",
+            result.frame
+        );
+        if result.exited {
+            break;
+        }
+    }
+}
+
+/// Baby Flame parity drive: stepping cast -> impact -> recover -> exit keeps
+/// every player frame inside the authored node union [60,77] and identity-mapped.
+/// Asserts against the node union (not the coarse `skill` clip label) because
+/// `baby_flame_recover` overshoots the skill end at frames 76/77.
+#[test]
+fn baby_flame_player_frames_map_identity_within_node_union() {
+    let clip = parse_clip("agumon");
+    let geometry = AtlasGeometry::from_clip_meta(&clip.meta);
+    let graph = parse_graph(AGUMON_SKILL_RON);
+
+    let mut player = AnimGraphPlayer::new(NodeId("baby_flame_cast".into()));
+    for tick in 0..32 {
+        let result = player.advance_result(&graph);
+        assert!(
+            BABY_FLAME_NODE_UNION.contains(&result.frame),
+            "tick {tick}: frame {} outside baby_flame node union {BABY_FLAME_NODE_UNION:?}",
+            result.frame
+        );
+        assert_eq!(
+            geometry.atlas_index(result.frame),
+            Some(result.frame),
+            "tick {tick}: atlas index must be identity for frame {}",
+            result.frame
+        );
+        if result.exited {
+            break;
+        }
+    }
 }

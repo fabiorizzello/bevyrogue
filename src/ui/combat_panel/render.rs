@@ -72,19 +72,8 @@ pub fn combat_panel(
 
     let mut unit_displays: Vec<UnitDisplay> = Vec::new();
     let mut units_data = Vec::new();
-    for (
-        unit,
-        team,
-        tough,
-        counterplay,
-        ult,
-        kit,
-        ko,
-        commander,
-        stunned,
-        energy,
-        gauge_meta,
-    ) in &units_q
+    for (unit, team, tough, counterplay, ult, kit, ko, commander, stunned, energy, gauge_meta) in
+        &units_q
     {
         units_data.push((
             unit.id,
@@ -206,58 +195,63 @@ pub fn combat_panel(
     let mut restart_clicked = false;
 
     let ctx = contexts.ctx_mut()?;
-    egui::CentralPanel::default().show(ctx, |ui| {
-        ui.horizontal(|ui| {
-            ui.heading("Combat Sandbox");
+    // EXPLORATORY (S02 sprite-visibility probe): transparent frame so the Bevy 2D
+    // sprite layer behind the egui overlay is visible. Default CentralPanel paints an
+    // opaque panel_fill that fully hides the sprites spawned at screen center.
+    egui::CentralPanel::default()
+        .frame(egui::Frame::NONE)
+        .show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                ui.heading("Combat Sandbox");
+                ui.separator();
+                ui.label(format!("Phase: {:?}", combat_state.phase));
+                match (active_actor_id, active_display) {
+                    (Some(_), Some(active)) => {
+                        ui.label(format!("Active: {}", active.name));
+                    }
+                    (None, Some(active)) if combat_state.phase == CombatPhase::WaitingAction => {
+                        ui.label(format!("Preview: {}", active.name));
+                    }
+                    _ if combat_state.phase == CombatPhase::WaitingAction => {
+                        ui.label("Active: unavailable");
+                    }
+                    _ => {}
+                }
+            });
+
+            render_action_bar(
+                ui,
+                active_actor_id,
+                &action_snapshot,
+                skill_book,
+                active_display,
+                &preview_cache,
+                &pending_action,
+                &selected_action_affordance,
+                selected_target_id,
+                telegraph_chip.as_ref(),
+                flash_chip.as_ref(),
+                &mut pending_request,
+            );
             ui.separator();
-            ui.label(format!("Phase: {:?}", combat_state.phase));
-            match (active_actor_id, active_display) {
-                (Some(_), Some(active)) => {
-                    ui.label(format!("Active: {}", active.name));
-                }
-                (None, Some(active)) if combat_state.phase == CombatPhase::WaitingAction => {
-                    ui.label(format!("Preview: {}", active.name));
-                }
-                _ if combat_state.phase == CombatPhase::WaitingAction => {
-                    ui.label("Active: unavailable");
-                }
-                _ => {}
-            }
+
+            render_columns(
+                ui,
+                &allies,
+                &enemies,
+                &sp,
+                &log,
+                any_broken,
+                action_snapshot.is_none(),
+                &selected_action_affordance,
+                active_actor_id,
+                &preview_cache,
+                &pending_action,
+                &mut clicked_target,
+            );
+
+            render_floating(ui, &fd_displays);
         });
-
-        render_action_bar(
-            ui,
-            active_actor_id,
-            &action_snapshot,
-            skill_book,
-            active_display,
-            &preview_cache,
-            &pending_action,
-            &selected_action_affordance,
-            selected_target_id,
-            telegraph_chip.as_ref(),
-            flash_chip.as_ref(),
-            &mut pending_request,
-        );
-        ui.separator();
-
-        render_columns(
-            ui,
-            &allies,
-            &enemies,
-            &sp,
-            &log,
-            any_broken,
-            action_snapshot.is_none(),
-            &selected_action_affordance,
-            active_actor_id,
-            &preview_cache,
-            &pending_action,
-            &mut clicked_target,
-        );
-
-        render_floating(ui, &fd_displays);
-    });
 
     if matches!(
         combat_state.phase,

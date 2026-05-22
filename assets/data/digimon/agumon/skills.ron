@@ -18,7 +18,7 @@
             entry: "cast",
             beats: [
                 (id: "cast", kind: Cast, hook: None, selector: None, presentation: None, payload: None),
-                (id: "impact_damage", kind: Impact, hook: Some("core/deal_damage"), selector: Some("core/primary"), presentation: None, payload: Some(DealDamage(amount: 18, tag: Fire, target: Single))),
+                (id: "impact_damage", kind: Impact, hook: Some("core/deal_damage"), selector: Some("core/primary"), presentation: Some((cue_id: "agumon/baby_flame/impact", anim: Some("baby_flame_impact"), vfx: None, sfx: None)), payload: Some(DealDamage(amount: 18, tag: Fire, target: Single))),
                 (id: "impact_break", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/primary"), presentation: None, payload: Some(BreakToughness(amount: 10, tag: Fire, target: Single))),
                 (id: "impact_signal", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/caster"), presentation: None, payload: Some(BlueprintSignal(owner: "agumon", name: "apply_heated", payload: Amount(3)))),
                 (

@@ -19,11 +19,11 @@ use bevyrogue::combat::follow_up::{
     follow_up_listener_system, form_identity_listener_system, resolve_follow_up_action_system,
 };
 use bevyrogue::combat::observability::{
-    capture_validation_snapshot, format_frame_time_stats, format_validation_snapshot,
-    parse_validation_baseline_toggle, FrameTimeAccumulator,
+    FrameTimeAccumulator, capture_validation_snapshot, format_frame_time_stats,
+    format_validation_snapshot, parse_validation_baseline_toggle,
 };
-use bevyrogue::combat::runtime::{Clock, SuspendedTimelineState, TimelineClock};
 use bevyrogue::combat::runtime::intent::CastId;
+use bevyrogue::combat::runtime::{Clock, SuspendedTimelineState, TimelineClock};
 use bevyrogue::combat::sp::SpPool;
 use bevyrogue::combat::state::{CombatPhase, CombatState};
 use bevyrogue::combat::turn_order::{TurnAdvanced, TurnOrder};
@@ -40,7 +40,21 @@ pub(super) const AGUMON_STANCE_GRAPH_ID: &str = "agumon_stance";
 pub(super) const AGUMON_SKILL_GRAPH_ID: &str = "agumon_skill";
 pub(super) const SHARP_CLAWS_SKILL_ID: &str = "sharp_claws";
 pub(super) const SHARP_CLAWS_WINDUP_NODE: &str = "sharp_claws_windup";
+pub(super) const BABY_FLAME_SKILL_ID: &str = "baby_flame";
+pub(super) const AGUMON_ULT_SKILL_ID: &str = "agumon_ult";
+pub(super) const BABY_FLAME_CAST_NODE: &str = "baby_flame_cast";
+pub(super) const BABY_BURNER_CHARGE_NODE: &str = "baby_burner_charge";
+// The skill FSM entry nodes above seed the player; the presentation nodes below
+// complete the bridged-node vocabulary (matching anim_graph.ron) and are
+// consumed when the Baby Flame / Baby Burner impact-release bridges go live.
+#[allow(dead_code)]
 pub(super) const SHARP_CLAWS_STRIKE_NODE: &str = "sharp_claws_strike";
+#[allow(dead_code)]
+pub(super) const BABY_FLAME_IMPACT_NODE: &str = "baby_flame_impact";
+#[allow(dead_code)]
+pub(super) const BABY_BURNER_LAUNCH_NODE: &str = "baby_burner_launch";
+#[allow(dead_code)]
+pub(super) const BABY_BURNER_RECOVERY_NODE: &str = "baby_burner_recovery";
 
 #[derive(Resource, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct WindowedValidationConfig {
@@ -147,7 +161,10 @@ fn parse_windowed_validation_config(
 
     let baseline = parse_validation_baseline_toggle(baseline_raw)?;
 
-    Ok(Some(WindowedValidationConfig { soak_secs, baseline }))
+    Ok(Some(WindowedValidationConfig {
+        soak_secs,
+        baseline,
+    }))
 }
 
 pub fn config_from_env() -> Result<Option<WindowedValidationConfig>, String> {
@@ -158,7 +175,9 @@ pub fn config_from_env() -> Result<Option<WindowedValidationConfig>, String> {
         std::env::var("BEVYROGUE_VALIDATION_WINDOWED_SOAK_SECS")
             .ok()
             .as_deref(),
-        std::env::var("BEVYROGUE_VALIDATION_BASELINE").ok().as_deref(),
+        std::env::var("BEVYROGUE_VALIDATION_BASELINE")
+            .ok()
+            .as_deref(),
     )
 }
 

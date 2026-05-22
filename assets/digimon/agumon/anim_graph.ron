@@ -16,6 +16,9 @@
         "baby_flame_impact": (
             frames: (69, 72),
             modifier: Some(Hold(extra_frames: 2)),
+            cues: [
+                (at: 1, command: ReleaseKernel(())),
+            ],
         ),
         "baby_flame_recover": (
             frames: (73, 77),
@@ -34,6 +37,9 @@
         ),
         "baby_burner_charge": (
             frames: (23, 30),
+            cues: [
+                (at: 7, command: ReleaseKernel(())),
+            ],
         ),
         "baby_burner_launch": (
             frames: (31, 37),
@@ -43,6 +49,9 @@
         ),
         "baby_burner_recovery": (
             frames: (38, 45),
+            cues: [
+                (at: 7, command: ReleaseKernel(())),
+            ],
         ),
     },
     transitions: [

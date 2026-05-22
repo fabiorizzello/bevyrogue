@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "milestoneId": "M003",
+  "sliceId": "S02",
+  "timestamp": 1779446418569,
+  "status": "fail",
+  "durationMs": 1,
+  "checks": [
+    {
+      "category": "tool",
+      "target": "T01 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: cargo test --test animation 2>&1 | tail -20 (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "T01 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: cargo test 2>&1 | tail -20 (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "T02 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: cargo build --features windowed 2>&1 | tail -10 (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "T02 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: cargo test --features windowed 2>&1 | tail -20 (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "T03 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: cargo test --test animation 2>&1 | tail -15 (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "T03 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: cargo build --features windowed 2>&1 | tail -10 (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "T03 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: cargo test --features windowed 2>&1 | tail -20 (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    },
+    {
+      "category": "tool",
+      "target": "T03 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: cargo test 2>&1 | tail -15 (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    }
+  ]
+}
