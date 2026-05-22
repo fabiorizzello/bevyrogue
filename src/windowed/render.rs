@@ -4,15 +4,16 @@ use bevy::prelude::*;
 
 use bevyrogue::animation::{
     resolve_locus, AnimGraph, AnimGraphId, AnimGraphPlayer, AnimationClipHandles,
-    AnimationClipLoadState, AnimationGraphLookupDiagnostics, AtlasGeometry, Clip,
-    FrameCueCommand, NodeId, ResolvedAnimGraph, ResolvedAnimGraphSource,
-    SkillGraphRegistry, StanceGraphRegistry, VfxMotion, VfxSpawnDescriptor,
+    AnimationClipLoadState, AnimationGraphLookupDiagnostics, AtlasGeometry, Clip, Command,
+    FrameCueCommand, NodeId, ParticleId, ResolvedAnimGraph, ResolvedAnimGraphSource,
+    SkillGraphRegistry, StanceGraphRegistry, VfxLocus, VfxMotion, VfxSpawnDescriptor,
 };
 use bevyrogue::combat::runtime::{CueBarrierStatus, CueReleaseResult, SuspendedTimelineState};
 use bevyrogue::combat::team::Team;
 use bevyrogue::combat::turn_system::{continue_suspended_timeline_system, resolve_action_system};
 use bevyrogue::combat::types::UnitId;
 use bevyrogue::combat::unit::Unit;
+use bevyrogue::ui::combat_panel::latest_baby_burner_flash_trigger;
 
 use super::{
     AGUMON_SKILL_GRAPH_ID, AGUMON_STANCE_GRAPH_ID, AGUMON_ULT_SKILL_ID, BABY_BURNER_CHARGE_NODE,
@@ -238,6 +239,13 @@ impl Plugin for RenderPlugin {
             .add_systems(Update, build_agumon_atlas.before(spawn_unit_sprites))
             .add_systems(Update, spawn_unit_sprites)
             .add_systems(Update, sample_animation_ticks.before(advance_vfx_particles))
+            .add_systems(
+                Update,
+                spawn_detonate_particles
+                    .after(resolve_action_system)
+                    .after(spawn_unit_sprites)
+                    .before(continue_suspended_timeline_system),
+            )
             .add_systems(
                 Update,
                 (advance_vfx_particles, advance_agumon_presentation)
@@ -689,6 +697,81 @@ fn nearest_non_caster_target_xy(
         .map(|(xy, _)| xy)
 }
 
+fn detonate_vfx_descriptor() -> VfxSpawnDescriptor {
+    VfxSpawnDescriptor::from_command(&Command::SpawnParticle {
+        name: ParticleId("baby_burner_detonate".into()),
+        origin: VfxLocus::TargetCenter,
+        motion: VfxMotion::Static,
+    })
+    .expect("SpawnParticle detonate command must distill to a renderable VFX descriptor")
+}
+
+fn find_sprite_xy(
+    sprites: &Query<(&AgumonSprite, &Transform)>,
+    unit_id: UnitId,
+) -> Option<[f32; 2]> {
+    sprites.iter().find_map(|(sprite, transform)| {
+        (sprite.unit_id == unit_id)
+            .then_some([transform.translation.x, transform.translation.y])
+    })
+}
+
+fn spawn_detonate_particles(
+    mut commands: Commands,
+    mut events: MessageReader<bevyrogue::combat::events::CombatEvent>,
+    sprites: Query<(&AgumonSprite, &Transform)>,
+) {
+    let Some(trigger) = latest_baby_burner_flash_trigger(events.read()) else {
+        return;
+    };
+
+    let Some(caster_xy) = find_sprite_xy(&sprites, trigger.source) else {
+        debug!(
+            target: "windowed.agumon_playback",
+            source_unit = ?trigger.source,
+            cast_id = ?trigger.cast_id,
+            "Baby Burner detonate particle source sprite could not be resolved"
+        );
+        return;
+    };
+
+    let descriptor = detonate_vfx_descriptor();
+    for target in trigger.targets {
+        let Some(target_xy) = find_sprite_xy(&sprites, target) else {
+            debug!(
+                target: "windowed.agumon_playback",
+                source_unit = ?trigger.source,
+                target_unit = ?target,
+                cast_id = ?trigger.cast_id,
+                particle = %descriptor.particle.0,
+                "Baby Burner detonate particle target could not be resolved"
+            );
+            continue;
+        };
+
+        let entity = spawn_vfx_particle(
+            &mut commands,
+            &descriptor,
+            caster_xy,
+            target_xy,
+            trigger.source,
+        );
+        let resolved_xy = resolve_vfx_spawn_xy(&descriptor, caster_xy, target_xy);
+        trace!(
+            target: "windowed.agumon_playback",
+            entity = ?entity,
+            cast_id = ?trigger.cast_id,
+            particle = %descriptor.particle.0,
+            source_unit = ?trigger.source,
+            target_unit = ?target,
+            resolved_xy = ?resolved_xy,
+            motion = ?descriptor.motion,
+            ttl_ticks = VFX_PARTICLE_TTL_TICKS,
+            "spawned Baby Burner detonate particle"
+        );
+    }
+}
+
 fn spawn_vfx_particle(
     commands: &mut Commands,
     descriptor: &VfxSpawnDescriptor,
@@ -1047,6 +1130,25 @@ mod tests {
         assert_eq!(
             resolve_vfx_spawn_xy(&primary_target_center, caster_xy, target_xy),
             target_xy
+        );
+    }
+
+    #[test]
+    fn detonate_descriptor_is_renderable_and_serializes_without_numeric_payload() {
+        let descriptor = detonate_vfx_descriptor();
+        assert!(descriptor.is_renderable());
+        assert_eq!(descriptor.locus, VfxLocus::TargetCenter);
+        assert_eq!(descriptor.motion, VfxMotion::Static);
+
+        let command = Command::SpawnParticle {
+            name: ParticleId("baby_burner_flash".into()),
+            origin: descriptor.locus.clone(),
+            motion: descriptor.motion.clone(),
+        };
+        let serialized = serde_json::to_string(&command).expect("SpawnParticle serializes");
+        assert!(
+            !serialized.chars().any(|ch| ch.is_ascii_digit()),
+            "serialized SpawnParticle should not carry numeric gameplay payload: {serialized}"
         );
     }
 
