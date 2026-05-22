@@ -3,9 +3,9 @@ use std::collections::HashSet;
 use bevy::prelude::*;
 
 use bevyrogue::animation::{
-    AnimGraph, AnimGraphId, AnimGraphPlayer, FrameCueCommand, NodeId,
+    AnimGraph, AnimGraphId, AnimGraphPlayer, AnimationClipHandles, AnimationClipLoadState,
+    AnimationGraphLookupDiagnostics, AtlasGeometry, Clip, FrameCueCommand, NodeId,
     ResolvedAnimGraph, ResolvedAnimGraphSource, SkillGraphRegistry, StanceGraphRegistry,
-    AnimationGraphLookupDiagnostics,
 };
 use bevyrogue::combat::runtime::{CueBarrierStatus, CueReleaseResult, SuspendedTimelineState};
 use bevyrogue::combat::team::Team;
@@ -88,6 +88,16 @@ impl AgumonSprite {
     }
 }
 
+/// Bound atlas handles + geometry for the on-screen Agumon sprites. Built once
+/// the agumon `Clip` is readable; both actors share the same image/layout, and
+/// the geometry drives the player-frame -> tile-index map each tick.
+#[derive(Resource, Debug, Clone)]
+pub(super) struct AgumonAtlas {
+    image: Handle<Image>,
+    layout: Handle<TextureAtlasLayout>,
+    geometry: AtlasGeometry,
+}
+
 /// Sprite camera + Agumon presentation state machine. Feature-agnostic player,
 /// windowed playback bridge.
 pub struct RenderPlugin;
@@ -95,6 +105,7 @@ pub struct RenderPlugin;
 impl Plugin for RenderPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup_camera)
+            .add_systems(Update, build_agumon_atlas.before(spawn_unit_sprites))
             .add_systems(Update, spawn_unit_sprites)
             .add_systems(
                 Update,
@@ -110,6 +121,86 @@ fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera2d);
 }
 
+/// Builds the shared `AgumonAtlas` (image + `TextureAtlasLayout` + geometry)
+/// once the agumon `Clip` is readable. Idempotent: returns early once the
+/// resource exists, so it runs at most one effective build. Emits a one-time
+/// `info!` describing the grid and a one-time `warn!` if the clip never becomes
+/// readable or the atlas image fails to load.
+#[allow(clippy::too_many_arguments)]
+fn build_agumon_atlas(
+    mut commands: Commands,
+    existing: Option<Res<AgumonAtlas>>,
+    clip_load_state: Res<AnimationClipLoadState>,
+    clip_handles: Option<Res<AnimationClipHandles>>,
+    clips: Res<Assets<Clip>>,
+    asset_server: Res<AssetServer>,
+    mut layouts: ResMut<Assets<TextureAtlasLayout>>,
+    mut warned: Local<bool>,
+) {
+    if existing.is_some() {
+        return;
+    }
+
+    let Some(handles) = clip_handles else {
+        return;
+    };
+
+    // The agumon clip is index 0 (DEFAULT_ANIM_CLIP_PATHS) and is the geometry
+    // source for both on-screen actors.
+    let clip = handles.0.first().and_then(|handle| clips.get(handle));
+    let Some(clip) = clip else {
+        // Only a real failure (load state reports ready but the asset is
+        // missing) is worth surfacing; the transient loading state is silent.
+        if clip_load_state.ready && !*warned {
+            warn!(
+                target: "windowed.agumon_playback",
+                "agumon clip not readable after load state ready; atlas binding deferred — sprites stay blank"
+            );
+            *warned = true;
+        }
+        return;
+    };
+
+    let geometry = AtlasGeometry::from_clip_meta(&clip.meta);
+    let layout = TextureAtlasLayout::from_grid(
+        UVec2::new(geometry.frame_size.w, geometry.frame_size.h),
+        geometry.columns,
+        geometry.rows,
+        None,
+        None,
+    );
+    let layout = layouts.add(layout);
+    let image = asset_server.load("digimon/agumon_atlas.png");
+
+    if matches!(
+        asset_server.load_state(image.id()),
+        bevy::asset::LoadState::Failed(_)
+    ) && !*warned
+    {
+        warn!(
+            target: "windowed.agumon_playback",
+            "agumon atlas image load failed: digimon/agumon_atlas.png — sprites will render blank"
+        );
+        *warned = true;
+    }
+
+    info!(
+        target: "windowed.agumon_playback",
+        frame_w = geometry.frame_size.w,
+        frame_h = geometry.frame_size.h,
+        columns = geometry.columns,
+        rows = geometry.rows,
+        total_frames = geometry.total_frames,
+        "agumon atlas built (TextureAtlasLayout + image bound)"
+    );
+
+    commands.insert_resource(AgumonAtlas {
+        image,
+        layout,
+        geometry,
+    });
+}
+
 /// Spawns one `AgumonSprite` entity per unit that does not yet have one.
 /// Runs every frame but is idempotent: once a sprite exists for a unit it is skipped.
 /// Waits for the stance graph to be loaded before spawning anything.
@@ -117,6 +208,7 @@ fn spawn_unit_sprites(
     mut commands: Commands,
     stance_reg: Res<StanceGraphRegistry>,
     graphs: Res<Assets<AnimGraph>>,
+    atlas: Option<Res<AgumonAtlas>>,
     units: Query<(&Unit, &Team)>,
     sprites: Query<&AgumonSprite>,
 ) {
@@ -124,6 +216,12 @@ fn spawn_unit_sprites(
         &AnimGraphId(AGUMON_STANCE_GRAPH_ID.into()),
         &graphs,
     ) else {
+        return;
+    };
+
+    // Both the stance graph and the bound atlas must be ready before we can
+    // spawn a sprite that renders real pixels.
+    let Some(atlas) = atlas else {
         return;
     };
 
@@ -138,6 +236,11 @@ fn spawn_unit_sprites(
         commands.spawn((
             AgumonSprite::idle_for(unit.id, stance_graph.clone()),
             Sprite {
+                image: atlas.image.clone(),
+                texture_atlas: Some(TextureAtlas {
+                    layout: atlas.layout.clone(),
+                    index: 0,
+                }),
                 flip_x,
                 ..default()
             },
@@ -152,7 +255,8 @@ pub(super) fn advance_agumon_presentation(
     graphs: Res<Assets<AnimGraph>>,
     mut lookup_diagnostics: ResMut<AnimationGraphLookupDiagnostics>,
     mut barrier: ResMut<SuspendedTimelineState>,
-    mut sprites: Query<&mut AgumonSprite>,
+    atlas: Option<Res<AgumonAtlas>>,
+    mut sprites: Query<(&mut AgumonSprite, &mut Sprite)>,
 ) {
     let stance_graph = stance_reg.resolve_snapshot(&AnimGraphId(AGUMON_STANCE_GRAPH_ID.into()), &graphs);
     let active_barrier = barrier.active_status().cloned();
@@ -172,7 +276,7 @@ pub(super) fn advance_agumon_presentation(
         }
     }
 
-    for mut sprite in &mut sprites {
+    for (mut sprite, mut render_sprite) in &mut sprites {
         sync_agumon_mode(
             &mut sprite,
             active_barrier.as_ref(),
@@ -186,6 +290,18 @@ pub(super) fn advance_agumon_presentation(
         let advance = sprite.player.advance_result(&graph);
         let current_node = sprite.player.current_node.0.clone();
         let local_frame = local_frame_for(&graph, &sprite.player.current_node, advance.frame);
+
+        // Drive the rendered tile from the player frame via the identity
+        // frame -> atlas-index map. Leave the index unchanged on an
+        // out-of-range frame (atlas_index == None).
+        let atlas_index = atlas
+            .as_ref()
+            .and_then(|atlas| atlas.geometry.atlas_index(advance.frame));
+        if let (Some(index), Some(texture_atlas)) =
+            (atlas_index, render_sprite.texture_atlas.as_mut())
+        {
+            texture_atlas.index = index as usize;
+        }
 
         if active_barrier.is_some() {
             barrier.annotate_active_animation(&current_node, advance.frame as usize);
@@ -204,6 +320,7 @@ pub(super) fn advance_agumon_presentation(
             node = current_node.as_str(),
             clip_frame = advance.frame,
             local_frame,
+            atlas_index,
             awaiting,
             released,
             barrier = ?active_barrier.as_ref().map(barrier_trace_tuple),
