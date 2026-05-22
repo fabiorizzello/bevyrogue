@@ -23,3 +23,5 @@ mod turn_system_internals;
 mod ultimate_charge_unit;
 #[path = "turn_economy/ultimate_meter.rs"]
 mod ultimate_meter;
+#[path = "turn_economy/ult_out_of_turn.rs"]
+mod ult_out_of_turn;

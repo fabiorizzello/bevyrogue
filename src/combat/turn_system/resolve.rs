@@ -49,7 +49,7 @@ pub fn resolve_action_system(
     registry: Option<Res<CombatKernelRegistry>>,
     mut actors: ResolveActorsQuery,
     gauge_meta_q: Query<&'static crate::combat::ult_gauge::UltGaugeMetadata>,
-    out_of_turn_burst: Res<crate::combat::turn_system::OutOfTurnBurst>,
+    out_of_turn_burst: Option<Res<crate::combat::turn_system::OutOfTurnBurst>>,
     mut runtime: ActionRuntimeParams,
 ) {
     if state.phase == CombatPhase::Resolving {
@@ -140,7 +140,7 @@ pub fn resolve_action_system(
 
             // Out-of-turn burst: honor the same active-unit lift the burst system
             // authorized, so an off-turn ult passes legality for this one cycle.
-            if out_of_turn_burst.0 == Some(actor_id) {
+            if out_of_turn_burst.as_ref().and_then(|b| b.0) == Some(actor_id) {
                 mark_unit_active(&mut snapshot, actor_id);
             }
 
