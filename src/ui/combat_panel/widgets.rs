@@ -299,7 +299,15 @@ pub(super) fn render_columns(
                 // button stays live even during an enemy turn.
                 let gauge_ready = ally.ult_cur >= ally.ult_trigger;
                 let is_active_actor = Some(ally.id) == active_actor_id;
-                if gauge_ready && !is_active_actor && !ally.is_ko && !ally.is_stunned {
+                // SP is phase-independent (it gates regardless of whose turn it
+                // is), so checking it here keeps the queue UX intact: the button
+                // still stays live during an enemy turn when SP can fund the
+                // cast, and only hides when the shared pool genuinely can't —
+                // matching the engine's `SpShortfall` rejection instead of
+                // letting the button silently no-op.
+                let sp_affordable = sp.current >= ally.ult_sp_cost;
+                if gauge_ready && sp_affordable && !is_active_actor && !ally.is_ko && !ally.is_stunned
+                {
                     let burst_response = ui
                         .add(egui::Button::new(format!("⚡ Burst: {} Ultimate", ally.name)))
                         .on_hover_text(

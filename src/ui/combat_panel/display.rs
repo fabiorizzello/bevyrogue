@@ -25,6 +25,11 @@ pub(super) struct UnitDisplay {
     pub(super) ult_trigger: i32,
     pub(super) ult_cap: i32,
     pub(super) ult_backing: &'static str,
+    /// SP cost of this unit's Ultimate, resolved from the skill book. Used to
+    /// gate the out-of-turn Burst button on affordability — mirrors the
+    /// `SpShortfall` legality check so the button never looks live when the
+    /// shared SP pool can't fund the cast.
+    pub(super) ult_sp_cost: i32,
     pub(super) skills: Vec<SkillDisplay>,
     pub(super) is_ko: bool,
     pub(super) is_stunned: bool,

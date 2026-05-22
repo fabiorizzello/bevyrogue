@@ -106,6 +106,11 @@ pub fn combat_panel(
             ult_trigger: effective_gauge.trigger,
             ult_cap: effective_gauge.cap,
             ult_backing: effective_gauge.backing,
+            ult_sp_cost: skill_book
+                .0
+                .iter()
+                .find(|skill| skill.id == kit.ultimate)
+                .map_or(0, |skill| skill.sp_cost),
             skills: kit
                 .skills
                 .iter()

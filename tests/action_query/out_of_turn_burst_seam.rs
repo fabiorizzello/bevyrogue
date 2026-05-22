@@ -3,8 +3,8 @@
 //! still bite. Pure snapshot-level — no ECS. See small-feature 260522-1.
 
 use bevyrogue::combat::action_query::{
-    ActionQueryKind, ActionStatus, CombatQuerySnapshot, UnitQuerySnapshot, mark_unit_active,
-    query_action_affordance,
+    ActionQueryKind, ActionStatus, CombatQuerySnapshot, UnitQuerySnapshot, first_enabled_target_id,
+    mark_unit_active, query_action_affordance,
 };
 use bevyrogue::combat::kit::UnitSkills;
 use bevyrogue::combat::state::CombatPhase;
@@ -85,7 +85,12 @@ fn ult_skill_book() -> SkillBook {
 #[test]
 fn off_turn_ult_rejected_as_not_active_without_seam() {
     let snap = snapshot(true, ULT_SP_COST);
-    let aff = query_action_affordance(&snap, &ult_skill_book(), UnitId(BURST), ActionQueryKind::Ultimate);
+    let aff = query_action_affordance(
+        &snap,
+        &ult_skill_book(),
+        UnitId(BURST),
+        ActionQueryKind::Ultimate,
+    );
     assert_eq!(
         aff.action,
         ActionStatus::Disabled {
@@ -99,7 +104,12 @@ fn off_turn_ult_rejected_as_not_active_without_seam() {
 fn seam_enables_ready_off_turn_ult() {
     let mut snap = snapshot(true, ULT_SP_COST);
     mark_unit_active(&mut snap, UnitId(BURST));
-    let aff = query_action_affordance(&snap, &ult_skill_book(), UnitId(BURST), ActionQueryKind::Ultimate);
+    let aff = query_action_affordance(
+        &snap,
+        &ult_skill_book(),
+        UnitId(BURST),
+        ActionQueryKind::Ultimate,
+    );
     assert_eq!(
         aff.action,
         ActionStatus::Enabled,
@@ -111,7 +121,12 @@ fn seam_enables_ready_off_turn_ult() {
 fn seam_still_blocks_when_gauge_not_ready() {
     let mut snap = snapshot(false, ULT_SP_COST);
     mark_unit_active(&mut snap, UnitId(BURST));
-    let aff = query_action_affordance(&snap, &ult_skill_book(), UnitId(BURST), ActionQueryKind::Ultimate);
+    let aff = query_action_affordance(
+        &snap,
+        &ult_skill_book(),
+        UnitId(BURST),
+        ActionQueryKind::Ultimate,
+    );
     assert_eq!(
         aff.action,
         ActionStatus::Disabled {
@@ -121,11 +136,44 @@ fn seam_still_blocks_when_gauge_not_ready() {
     );
 }
 
+/// Regression for the windowed emission gate. `combat_panel::render` only
+/// writes an `UltBurstRequest` when the seam'd ult affordance yields an enabled
+/// target (`first_enabled_target_id`). That gate is what populates the engine's
+/// queue, so it must stay live precisely when the player does NOT hold the
+/// action window — an enemy turn or an AV-tick gap (`WaitingForTurn`). Target
+/// enablement is phase-independent today; this pins it. If a future change made
+/// targeting depend on phase, the UI would silently stop emitting during the
+/// enemy turn and the queue would never fill — and no other test would catch it.
+#[test]
+fn off_turn_ult_still_targets_when_player_lacks_the_action_window() {
+    let mut snap = snapshot(true, ULT_SP_COST);
+    // Control is not with the player: AV is ticking / the enemy holds the turn.
+    snap.phase = CombatPhase::WaitingForTurn;
+    mark_unit_active(&mut snap, UnitId(BURST));
+    let aff = query_action_affordance(
+        &snap,
+        &ult_skill_book(),
+        UnitId(BURST),
+        ActionQueryKind::Ultimate,
+    );
+    assert_eq!(
+        first_enabled_target_id(&aff),
+        Some(UnitId(ENEMY)),
+        "the burst must still resolve an enabled target outside the player's \
+         action window, or the windowed UI would never emit the request to queue"
+    );
+}
+
 #[test]
 fn seam_still_blocks_on_sp_shortfall() {
     let mut snap = snapshot(true, ULT_SP_COST - 1);
     mark_unit_active(&mut snap, UnitId(BURST));
-    let aff = query_action_affordance(&snap, &ult_skill_book(), UnitId(BURST), ActionQueryKind::Ultimate);
+    let aff = query_action_affordance(
+        &snap,
+        &ult_skill_book(),
+        UnitId(BURST),
+        ActionQueryKind::Ultimate,
+    );
     assert_eq!(
         aff.action,
         ActionStatus::Disabled {
