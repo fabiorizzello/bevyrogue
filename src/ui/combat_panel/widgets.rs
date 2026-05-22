@@ -237,6 +237,7 @@ pub(super) fn render_columns(
     preview_cache: &PreviewDamageCache,
     pending_action: &PendingAction,
     clicked_target: &mut Option<UnitId>,
+    burst_attacker: &mut Option<UnitId>,
 ) {
     let pending_targets = selected_action_affordance.as_ref();
     let pending_enabled = pending_targets
@@ -289,6 +290,25 @@ pub(super) fn render_columns(
                 }
                 if ally.is_ko {
                     ui.label(egui::RichText::new("KO").color(egui::Color32::RED));
+                }
+
+                // Out-of-turn burst: a charged, non-active, healthy ally can fire
+                // its Ultimate as a free burst at any moment with a single click.
+                // The engine auto-targets, validates, and — if pressed while the
+                // enemy holds the turn — queues it until the turn ends, so the
+                // button stays live even during an enemy turn.
+                let gauge_ready = ally.ult_cur >= ally.ult_trigger;
+                let is_active_actor = Some(ally.id) == active_actor_id;
+                if gauge_ready && !is_active_actor && !ally.is_ko && !ally.is_stunned {
+                    let burst_response = ui
+                        .add(egui::Button::new(format!("⚡ Burst: {} Ultimate", ally.name)))
+                        .on_hover_text(
+                            "Fire this ally's Ultimate out of turn (free, does not consume a turn). \
+Queued until launchable if pressed during the enemy's turn.",
+                        );
+                    if burst_response.clicked() {
+                        *burst_attacker = Some(ally.id);
+                    }
                 }
 
                 if let Some(target_affordance) = pending_targets.and_then(|affordance| {

@@ -15,6 +15,7 @@ use crate::combat::ult_gauge::effective_ult_gauge;
 use crate::combat::{
     action_query::{
         ActionStatus, TargetStatus, build_snapshot_from_ecs_with_sp, first_enabled_target_id,
+        mark_unit_active,
     },
     floating::{FLOATING_LIFETIME_SECS, FloatingDamage},
     log::ActionLog,
@@ -23,7 +24,7 @@ use crate::combat::{
     team::Team,
     toughness::visible_toughness,
     turn_order::TurnOrder,
-    turn_system::ActionIntent,
+    turn_system::{ActionIntent, UltBurstRequest},
     types::UnitId,
     unit::Unit,
 };
@@ -57,7 +58,9 @@ pub fn combat_panel(
     panel_state: (Res<PreviewDamageCache>, Res<BabyBurnerFlashState>),
     skill_books: Res<Assets<SkillBook>>,
     barrier: Res<SuspendedTimelineState>,
-    mut action_intent: MessageWriter<ActionIntent>,
+    // Grouped into one tuple param to stay within Bevy's 16-argument system
+    // limit (adding the burst writer would otherwise be the 17th argument).
+    mut intent_writers: (MessageWriter<ActionIntent>, MessageWriter<UltBurstRequest>),
     units_q: CombatPanelUnitsQuery,
     floating_q: Query<&FloatingDamage>,
     mut despawn_q: ParamSet<(Query<Instance<Unit>>, Query<Instance<FloatingDamage>>)>,
@@ -147,7 +150,7 @@ pub fn combat_panel(
             sp.current,
             actor_id,
             actor_id,
-            units_data,
+            units_data.clone(),
         )
     });
 
@@ -192,6 +195,7 @@ pub fn combat_panel(
 
     let mut pending_request: Option<Option<PendingKind>> = None;
     let mut clicked_target: Option<UnitId> = None;
+    let mut burst_attacker: Option<UnitId> = None;
     let mut restart_clicked = false;
 
     let ctx = contexts.ctx_mut()?;
@@ -248,6 +252,7 @@ pub fn combat_panel(
                 &preview_cache,
                 &pending_action,
                 &mut clicked_target,
+                &mut burst_attacker,
             );
 
             render_floating(ui, &fd_displays);
@@ -307,7 +312,7 @@ pub fn combat_panel(
                             target,
                         },
                     };
-                    action_intent.write(intent);
+                    intent_writers.0.write(intent);
                     pending_action.kind = None;
                 }
             }
@@ -319,6 +324,35 @@ pub fn combat_panel(
     }
     if let Some(request) = pending_request {
         pending_action.kind = request;
+    }
+
+    // Out-of-turn burst: one click on a charged off-turn ally fires its Ultimate
+    // as a free burst. Build that ally's snapshot with the active-unit gate
+    // lifted (`mark_unit_active`), auto-target the first legal target — mirroring
+    // the CLI — and emit an `UltBurstRequest`. The burst engine validates
+    // legality and queues the request until launchable, so a burst pressed while
+    // the enemy holds the turn fires the moment control returns. Emitting only
+    // when a legal target exists keeps a genuinely illegal burst (drained gauge,
+    // KO, no target) from ever being requested.
+    if let Some(attacker) = burst_attacker {
+        let mut snapshot = build_snapshot_from_ecs_with_sp(
+            &combat_state,
+            &order,
+            sp.current,
+            attacker,
+            attacker,
+            units_data,
+        );
+        mark_unit_active(&mut snapshot, attacker);
+        let affordance = query_pending_action_affordance(
+            &snapshot,
+            skill_book,
+            attacker,
+            &PendingKind::Ultimate,
+        );
+        if let Some(target) = first_enabled_target_id(&affordance) {
+            intent_writers.1.write(UltBurstRequest { attacker, target });
+        }
     }
 
     if restart_clicked {
