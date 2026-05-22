@@ -24,3 +24,5 @@ mod anim_validation;
 mod clip_atlas_parity;
 #[path = "animation/skill_graph_mapping_extensibility.rs"]
 mod skill_graph_mapping_extensibility;
+#[path = "animation/vfx_handle_seam.rs"]
+mod vfx_handle_seam;
