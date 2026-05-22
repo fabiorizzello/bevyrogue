@@ -11,7 +11,7 @@
 // ── Accumulator ──────────────────────────────────────────────────────────────
 
 /// Accumulates per-frame deltas (seconds) from the caller.
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct FrameTimeAccumulator {
     samples: Vec<f32>,
 }
@@ -101,6 +101,25 @@ pub fn format_frame_time_stats(stats: &FrameTimeStats, mode: &str) -> String {
         "validation_frametime: mode={} count={} mean_ms={:.3} p95_ms={:.3} max_ms={:.3} min_ms={:.3}",
         mode, stats.count, stats.mean_ms, stats.p95_ms, stats.max_ms, stats.min_ms
     )
+}
+
+// ── Baseline run toggle ────────────────────────────────────────────────────────
+
+/// Parse the `BEVYROGUE_VALIDATION_BASELINE` env toggle (kernel-only baseline run).
+///
+/// Lives in the lib (not the windowed binary) so it is headlessly testable. The
+/// mapping mirrors the windowed validation toggle: unset → false (the default is a
+/// full anim-graph run); the documented truthy strings → true; the documented
+/// falsey strings → false; anything else is a hard error. Presence of the var with
+/// an empty value counts as truthy, matching `BEVYROGUE_VALIDATION_WINDOWED`.
+pub fn parse_validation_baseline_toggle(raw: Option<&str>) -> Result<bool, String> {
+    match raw {
+        None | Some("0" | "false" | "False" | "FALSE" | "no" | "No" | "NO" | "off") => Ok(false),
+        Some("") | Some("1" | "true" | "True" | "TRUE" | "yes" | "Yes" | "YES" | "on") => Ok(true),
+        Some(other) => Err(format!(
+            "BEVYROGUE_VALIDATION_BASELINE must be one of: 1,true,yes,on,0,false,no,off (got {other:?})"
+        )),
+    }
 }
 
 // ── Regression verdict ───────────────────────────────────────────────────────
@@ -347,6 +366,20 @@ mod tests {
     }
 
     // ── Formatter ────────────────────────────────────────────────────────────
+
+    // ── Baseline toggle ────────────────────────────────────────────────────────
+
+    #[test]
+    fn baseline_toggle_maps_documented_strings_and_rejects_garbage() {
+        assert_eq!(parse_validation_baseline_toggle(None), Ok(false));
+        for falsey in ["0", "false", "False", "FALSE", "no", "No", "NO", "off"] {
+            assert_eq!(parse_validation_baseline_toggle(Some(falsey)), Ok(false), "{falsey}");
+        }
+        for truthy in ["", "1", "true", "True", "TRUE", "yes", "Yes", "YES", "on"] {
+            assert_eq!(parse_validation_baseline_toggle(Some(truthy)), Ok(true), "{truthy}");
+        }
+        assert!(parse_validation_baseline_toggle(Some("maybe")).is_err());
+    }
 
     #[test]
     fn format_starts_with_validation_frametime_prefix() {

@@ -2,6 +2,8 @@
 //!
 //! Hosts tests for windowed-only UI features (phase strip, preview cache).
 
+#[path = "windowed_only/frame_time_soak.rs"]
+mod frame_time_soak;
 #[path = "windowed_only/phase_strip_readonly.rs"]
 mod phase_strip_readonly;
 #[path = "windowed_only/windowed_hud_hp_bar.rs"]

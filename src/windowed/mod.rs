@@ -18,7 +18,10 @@ use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::follow_up::{
     follow_up_listener_system, form_identity_listener_system, resolve_follow_up_action_system,
 };
-use bevyrogue::combat::observability::{capture_validation_snapshot, format_validation_snapshot};
+use bevyrogue::combat::observability::{
+    capture_validation_snapshot, format_frame_time_stats, format_validation_snapshot,
+    parse_validation_baseline_toggle, FrameTimeAccumulator,
+};
 use bevyrogue::combat::runtime::{Clock, SuspendedTimelineState, TimelineClock};
 use bevyrogue::combat::runtime::intent::CastId;
 use bevyrogue::combat::sp::SpPool;
@@ -42,13 +45,27 @@ pub(super) const SHARP_CLAWS_STRIKE_NODE: &str = "sharp_claws_strike";
 #[derive(Resource, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct WindowedValidationConfig {
     soak_secs: u64,
+    /// When true, run a kernel-only baseline (anim-graph/render path disabled) so
+    /// the soak's frame-time stats isolate the anim-graph cost. Drives the
+    /// `mode=full|baseline` field of the `validation_frametime:` line.
+    baseline: bool,
 }
 
-#[derive(Resource, Debug, Default, Clone, Copy, PartialEq)]
+#[derive(Resource, Debug, Default, Clone, PartialEq)]
 struct WindowedValidationState {
     started_at_secs: Option<f32>,
     snapshot_logged: bool,
     finished: bool,
+    /// Per-frame deltas accumulated after the soak start frame. The exact pure
+    /// aggregator unit-proven in T01 (`bevyrogue::combat::observability`).
+    frame_times: FrameTimeAccumulator,
+}
+
+impl WindowedValidationState {
+    /// Record one presentation-frame delta (seconds) into the soak accumulator.
+    fn record_frame(&mut self, delta_secs: f32) {
+        self.frame_times.push(delta_secs);
+    }
 }
 
 /// Egui panels: roster, turn order, combat panel.
@@ -107,6 +124,7 @@ fn parse_windowed_validation_toggle(raw: Option<&str>) -> Result<bool, String> {
 fn parse_windowed_validation_config(
     enabled_raw: Option<&str>,
     soak_secs_raw: Option<&str>,
+    baseline_raw: Option<&str>,
 ) -> Result<Option<WindowedValidationConfig>, String> {
     if !parse_windowed_validation_toggle(enabled_raw)? {
         return Ok(None);
@@ -127,7 +145,9 @@ fn parse_windowed_validation_config(
         );
     }
 
-    Ok(Some(WindowedValidationConfig { soak_secs }))
+    let baseline = parse_validation_baseline_toggle(baseline_raw)?;
+
+    Ok(Some(WindowedValidationConfig { soak_secs, baseline }))
 }
 
 pub fn config_from_env() -> Result<Option<WindowedValidationConfig>, String> {
@@ -138,10 +158,16 @@ pub fn config_from_env() -> Result<Option<WindowedValidationConfig>, String> {
         std::env::var("BEVYROGUE_VALIDATION_WINDOWED_SOAK_SECS")
             .ok()
             .as_deref(),
+        std::env::var("BEVYROGUE_VALIDATION_BASELINE").ok().as_deref(),
     )
 }
 
 pub fn register(app: &mut App, validation: Option<WindowedValidationConfig>) {
+    // Kernel-only baseline soak: disable the entire anim-graph/render path so the
+    // measured frame-time delta vs the full run is attributable to that path alone
+    // (D027). Everything else — DefaultPlugins, soak tick, exit — is identical.
+    let baseline = validation.is_some_and(|config| config.baseline);
+
     app.add_plugins(DefaultPlugins.set(AssetPlugin {
         watch_for_changes_override: Some(true),
         ..default()
@@ -150,9 +176,12 @@ pub fn register(app: &mut App, validation: Option<WindowedValidationConfig>) {
     .add_plugins(DataPlugin)
     .insert_resource(TimelineClock(Clock::Windowed))
     .init_resource::<SuspendedTimelineState>()
-    .add_plugins(render::RenderPlugin)
     .add_plugins(UiPlugin)
     .add_systems(Update, windowed_bootstrap_system);
+
+    if !baseline {
+        app.add_plugins(render::RenderPlugin);
+    }
 
     if let Some(config) = validation {
         app.insert_resource(config)
@@ -244,18 +273,26 @@ fn windowed_validation_tick(world: &mut World) {
         return;
     }
 
-    let soak_secs = world.resource::<WindowedValidationConfig>().soak_secs;
-    let elapsed_secs = world.resource::<Time>().elapsed_secs();
+    let config = *world.resource::<WindowedValidationConfig>();
+    let soak_secs = config.soak_secs;
+    let time = world.resource::<Time>();
+    let elapsed_secs = time.elapsed_secs();
+    let delta_secs = time.delta_secs();
 
     let mut log_start = false;
     let mut log_snapshot = false;
     let mut log_finish = false;
+    let mut frame_time_line: Option<String> = None;
 
     {
         let mut state = world.resource_mut::<WindowedValidationState>();
         if state.started_at_secs.is_none() {
             state.started_at_secs = Some(elapsed_secs);
             log_start = true;
+        } else {
+            // Accumulate every presentation frame after the soak start frame; the
+            // start frame's delta belongs to bring-up, not the soak window.
+            state.record_frame(delta_secs);
         }
         if !state.snapshot_logged {
             state.snapshot_logged = true;
@@ -268,6 +305,9 @@ fn windowed_validation_tick(world: &mut World) {
         {
             state.finished = true;
             log_finish = true;
+            let stats = state.frame_times.finalise();
+            let mode = if config.baseline { "baseline" } else { "full" };
+            frame_time_line = Some(format_frame_time_stats(&stats, mode));
         }
     }
 
@@ -287,6 +327,9 @@ fn windowed_validation_tick(world: &mut World) {
 
     if log_finish {
         info!("validation_windowed:finish soak_secs={soak_secs}");
+        if let Some(line) = frame_time_line {
+            info!("{line}");
+        }
         world.write_message(AppExit::Success);
     }
 }
@@ -413,9 +456,12 @@ mod tests {
 
     #[test]
     fn windowed_validation_is_disabled_when_flag_absent_or_false() {
-        assert_eq!(parse_windowed_validation_config(None, None).unwrap(), None);
         assert_eq!(
-            parse_windowed_validation_config(Some("false"), Some("300")).unwrap(),
+            parse_windowed_validation_config(None, None, None).unwrap(),
+            None
+        );
+        assert_eq!(
+            parse_windowed_validation_config(Some("false"), Some("300"), None).unwrap(),
             None
         );
     }
@@ -423,19 +469,43 @@ mod tests {
     #[test]
     fn windowed_validation_uses_default_soak_when_enabled_without_override() {
         assert_eq!(
-            parse_windowed_validation_config(Some("1"), None).unwrap(),
-            Some(WindowedValidationConfig { soak_secs: 300 })
+            parse_windowed_validation_config(Some("1"), None, None).unwrap(),
+            Some(WindowedValidationConfig {
+                soak_secs: 300,
+                baseline: false
+            })
         );
     }
 
     #[test]
     fn windowed_validation_rejects_bad_inputs() {
         assert_eq!(
-            parse_windowed_validation_config(Some("true"), Some("120")).unwrap(),
-            Some(WindowedValidationConfig { soak_secs: 120 })
+            parse_windowed_validation_config(Some("true"), Some("120"), None).unwrap(),
+            Some(WindowedValidationConfig {
+                soak_secs: 120,
+                baseline: false
+            })
         );
-        assert!(parse_windowed_validation_config(Some("true"), Some("0")).is_err());
-        assert!(parse_windowed_validation_config(Some("true"), Some("bogus")).is_err());
-        assert!(parse_windowed_validation_config(Some("maybe"), None).is_err());
+        assert!(parse_windowed_validation_config(Some("true"), Some("0"), None).is_err());
+        assert!(parse_windowed_validation_config(Some("true"), Some("bogus"), None).is_err());
+        assert!(parse_windowed_validation_config(Some("maybe"), None, None).is_err());
+    }
+
+    #[test]
+    fn windowed_validation_threads_baseline_toggle_into_config() {
+        assert_eq!(
+            parse_windowed_validation_config(Some("1"), None, Some("1")).unwrap(),
+            Some(WindowedValidationConfig {
+                soak_secs: 300,
+                baseline: true
+            })
+        );
+        // Baseline only matters when validation is enabled.
+        assert_eq!(
+            parse_windowed_validation_config(Some("0"), None, Some("1")).unwrap(),
+            None
+        );
+        // A garbage baseline value is a hard error.
+        assert!(parse_windowed_validation_config(Some("1"), None, Some("maybe")).is_err());
     }
 }
