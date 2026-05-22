@@ -54,6 +54,17 @@ pub struct UltBurstRequest {
 #[derive(Resource, Debug, Default, Clone, PartialEq, Eq)]
 pub struct OutOfTurnBurst(pub Option<UnitId>);
 
+/// FIFO queue of out-of-turn ult bursts awaiting a launchable window.
+///
+/// A burst is launchable whenever the enemy is *not* taking its turn (i.e. the
+/// active unit is not an enemy and combat is not mid-resolution). When the
+/// player requests a burst while an enemy is acting, `burst_action_system`
+/// parks the request here and fires it on the first launchable frame — the
+/// moment the enemy's turn ends. Requests pressed during a launchable window
+/// fire immediately and never linger in this queue.
+#[derive(Resource, Debug, Default, Clone, PartialEq, Eq)]
+pub struct PendingBurstQueue(pub Vec<UltBurstRequest>);
+
 pub(crate) type ResolveActorsQuery<'w, 's> = Query<
     'w,
     's,

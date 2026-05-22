@@ -7,7 +7,9 @@ pub mod types;
 
 // Re-export extracted types so external consumers keep working.
 pub(crate) use types::ResolveActorsQuery;
-pub use types::{ActionIntent, EnemyTurnRequestQueue, OutOfTurnBurst, UltBurstRequest};
+pub use types::{
+    ActionIntent, EnemyTurnRequestQueue, OutOfTurnBurst, PendingBurstQueue, UltBurstRequest,
+};
 
 // Re-export extracted helpers so sibling modules (`pipeline`, `tests`) keep working.
 pub(crate) use helpers::{emit_combat_beat, emit_combat_event, emit_kernel_transition, set_phase};

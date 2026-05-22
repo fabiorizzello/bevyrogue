@@ -5,7 +5,8 @@
 //!   (a) a ready, off-turn unit's burst fires (gauge reset, target damaged,
 //!       `UltimateUsed` emitted, SP spent);
 //!   (b) rejected when the gauge is not ready;
-//!   (c) rejected when the phase is not `WaitingAction`;
+//!   (c) parked in the queue while an enemy is taking its turn, then fired the
+//!       moment the enemy turn ends; also fires "between turns" (`WaitingForTurn`);
 //!   (d) rejected when the burst unit is KO or stunned;
 //!   (e) `TurnOrder.active_unit` and every unit's `ActionValue` are byte-identical
 //!       before and after — a burst consumes no turn.
@@ -23,7 +24,8 @@ use bevyrogue::combat::{
     toughness::Toughness,
     turn_order::{TurnAdvanced, TurnOrder},
     turn_system::{
-        ActionIntent, OutOfTurnBurst, UltBurstRequest, burst_action_system, resolve_action_system,
+        ActionIntent, OutOfTurnBurst, PendingBurstQueue, UltBurstRequest, burst_action_system,
+        resolve_action_system,
     },
     types::{Attribute, DamageTag, EvoStage, SkillId, UnitId},
     ultimate::{UltAccumulationTrigger, UltimateCharge},
@@ -151,6 +153,7 @@ fn burst_app(phase: CombatPhase) -> App {
         .init_resource::<ActionLog>()
         .init_resource::<Time>()
         .init_resource::<OutOfTurnBurst>()
+        .init_resource::<PendingBurstQueue>()
         .add_message::<ActionIntent>()
         .add_message::<UltBurstRequest>()
         .add_message::<CombatEvent>()
@@ -312,10 +315,12 @@ fn burst_rejected_when_gauge_not_ready() {
 }
 
 #[test]
-fn burst_rejected_in_wrong_phase() {
-    // WaitingForTurn is a non-action phase; the burst guard must refuse it.
-    let mut app = burst_app(CombatPhase::WaitingForTurn);
+fn burst_queued_during_enemy_turn_then_fires_when_it_ends() {
+    // The enemy (TARGET is Team::Enemy) holds the turn: pressing ult must NOT
+    // fire mid-enemy-turn — it parks in the queue.
+    let mut app = burst_app(CombatPhase::WaitingAction);
     spawn_units(&mut app, 100, false, false);
+    app.world_mut().resource_mut::<TurnOrder>().active_unit = Some(UnitId(TARGET));
     let mut cursor = app
         .world_mut()
         .resource_mut::<Messages<CombatEvent>>()
@@ -324,10 +329,71 @@ fn burst_rejected_in_wrong_phase() {
     send_burst(&mut app);
     app.update();
 
-    assert_eq!(hp_of(&mut app, TARGET), 1000, "no damage in wrong phase");
+    // Held: nothing resolved, gauge intact, request retained in the queue.
+    assert_eq!(
+        hp_of(&mut app, TARGET),
+        1000,
+        "no damage while the enemy is acting"
+    );
     assert!(ultimate_used_ids(&mut app, &mut cursor).is_empty());
     assert_eq!(ult_charge_of(&mut app, BURST), 100, "gauge untouched");
     assert_eq!(app.world().resource::<OutOfTurnBurst>().0, None);
+    assert_eq!(
+        app.world().resource::<PendingBurstQueue>().0.len(),
+        1,
+        "the burst must be parked, not dropped"
+    );
+
+    // Enemy turn ends: control returns to an ally. The parked burst now fires
+    // with no new request sent.
+    app.world_mut().resource_mut::<TurnOrder>().active_unit = Some(UnitId(ACTIVE));
+    app.update();
+
+    assert_eq!(ult_charge_of(&mut app, BURST), 0, "queued burst must fire");
+    assert!(hp_of(&mut app, TARGET) < 1000, "target took the queued ult");
+    assert_eq!(ultimate_used_ids(&mut app, &mut cursor), vec![UnitId(BURST)]);
+    assert!(
+        app.world().resource::<PendingBurstQueue>().0.is_empty(),
+        "queue drained after firing"
+    );
+}
+
+#[test]
+fn burst_queued_during_av_gap_fires_when_action_window_opens() {
+    // The AV-ticking gap (`WaitingForTurn`, no active unit) is not a launchable
+    // window — actions resolve only in `WaitingAction`. A burst pressed here must
+    // park, then fire the instant the player's action window opens.
+    let mut app = burst_app(CombatPhase::WaitingForTurn);
+    spawn_units(&mut app, 100, false, false);
+    app.world_mut().resource_mut::<TurnOrder>().active_unit = None;
+    let mut cursor = app
+        .world_mut()
+        .resource_mut::<Messages<CombatEvent>>()
+        .get_cursor();
+
+    send_burst(&mut app);
+    app.update();
+
+    assert_eq!(ult_charge_of(&mut app, BURST), 100, "gauge untouched in AV gap");
+    assert!(ultimate_used_ids(&mut app, &mut cursor).is_empty());
+    assert_eq!(
+        app.world().resource::<PendingBurstQueue>().0.len(),
+        1,
+        "burst parked during the AV gap"
+    );
+
+    // Action window opens with an ally active: the parked burst fires.
+    {
+        let mut state = app.world_mut().resource_mut::<CombatState>();
+        state.phase = CombatPhase::WaitingAction;
+    }
+    app.world_mut().resource_mut::<TurnOrder>().active_unit = Some(UnitId(ACTIVE));
+    app.update();
+
+    assert_eq!(ult_charge_of(&mut app, BURST), 0, "queued burst fires");
+    assert!(hp_of(&mut app, TARGET) < 1000, "target took the queued ult");
+    assert_eq!(ultimate_used_ids(&mut app, &mut cursor), vec![UnitId(BURST)]);
+    assert!(app.world().resource::<PendingBurstQueue>().0.is_empty());
 }
 
 #[test]

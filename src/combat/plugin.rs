@@ -37,6 +37,7 @@ impl Plugin for CombatPlugin {
             .init_resource::<DamageModifierLedger>()
             .init_resource::<PassiveListeners>()
             .init_resource::<crate::combat::turn_system::OutOfTurnBurst>()
+            .init_resource::<crate::combat::turn_system::PendingBurstQueue>()
             .insert_resource(Clock::default())
             .insert_resource(CombatRng::from_seed(DEFAULT_COMBAT_RNG_SEED))
             .add_systems(
