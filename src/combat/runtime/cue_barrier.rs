@@ -12,7 +12,7 @@ use crate::combat::{
         runner::BeatRunner,
     },
     state::InFlightAction,
-    types::SkillId,
+    types::{SkillId, UnitId},
 };
 
 /// Runtime-selected execution clock for timeline-backed actions.
@@ -35,6 +35,9 @@ pub const CUE_BARRIER_TIMEOUT_FRAMES: u32 = 180;
 pub struct CueBarrierStatus {
     pub cast_id: CastId,
     pub skill_id: SkillId,
+    /// Caster of the suspended action. Lets per-unit presentation bridges gate on
+    /// the actor that actually cast (the kernel barrier itself is global).
+    pub source: UnitId,
     pub timeline_id: &'static str,
     pub beat_id: &'static str,
     pub cue_id: &'static str,
@@ -51,9 +54,11 @@ pub struct CueBarrierStatus {
 }
 
 impl CueBarrierStatus {
+    #[allow(clippy::too_many_arguments)]
     fn awaiting(
         cast_id: CastId,
         skill_id: SkillId,
+        source: UnitId,
         timeline_id: &'static str,
         beat_id: &'static str,
         cue_id: &'static str,
@@ -62,6 +67,7 @@ impl CueBarrierStatus {
         Self {
             cast_id,
             skill_id,
+            source,
             timeline_id,
             beat_id,
             cue_id,
@@ -124,6 +130,7 @@ impl SuspendedTimeline {
         let mut status = CueBarrierStatus::awaiting(
             cast_id,
             inflight.action.skill_id.clone(),
+            inflight.action.source,
             runner.timeline_id(),
             awaiting.beat_id,
             awaiting.cue_id,

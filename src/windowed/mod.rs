@@ -10,7 +10,6 @@ use bevy_egui::{EguiContexts, EguiPlugin, EguiPrimaryContextPass, egui};
 
 use bevyrogue::animation::AnimationAssetPlugin;
 use bevyrogue::combat::av::ActionValue;
-use bevyrogue::combat::blueprints::agumon::TalentRanks;
 use bevyrogue::combat::bootstrap::{
     EncounterPreset, SelectionRequest, apply_composition, bootstrap_encounter,
 };
@@ -218,7 +217,6 @@ fn windowed_bootstrap_system(
     mut combat_state: ResMut<CombatState>,
     mut combat_events: MessageWriter<CombatEvent>,
     mut sp: ResMut<SpPool>,
-    mut talent_ranks: ResMut<TalentRanks>,
 ) {
     if data_ready.is_none() || !units.is_empty() {
         return;
@@ -240,7 +238,6 @@ fn windowed_bootstrap_system(
             combat_state.phase = CombatPhase::WaitingForTurn;
             sp.current = 3;
             sp.max = 3;
-            talent_ranks.0.insert("agumon::bouncing_fire".into(), 1);
             combat_events.write(CombatEvent {
                 source: UnitId(0),
                 target: UnitId(0),

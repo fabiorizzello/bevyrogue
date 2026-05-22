@@ -14,7 +14,7 @@
 - [x] **S01: S01** `risk:high` `depends:[]`
   > After this: Headless: tests prove the on-screen Sprite carries a bound Handle<Image>+TextureAtlas (not ..default()), the player frame maps 1:1 onto TextureAtlas.index across idle/attack ranges, clip↔atlas parity holds, and the impact-frame damage invariant holds on the rendered frame for Sharp Claws. Visual (user-run cargo winx, K001): two Agumon idle-loop and the basic Sharp Claws animation plays with damage landing on the impact frame.
 
-- [ ] **S02: S02** `risk:high` `depends:[]`
+- [x] **S02: S02** `risk:high` `depends:[]`
   > After this: Headless: impact-frame damage invariant holds on the rendered frame for Baby Flame (skill range) and Baby Burner (heavy_attack range) — release fires on the cue frame, not auto-released. Visual (user-run cargo winx, K001): skill (Baby Flame) and ultimate (Baby Burner) play their correct atlas frame ranges as smooth animation on both actors with damage/effects landing on the impact frame.
 
 - [ ] **S03: VFX flash renders as visible particles** `risk:medium` `depends:[S01,S02]`

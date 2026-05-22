@@ -450,6 +450,7 @@ fn telegraph_chip_helpers_surface_and_hide_sharp_claws_barriers_without_egui() {
     let awaiting = CueBarrierStatus {
         cast_id: CastId::ROOT,
         skill_id: sharp_claws_skill_id(),
+        source: CASTER_ID,
         timeline_id: "sharp_claws",
         beat_id: "impact_damage",
         cue_id: "agumon/sharp_claws/impact",

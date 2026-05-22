@@ -113,6 +113,12 @@ const DEFAULT_ANIM_FPS: f32 = 12.0;
 /// catch-up after a frame-time hitch so playback never enters a spiral.
 const MAX_CATCHUP_TICKS: u32 = 4;
 
+/// Display scale applied to the native 512×512 Agumon atlas frames. Authored at
+/// full tile size, an unscaled sprite fills the viewport and a full 4-per-team
+/// roster (8 actors) cannot fit. 0.4 → ~205px per sprite. Provisional layout
+/// value pending multi-slot positioning.
+const SPRITE_DISPLAY_SCALE: f32 = 0.4;
+
 /// Fixed-rate animation clock for the windowed presentation layer.
 ///
 /// `advance_agumon_presentation` previously advanced the player once per render
@@ -343,7 +349,7 @@ fn spawn_unit_sprites(
                 flip_x,
                 ..default()
             },
-            Transform::from_xyz(x, 0.0, 0.0),
+            Transform::from_xyz(x, 0.0, 0.0).with_scale(Vec3::splat(SPRITE_DISPLAY_SCALE)),
         ));
     }
 }
@@ -365,14 +371,18 @@ pub(super) fn advance_agumon_presentation(
     {
         let active_barrier = barrier.active_status().cloned();
         if let Some(status) = active_barrier.as_ref() {
-            if status.awaiting_release && status.skill_id.0 != SHARP_CLAWS_SKILL_ID {
+            // Auto-release is now only the fallback for genuinely unbridged skills
+            // (no windowed presentation graph). Bridged skills — sharp_claws,
+            // baby_flame, agumon_ult — release on their rendered ReleaseKernel cue
+            // in the per-tick block below instead of being auto-released here.
+            if status.awaiting_release && should_auto_release_unbridged(&status.skill_id.0) {
                 debug!(
                     target: "windowed.agumon_playback",
                     skill_id = %status.skill_id.0,
                     beat_id = status.beat_id,
                     cue_id = status.cue_id,
                     hop_index = ?status.hop_index,
-                    "unsupported windowed cue bridge; auto-releasing barrier to avoid stalled resolve"
+                    "unbridged windowed skill; auto-releasing barrier to avoid stalled resolve"
                 );
                 let _ = barrier.request_release(status.cue_id);
                 return;
@@ -413,7 +423,12 @@ pub(super) fn advance_agumon_presentation(
                 texture_atlas.index = index as usize;
             }
 
-            if active_barrier.is_some() {
+            // Only the caster's sprite annotates the barrier with node/frame, so
+            // an idle non-caster actor can't clobber the caster's impact state.
+            if active_barrier
+                .as_ref()
+                .is_some_and(|status| barrier_targets_sprite(status, sprite.unit_id))
+            {
                 barrier.annotate_active_animation(&current_node, advance.frame as usize);
             }
 
@@ -481,7 +496,20 @@ pub(super) fn advance_agumon_presentation(
                     result,
                     CueReleaseResult::Released | CueReleaseResult::DuplicateRelease
                 ) {
+                    // Arm the KernelCue-gated FSM transition. The node actually
+                    // changes on the next tick's advance_result; this only arms the
+                    // pending cue. Skills with a forward KernelCue edge advance
+                    // (Baby Burner charge->launch->recovery, Sharp Claws
+                    // strike->recover); Baby Flame's impact node has no KernelCue
+                    // edge (the bounce is pure VFX, not an animation hop), so this is
+                    // a no-op there and impact->recover proceeds via TimeInNode.
                     sprite.player.fire_kernel_cue();
+                    trace!(
+                        target: "windowed.agumon_playback",
+                        cue_id = cue_id.as_str(),
+                        node = current_node.as_str(),
+                        "multi-barrier FSM advance fired (kernel cue armed)"
+                    );
                     sprite.last_release_frame = Some(ReleaseFrameKey {
                         cue_id,
                         node: current_node.clone(),
@@ -520,6 +548,12 @@ fn sync_agumon_mode(
     let Some(status) = active_barrier else {
         return;
     };
+
+    // The kernel cue barrier is global, but only the caster's sprite should
+    // present the skill. Every other on-screen actor keeps cycling idle.
+    if !barrier_targets_sprite(status, sprite.unit_id) {
+        return;
+    }
 
     // Only skills with a known FSM entry node are bridged here. Unbridged skills
     // are handled by the auto-release fallback in `advance_agumon_presentation`.
@@ -656,6 +690,13 @@ fn classify_same_skill_sync(
     }
 }
 
+/// Whether an active (global) kernel barrier belongs to a given on-screen actor.
+/// Gates per-sprite presentation so only the caster animates the skill while
+/// every other actor keeps cycling idle.
+fn barrier_targets_sprite(status: &CueBarrierStatus, unit_id: UnitId) -> bool {
+    status.source == unit_id
+}
+
 /// `(skill_id, awaiting_cue_id)` for the active mode, used to enrich the
 /// per-tick playback trace. `Idle` carries neither.
 fn mode_trace_fields(mode: &AgumonPlaybackMode) -> (Option<&str>, Option<&str>) {
@@ -695,6 +736,14 @@ fn already_released_frame(
     })
 }
 
+/// Whether an awaiting barrier for `skill_id` must be auto-released as the
+/// unbridged fallback. Bridged skills (those with a windowed FSM entry node via
+/// [`skill_start_node`]) release on their rendered `ReleaseKernel` cue instead,
+/// so they are NOT auto-released here.
+fn should_auto_release_unbridged(skill_id: &str) -> bool {
+    skill_start_node(skill_id).is_none()
+}
+
 fn barrier_trace_tuple(status: &CueBarrierStatus) -> (&str, &str, &str, bool, bool) {
     (
         status.skill_id.0.as_str(),
@@ -708,6 +757,37 @@ fn barrier_trace_tuple(status: &CueBarrierStatus) -> (&str, &str, &str, bool, bo
 #[cfg(test)]
 mod tests {
     use super::*;
+    use bevyrogue::combat::runtime::intent::CastId;
+    use bevyrogue::combat::types::SkillId;
+
+    fn barrier_status_from(source: UnitId) -> CueBarrierStatus {
+        CueBarrierStatus {
+            cast_id: CastId::ROOT,
+            skill_id: SkillId("sharp_claws".into()),
+            source,
+            timeline_id: "sharp_claws",
+            beat_id: "impact_damage",
+            cue_id: "agumon/sharp_claws/impact",
+            awaiting_release: true,
+            released: false,
+            timed_out: false,
+            waited_frames: 0,
+            timeout_frames: 180,
+            animation_node: None,
+            animation_frame: None,
+            hop_index: None,
+        }
+    }
+
+    #[test]
+    fn barrier_targets_only_the_casting_sprite() {
+        let caster = UnitId(7);
+        let status = barrier_status_from(caster);
+        // The caster's sprite presents the skill; a non-caster (e.g. the target
+        // dummy) stays idle even though the barrier is globally visible.
+        assert!(barrier_targets_sprite(&status, caster));
+        assert!(!barrier_targets_sprite(&status, UnitId(99)));
+    }
 
     #[test]
     fn skill_start_node_maps_each_bridged_skill_to_its_fsm_entry() {
@@ -794,7 +874,7 @@ mod tests {
     }
 
     #[test]
-    fn duplicate_release_guard_matches_same_cue_node_and_local_frame_only() {
+    fn duplicate_release_guard_matches_same_cue_node_and_local_frame() {
         let last = ReleaseFrameKey {
             cue_id: "agumon/sharp_claws/impact".into(),
             node: "sharp_claws_strike".into(),
@@ -819,5 +899,58 @@ mod tests {
             "sharp_claws_strike",
             1,
         ));
+    }
+
+    /// Baby Flame and Baby Burner are bridged, so the fallback auto-release branch
+    /// in `advance_agumon_presentation` must NOT fire for them — they release on
+    /// their rendered `ReleaseKernel` cue. Only skills with no windowed FSM entry
+    /// (e.g. an unbridged Greymon skill) take the auto-release fallback.
+    #[test]
+    fn auto_release_fallback_only_targets_unbridged_skills() {
+        assert!(!should_auto_release_unbridged(SHARP_CLAWS_SKILL_ID));
+        assert!(!should_auto_release_unbridged(BABY_FLAME_SKILL_ID));
+        assert!(!should_auto_release_unbridged(AGUMON_ULT_SKILL_ID));
+        // An unbridged skill (no windowed presentation graph) still auto-releases.
+        assert!(should_auto_release_unbridged("greymon_basic"));
+    }
+
+    /// The release-frame detector fires exactly on each authored `ReleaseKernel`
+    /// local frame: Baby Burner's windup/recovery end-of-node cues (local 7) and
+    /// the launch/impact cues (local 1) — the frames where damage lands and the
+    /// multi-barrier walk advances.
+    #[test]
+    fn should_release_kernel_fires_on_authored_cue_frames() {
+        use bevyrogue::animation::{AnimNode, FrameCue, FrameRange, ReleaseKernelCue};
+
+        let node_with_release_at = |local: u32| AnimNode {
+            frames: FrameRange(0, 8),
+            on_enter: Vec::new(),
+            cues: vec![FrameCue {
+                at: local,
+                command: FrameCueCommand::ReleaseKernel(ReleaseKernelCue),
+            }],
+            modifier: None,
+            reverse: false,
+        };
+
+        // baby_burner_charge / baby_burner_recovery: end-of-node release at local 7.
+        let charge = node_with_release_at(7);
+        assert!(should_release_kernel(&charge, 7));
+        assert!(!should_release_kernel(&charge, 6));
+
+        // baby_burner_launch / baby_flame_impact: release at local 1 (impact).
+        let launch = node_with_release_at(1);
+        assert!(should_release_kernel(&launch, 1));
+        assert!(!should_release_kernel(&launch, 0));
+
+        // A node with no cues never releases.
+        let plain = AnimNode {
+            frames: FrameRange(0, 8),
+            on_enter: Vec::new(),
+            cues: Vec::new(),
+            modifier: None,
+            reverse: false,
+        };
+        assert!(!should_release_kernel(&plain, 1));
     }
 }

@@ -63,12 +63,6 @@
         ),
         (
             from: "baby_flame_impact",
-            to: Node("baby_flame_impact"),
-            when: KernelCue,
-            priority: Some((10)),
-        ),
-        (
-            from: "baby_flame_impact",
             to: Node("baby_flame_recover"),
             when: TimeInNode,
         ),
