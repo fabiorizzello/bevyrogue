@@ -28,3 +28,5 @@ mod clip_atlas_parity;
 mod skill_graph_mapping_extensibility;
 #[path = "animation/vfx_handle_seam.rs"]
 mod vfx_handle_seam;
+#[path = "animation/vfx_spawn_descriptor.rs"]
+mod vfx_spawn_descriptor;

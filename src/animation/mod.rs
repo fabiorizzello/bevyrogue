@@ -5,6 +5,7 @@ pub mod player;
 pub mod plugin;
 pub mod registry;
 pub mod validation;
+pub mod vfx;
 
 pub use anim_graph::*;
 pub use atlas::*;
@@ -17,3 +18,4 @@ pub use registry::{
     SkillGraphRegistry, StanceGraphPaths, StanceGraphRegistry,
 };
 pub use validation::*;
+pub use vfx::*;
