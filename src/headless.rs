@@ -29,7 +29,8 @@ use bevyrogue::combat::toughness::{Toughness, visible_toughness};
 use bevyrogue::combat::turn_order::{TurnAdvanced, TurnOrder};
 use bevyrogue::combat::turn_system::{
     ActionIntent, EnemyTurnRequestQueue, advance_turn_system, apply_av_ops_system,
-    check_victory_system, resolve_action_system, resolve_enemy_turn_action_system,
+    burst_action_system, check_victory_system, resolve_action_system,
+    resolve_enemy_turn_action_system,
 };
 use bevyrogue::combat::types::UnitId;
 use bevyrogue::combat::ultimate::{UltimateCharge, flush_ult_gain_system, ult_accumulation_system};
@@ -135,6 +136,7 @@ pub fn register_combat_systems(app: &mut App) {
     app.init_resource::<EnemyTurnRequestQueue>().add_systems(
         Update,
         (
+            burst_action_system,
             resolve_action_system,
             follow_up_listener_system,
             form_identity_listener_system,

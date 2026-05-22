@@ -21,7 +21,7 @@ use bevyrogue::combat::state::CombatState;
 use bevyrogue::combat::turn_order::{TurnAdvanced, TurnOrder};
 use bevyrogue::combat::turn_system::{ActionIntent, UltBurstRequest};
 use bevyrogue::combat::turn_system::{
-    advance_turn_system, check_victory_system, resolve_action_system,
+    advance_turn_system, burst_action_system, check_victory_system, resolve_action_system,
     resolve_enemy_turn_action_system,
 };
 use bevyrogue::combat::types::UnitId;
@@ -221,6 +221,7 @@ fn main() -> AppExit {
         (
             bootstrap_system,
             timeout_system,
+            burst_action_system,
             resolve_action_system,
             follow_up_listener_system,
             form_identity_listener_system,

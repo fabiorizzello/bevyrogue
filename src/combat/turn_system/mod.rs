@@ -13,11 +13,13 @@ pub use types::{ActionIntent, EnemyTurnRequestQueue, OutOfTurnBurst, UltBurstReq
 pub(crate) use helpers::{emit_combat_beat, emit_combat_event, emit_kernel_transition, set_phase};
 
 mod advance;
+mod burst;
 mod enemy_turn;
 mod finalize;
 mod resolve;
 
 pub use advance::advance_turn_system;
+pub use burst::burst_action_system;
 pub use enemy_turn::resolve_enemy_turn_action_system;
 pub use finalize::{apply_av_ops_system, check_victory_system};
 pub use pipeline::{continue_suspended_timeline, continue_suspended_timeline_system};

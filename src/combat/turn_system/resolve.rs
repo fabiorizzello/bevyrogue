@@ -5,7 +5,9 @@ use crate::combat::runtime::{
     intent::{CastId, CastIdGen},
 };
 use crate::combat::{
-    action_query::{ActionQueryKind, build_snapshot_from_ecs, query_intent_legality},
+    action_query::{
+        ActionQueryKind, build_snapshot_from_ecs, mark_unit_active, query_intent_legality,
+    },
     energy::Energy,
     events::{ActionIntentKind, CombatEvent, CombatEventKind},
     kernel::{CombatBeatId, CombatKernelRegistry},
@@ -47,6 +49,7 @@ pub fn resolve_action_system(
     registry: Option<Res<CombatKernelRegistry>>,
     mut actors: ResolveActorsQuery,
     gauge_meta_q: Query<&'static crate::combat::ult_gauge::UltGaugeMetadata>,
+    out_of_turn_burst: Res<crate::combat::turn_system::OutOfTurnBurst>,
     mut runtime: ActionRuntimeParams,
 ) {
     if state.phase == CombatPhase::Resolving {
@@ -132,8 +135,14 @@ pub fn resolve_action_system(
                 )
                 .collect();
 
-            let snapshot =
+            let mut snapshot =
                 build_snapshot_from_ecs(&state, &turn_order, &sp, actor_id, target_id, units_data);
+
+            // Out-of-turn burst: honor the same active-unit lift the burst system
+            // authorized, so an off-turn ult passes legality for this one cycle.
+            if out_of_turn_burst.0 == Some(actor_id) {
+                mark_unit_active(&mut snapshot, actor_id);
+            }
 
             if let Err(reason) =
                 query_intent_legality(&snapshot, skill_book, actor_id, &query_kind, target_id)

@@ -28,8 +28,8 @@ use bevyrogue::combat::sp::SpPool;
 use bevyrogue::combat::state::{CombatPhase, CombatState};
 use bevyrogue::combat::turn_order::{TurnAdvanced, TurnOrder};
 use bevyrogue::combat::turn_system::{
-    advance_turn_system, check_victory_system, continue_suspended_timeline_system,
-    resolve_action_system, resolve_enemy_turn_action_system,
+    advance_turn_system, burst_action_system, check_victory_system,
+    continue_suspended_timeline_system, resolve_action_system, resolve_enemy_turn_action_system,
 };
 use bevyrogue::combat::types::{Attribute, UnitId};
 use bevyrogue::combat::ultimate::{flush_ult_gain_system, ult_accumulation_system};
@@ -253,6 +253,7 @@ pub fn register_combat_systems(app: &mut App) {
         .add_systems(
             Update,
             (
+                burst_action_system,
                 resolve_action_system,
                 follow_up_listener_system,
                 form_identity_listener_system,
