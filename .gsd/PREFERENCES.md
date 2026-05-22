@@ -18,7 +18,6 @@ phases:
 discuss_preparation: true
 discuss_web_research: true
 discuss_depth: thorough
-planning_depth: deep
 avoid_skills:
   - accessibility
   - agent-browser
