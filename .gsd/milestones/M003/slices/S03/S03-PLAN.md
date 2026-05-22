@@ -26,7 +26,7 @@ Upstream consumed: Command::SpawnParticle/ParticleId/VfxLocus/VfxMotion (src/ani
   - Files: `src/animation/vfx.rs`, `src/animation/mod.rs`, `tests/animation/vfx_spawn_descriptor.rs`, `tests/animation.rs`
   - Verify: cargo test --test animation
 
-- [ ] **T02: Consume on_enter SpawnParticle into short-lived colored Sprite-quad particle entities (windowed)** `est:2h`
+- [x] **T02: Consume on_enter SpawnParticle into short-lived colored Sprite-quad particle entities (windowed)** `est:2h`
   Why: advance_agumon_presentation reads node `cues` for ReleaseKernel but never reads node `on_enter` commands, so the lone authored SpawnParticle on baby_flame_cast (assets/digimon/agumon/anim_graph.ron:8) is a no-op. This task makes the Baby Flame cast emit a visible particle, establishing the reusable windowed particle entity + ttl/motion despawn infra that T03 also uses.
   - Files: `src/windowed/render.rs`
   - Verify: cargo test --features windowed --bin bevyrogue

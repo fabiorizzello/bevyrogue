@@ -3,9 +3,10 @@ use std::collections::HashSet;
 use bevy::prelude::*;
 
 use bevyrogue::animation::{
-    AnimGraph, AnimGraphId, AnimGraphPlayer, AnimationClipHandles, AnimationClipLoadState,
-    AnimationGraphLookupDiagnostics, AtlasGeometry, Clip, FrameCueCommand, NodeId,
-    ResolvedAnimGraph, ResolvedAnimGraphSource, SkillGraphRegistry, StanceGraphRegistry,
+    resolve_locus, AnimGraph, AnimGraphId, AnimGraphPlayer, AnimationClipHandles,
+    AnimationClipLoadState, AnimationGraphLookupDiagnostics, AtlasGeometry, Clip,
+    FrameCueCommand, NodeId, ResolvedAnimGraph, ResolvedAnimGraphSource,
+    SkillGraphRegistry, StanceGraphRegistry, VfxMotion, VfxSpawnDescriptor,
 };
 use bevyrogue::combat::runtime::{CueBarrierStatus, CueReleaseResult, SuspendedTimelineState};
 use bevyrogue::combat::team::Team;
@@ -27,6 +28,22 @@ pub(super) struct AgumonSprite {
     mode: AgumonPlaybackMode,
     last_release_frame: Option<ReleaseFrameKey>,
     last_missing_skill_graph_cue: Option<String>,
+}
+
+#[derive(Component, Debug, Clone, PartialEq, Eq)]
+struct VfxParticle {
+    ttl_ticks: u32,
+    motion: VfxMotion,
+}
+
+#[derive(Component, Debug, Clone, Copy, PartialEq)]
+struct VfxParticleTarget {
+    world_xy: [f32; 2],
+}
+
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
+struct VfxParticleSource {
+    unit_id: UnitId,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -118,6 +135,9 @@ const MAX_CATCHUP_TICKS: u32 = 4;
 /// roster (8 actors) cannot fit. 0.4 → ~205px per sprite. Provisional layout
 /// value pending multi-slot positioning.
 const SPRITE_DISPLAY_SCALE: f32 = 0.4;
+const VFX_PARTICLE_TTL_TICKS: u32 = 6;
+const VFX_PARTICLE_SIZE: f32 = 18.0;
+const VFX_PARTICLE_Z: f32 = 1.0;
 
 /// Fixed-rate animation clock for the windowed presentation layer.
 ///
@@ -135,6 +155,9 @@ pub(super) struct AnimationClock {
     fps: f32,
     accumulator: f32,
 }
+
+#[derive(Resource, Debug, Clone, Copy, Default)]
+struct PendingAnimationTicks(u32);
 
 impl AnimationClock {
     fn new(fps: f32) -> Self {
@@ -210,12 +233,16 @@ pub struct RenderPlugin;
 impl Plugin for RenderPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(AnimationClock::from_env())
+            .insert_resource(PendingAnimationTicks::default())
             .add_systems(Startup, setup_camera)
             .add_systems(Update, build_agumon_atlas.before(spawn_unit_sprites))
             .add_systems(Update, spawn_unit_sprites)
+            .add_systems(Update, sample_animation_ticks.before(advance_vfx_particles))
             .add_systems(
                 Update,
-                advance_agumon_presentation
+                (advance_vfx_particles, advance_agumon_presentation)
+                    .chain()
+                    .after(sample_animation_ticks)
                     .after(spawn_unit_sprites)
                     .after(resolve_action_system)
                     .before(continue_suspended_timeline_system),
@@ -225,6 +252,14 @@ impl Plugin for RenderPlugin {
 
 fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera2d);
+}
+
+fn sample_animation_ticks(
+    time: Res<Time>,
+    mut clock: ResMut<AnimationClock>,
+    mut pending_ticks: ResMut<PendingAnimationTicks>,
+) {
+    pending_ticks.0 = clock.tick(time.delta_secs());
 }
 
 /// Builds the shared `AgumonAtlas` (image + `TextureAtlasLayout` + geometry)
@@ -354,16 +389,19 @@ fn spawn_unit_sprites(
     }
 }
 
-pub(super) fn advance_agumon_presentation(
-    time: Res<Time>,
-    mut clock: ResMut<AnimationClock>,
+fn advance_agumon_presentation(
+    pending_ticks: Res<PendingAnimationTicks>,
+    mut commands: Commands,
     stance_reg: Res<StanceGraphRegistry>,
     skill_reg: Res<SkillGraphRegistry>,
     graphs: Res<Assets<AnimGraph>>,
     mut lookup_diagnostics: ResMut<AnimationGraphLookupDiagnostics>,
     mut barrier: ResMut<SuspendedTimelineState>,
     atlas: Option<Res<AgumonAtlas>>,
-    mut sprites: Query<(&mut AgumonSprite, &mut Sprite)>,
+    mut sprites: ParamSet<(
+        Query<(&mut AgumonSprite, &mut Sprite, &Transform)>,
+        Query<(&AgumonSprite, &Transform)>,
+    )>,
 ) {
     let stance_graph =
         stance_reg.resolve_snapshot(&AnimGraphId(AGUMON_STANCE_GRAPH_ID.into()), &graphs);
@@ -393,10 +431,21 @@ pub(super) fn advance_agumon_presentation(
     // Advance the player at the fixed animation rate, not once per render frame.
     // Most 60fps frames yield 0 ticks; the kernel-barrier release still observes
     // the rendered impact frame — it just samples it on the animation tick.
-    let ticks = clock.tick(time.delta_secs());
-    for _ in 0..ticks {
+    for _ in 0..pending_ticks.0 {
         let active_barrier = barrier.active_status().cloned();
-        for (mut sprite, mut render_sprite) in &mut sprites {
+        let sprite_positions: Vec<(UnitId, [f32; 2])> = sprites
+            .p1()
+            .iter()
+            .map(|(sprite, transform)| {
+                (
+                    sprite.unit_id,
+                    [transform.translation.x, transform.translation.y],
+                )
+            })
+            .collect();
+        for (mut sprite, mut render_sprite, transform) in &mut sprites.p0() {
+            let prev_node = sprite.player.current_node.0.clone();
+
             sync_agumon_mode(
                 &mut sprite,
                 active_barrier.as_ref(),
@@ -409,6 +458,7 @@ pub(super) fn advance_agumon_presentation(
             let graph = sprite.graph.graph().clone();
             let advance = sprite.player.advance_result(&graph);
             let current_node = sprite.player.current_node.0.clone();
+            let entered = entered_node(&prev_node, &current_node);
             let local_frame = local_frame_for(&graph, &sprite.player.current_node, advance.frame);
 
             // Drive the rendered tile from the player frame via the identity
@@ -481,6 +531,52 @@ pub(super) fn advance_agumon_presentation(
                 None
             };
 
+            if should_spawn_node_vfx(&sprite.mode, active_barrier.as_ref(), sprite.unit_id) {
+                if let Some(node_id) = entered {
+                    if let Some(node) = graph.nodes.get(&NodeId(node_id.to_string())) {
+                        let caster_xy = [transform.translation.x, transform.translation.y];
+                        let target_xy =
+                            nearest_non_caster_target_xy(&sprite_positions, sprite.unit_id, caster_xy);
+
+                        for command in &node.on_enter {
+                            let Some(descriptor) = VfxSpawnDescriptor::from_command(command) else {
+                                continue;
+                            };
+
+                            let Some(target_xy) = target_xy else {
+                                debug!(
+                                    target: "windowed.agumon_playback",
+                                    source_unit = ?sprite.unit_id,
+                                    node = node_id,
+                                    particle = %descriptor.particle.0,
+                                    "SpawnParticle on_enter target could not be resolved"
+                                );
+                                continue;
+                            };
+
+                            let entity = spawn_vfx_particle(
+                                &mut commands,
+                                &descriptor,
+                                caster_xy,
+                                target_xy,
+                                sprite.unit_id,
+                            );
+                            let resolved_xy = resolve_vfx_spawn_xy(&descriptor, caster_xy, target_xy);
+                            trace!(
+                                target: "windowed.agumon_playback",
+                                entity = ?entity,
+                                particle = %descriptor.particle.0,
+                                resolved_xy = ?resolved_xy,
+                                motion = ?descriptor.motion,
+                                ttl_ticks = VFX_PARTICLE_TTL_TICKS,
+                                source_unit = ?sprite.unit_id,
+                                "spawned windowed vfx particle"
+                            );
+                        }
+                    }
+                }
+            }
+
             if let Some((cue_id, lf)) = pending_release {
                 let result = barrier.request_release(&cue_id);
                 trace!(
@@ -532,6 +628,129 @@ pub(super) fn advance_agumon_presentation(
                         "agumon playback returned to idle"
                     );
                 }
+            }
+        }
+    }
+}
+
+fn entered_node<'a>(prev_node: &'a str, current_node: &'a str) -> Option<&'a str> {
+    (prev_node != current_node).then_some(current_node)
+}
+
+fn decrement_vfx_ttl(ttl_ticks: u32) -> u32 {
+    ttl_ticks.saturating_sub(1)
+}
+
+fn resolve_vfx_spawn_xy(
+    descriptor: &VfxSpawnDescriptor,
+    caster_xy: [f32; 2],
+    target_xy: [f32; 2],
+) -> [f32; 2] {
+    resolve_locus(&descriptor.locus, caster_xy, target_xy)
+}
+
+fn vfx_particle_color(descriptor: &VfxSpawnDescriptor) -> Color {
+    let name = descriptor.particle.0.as_str();
+    if name.contains("burner") {
+        Color::srgb(1.0, 0.8, 0.2)
+    } else if name.contains("flame") {
+        Color::srgb(1.0, 0.45, 0.15)
+    } else {
+        Color::srgb(1.0, 1.0, 1.0)
+    }
+}
+
+fn should_spawn_node_vfx(
+    mode: &AgumonPlaybackMode,
+    active_barrier: Option<&CueBarrierStatus>,
+    unit_id: UnitId,
+) -> bool {
+    matches!(mode, AgumonPlaybackMode::Skill { .. })
+        && active_barrier
+            .map(|status| barrier_targets_sprite(status, unit_id))
+            .unwrap_or(true)
+}
+
+fn nearest_non_caster_target_xy(
+    sprite_positions: &[(UnitId, [f32; 2])],
+    caster: UnitId,
+    caster_xy: [f32; 2],
+) -> Option<[f32; 2]> {
+    sprite_positions
+        .iter()
+        .filter(|(unit_id, _)| *unit_id != caster)
+        .map(|(_, xy)| {
+            let dx = xy[0] - caster_xy[0];
+            let dy = xy[1] - caster_xy[1];
+            let dist2 = dx * dx + dy * dy;
+            (*xy, dist2)
+        })
+        .min_by(|(_, lhs), (_, rhs)| lhs.total_cmp(rhs))
+        .map(|(xy, _)| xy)
+}
+
+fn spawn_vfx_particle(
+    commands: &mut Commands,
+    descriptor: &VfxSpawnDescriptor,
+    caster_xy: [f32; 2],
+    target_xy: [f32; 2],
+    source_unit: UnitId,
+) -> Entity {
+    let resolved_xy = resolve_vfx_spawn_xy(descriptor, caster_xy, target_xy);
+    commands
+        .spawn((
+            Sprite::from_color(vfx_particle_color(descriptor), Vec2::splat(VFX_PARTICLE_SIZE)),
+            Transform::from_xyz(resolved_xy[0], resolved_xy[1], VFX_PARTICLE_Z),
+            VfxParticle {
+                ttl_ticks: VFX_PARTICLE_TTL_TICKS,
+                motion: descriptor.motion.clone(),
+            },
+            VfxParticleTarget { world_xy: target_xy },
+            VfxParticleSource { unit_id: source_unit },
+        ))
+        .id()
+}
+
+fn advance_vfx_particles(
+    mut commands: Commands,
+    pending_ticks: Res<PendingAnimationTicks>,
+    mut particles: Query<
+        (
+            Entity,
+            &mut VfxParticle,
+            &mut Transform,
+            &VfxParticleTarget,
+            &VfxParticleSource,
+        ),
+    >,
+) {
+    for _ in 0..pending_ticks.0 {
+        for (entity, mut particle, mut transform, target, source) in &mut particles {
+            match &particle.motion {
+                VfxMotion::Static => {}
+                VfxMotion::FollowTarget | VfxMotion::ArcToTarget => {
+                    let dx = target.world_xy[0] - transform.translation.x;
+                    let dy = target.world_xy[1] - transform.translation.y;
+                    let factor = match &particle.motion {
+                        VfxMotion::FollowTarget => 0.45,
+                        VfxMotion::ArcToTarget => 0.3,
+                        VfxMotion::Static => 0.0,
+                    };
+                    transform.translation.x += dx * factor;
+                    transform.translation.y += dy * factor;
+                }
+            }
+
+            particle.ttl_ticks = decrement_vfx_ttl(particle.ttl_ticks);
+            if particle.ttl_ticks == 0 {
+                trace!(
+                    target: "windowed.agumon_playback",
+                    entity = ?entity,
+                    motion = ?particle.motion,
+                    source_unit = ?source.unit_id,
+                    "despawned windowed vfx particle"
+                );
+                commands.entity(entity).despawn();
             }
         }
     }
@@ -777,6 +996,58 @@ mod tests {
             animation_frame: None,
             hop_index: None,
         }
+    }
+
+
+    #[test]
+    fn entered_node_only_reports_actual_node_changes() {
+        assert_eq!(entered_node("baby_flame_cast", "baby_flame_cast"), None);
+        assert_eq!(
+            entered_node("baby_flame_cast", "baby_flame_impact"),
+            Some("baby_flame_impact")
+        );
+    }
+
+    #[test]
+    fn vfx_particle_ttl_reaches_zero_after_configured_ticks() {
+        let mut ttl = VFX_PARTICLE_TTL_TICKS;
+        for _ in 0..VFX_PARTICLE_TTL_TICKS {
+            ttl = decrement_vfx_ttl(ttl);
+        }
+        assert_eq!(ttl, 0);
+        assert_eq!(decrement_vfx_ttl(ttl), 0);
+    }
+
+    #[test]
+    fn resolve_vfx_spawn_xy_honors_each_supported_locus() {
+        use bevyrogue::animation::{ParticleId, VfxLocus};
+
+        let caster_xy = [-24.0, 12.0];
+        let target_xy = [48.0, -6.0];
+
+        let caster_center = VfxSpawnDescriptor {
+            particle: ParticleId("baby_flame".into()),
+            locus: VfxLocus::CasterCenter,
+            motion: VfxMotion::ArcToTarget,
+        };
+        assert_eq!(resolve_vfx_spawn_xy(&caster_center, caster_xy, target_xy), caster_xy);
+
+        let target_center = VfxSpawnDescriptor {
+            particle: ParticleId("baby_flame".into()),
+            locus: VfxLocus::TargetCenter,
+            motion: VfxMotion::FollowTarget,
+        };
+        assert_eq!(resolve_vfx_spawn_xy(&target_center, caster_xy, target_xy), target_xy);
+
+        let primary_target_center = VfxSpawnDescriptor {
+            particle: ParticleId("baby_flame".into()),
+            locus: bevyrogue::animation::VfxLocus::PrimaryTargetCenter,
+            motion: VfxMotion::Static,
+        };
+        assert_eq!(
+            resolve_vfx_spawn_xy(&primary_target_center, caster_xy, target_xy),
+            target_xy
+        );
     }
 
     #[test]
