@@ -1,0 +1,32 @@
+{
+  "template": "small-feature",
+  "templateName": "Small Feature",
+  "description": "",
+  "branch": "master",
+  "phases": [
+    {
+      "name": "scope",
+      "index": 0,
+      "status": "active"
+    },
+    {
+      "name": "plan",
+      "index": 1,
+      "status": "pending"
+    },
+    {
+      "name": "implement",
+      "index": 2,
+      "status": "pending"
+    },
+    {
+      "name": "verify",
+      "index": 3,
+      "status": "pending"
+    }
+  ],
+  "currentPhase": 0,
+  "startedAt": "2026-05-22T10:11:45.577Z",
+  "updatedAt": "2026-05-22T10:11:45.577Z",
+  "artifactDir": "/home/fabio/dev/bevyrogue/.gsd/workflows/features/260522-1-small-feature"
+}

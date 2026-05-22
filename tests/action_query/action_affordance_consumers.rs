@@ -4,7 +4,7 @@ use bevyrogue::combat::action_query::{
     first_enabled_target_id, query_action_affordance,
 };
 use bevyrogue::combat::counterplay::EnemyCounterplayKit;
-use bevyrogue::combat::energy::{Energy, RoundEnergyTracker};
+use bevyrogue::combat::energy::Energy;
 use bevyrogue::combat::kit::UnitSkills;
 use bevyrogue::combat::sp::SpPool;
 use bevyrogue::combat::state::{CombatPhase, CombatState};
@@ -31,7 +31,6 @@ struct Fixture {
     ultimate: Option<UltimateCharge>,
     toughness: Option<Toughness>,
     energy: Option<Energy>,
-    tracker: Option<RoundEnergyTracker>,
     counterplay: Option<EnemyCounterplayKit>,
 }
 
@@ -186,7 +185,6 @@ fn snapshot_from_fixtures(
                 fixture.is_stunned,
                 fixture.is_commander,
                 fixture.energy.as_ref(),
-                fixture.tracker.as_ref(),
                 None,
             )
         })
@@ -250,7 +248,6 @@ fn explicit_sp_snapshot_blocks_revive_but_bypass_snapshot_remains_separate() {
                 current: 0,
                 max: 100,
             }),
-            tracker: Some(RoundEnergyTracker::default()),
             counterplay: None,
         },
         Fixture {
@@ -265,7 +262,6 @@ fn explicit_sp_snapshot_blocks_revive_but_bypass_snapshot_remains_separate() {
             ultimate: None,
             toughness: None,
             energy: None,
-            tracker: None,
             counterplay: None,
         },
     ];
@@ -333,7 +329,6 @@ fn explicit_sp_snapshot_blocks_revive_but_bypass_snapshot_remains_separate() {
                 fixture.is_stunned,
                 fixture.is_commander,
                 fixture.energy.as_ref(),
-                fixture.tracker.as_ref(),
                 None,
             )
         })
@@ -388,10 +383,6 @@ fn snapshot_carries_commander_energy_tracker_and_real_sp() {
                 current: 37,
                 max: 100,
             }),
-            tracker: Some(RoundEnergyTracker {
-                secondary_gained: 8,
-                external_gained: 12,
-            }),
             counterplay: None,
         }],
         UnitId(1),
@@ -404,8 +395,6 @@ fn snapshot_carries_commander_energy_tracker_and_real_sp() {
     assert_eq!(snapshot.acting_unit.sp, 4);
     assert!(snapshot.acting_unit.is_commander);
     assert_eq!(snapshot.acting_unit.energy, 37);
-    assert_eq!(snapshot.acting_unit.energy_secondary_gained, 8);
-    assert_eq!(snapshot.acting_unit.energy_external_gained, 12);
 }
 
 #[test]
@@ -437,7 +426,6 @@ fn disabled_resource_keeps_target_reason_codes_for_ko_live_and_enemy_targets() {
                 }),
                 toughness: None,
                 energy: None,
-                tracker: None,
                 counterplay: None,
             },
             Fixture {
@@ -452,7 +440,6 @@ fn disabled_resource_keeps_target_reason_codes_for_ko_live_and_enemy_targets() {
                 ultimate: None,
                 toughness: None,
                 energy: None,
-                tracker: None,
                 counterplay: None,
             },
             Fixture {
@@ -467,7 +454,6 @@ fn disabled_resource_keeps_target_reason_codes_for_ko_live_and_enemy_targets() {
                 ultimate: None,
                 toughness: None,
                 energy: None,
-                tracker: None,
                 counterplay: None,
             },
             Fixture {
@@ -482,7 +468,6 @@ fn disabled_resource_keeps_target_reason_codes_for_ko_live_and_enemy_targets() {
                 ultimate: None,
                 toughness: None,
                 energy: None,
-                tracker: None,
                 counterplay: None,
             },
         ],
@@ -570,7 +555,6 @@ fn enabled_basic_target_is_chosen_from_query_output_not_local_team_assumptions()
                 }),
                 toughness: None,
                 energy: None,
-                tracker: None,
                 counterplay: None,
             },
             Fixture {
@@ -585,7 +569,6 @@ fn enabled_basic_target_is_chosen_from_query_output_not_local_team_assumptions()
                 ultimate: None,
                 toughness: None,
                 energy: None,
-                tracker: None,
                 counterplay: None,
             },
             Fixture {
@@ -600,7 +583,6 @@ fn enabled_basic_target_is_chosen_from_query_output_not_local_team_assumptions()
                 ultimate: None,
                 toughness: None,
                 energy: None,
-                tracker: None,
                 counterplay: None,
             },
         ],
@@ -661,7 +643,6 @@ fn deferred_actions_are_excluded_from_enabled_selection() {
                 }),
                 toughness: None,
                 energy: None,
-                tracker: None,
                 counterplay: None,
             },
             Fixture {
@@ -676,7 +657,6 @@ fn deferred_actions_are_excluded_from_enabled_selection() {
                 ultimate: None,
                 toughness: None,
                 energy: None,
-                tracker: None,
                 counterplay: None,
             },
         ],

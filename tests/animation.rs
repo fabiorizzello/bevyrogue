@@ -20,6 +20,8 @@ mod anim_registry_failure_visibility;
 mod anim_stance_asset;
 #[path = "animation/anim_validation.rs"]
 mod anim_validation;
+#[path = "animation/atlas_binding.rs"]
+mod atlas_binding;
 #[path = "animation/clip_atlas_parity.rs"]
 mod clip_atlas_parity;
 #[path = "animation/skill_graph_mapping_extensibility.rs"]

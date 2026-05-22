@@ -2,7 +2,7 @@ use bevyrogue::combat::action_query::{
     ActionQueryKind, ActionStatus, CombatQuerySnapshot, ImplementationStatus,
     ResourceAffordanceDetail, ResourceKind, ResourceStatus, TargetStatus, ToughnessAffordance,
     UnitQuerySnapshot, query_action_affordance, query_all_target_affordances,
-    query_energy_cap_affordance, query_intent_legality, query_target_affordance,
+    query_intent_legality, query_target_affordance,
 };
 use bevyrogue::combat::kit::UnitSkills;
 use bevyrogue::combat::state::CombatPhase;
@@ -36,8 +36,6 @@ fn unit(
         ultimate_trigger: 100,
         ultimate_ready: false,
         energy: 0,
-        energy_secondary_gained: 0,
-        energy_external_gained: 0,
         skills: None,
         toughness: None,
         ..Default::default()
@@ -989,98 +987,6 @@ fn deferred_row_shape_returns_deferred_for_every_target_in_snapshot() {
             reason: LegalityReasonCode::UnimplementedTargetShape
         }
     )));
-}
-
-#[test]
-fn energy_cap_affordance_reports_remaining_budget_and_true_cap_reason() {
-    let unit = UnitQuerySnapshot {
-        id: UnitId(1),
-        team: Team::Ally,
-        is_active: true,
-        is_ko: false,
-        is_stunned: false,
-        is_commander: false,
-        hp_current: 50,
-        hp_max: 50,
-        sp: 0,
-        ultimate_current: 0,
-        ultimate_trigger: 100,
-        ultimate_ready: false,
-        energy: 0,
-        energy_secondary_gained: 3,
-        energy_external_gained: 0,
-        skills: None,
-        toughness: None,
-        ..Default::default()
-    };
-
-    let affordance = query_energy_cap_affordance(
-        &unit,
-        bevyrogue::combat::energy::EnergyGainSource::SecondaryAction,
-        5,
-    );
-
-    assert_eq!(affordance.kind, ResourceKind::EnergyCap);
-    assert!(matches!(affordance.status, ResourceStatus::Enabled));
-    assert_eq!(affordance.current, Some(7));
-    assert_eq!(affordance.required, Some(5));
-}
-
-#[test]
-fn energy_cap_affordance_disables_when_requested_exceeds_remaining_or_budget_is_exhausted() {
-    let exhausted = UnitQuerySnapshot {
-        id: UnitId(1),
-        team: Team::Ally,
-        is_active: true,
-        is_ko: false,
-        is_stunned: false,
-        is_commander: false,
-        hp_current: 50,
-        hp_max: 50,
-        sp: 0,
-        ultimate_current: 0,
-        ultimate_trigger: 100,
-        ultimate_ready: false,
-        energy: 0,
-        energy_secondary_gained: 10,
-        energy_external_gained: 0,
-        skills: None,
-        toughness: None,
-        ..Default::default()
-    };
-    let partial = UnitQuerySnapshot {
-        energy_secondary_gained: 3,
-        ..exhausted.clone()
-    };
-
-    let exhausted_affordance = query_energy_cap_affordance(
-        &exhausted,
-        bevyrogue::combat::energy::EnergyGainSource::SecondaryAction,
-        1,
-    );
-    let partial_affordance = query_energy_cap_affordance(
-        &partial,
-        bevyrogue::combat::energy::EnergyGainSource::SecondaryAction,
-        8,
-    );
-
-    assert!(matches!(
-        exhausted_affordance.status,
-        ResourceStatus::Disabled {
-            reason: LegalityReasonCode::EnergyCapReached
-        }
-    ));
-    assert_eq!(exhausted_affordance.current, Some(0));
-    assert_eq!(exhausted_affordance.required, Some(1));
-
-    assert!(matches!(
-        partial_affordance.status,
-        ResourceStatus::Disabled {
-            reason: LegalityReasonCode::EnergyCapReached
-        }
-    ));
-    assert_eq!(partial_affordance.current, Some(7));
-    assert_eq!(partial_affordance.required, Some(8));
 }
 
 #[test]

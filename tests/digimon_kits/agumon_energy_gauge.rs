@@ -16,7 +16,7 @@ use bevyrogue::data::units_ron::{UnitDef, UnitRoster};
 use crate::common::{app::skill_book_runtime_app, load_roster, load_skill_book};
 
 const DUMMY_ID: UnitId = UnitId(99);
-const SHARP_CLAWS_ENERGY_GAIN: i32 = 6;
+const SHARP_CLAWS_ENERGY_GAIN: i32 = 20;
 
 fn pilot(roster: &UnitRoster, name: &str) -> UnitDef {
     roster
@@ -165,13 +165,13 @@ fn agumon_energy_gauge_fills_locks_and_drains_end_to_end() {
         assert_eq!(
             energy.current,
             cast * SHARP_CLAWS_ENERGY_GAIN,
-            "sharp_claws should grant +6 energy per hit"
+            "sharp_claws should grant +20 energy per hit"
         );
     }
 
     let prelock_energy = unit_energy(&mut app, agumon.id);
     let prelock_ult = unit_ult(&mut app, agumon.id);
-    assert_eq!(prelock_energy.current, 24);
+    assert_eq!(prelock_energy.current, 80);
     assert_eq!(prelock_ult.current, 100, "legacy charge is already primed after 4 basics");
 
     app.world_mut().write_message(ActionIntent::Ultimate {
@@ -189,7 +189,7 @@ fn agumon_energy_gauge_fills_locks_and_drains_end_to_end() {
     }));
     assert_eq!(
         unit_energy(&mut app, agumon.id).current,
-        24,
+        80,
         "failed ult must not spend Agumon's energy-backed gauge"
     );
     assert_eq!(
@@ -240,4 +240,57 @@ fn agumon_energy_gauge_fills_locks_and_drains_end_to_end() {
     let spent_ult = unit_ult(&mut app, agumon.id);
     assert_eq!(spent_energy.current, 0, "successful ult must drain Agumon's Energy.current");
     assert_eq!(spent_ult.current, 0, "successful ult must also zero legacy UltimateCharge.current");
+}
+
+/// Regression: the timeline-backed ult preflight must derive readiness from the
+/// *effective* gauge (Energy for Agumon), not the legacy UltimateCharge. In play,
+/// Energy fills from skills too (baby_flame +30) while legacy charge only accrues
+/// `OnBasicAttack`, so the two diverge — Energy can be full while legacy is < trigger.
+/// Before the fix the cast failed with a misleading "SP shortfall" even though the
+/// UI (which uses effective_ult_gauge) showed the ult ready.
+#[test]
+fn full_energy_ult_casts_even_when_legacy_charge_not_primed() {
+    let roster = load_roster();
+    let agumon = pilot(&roster, "Agumon");
+    let mut app = skill_book_runtime_app(load_skill_book());
+    // Energy full (gauge ready per effective_ult_gauge), legacy UltimateCharge at 0
+    // (NOT ready) — exactly the divergence skill-fed energy produces in play.
+    spawn_from_def(
+        &mut app,
+        &agumon,
+        agumon.hp_max,
+        agumon.toughness_max,
+        0,
+        100,
+    );
+    spawn_training_dummy(&mut app);
+
+    let mut cursor = message_cursor::<CombatEvent>(&mut app);
+
+    assert_eq!(unit_energy(&mut app, agumon.id).current, 100);
+    assert_eq!(
+        unit_ult(&mut app, agumon.id).current,
+        0,
+        "precondition: legacy charge must be unprimed to prove gating is energy-driven"
+    );
+
+    app.world_mut().write_message(ActionIntent::Ultimate {
+        attacker: agumon.id,
+        target: DUMMY_ID,
+    });
+    app.update();
+    let ult_events = drain_messages(&mut cursor, &app);
+
+    assert!(
+        !ult_events.iter().any(|event| matches!(&event.kind, CombatEventKind::OnActionFailed { .. })),
+        "energy-full ult must not fail on the unprimed legacy gauge: {ult_events:?}"
+    );
+    assert!(ult_events.iter().any(|event| {
+        matches!(&event.kind, CombatEventKind::UltimateUsed { unit_id } if *unit_id == agumon.id)
+    }));
+    assert_eq!(
+        unit_energy(&mut app, agumon.id).current,
+        0,
+        "successful ult must drain Agumon's energy-backed gauge"
+    );
 }

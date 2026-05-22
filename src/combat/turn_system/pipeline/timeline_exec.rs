@@ -225,14 +225,23 @@ fn preflight_timeline_action(
     if matches!(inflight.action.ult_effect, UltEffect::Reset) {
         let mut q = world.query::<(
             &crate::combat::unit::Unit,
-            &crate::combat::ultimate::UltimateCharge,
+            Option<&crate::combat::ultimate::UltimateCharge>,
+            Option<&Energy>,
+            Option<&crate::combat::ult_gauge::UltGaugeMetadata>,
         )>();
+        // Use effective_ult_gauge so energy-backed gauges (e.g. Agumon, whose ult
+        // gauge IS Energy) derive readiness from Energy.current, not the legacy
+        // UltimateCharge which never charges for those units.
         let ult_ready = q
             .iter(world)
-            .find_map(|(unit, ult)| (unit.id == attacker_id).then_some(ult.ready()))
+            .find_map(|(unit, ult, energy, meta)| {
+                (unit.id == attacker_id).then(|| {
+                    crate::combat::ult_gauge::effective_ult_gauge(meta, energy, ult).ready
+                })
+            })
             .unwrap_or(false);
         if !ult_ready {
-            preflight_fail_timeline_action(world, inflight, cast_id, "SP shortfall".to_string());
+            preflight_fail_timeline_action(world, inflight, cast_id, "ult not ready".to_string());
             return false;
         }
     }

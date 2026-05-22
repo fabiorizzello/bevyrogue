@@ -12,7 +12,7 @@
             target_hp_rule: Any,
         ),
         implementation: Implemented,
-        legacy_ops: [Damage(amount: 18, target: Single), ToughnessHit(10), GrantEnergy(9)],
+        legacy_ops: [Damage(amount: 18, target: Single), ToughnessHit(10), GrantEnergy(30)],
         custom_signals: [(owner: "agumon", signal: "apply_heated", payload: Amount(amount: 3))],
         timeline: Some((
             entry: "cast",
@@ -56,7 +56,7 @@
             target_hp_rule: Any,
         ),
         implementation: Implemented,
-        legacy_ops: [Damage(amount: 18, target: Single), ToughnessHit(10), GrantEnergy(6)],
+        legacy_ops: [Damage(amount: 18, target: Single), ToughnessHit(10), GrantEnergy(20)],
         custom_signals: [(owner: "agumon", signal: "apply_heated", payload: Amount(amount: 3))],
         timeline: Some((
             entry: "cast",

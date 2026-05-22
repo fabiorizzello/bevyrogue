@@ -112,9 +112,7 @@ pub fn resolve_action_system(
                         _,
                         _,
                     )| {
-                        let energy_data = energy_readonly.get(entity).ok();
-                        let energy = energy_data.map(|(e, _)| e);
-                        let tracker = energy_data.and_then(|(_, t)| t);
+                        let energy = energy_readonly.get(entity).ok();
                         let gauge_meta = gauge_meta_q.get(entity).ok();
                         (
                             unit.id,
@@ -128,7 +126,6 @@ pub fn resolve_action_system(
                             stunned.is_some(),
                             commander.is_some(),
                             energy,
-                            tracker,
                             gauge_meta,
                         )
                     },

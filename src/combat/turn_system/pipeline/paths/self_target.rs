@@ -144,7 +144,7 @@ pub(in crate::combat::turn_system::pipeline) fn run(
     let mut attacker_energy_borrow = energy_q.get_mut(attacker_entity).ok();
     let attacker_energy_ref = attacker_energy_borrow
         .as_mut()
-        .map(|(energy, _)| energy.as_mut());
+        .map(|energy| energy.as_mut());
     let (outcome, core_events) = apply_legacy_ops(
         &inflight.action,
         &attacker_unit,

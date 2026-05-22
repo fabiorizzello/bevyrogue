@@ -1,4 +1,5 @@
 pub mod anim_graph;
+pub mod atlas;
 pub mod clip;
 pub mod player;
 pub mod plugin;
@@ -6,6 +7,7 @@ pub mod registry;
 pub mod validation;
 
 pub use anim_graph::*;
+pub use atlas::*;
 pub use clip::*;
 pub use player::{AnimAdvanceResult, AnimGraphPlayer};
 pub use plugin::*;

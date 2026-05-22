@@ -73,7 +73,7 @@ pub(super) fn finalize(
     // when the attacker is energy-backed. Legacy units are unaffected.
     if matches!(inflight.action.ult_effect, UltEffect::Reset) {
         let meta = gauge_meta_q.get(attacker_entity).ok();
-        if let Ok((mut energy, _)) = energy_q.get_mut(attacker_entity) {
+        if let Ok(mut energy) = energy_q.get_mut(attacker_entity) {
             drain_energy_on_ult_reset(meta, Some(energy.as_mut()));
         }
     }

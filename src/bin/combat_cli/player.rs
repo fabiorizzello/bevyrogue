@@ -269,8 +269,8 @@ pub fn player_action_system(
         .filter_map(|(target_id, affordance)| {
             units
                 .iter()
-                .find(|(unit, _, _, _, _, _, _, _, _, _, _, _)| unit.id == *target_id)
-                .map(|(unit, team, _, _, _, _, _, _, _, _, _, _)| {
+                .find(|(unit, _, _, _, _, _, _, _, _, _, _)| unit.id == *target_id)
+                .map(|(unit, team, _, _, _, _, _, _, _, _, _)| {
                     (*target_id, target_entry_label(unit, team, affordance))
                 })
         })
