@@ -21,25 +21,25 @@ mod compiled_timeline_runtime_skills;
 mod perhop_guard;
 #[path = "timeline/pipeline_dispatch.rs"]
 mod pipeline_dispatch;
+#[path = "timeline/r013_failure_visibility.rs"]
+mod r013_failure_visibility;
 #[path = "timeline/runtime_runner_internals.rs"]
 mod runtime_runner_internals;
+#[path = "timeline/timeline_basic_sp_gain.rs"]
+mod timeline_basic_sp_gain;
 #[path = "timeline/timeline_chain_bolt_port.rs"]
 mod timeline_chain_bolt_port;
 #[path = "timeline/timeline_circuit_breaker.rs"]
 mod timeline_circuit_breaker;
+#[path = "timeline/timeline_cue_barrier_pipeline.rs"]
+mod timeline_cue_barrier_pipeline;
+#[path = "timeline/timeline_loop_hop_cue_parity.rs"]
+mod timeline_loop_hop_cue_parity;
 #[path = "timeline/timeline_mode_parity.rs"]
 mod timeline_mode_parity;
 #[path = "timeline/timeline_onturnstart_kills.rs"]
 mod timeline_onturnstart_kills;
-#[path = "timeline/timeline_cue_barrier_pipeline.rs"]
-mod timeline_cue_barrier_pipeline;
-#[path = "timeline/timeline_basic_sp_gain.rs"]
-mod timeline_basic_sp_gain;
-#[path = "timeline/timeline_loop_hop_cue_parity.rs"]
-mod timeline_loop_hop_cue_parity;
 #[path = "timeline/timeline_two_clock_parity.rs"]
 mod timeline_two_clock_parity;
 #[path = "timeline/timeline_validate_loop_internals.rs"]
 mod timeline_validate_loop_internals;
-#[path = "timeline/r013_failure_visibility.rs"]
-mod r013_failure_visibility;

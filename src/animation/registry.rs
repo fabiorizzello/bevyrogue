@@ -3,7 +3,9 @@ use std::collections::HashMap;
 use bevy::prelude::*;
 
 use super::AnimGraphId;
-use super::anim_graph::{AnimGraph, AnimEdge, AnimNode, FrameRange, NodeId, Predicate, TransitionTarget};
+use super::anim_graph::{
+    AnimEdge, AnimGraph, AnimNode, FrameRange, NodeId, Predicate, TransitionTarget,
+};
 
 /// Deterministic node id used by the runtime fallback graph when a requested
 /// skill/stance graph is unavailable.

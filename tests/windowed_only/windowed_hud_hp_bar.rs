@@ -51,8 +51,16 @@ fn hp_bar_view_computes_pct_from_unit_without_mutating_unit() {
     app.update();
 
     let view = app.world().resource::<HpBarView>().clone();
-    let entry_a = view.bars.iter().find(|e| e.unit_id == a).expect("unit A missing");
-    let entry_b = view.bars.iter().find(|e| e.unit_id == b).expect("unit B missing");
+    let entry_a = view
+        .bars
+        .iter()
+        .find(|e| e.unit_id == a)
+        .expect("unit A missing");
+    let entry_b = view
+        .bars
+        .iter()
+        .find(|e| e.unit_id == b)
+        .expect("unit B missing");
 
     assert_eq!(entry_a.cur, 75);
     assert_eq!(entry_a.max, 100);
@@ -142,9 +150,21 @@ fn floating_damage_view_text_includes_damage_kind_prefix() {
 
     let view = app.world().resource::<FloatingDamageView>().clone();
     assert_eq!(view.entries.len(), 3);
-    let weak = view.entries.iter().find(|e| e.unit_id == UnitId(11)).unwrap();
-    let resist = view.entries.iter().find(|e| e.unit_id == UnitId(12)).unwrap();
-    let brk = view.entries.iter().find(|e| e.unit_id == UnitId(13)).unwrap();
+    let weak = view
+        .entries
+        .iter()
+        .find(|e| e.unit_id == UnitId(11))
+        .unwrap();
+    let resist = view
+        .entries
+        .iter()
+        .find(|e| e.unit_id == UnitId(12))
+        .unwrap();
+    let brk = view
+        .entries
+        .iter()
+        .find(|e| e.unit_id == UnitId(13))
+        .unwrap();
     assert_eq!(weak.text, "WEAK 30");
     assert_eq!(resist.text, "RES 15");
     assert_eq!(brk.text, "BRK 50");

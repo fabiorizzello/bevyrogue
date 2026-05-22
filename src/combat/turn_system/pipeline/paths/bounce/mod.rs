@@ -53,22 +53,8 @@ pub(in crate::combat::turn_system::pipeline) fn run(
 
     // Phase 1: attacker validation + resource consumption (hoisted, paid once pre-loop).
     {
-        let Ok((
-            _,
-            _,
-            _,
-            _,
-            att_ult_opt,
-            _,
-            _,
-            att_ko,
-            att_stun,
-            _,
-            _,
-            _,
-            _,
-            _,
-        )) = actors.get_mut(attacker_entity)
+        let Ok((_, _, _, _, att_ult_opt, _, _, att_ko, att_stun, _, _, _, _, _)) =
+            actors.get_mut(attacker_entity)
         else {
             return true;
         };

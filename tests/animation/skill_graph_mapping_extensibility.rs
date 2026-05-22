@@ -123,7 +123,8 @@ fn unregistered_skill_id_returns_instant_fallback_with_diagnostic() {
     );
     assert_eq!(resolved.requested_id, missing_id);
     assert_eq!(
-        resolved.graph().entry.0, MISSING_GRAPH_FALLBACK_NODE_ID,
+        resolved.graph().entry.0,
+        MISSING_GRAPH_FALLBACK_NODE_ID,
         "fallback graph entry must be the well-known missing-graph sentinel node"
     );
 

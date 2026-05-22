@@ -1,6 +1,6 @@
-
 use std::collections::BTreeMap;
 
+use crate::common::resolution_helpers::{basic_intent, resolved, revive_skill, skill, unit};
 use bevyrogue::combat::energy::Energy;
 use bevyrogue::combat::events::CombatEventKind;
 use bevyrogue::combat::resolution::apply_legacy_ops;
@@ -22,7 +22,6 @@ use bevyrogue::data::{
     },
     units_ron::{BlueprintRoster, BlueprintRosterPayload},
 };
-use crate::common::resolution_helpers::{basic_intent, resolved, revive_skill, skill, unit};
 
 fn energy_backed_metadata() -> UltGaugeMetadata {
     let mut owner = BTreeMap::new();
@@ -117,9 +116,9 @@ fn resolve_apply_basic_adds_sp_and_not_on_skill_cast() {
         None,
         None,
         None,
-            None,
-            None,
-        );
+        None,
+        None,
+    );
 
     assert!(outcome.sp_ok);
     assert_eq!(sp.current, 4);
@@ -169,9 +168,9 @@ fn resolve_apply_skill_spends_sp_and_emits_on_skill_cast() {
         None,
         None,
         None,
-            None,
-            None,
-        );
+        None,
+        None,
+    );
 
     assert!(outcome.sp_ok);
     assert_eq!(sp.current, 1);
@@ -215,9 +214,9 @@ fn resolve_apply_skill_fails_when_pool_too_low() {
         None,
         None,
         None,
-            None,
-            None,
-        );
+        None,
+        None,
+    );
 
     assert!(!outcome.sp_ok);
     assert_eq!(sp.current, 1);
@@ -254,9 +253,9 @@ fn resolve_apply_break_sets_broke_flag_and_on_break_event() {
         None,
         None,
         None,
-            None,
-            None,
-        );
+        None,
+        None,
+    );
 
     assert!(outcome.broke);
     assert_eq!(outcome.kind, DamageKind::Break);
@@ -297,9 +296,9 @@ fn resolve_apply_no_break_no_on_break_event() {
         None,
         None,
         None,
-            None,
-            None,
-        );
+        None,
+        None,
+    );
 
     assert!(!outcome.broke);
     assert!(
@@ -338,9 +337,9 @@ fn resolve_apply_ko_flag_when_hp_drops_below_zero_and_emits_on_ko() {
         None,
         None,
         None,
-            None,
-            None,
-        );
+        None,
+        None,
+    );
 
     assert!(outcome.ko);
     assert!(defender.hp_current <= 0);
@@ -380,9 +379,9 @@ fn resolve_apply_no_ko_no_on_ko_event() {
         None,
         None,
         None,
-            None,
-            None,
-        );
+        None,
+        None,
+    );
 
     assert!(!outcome.ko);
     assert!(
@@ -425,9 +424,9 @@ fn resolve_apply_ultimate_resets_charge_and_emits_on_skill_cast() {
         None,
         None,
         None,
-            None,
-            None,
-        );
+        None,
+        None,
+    );
 
     assert!(outcome.sp_ok);
     assert_eq!(ult.current, 0);
@@ -481,7 +480,10 @@ fn energy_backed_ultimate_reset_drains_energy_and_legacy_charge() {
 
     assert!(outcome.sp_ok);
     assert_eq!(ult.current, 0, "legacy gauge stays zeroed for back-compat");
-    assert_eq!(energy.current, 0, "energy-backed ult spend must drain Energy.current");
+    assert_eq!(
+        energy.current, 0,
+        "energy-backed ult spend must drain Energy.current"
+    );
 }
 
 #[test]
@@ -527,7 +529,10 @@ fn legacy_ultimate_reset_leaves_energy_untouched() {
 
     assert!(outcome.sp_ok);
     assert_eq!(ult.current, 0);
-    assert_eq!(energy.current, 73, "legacy ult users must not drain Energy.current");
+    assert_eq!(
+        energy.current, 73,
+        "legacy ult users must not drain Energy.current"
+    );
 }
 
 #[test]
@@ -564,9 +569,9 @@ fn test_apply_revive_success() {
         None,
         None,
         None,
-            None,
-            None,
-        );
+        None,
+        None,
+    );
 
     assert!(outcome.sp_ok);
     assert_eq!(defender.hp_current, 25); // 25% of 100

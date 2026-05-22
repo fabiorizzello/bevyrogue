@@ -1,4 +1,3 @@
-
 use bevy::prelude::*;
 use bevyrogue::combat::av::{ActionValue, MAX_AV};
 use bevyrogue::combat::speed::Speed;

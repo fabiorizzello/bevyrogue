@@ -8,10 +8,10 @@ mod agumon_sharp_claws_asset;
 mod anim_gameplay_command_forbidden;
 #[path = "animation/anim_graph_asset.rs"]
 mod anim_graph_asset;
-#[path = "animation/anim_graph_parse.rs"]
-mod anim_graph_parse;
 #[path = "animation/anim_graph_input_purity.rs"]
 mod anim_graph_input_purity;
+#[path = "animation/anim_graph_parse.rs"]
+mod anim_graph_parse;
 #[path = "animation/anim_player_fsm.rs"]
 mod anim_player_fsm;
 #[path = "animation/anim_registry_failure_visibility.rs"]

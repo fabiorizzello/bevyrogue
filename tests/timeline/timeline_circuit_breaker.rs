@@ -14,7 +14,7 @@
 //! and hop_count when Halted is returned. Capturing that log signal is out of scope here;
 //! `StepOutcome::Halted` is the observable contract at the integration boundary.
 
-
+use crate::common::app::minimal_intent_app;
 use bevy::prelude::*;
 use bevyrogue::combat::{
     events::{CombatEvent, CombatEventKind},
@@ -29,7 +29,6 @@ use bevyrogue::combat::{
     types::{Attribute, DamageTag, EvoStage, UnitId},
     unit::Unit,
 };
-use crate::common::app::minimal_intent_app;
 use std::collections::VecDeque;
 use std::sync::Arc;
 

@@ -147,10 +147,7 @@ pub enum RegressionVerdict {
         pct_increase: f64,
     },
     /// Both mean and p95 regressions detected.
-    BothRegression {
-        mean_pct: f64,
-        p95_pct: f64,
-    },
+    BothRegression { mean_pct: f64, p95_pct: f64 },
 }
 
 impl PartialEq for RegressionVerdict {
@@ -158,16 +155,46 @@ impl PartialEq for RegressionVerdict {
         match (self, other) {
             (Self::Pass, Self::Pass) => true,
             (
-                Self::MeanRegression { full_mean_ms: a1, baseline_mean_ms: b1, pct_increase: c1 },
-                Self::MeanRegression { full_mean_ms: a2, baseline_mean_ms: b2, pct_increase: c2 },
-            ) => a1.to_bits() == a2.to_bits() && b1.to_bits() == b2.to_bits() && c1.to_bits() == c2.to_bits(),
+                Self::MeanRegression {
+                    full_mean_ms: a1,
+                    baseline_mean_ms: b1,
+                    pct_increase: c1,
+                },
+                Self::MeanRegression {
+                    full_mean_ms: a2,
+                    baseline_mean_ms: b2,
+                    pct_increase: c2,
+                },
+            ) => {
+                a1.to_bits() == a2.to_bits()
+                    && b1.to_bits() == b2.to_bits()
+                    && c1.to_bits() == c2.to_bits()
+            }
             (
-                Self::P95Regression { full_p95_ms: a1, baseline_p95_ms: b1, pct_increase: c1 },
-                Self::P95Regression { full_p95_ms: a2, baseline_p95_ms: b2, pct_increase: c2 },
-            ) => a1.to_bits() == a2.to_bits() && b1.to_bits() == b2.to_bits() && c1.to_bits() == c2.to_bits(),
+                Self::P95Regression {
+                    full_p95_ms: a1,
+                    baseline_p95_ms: b1,
+                    pct_increase: c1,
+                },
+                Self::P95Regression {
+                    full_p95_ms: a2,
+                    baseline_p95_ms: b2,
+                    pct_increase: c2,
+                },
+            ) => {
+                a1.to_bits() == a2.to_bits()
+                    && b1.to_bits() == b2.to_bits()
+                    && c1.to_bits() == c2.to_bits()
+            }
             (
-                Self::BothRegression { mean_pct: a1, p95_pct: b1 },
-                Self::BothRegression { mean_pct: a2, p95_pct: b2 },
+                Self::BothRegression {
+                    mean_pct: a1,
+                    p95_pct: b1,
+                },
+                Self::BothRegression {
+                    mean_pct: a2,
+                    p95_pct: b2,
+                },
             ) => a1.to_bits() == a2.to_bits() && b1.to_bits() == b2.to_bits(),
             _ => false,
         }
@@ -178,7 +205,10 @@ impl PartialEq for RegressionVerdict {
 /// using the D027 thresholds:
 ///   - mean regression > 15 %  AND mean absolute delta > 2 ms  → fail
 ///   - p95  regression > 20 %                                   → fail
-pub fn frame_time_regression(full: &FrameTimeStats, baseline: &FrameTimeStats) -> RegressionVerdict {
+pub fn frame_time_regression(
+    full: &FrameTimeStats,
+    baseline: &FrameTimeStats,
+) -> RegressionVerdict {
     // If baseline is zero we cannot compute a ratio — treat as pass.
     let mean_fail = if baseline.mean_ms > 0.0 {
         let pct = (full.mean_ms - baseline.mean_ms) / baseline.mean_ms * 100.0;
@@ -250,10 +280,26 @@ mod tests {
         assert_eq!(acc.count(), 1);
         let stats = acc.finalise();
         assert_eq!(stats.count, 1);
-        assert!((stats.mean_ms - 16.0).abs() < 0.01, "mean_ms={}", stats.mean_ms);
-        assert!((stats.p95_ms - 16.0).abs() < 0.01, "p95_ms={}", stats.p95_ms);
-        assert!((stats.max_ms - 16.0).abs() < 0.01, "max_ms={}", stats.max_ms);
-        assert!((stats.min_ms - 16.0).abs() < 0.01, "min_ms={}", stats.min_ms);
+        assert!(
+            (stats.mean_ms - 16.0).abs() < 0.01,
+            "mean_ms={}",
+            stats.mean_ms
+        );
+        assert!(
+            (stats.p95_ms - 16.0).abs() < 0.01,
+            "p95_ms={}",
+            stats.p95_ms
+        );
+        assert!(
+            (stats.max_ms - 16.0).abs() < 0.01,
+            "max_ms={}",
+            stats.max_ms
+        );
+        assert!(
+            (stats.min_ms - 16.0).abs() < 0.01,
+            "min_ms={}",
+            stats.min_ms
+        );
     }
 
     // ── p95 with unsorted series ──────────────────────────────────────────────
@@ -277,8 +323,16 @@ mod tests {
             "expected p95 ≈ 10 ms, got {:.3}",
             stats.p95_ms
         );
-        assert!((stats.max_ms - 100.0).abs() < 0.5, "max_ms={:.3}", stats.max_ms);
-        assert!((stats.min_ms - 10.0).abs() < 0.5, "min_ms={:.3}", stats.min_ms);
+        assert!(
+            (stats.max_ms - 100.0).abs() < 0.5,
+            "max_ms={:.3}",
+            stats.max_ms
+        );
+        assert!(
+            (stats.min_ms - 10.0).abs() < 0.5,
+            "min_ms={:.3}",
+            stats.min_ms
+        );
     }
 
     // ── Regression verdicts ───────────────────────────────────────────────────
@@ -297,7 +351,10 @@ mod tests {
     fn verdict_pass_when_no_regression() {
         let baseline = make_stats(10.0, 15.0);
         let full = make_stats(10.5, 15.5); // +5 % mean, +3.3 % p95
-        assert_eq!(frame_time_regression(&full, &baseline), RegressionVerdict::Pass);
+        assert_eq!(
+            frame_time_regression(&full, &baseline),
+            RegressionVerdict::Pass
+        );
     }
 
     #[test]
@@ -373,10 +430,18 @@ mod tests {
     fn baseline_toggle_maps_documented_strings_and_rejects_garbage() {
         assert_eq!(parse_validation_baseline_toggle(None), Ok(false));
         for falsey in ["0", "false", "False", "FALSE", "no", "No", "NO", "off"] {
-            assert_eq!(parse_validation_baseline_toggle(Some(falsey)), Ok(false), "{falsey}");
+            assert_eq!(
+                parse_validation_baseline_toggle(Some(falsey)),
+                Ok(false),
+                "{falsey}"
+            );
         }
         for truthy in ["", "1", "true", "True", "TRUE", "yes", "Yes", "YES", "on"] {
-            assert_eq!(parse_validation_baseline_toggle(Some(truthy)), Ok(true), "{truthy}");
+            assert_eq!(
+                parse_validation_baseline_toggle(Some(truthy)),
+                Ok(true),
+                "{truthy}"
+            );
         }
         assert!(parse_validation_baseline_toggle(Some("maybe")).is_err());
     }

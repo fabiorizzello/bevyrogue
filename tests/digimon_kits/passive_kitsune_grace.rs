@@ -1,4 +1,4 @@
-
+use crate::common::app::passive_dispatch_app;
 use bevy::{ecs::message::MessageCursor, ecs::system::RunSystemOnce, prelude::*};
 use bevyrogue::combat::{
     events::{CombatEvent, CombatEventKind, CombatKernelTransition},
@@ -12,7 +12,6 @@ use bevyrogue::combat::{
     types::{Attribute, EvoStage, UnitId},
     unit::Unit,
 };
-use crate::common::app::passive_dispatch_app;
 use std::sync::Arc;
 
 const RENAMON_ID: UnitId = UnitId(10);

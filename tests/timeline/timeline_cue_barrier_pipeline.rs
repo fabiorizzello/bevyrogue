@@ -7,9 +7,8 @@ use bevyrogue::combat::{
     log::{ActionLog, LogEntry},
     rng::CombatRng,
     runtime::{
-        Clock, CUE_BARRIER_TIMEOUT_FRAMES, CueReleaseResult, ExtRegistries,
-        SuspendedTimelineState, TimelineClock, register_kernel_builtins,
-        request_timeline_cue_release,
+        CUE_BARRIER_TIMEOUT_FRAMES, Clock, CueReleaseResult, ExtRegistries, SuspendedTimelineState,
+        TimelineClock, register_kernel_builtins, request_timeline_cue_release,
         timeline::{Beat, BeatEdge, BeatKind, BeatPayload, TimelineLibrary},
     },
     sp::SpPool,
@@ -481,7 +480,10 @@ fn windowed_basic_action_times_out_then_force_resumes_with_structured_diagnostic
     assert!(!last.awaiting_release);
     assert_eq!(last.waited_frames, CUE_BARRIER_TIMEOUT_FRAMES);
     assert_eq!(last.timeout_frames, CUE_BARRIER_TIMEOUT_FRAMES);
-    assert_eq!(barrier.last_release_result(), Some(CueReleaseResult::TimedOut));
+    assert_eq!(
+        barrier.last_release_result(),
+        Some(CueReleaseResult::TimedOut)
+    );
     let msg = barrier
         .last_message()
         .expect("timeout recovery should keep a diagnostic message");
@@ -494,7 +496,10 @@ fn windowed_basic_action_times_out_then_force_resumes_with_structured_diagnostic
 
     app.update();
     let after_done = collect_events(&app, &mut cursor);
-    assert!(after_done.is_empty(), "timeout resume must not replay damage");
+    assert!(
+        after_done.is_empty(),
+        "timeout resume must not replay damage"
+    );
 }
 
 #[test]

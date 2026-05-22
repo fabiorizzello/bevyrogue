@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use crate::common::app::passive_dispatch_app;
 use bevy::prelude::*;
 use bevyrogue::combat::{
     events::{CombatEvent, CombatEventKind},
@@ -9,7 +10,6 @@ use bevyrogue::combat::{
     },
     types::UnitId,
 };
-use crate::common::app::passive_dispatch_app;
 
 const OWNER: UnitId = UnitId(10);
 const TARGET: UnitId = UnitId(11);

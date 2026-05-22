@@ -1,6 +1,4 @@
-use bevyrogue::animation::{
-    AnimGraph, AnimGraphInput, AnimGraphPlayer, AnimGraphRole,
-};
+use bevyrogue::animation::{AnimGraph, AnimGraphInput, AnimGraphPlayer, AnimGraphRole};
 
 fn parse_graph(ron_str: &str) -> AnimGraph {
     ron::from_str(ron_str).expect("inline graph should parse")
@@ -98,6 +96,9 @@ fn legacy_player_entrypoint_remains_behaviorally_equivalent_to_default_input() {
     let mut explicit = AnimGraphPlayer::new(graph.entry.clone());
 
     for _ in 0..6 {
-        assert_eq!(legacy.advance(&graph), explicit.advance_with_input(&graph, &input));
+        assert_eq!(
+            legacy.advance(&graph),
+            explicit.advance_with_input(&graph, &input)
+        );
     }
 }

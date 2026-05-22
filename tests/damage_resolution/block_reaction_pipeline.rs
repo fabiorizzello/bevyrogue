@@ -1,4 +1,4 @@
-
+use crate::common::app::TestAppBuilder;
 use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::{
     buffs::DrBag,
@@ -9,7 +9,6 @@ use bevyrogue::combat::{
     types::{Attribute, DamageTag, EvoStage, UnitId},
     unit::Unit,
 };
-use crate::common::app::TestAppBuilder;
 
 fn setup_app(seed: u64) -> App {
     TestAppBuilder::new()

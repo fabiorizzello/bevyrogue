@@ -235,7 +235,9 @@ fn track_animation_graph_loads(
                 if !state.failed_paths.iter().any(|failed| failed == path) {
                     state.failed_paths.push(path.to_string());
                 }
-                warn!("animation graph missing or failed: {path} — canonical boot registry entry unavailable");
+                warn!(
+                    "animation graph missing or failed: {path} — canonical boot registry entry unavailable"
+                );
             }
         }
     }

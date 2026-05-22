@@ -243,7 +243,11 @@ fn burst_fires_off_turn_when_ready() {
     send_burst(&mut app);
     app.update();
 
-    assert_eq!(ult_charge_of(&mut app, BURST), 0, "gauge must reset on burst");
+    assert_eq!(
+        ult_charge_of(&mut app, BURST),
+        0,
+        "gauge must reset on burst"
+    );
     assert!(
         hp_of(&mut app, TARGET) < 1000,
         "target must take ult damage"
@@ -351,7 +355,10 @@ fn burst_queued_during_enemy_turn_then_fires_when_it_ends() {
 
     assert_eq!(ult_charge_of(&mut app, BURST), 0, "queued burst must fire");
     assert!(hp_of(&mut app, TARGET) < 1000, "target took the queued ult");
-    assert_eq!(ultimate_used_ids(&mut app, &mut cursor), vec![UnitId(BURST)]);
+    assert_eq!(
+        ultimate_used_ids(&mut app, &mut cursor),
+        vec![UnitId(BURST)]
+    );
     assert!(
         app.world().resource::<PendingBurstQueue>().0.is_empty(),
         "queue drained after firing"
@@ -374,7 +381,11 @@ fn burst_queued_during_av_gap_fires_when_action_window_opens() {
     send_burst(&mut app);
     app.update();
 
-    assert_eq!(ult_charge_of(&mut app, BURST), 100, "gauge untouched in AV gap");
+    assert_eq!(
+        ult_charge_of(&mut app, BURST),
+        100,
+        "gauge untouched in AV gap"
+    );
     assert!(ultimate_used_ids(&mut app, &mut cursor).is_empty());
     assert_eq!(
         app.world().resource::<PendingBurstQueue>().0.len(),
@@ -392,7 +403,10 @@ fn burst_queued_during_av_gap_fires_when_action_window_opens() {
 
     assert_eq!(ult_charge_of(&mut app, BURST), 0, "queued burst fires");
     assert!(hp_of(&mut app, TARGET) < 1000, "target took the queued ult");
-    assert_eq!(ultimate_used_ids(&mut app, &mut cursor), vec![UnitId(BURST)]);
+    assert_eq!(
+        ultimate_used_ids(&mut app, &mut cursor),
+        vec![UnitId(BURST)]
+    );
     assert!(app.world().resource::<PendingBurstQueue>().0.is_empty());
 }
 

@@ -1,3 +1,4 @@
+use crate::common::app::turn_av_base_app;
 /// Headless integration tests for M008/S01 enemy AI decision routing.
 ///
 /// These tests exercise the full `advance_turn_system` path (TurnAdvanced →
@@ -5,7 +6,6 @@
 /// no SkillBook asset is required — all inputs are inline Rust.
 ///
 /// Enemy UnitIds use the 101+ range to avoid collisions with ally IDs 0–10 (MEM030).
-
 use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::{
     kit::UnitSkills,
@@ -19,7 +19,6 @@ use bevyrogue::combat::{
     ultimate::{UltAccumulationTrigger, UltimateCharge},
     unit::Unit,
 };
-use crate::common::app::turn_av_base_app;
 
 // ---------------------------------------------------------------------------
 // Helpers

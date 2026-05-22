@@ -46,7 +46,7 @@ pub fn effective_ult_gauge(
 
 pub fn is_energy_backed(metadata: Option<&UltGaugeMetadata>) -> bool {
     metadata
-        .and_then(|metadata| metadata.0 .0.get("agumon"))
+        .and_then(|metadata| metadata.0.0.get("agumon"))
         .and_then(|payload| payload.0.get("ult_gauge"))
         .is_some_and(|value| value == "energy")
 }

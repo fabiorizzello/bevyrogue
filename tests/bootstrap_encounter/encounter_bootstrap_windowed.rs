@@ -57,8 +57,14 @@ fn agumon_training_dummy_has_one_ally_and_one_enemy() {
     assert_eq!(ally.team, Team::Ally, "ally should have Team::Ally");
 
     let dummy = &composition.enemies[0];
-    assert_ne!(dummy.id, ally.id, "dummy must have a distinct UnitId from the ally");
-    assert_eq!(dummy.id, AGUMON_DUMMY_ID, "dummy should use the stable AGUMON_DUMMY_ID");
+    assert_ne!(
+        dummy.id, ally.id,
+        "dummy must have a distinct UnitId from the ally"
+    );
+    assert_eq!(
+        dummy.id, AGUMON_DUMMY_ID,
+        "dummy should use the stable AGUMON_DUMMY_ID"
+    );
     assert_eq!(dummy.team, Team::Enemy, "dummy must be on Team::Enemy");
 }
 
@@ -67,8 +73,14 @@ fn agumon_training_dummy_fails_gracefully_when_agumon_missing_from_roster() {
     let empty_roster = UnitRoster(vec![]);
     let request = SelectionRequest { rookie_ids: vec![] };
 
-    let result =
-        bootstrap_encounter(&empty_roster, &request, EncounterPreset::AgumonTrainingDummy);
+    let result = bootstrap_encounter(
+        &empty_roster,
+        &request,
+        EncounterPreset::AgumonTrainingDummy,
+    );
 
-    assert!(result.is_err(), "should fail when Agumon is not in the roster");
+    assert!(
+        result.is_err(),
+        "should fail when Agumon is not in the roster"
+    );
 }

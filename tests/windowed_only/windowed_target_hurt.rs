@@ -19,7 +19,10 @@ fn build_app() -> App {
     app.add_message::<CombatEvent>()
         .init_resource::<TargetHurtState>()
         .init_resource::<CombatState>()
-        .add_systems(Update, (observe_target_hurt, tick_target_hurt_state).chain());
+        .add_systems(
+            Update,
+            (observe_target_hurt, tick_target_hurt_state).chain(),
+        );
     app
 }
 
@@ -97,5 +100,8 @@ fn no_combat_state_mutation_from_hurt_projection() {
     app.update();
 
     let after = app.world().resource::<CombatState>().clone();
-    assert_eq!(before, after, "TargetHurtState must never mutate CombatState");
+    assert_eq!(
+        before, after,
+        "TargetHurtState must never mutate CombatState"
+    );
 }

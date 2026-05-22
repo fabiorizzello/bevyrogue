@@ -82,8 +82,7 @@ pub(super) fn run_target_loop(
             continue;
         };
 
-        let (_, att_team_val, att_unit_val, _, _, _, _, _, _, _, att_bag_val, _, _, _) =
-            &att_row;
+        let (_, att_team_val, att_unit_val, _, _, _, _, _, _, _, att_bag_val, _, _, _) = &att_row;
         let (
             _,
             def_team_val,

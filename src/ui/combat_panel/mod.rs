@@ -22,6 +22,8 @@ pub use preview_cache::refresh_preview_damage_cache;
 pub use render::combat_panel;
 
 #[cfg(feature = "windowed")]
+use crate::combat::ult_gauge::UltGaugeMetadata;
+#[cfg(feature = "windowed")]
 use crate::combat::{
     blueprints::agumon::{OWNER as AGUMON_BLUEPRINT_OWNER, baby_burner::DETONATE_SIGNAL_NAME},
     counterplay::EnemyCounterplayKit,
@@ -37,8 +39,6 @@ use crate::combat::{
     ultimate::UltimateCharge,
     unit::{Commander, Ko, Unit},
 };
-#[cfg(feature = "windowed")]
-use crate::combat::ult_gauge::UltGaugeMetadata;
 
 #[cfg(feature = "windowed")]
 use bevy::prelude::*;

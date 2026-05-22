@@ -117,9 +117,9 @@ fn run(
         None,
         None,
         dr_bag,
-            None,
-            None,
-        );
+        None,
+        None,
+    );
 
     let amount = events
         .iter()

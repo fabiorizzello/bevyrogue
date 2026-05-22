@@ -33,7 +33,8 @@ fn spawn_particle_ron_round_trips_losslessly() {
 /// is closed, so a windowed consumer can never receive an out-of-contract value.
 #[test]
 fn unknown_vfx_locus_variant_fails_to_deserialize() {
-    let ron_str = r#"SpawnParticle(name: "explosion_burst", origin: OffscreenVoid, motion: Static)"#;
+    let ron_str =
+        r#"SpawnParticle(name: "explosion_burst", origin: OffscreenVoid, motion: Static)"#;
     let result: Result<Command, _> = ron::de::from_str(ron_str);
     assert!(
         result.is_err(),

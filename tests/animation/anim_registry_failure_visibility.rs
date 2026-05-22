@@ -48,7 +48,10 @@ fn missing_skill_graph_runtime_lookup_uses_structured_instant_fallback() {
 
     let mut player = AnimGraphPlayer::new(resolved.graph().entry.clone());
     let result = player.advance_result(resolved.graph());
-    assert_eq!(result.frame, 0, "instant fallback should stay deterministic");
+    assert_eq!(
+        result.frame, 0,
+        "instant fallback should stay deterministic"
+    );
     assert!(result.exited, "instant fallback should exit in one tick");
 }
 

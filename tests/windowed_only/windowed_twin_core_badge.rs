@@ -23,7 +23,10 @@ fn build_app() -> App {
     app.add_message::<CombatEvent>()
         .init_resource::<TwinCoreBadgeState>()
         .init_resource::<CombatState>()
-        .add_systems(Update, (observe_twin_core_badge, tick_twin_core_badge).chain());
+        .add_systems(
+            Update,
+            (observe_twin_core_badge, tick_twin_core_badge).chain(),
+        );
     app
 }
 
@@ -89,7 +92,8 @@ fn unrelated_blueprint_signals_do_not_prime() {
 #[test]
 fn countdown_decrements_each_frame_and_clears_at_zero() {
     let mut app = build_app();
-    app.world_mut().write_message(twin_core_event("build_cross_resonance"));
+    app.world_mut()
+        .write_message(twin_core_event("build_cross_resonance"));
     app.update();
     // After first update: primed = LIFETIME - 1.
     for _ in 0..(TWIN_CORE_BADGE_FRAMES - 1) {
@@ -105,8 +109,10 @@ fn countdown_decrements_each_frame_and_clears_at_zero() {
 fn multiple_signals_in_one_ultimate_only_prime_once() {
     let mut app = build_app();
     // Simulate an Ultimate fanning out three Twin Core signals in the same frame.
-    app.world_mut().write_message(twin_core_event("build_cross_resonance"));
-    app.world_mut().write_message(twin_core_event("thermal_spark"));
+    app.world_mut()
+        .write_message(twin_core_event("build_cross_resonance"));
+    app.world_mut()
+        .write_message(twin_core_event("thermal_spark"));
     app.world_mut().write_message(twin_core_event("twin_burst"));
     app.update();
 
@@ -129,10 +135,16 @@ fn signals_while_primed_do_not_extend_lifetime() {
     for _ in 0..5 {
         app.update();
     }
-    let mid = app.world().resource::<TwinCoreBadgeState>().primed_for_frames;
+    let mid = app
+        .world()
+        .resource::<TwinCoreBadgeState>()
+        .primed_for_frames;
     app.world_mut().write_message(twin_core_event("shatter"));
     app.update();
-    let after = app.world().resource::<TwinCoreBadgeState>().primed_for_frames;
+    let after = app
+        .world()
+        .resource::<TwinCoreBadgeState>()
+        .primed_for_frames;
     assert_eq!(
         after,
         mid - 1,
@@ -147,5 +159,8 @@ fn no_combat_state_mutation_from_badge_projection() {
     app.world_mut().write_message(twin_core_event("twin_burst"));
     app.update();
     let after = app.world().resource::<CombatState>().clone();
-    assert_eq!(before, after, "TwinCoreBadgeState must never mutate CombatState");
+    assert_eq!(
+        before, after,
+        "TwinCoreBadgeState must never mutate CombatState"
+    );
 }

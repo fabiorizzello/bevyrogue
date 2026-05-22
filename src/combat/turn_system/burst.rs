@@ -95,7 +95,19 @@ pub fn burst_action_system(
     let units_data: Vec<_> = actors
         .iter()
         .map(
-            |(team, unit, skills, ult, toughness, counterplay, ko, stunned, commander, energy, gauge_meta)| {
+            |(
+                team,
+                unit,
+                skills,
+                ult,
+                toughness,
+                counterplay,
+                ko,
+                stunned,
+                commander,
+                energy,
+                gauge_meta,
+            )| {
                 (
                     unit.id,
                     *team,

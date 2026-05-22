@@ -15,8 +15,8 @@ use bevyrogue::combat::toughness::Toughness;
 use bevyrogue::combat::turn_order::TurnOrder;
 use bevyrogue::combat::turn_system::{ActionIntent, UltBurstRequest};
 use bevyrogue::combat::types::UnitId;
-use bevyrogue::combat::ultimate::UltimateCharge;
 use bevyrogue::combat::ult_gauge::UltGaugeMetadata;
+use bevyrogue::combat::ultimate::UltimateCharge;
 use bevyrogue::combat::unit::{Commander, Ko, Unit};
 use bevyrogue::data::SkillBookHandle;
 use bevyrogue::data::skills_ron::SkillBook;
@@ -259,20 +259,28 @@ pub fn player_action_system(
             })
             .collect();
         if !targets.is_empty() {
-            burst_choices.push((unit.id, format!("⚡ Burst: {} Ultimate", unit.name), targets));
+            burst_choices.push((
+                unit.id,
+                format!("⚡ Burst: {} Ultimate", unit.name),
+                targets,
+            ));
         }
     }
 
     if !burst_choices.is_empty() {
         const CONTINUE: &str = "▶ Continue my turn";
-        let mut labels: Vec<String> = burst_choices.iter().map(|(_, label, _)| label.clone()).collect();
+        let mut labels: Vec<String> = burst_choices
+            .iter()
+            .map(|(_, label, _)| label.clone())
+            .collect();
         labels.push(CONTINUE.to_string());
         let picked = Select::new("Out-of-turn Burst available:", labels)
             .prompt()
             .unwrap_or_else(|_| CONTINUE.to_string());
         if picked != CONTINUE {
-            if let Some((attacker, _, targets)) =
-                burst_choices.into_iter().find(|(_, label, _)| *label == picked)
+            if let Some((attacker, _, targets)) = burst_choices
+                .into_iter()
+                .find(|(_, label, _)| *label == picked)
             {
                 let target_id = if targets.len() == 1 {
                     targets[0].0

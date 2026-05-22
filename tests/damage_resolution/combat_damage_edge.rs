@@ -1,7 +1,6 @@
-
+use crate::common::damage_helpers::{atk, make_unit};
 use bevyrogue::combat::mechanics::damage::calculate_damage;
 use bevyrogue::combat::types::{Attribute, DamageTag};
-use crate::common::damage_helpers::{atk, make_unit};
 
 // ──────────────────────────────────────────────────────────────────────────
 // Edge cases

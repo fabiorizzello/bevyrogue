@@ -38,12 +38,7 @@ struct PostActionUnitSlice {
 }
 
 fn snapshot_post_action_units(world: &mut World) -> Vec<PostActionUnitSlice> {
-    let mut q = world.query::<(
-        &Unit,
-        &Team,
-        Option<&SlotIndex>,
-        Option<&StatusBag>,
-    )>();
+    let mut q = world.query::<(&Unit, &Team, Option<&SlotIndex>, Option<&StatusBag>)>();
     q.iter(world)
         .map(|(unit, team, slot, status)| {
             let (status_remaining, heated_remaining) = match status {
@@ -235,9 +230,8 @@ fn preflight_timeline_action(
         let ult_ready = q
             .iter(world)
             .find_map(|(unit, ult, energy, meta)| {
-                (unit.id == attacker_id).then(|| {
-                    crate::combat::ult_gauge::effective_ult_gauge(meta, energy, ult).ready
-                })
+                (unit.id == attacker_id)
+                    .then(|| crate::combat::ult_gauge::effective_ult_gauge(meta, energy, ult).ready)
             })
             .unwrap_or(false);
         if !ult_ready {

@@ -8,7 +8,7 @@
 //! `Time::delta_secs()` into, plus the structured `validation_frametime:` line.
 
 use bevyrogue::combat::observability::{
-    format_frame_time_stats, parse_validation_baseline_toggle, FrameTimeAccumulator,
+    FrameTimeAccumulator, format_frame_time_stats, parse_validation_baseline_toggle,
 };
 
 #[test]
@@ -54,9 +54,17 @@ fn frame_time_known_delta_series_yields_expected_soak_stats_and_line() {
 
     assert_eq!(stats.count, 20);
     assert!((stats.min_ms - 10.0).abs() < 0.5, "min_ms={}", stats.min_ms);
-    assert!((stats.max_ms - 100.0).abs() < 0.5, "max_ms={}", stats.max_ms);
+    assert!(
+        (stats.max_ms - 100.0).abs() < 0.5,
+        "max_ms={}",
+        stats.max_ms
+    );
     // mean = (19*10 + 100) / 20 = 290 / 20 = 14.5 ms
-    assert!((stats.mean_ms - 14.5).abs() < 0.1, "mean_ms={}", stats.mean_ms);
+    assert!(
+        (stats.mean_ms - 14.5).abs() < 0.1,
+        "mean_ms={}",
+        stats.mean_ms
+    );
     // p95 index = ceil(0.95 * 20) - 1 = 18 → sorted[18] = 10 ms
     assert!((stats.p95_ms - 10.0).abs() < 0.5, "p95_ms={}", stats.p95_ms);
 

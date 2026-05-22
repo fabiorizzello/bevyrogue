@@ -20,12 +20,18 @@ fn repeated_gains_accumulate_without_round_cap() {
     e.gain(6);
     e.gain(6);
     e.gain(6);
-    assert_eq!(e.current, 18, "gains accumulate past the old per-round cap of 10");
+    assert_eq!(
+        e.current, 18,
+        "gains accumulate past the old per-round cap of 10"
+    );
 }
 
 #[test]
 fn gain_capped_reports_only_the_amount_actually_added() {
-    let mut e = Energy { current: 95, max: 100 };
+    let mut e = Energy {
+        current: 95,
+        max: 100,
+    };
     let applied = e.gain_capped(20);
     assert_eq!(applied, 5, "only the headroom up to max is applied");
     assert_eq!(e.current, 100);

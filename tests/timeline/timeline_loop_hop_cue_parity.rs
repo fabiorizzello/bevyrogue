@@ -126,8 +126,7 @@ fn windowed_suspends_once_per_hop_then_matches_headless() {
     let headless_intents = {
         let mut world = World::new();
         let mut pending: VecDeque<Intent> = VecDeque::new();
-        let mut runner =
-            BeatRunner::new(Arc::clone(&timeline), CastId::ROOT, CASTER, TARGET);
+        let mut runner = BeatRunner::new(Arc::clone(&timeline), CastId::ROOT, CASTER, TARGET);
         runner.run_to_completion(&mut world, &regs, SkillCtxMode::Execute, &mut pending, 256);
         normalized_intents(&pending)
     };
@@ -145,13 +144,8 @@ fn windowed_suspends_once_per_hop_then_matches_headless() {
 
     for hop in 0..N_HOPS {
         // Each call should stall on the hop body's presentation beat.
-        let outcome = runner.run_to_completion(
-            &mut world,
-            &regs,
-            SkillCtxMode::Execute,
-            &mut pending,
-            256,
-        );
+        let outcome =
+            runner.run_to_completion(&mut world, &regs, SkillCtxMode::Execute, &mut pending, 256);
         assert_eq!(
             outcome,
             StepOutcome::AwaitingCue,
@@ -159,13 +153,8 @@ fn windowed_suspends_once_per_hop_then_matches_headless() {
         );
 
         // Re-entering without resume must not advance or duplicate.
-        let redundant = runner.run_to_completion(
-            &mut world,
-            &regs,
-            SkillCtxMode::Execute,
-            &mut pending,
-            256,
-        );
+        let redundant =
+            runner.run_to_completion(&mut world, &regs, SkillCtxMode::Execute, &mut pending, 256);
         assert_eq!(
             redundant,
             StepOutcome::AwaitingCue,
@@ -181,10 +170,7 @@ fn windowed_suspends_once_per_hop_then_matches_headless() {
         let info = runner
             .awaiting_cue_info()
             .expect("hop {hop}: awaiting_cue_info must be Some while stalled");
-        assert_eq!(
-            info.cue_id, HOP_CUE,
-            "hop {hop}: cue_id must match HOP_CUE"
-        );
+        assert_eq!(info.cue_id, HOP_CUE, "hop {hop}: cue_id must match HOP_CUE");
         assert_eq!(
             info.hop_index,
             Some(hop),
@@ -195,23 +181,14 @@ fn windowed_suspends_once_per_hop_then_matches_headless() {
     }
 
     // After N resumes, the next run_to_completion must reach Done.
-    let final_outcome = runner.run_to_completion(
-        &mut world,
-        &regs,
-        SkillCtxMode::Execute,
-        &mut pending,
-        256,
-    );
+    let final_outcome =
+        runner.run_to_completion(&mut world, &regs, SkillCtxMode::Execute, &mut pending, 256);
     assert_eq!(
         final_outcome,
         StepOutcome::Done,
         "Windowed must reach Done after all {N_HOPS} resumes"
     );
-    assert_eq!(
-        runner.cursor(),
-        None,
-        "cursor must be None after Done"
-    );
+    assert_eq!(runner.cursor(), None, "cursor must be None after Done");
 
     // Intent stream must match HeadlessAuto.
     let windowed_intents = normalized_intents(&pending);
@@ -235,25 +212,15 @@ fn extra_resume_cue_after_done_is_no_op() {
         runner.run_to_completion(&mut world, &regs, SkillCtxMode::Execute, &mut pending, 256);
         runner.resume_cue();
     }
-    let done = runner.run_to_completion(
-        &mut world,
-        &regs,
-        SkillCtxMode::Execute,
-        &mut pending,
-        256,
-    );
+    let done =
+        runner.run_to_completion(&mut world, &regs, SkillCtxMode::Execute, &mut pending, 256);
     assert_eq!(done, StepOutcome::Done);
     let intent_count_at_done = pending.len();
 
     // Extra resume + run must not add intents or change state.
     runner.resume_cue();
-    let after_extra = runner.run_to_completion(
-        &mut world,
-        &regs,
-        SkillCtxMode::Execute,
-        &mut pending,
-        256,
-    );
+    let after_extra =
+        runner.run_to_completion(&mut world, &regs, SkillCtxMode::Execute, &mut pending, 256);
     assert_eq!(
         after_extra,
         StepOutcome::Done,

@@ -17,6 +17,7 @@
 //!    HP was already ≤0. Documents the "loop continued past death" semantics so
 //!    a future skill author can detect the case from the event log.
 
+use crate::common::app::minimal_intent_app;
 use bevy::ecs::message::Messages;
 use bevy::prelude::*;
 use bevyrogue::combat::{
@@ -57,7 +58,6 @@ use bevyrogue::data::{
         TargetShape, TargetSide,
     },
 };
-use crate::common::app::minimal_intent_app;
 use std::collections::VecDeque;
 use std::sync::Arc;
 
@@ -159,8 +159,8 @@ fn t1_build_app() -> App {
     {
         let mut regs = app.world_mut().resource_mut::<ExtRegistries>();
         register_kernel_builtins(&mut regs);
-        let compiled = compile_skill_book_timelines(&book, &regs)
-            .expect("r013 skill book must compile");
+        let compiled =
+            compile_skill_book_timelines(&book, &regs).expect("r013 skill book must compile");
         app.world_mut()
             .resource_mut::<TimelineLibrary<String>>()
             .timelines = compiled;
@@ -327,7 +327,10 @@ fn cue_never_released_times_out_force_resumes_with_structured_state() {
     assert!(last.timed_out);
     assert_eq!(last.waited_frames, CUE_BARRIER_TIMEOUT_FRAMES);
     assert_eq!(last.timeout_frames, CUE_BARRIER_TIMEOUT_FRAMES);
-    assert_eq!(barrier.last_release_result(), Some(bevyrogue::combat::runtime::CueReleaseResult::TimedOut));
+    assert_eq!(
+        barrier.last_release_result(),
+        Some(bevyrogue::combat::runtime::CueReleaseResult::TimedOut)
+    );
     let msg = barrier
         .last_message()
         .expect("timeout recovery should leave a diagnostic message");

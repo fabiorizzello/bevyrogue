@@ -35,8 +35,7 @@ use bevyrogue::combat::{
     unit::{SlotIndex, Unit},
 };
 use bevyrogue::data::{
-    SkillBookHandle, aggregate_skill_book,
-    skill_timeline::compile_skill_book_timelines,
+    SkillBookHandle, aggregate_skill_book, skill_timeline::compile_skill_book_timelines,
     skills_ron::SkillBook,
 };
 
@@ -112,7 +111,11 @@ fn baby_burner_timeline_parses_with_windup_impact_recovery_beats() {
         .find(|b| b.id == "impact_signal")
         .expect("impact_signal beat present");
     match &impact_signal.payload {
-        Some(BeatPayload::BlueprintSignal { owner, name, payload }) => {
+        Some(BeatPayload::BlueprintSignal {
+            owner,
+            name,
+            payload,
+        }) => {
             assert_eq!(*owner, "agumon");
             assert_eq!(*name, "apply_thermal_spark");
             assert!(matches!(payload, SignalPayload::Amount(3)));
@@ -301,7 +304,9 @@ fn baby_burner_impact_emits_damage_break_and_thermal_spark_signal() {
 
     let damage_count = events
         .iter()
-        .filter(|e| matches!(e.kind, CombatEventKind::OnDamageDealt { .. }) && e.target == PRIMARY_ID)
+        .filter(|e| {
+            matches!(e.kind, CombatEventKind::OnDamageDealt { .. }) && e.target == PRIMARY_ID
+        })
         .count();
     assert_eq!(damage_count, 1, "exactly one damage event on the primary");
 
@@ -323,9 +328,13 @@ fn baby_burner_impact_emits_damage_break_and_thermal_spark_signal() {
         })
         .count();
     assert_eq!(
-        thermal_spark_count, 1,
+        thermal_spark_count,
+        1,
         "exactly one apply_thermal_spark signal: events={:?}",
-        events.iter().map(|e| format!("{:?}", e.kind)).collect::<Vec<_>>()
+        events
+            .iter()
+            .map(|e| format!("{:?}", e.kind))
+            .collect::<Vec<_>>()
     );
 
     assert!(

@@ -220,8 +220,9 @@ fn sharp_claws_reports_bad_selector_with_existing_compile_error_path() {
 
 #[test]
 fn agumon_anim_graph_keeps_kernel_release_separate_from_gameplay_commands() {
-    let graph: AnimGraph = ron::from_str(include_str!("../../assets/digimon/agumon/anim_graph.ron"))
-        .expect("agumon anim graph should parse");
+    let graph: AnimGraph =
+        ron::from_str(include_str!("../../assets/digimon/agumon/anim_graph.ron"))
+            .expect("agumon anim graph should parse");
     let mut catalogs = AnimationValidationCatalogs::default();
     catalogs.particles.insert(ParticleId("baby_flame".into()));
     let report = validate_anim_graph(&graph, &parse_valid_clip(), &catalogs);

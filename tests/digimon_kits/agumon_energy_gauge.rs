@@ -1,4 +1,7 @@
-use bevy::{ecs::message::{Message, MessageCursor, Messages}, prelude::*};
+use bevy::{
+    ecs::message::{Message, MessageCursor, Messages},
+    prelude::*,
+};
 use bevyrogue::combat::{
     energy::Energy,
     events::{CombatEvent, CombatEventKind},
@@ -141,14 +144,7 @@ fn agumon_energy_gauge_fills_locks_and_drains_end_to_end() {
     let roster = load_roster();
     let agumon = pilot(&roster, "Agumon");
     let mut app = skill_book_runtime_app(load_skill_book());
-    spawn_from_def(
-        &mut app,
-        &agumon,
-        agumon.hp_max,
-        agumon.toughness_max,
-        0,
-        0,
-    );
+    spawn_from_def(&mut app, &agumon, agumon.hp_max, agumon.toughness_max, 0, 0);
     spawn_training_dummy(&mut app);
 
     let mut cursor = message_cursor::<CombatEvent>(&mut app);
@@ -172,7 +168,10 @@ fn agumon_energy_gauge_fills_locks_and_drains_end_to_end() {
     let prelock_energy = unit_energy(&mut app, agumon.id);
     let prelock_ult = unit_ult(&mut app, agumon.id);
     assert_eq!(prelock_energy.current, 80);
-    assert_eq!(prelock_ult.current, 100, "legacy charge is already primed after 4 basics");
+    assert_eq!(
+        prelock_ult.current, 100,
+        "legacy charge is already primed after 4 basics"
+    );
 
     app.world_mut().write_message(ActionIntent::Ultimate {
         attacker: agumon.id,
@@ -209,7 +208,10 @@ fn agumon_energy_gauge_fills_locks_and_drains_end_to_end() {
 
     let ready_energy = unit_energy(&mut app, agumon.id);
     let ready_ult = unit_ult(&mut app, agumon.id);
-    assert_eq!(ready_energy.current, ready_energy.max, "energy gauge should cap at full");
+    assert_eq!(
+        ready_energy.current, ready_energy.max,
+        "energy gauge should cap at full"
+    );
     assert!(
         ready_ult.current >= ready_ult.trigger,
         "legacy charge can stay primed; readiness is now gated by energy"
@@ -223,7 +225,9 @@ fn agumon_energy_gauge_fills_locks_and_drains_end_to_end() {
     let ult_events = drain_messages(&mut cursor, &app);
 
     assert!(
-        !ult_events.iter().any(|event| matches!(&event.kind, CombatEventKind::OnActionFailed { .. })),
+        !ult_events
+            .iter()
+            .any(|event| matches!(&event.kind, CombatEventKind::OnActionFailed { .. })),
         "full-energy Agumon ult should succeed: {ult_events:?}"
     );
     assert!(ult_events.iter().any(|event| {
@@ -238,8 +242,14 @@ fn agumon_energy_gauge_fills_locks_and_drains_end_to_end() {
 
     let spent_energy = unit_energy(&mut app, agumon.id);
     let spent_ult = unit_ult(&mut app, agumon.id);
-    assert_eq!(spent_energy.current, 0, "successful ult must drain Agumon's Energy.current");
-    assert_eq!(spent_ult.current, 0, "successful ult must also zero legacy UltimateCharge.current");
+    assert_eq!(
+        spent_energy.current, 0,
+        "successful ult must drain Agumon's Energy.current"
+    );
+    assert_eq!(
+        spent_ult.current, 0,
+        "successful ult must also zero legacy UltimateCharge.current"
+    );
 }
 
 /// Regression: the timeline-backed ult preflight must derive readiness from the
@@ -282,7 +292,9 @@ fn full_energy_ult_casts_even_when_legacy_charge_not_primed() {
     let ult_events = drain_messages(&mut cursor, &app);
 
     assert!(
-        !ult_events.iter().any(|event| matches!(&event.kind, CombatEventKind::OnActionFailed { .. })),
+        !ult_events
+            .iter()
+            .any(|event| matches!(&event.kind, CombatEventKind::OnActionFailed { .. })),
         "energy-full ult must not fail on the unprimed legacy gauge: {ult_events:?}"
     );
     assert!(ult_events.iter().any(|event| {

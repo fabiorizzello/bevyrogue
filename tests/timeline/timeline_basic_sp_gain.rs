@@ -136,8 +136,8 @@ fn build_app(book: SkillBook, start_sp: i32) -> App {
     {
         let mut regs = app.world_mut().resource_mut::<ExtRegistries>();
         register_kernel_builtins(&mut regs);
-        let compiled = compile_skill_book_timelines(&book, &regs)
-            .expect("timeline-backed basic must compile");
+        let compiled =
+            compile_skill_book_timelines(&book, &regs).expect("timeline-backed basic must compile");
         app.world_mut()
             .resource_mut::<TimelineLibrary<String>>()
             .timelines = compiled;
