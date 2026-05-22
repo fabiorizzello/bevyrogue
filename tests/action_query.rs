@@ -12,3 +12,5 @@ mod cast_id_propagation;
 mod commander_flow;
 #[path = "action_query/engine_legality_integration.rs"]
 mod engine_legality_integration;
+#[path = "action_query/out_of_turn_burst_seam.rs"]
+mod out_of_turn_burst_seam;

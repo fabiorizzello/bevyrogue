@@ -19,7 +19,7 @@ use bevyrogue::combat::log::ActionLog;
 use bevyrogue::combat::sp::SpPool;
 use bevyrogue::combat::state::CombatState;
 use bevyrogue::combat::turn_order::{TurnAdvanced, TurnOrder};
-use bevyrogue::combat::turn_system::ActionIntent;
+use bevyrogue::combat::turn_system::{ActionIntent, UltBurstRequest};
 use bevyrogue::combat::turn_system::{
     advance_turn_system, check_victory_system, resolve_action_system,
     resolve_enemy_turn_action_system,
@@ -201,6 +201,7 @@ fn main() -> AppExit {
     .insert_resource(SelectedEncounter(selected_preset))
     .add_message::<TurnAdvanced>()
     .add_message::<ActionIntent>()
+    .add_message::<UltBurstRequest>()
     .add_message::<FollowUpIntent>()
     .add_message::<FollowUpTrace>()
     .add_message::<CombatEvent>()

@@ -9,5 +9,5 @@ pub use types::{
     ActionAffordance, ActionQueryKind, ActionStatus, CombatQuerySnapshot, ImplementationStatus,
     ResourceAffordanceDetail, ResourceKind, ResourceStatus, TargetAffordance, TargetStatus,
     ToughnessAffordance, UnitQuerySnapshot, build_snapshot_from_ecs,
-    build_snapshot_from_ecs_with_sp,
+    build_snapshot_from_ecs_with_sp, mark_unit_active,
 };

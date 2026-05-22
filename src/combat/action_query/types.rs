@@ -186,6 +186,29 @@ pub fn build_snapshot_from_ecs_with_sp(
     }
 }
 
+/// Forces `is_active = true` for `unit_id` everywhere it appears in the snapshot.
+///
+/// This is the out-of-turn-burst legality seam: the burst attacker is not
+/// `TurnOrder.active_unit`, so its snapshot entry would otherwise be marked
+/// inactive and rejected with `NotActiveUnit`. Applying this *only* lifts the
+/// active-unit gate — every other legality check (phase, KO, stun, SP, gauge,
+/// targeting) reads unchanged fields and still bites.
+pub fn mark_unit_active(snapshot: &mut CombatQuerySnapshot, unit_id: UnitId) {
+    if snapshot.acting_unit.id == unit_id {
+        snapshot.acting_unit.is_active = true;
+    }
+    for unit in &mut snapshot.units {
+        if unit.id == unit_id {
+            unit.is_active = true;
+        }
+    }
+    if let Some(target) = &mut snapshot.target_unit {
+        if target.id == unit_id {
+            target.is_active = true;
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ActionQueryKind<'a> {
     Basic,

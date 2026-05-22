@@ -32,6 +32,28 @@ pub enum ActionIntent {
 #[derive(Resource, Debug, Default, Clone)]
 pub struct EnemyTurnRequestQueue(pub Vec<UnitId>);
 
+/// Request to fire a unit's Ultimate out of turn (HSR-style burst).
+///
+/// Written by UI/CLI/AI when a *non-active* unit has a ready ult gauge. Consumed
+/// by `burst_action_system`, which validates it through the existing legality
+/// gate and, if legal, writes an `ActionIntent::Ultimate` while never touching
+/// `TurnOrder.active_unit` or any `ActionValue`.
+#[derive(Message, Debug, Clone, PartialEq, Eq)]
+pub struct UltBurstRequest {
+    pub attacker: UnitId,
+    pub target: UnitId,
+}
+
+/// Transient marker: the unit currently authorized to act out of turn.
+///
+/// Set by `burst_action_system` for the burst attacker and consumed by
+/// `resolve_action_system`, which forces that unit's `is_active` in the legality
+/// snapshot for exactly one resolution cycle, then clears this back to `None`.
+/// SP-cost, gauge-ready, KO, stun, and targeting checks all still apply — only
+/// the active-unit gate is bypassed.
+#[derive(Resource, Debug, Default, Clone, PartialEq, Eq)]
+pub struct OutOfTurnBurst(pub Option<UnitId>);
+
 pub(crate) type ResolveActorsQuery<'w, 's> = Query<
     'w,
     's,

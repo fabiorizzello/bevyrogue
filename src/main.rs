@@ -14,7 +14,7 @@ use bevyrogue::combat::log::ActionLog;
 use bevyrogue::combat::sp::SpPool;
 use bevyrogue::combat::state::CombatState;
 use bevyrogue::combat::turn_order::{TurnAdvanced, TurnOrder};
-use bevyrogue::combat::turn_system::ActionIntent;
+use bevyrogue::combat::turn_system::{ActionIntent, UltBurstRequest};
 use bevyrogue::combat::ultimate::UltGainQueue;
 
 // Used by S03+ turn state transitions
@@ -50,6 +50,7 @@ fn main() -> AppExit {
         .init_resource::<UltGainQueue>()
         .add_message::<TurnAdvanced>()
         .add_message::<ActionIntent>()
+        .add_message::<UltBurstRequest>()
         .add_message::<FollowUpIntent>()
         .add_message::<FollowUpTrace>()
         .add_message::<CombatEvent>()
