@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "milestoneId": "M002",
+  "sliceId": "S09",
+  "timestamp": 1779437199899,
+  "status": "fail",
+  "durationMs": 2,
+  "checks": [
+    {
+      "category": "tool",
+      "target": "T05 Verify",
+      "passed": false,
+      "message": "Unsafe or non-runnable Verify command: bash -c 'set -e; M=.gsd/milestones/M002/slices/S09/M002-BOUNDARY-MAP.md; C=.gsd/milestones/M002/slices/S09/S09-CLOSEOUT.md; test -f \"$M\"; test -f \"$C\"; for t in tests/timeline/boundary_contract.rs tests/windowed_only/phase_strip_readonly.rs tests/preview_ai/presentation_metadata_boundary.rs tests/animation/skill_graph_mapping_extensibility.rs tests/animation/vfx_handle_seam.rs; do test -f \"$t\" || { echo \"missing cited test $t\"; exit 1; }; grep -qF \"$t\" \"$M\" || { echo \"boundary map does not cite $t\"; exit 1; }; done; for row in kernel timeline anim-graph cue CombatEvent SkillGraphRegistry ParticleId; do grep -qiF \"$row\" \"$M\" || { echo \"boundary map missing row keyword $row\"; exit 1; }; done; echo BOUNDARY_MAP_AND_CLOSEOUT_OK' (contains shell control syntax such as pipes, redirects, semicolons, backticks, or command substitution)",
+      "blocking": true
+    }
+  ]
+}

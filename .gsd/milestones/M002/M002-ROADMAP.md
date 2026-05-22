@@ -1,4 +1,4 @@
-# M002: M002: M002: First on-screen combat (Agumon-only)
+# M002: M002: M002: M002: First on-screen combat (Agumon-only)
 
 **Vision:** The first time bevyrogue's combat appears on screen: AnimGraph runtime player + wgpu sprite render + §9 UI core + two-clock impact sync, Agumon-only, ending in a playable cargo run --features windowed of Agumon vs an Agumon dummy at full kit, with damage landing on the visible impact frame, gated at closeout by a repomix architectural review. The animation/skill seam must be complete and extensible so M003-M007 and a future RON editor lean on it without rewrites.
 
@@ -28,7 +28,7 @@
 - [x] **S08: S08** `risk:high` `depends:[]`
   > After this: After this: R009 has executable proof of typed pure graph input with no world globals or mutable graph context; R013 has structured failure visibility for cue timeout, missing skill-id, hot reload at next spawn, and dead target mid-loop.
 
-- [ ] **S09: Remediate validation evidence and operational closeout** `risk:medium` `depends:[S08]`
+- [ ] **S09: S09** `risk:medium` `depends:[]`
   > After this: After this: M002 has an explicit producer consumer boundary map, evidence for stance return and skill graph mapping and VFX handle seam, captured console output, and measured frame-time baseline comparison for the windowed soak.
 
 ## Boundary Map

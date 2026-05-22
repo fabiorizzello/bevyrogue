@@ -22,3 +22,5 @@ mod anim_stance_asset;
 mod anim_validation;
 #[path = "animation/clip_atlas_parity.rs"]
 mod clip_atlas_parity;
+#[path = "animation/skill_graph_mapping_extensibility.rs"]
+mod skill_graph_mapping_extensibility;
