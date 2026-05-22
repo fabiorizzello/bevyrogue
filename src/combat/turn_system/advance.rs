@@ -4,7 +4,6 @@ use crate::combat::buffs::DrBag;
 use crate::combat::runtime::intent::CastId;
 use crate::combat::{
     StatusBag,
-    energy::RoundEnergyTracker,
     events::{CombatEvent, CombatEventKind},
     kit::UnitSkills,
     round_flags::RoundFlags,
@@ -39,7 +38,6 @@ pub fn advance_turn_system(
             Option<&Toughness>,
             Option<&Commander>,
             Option<&mut RoundFlags>,
-            Option<&mut RoundEnergyTracker>,
             Option<&mut DrBag>,
         ),
         Without<Ko>,
@@ -63,7 +61,7 @@ pub fn advance_turn_system(
     let snapshots: Vec<Snap> = query
         .iter_mut()
         .map(
-            |(entity, unit, team, _, _, _, stunned, status_bag, _, _, _, _, _, _, _)| Snap {
+            |(entity, unit, team, _, _, _, stunned, status_bag, _, _, _, _, _, _)| Snap {
                 entity,
                 id: unit.id,
                 team: *team,
@@ -102,7 +100,6 @@ pub fn advance_turn_system(
                 _,
                 _,
                 mut round_flags_opt,
-                mut round_energy_tracker_opt,
                 mut dr_bag_opt,
             )) = query.get_mut(snap.entity)
             else {
@@ -115,10 +112,6 @@ pub fn advance_turn_system(
                 flags.acted_this_turn = false;
                 flags.hits_received_this_round = 0;
             }
-            if let Some(ref mut tracker) = round_energy_tracker_opt {
-                tracker.reset();
-            }
-
             // Heated DoT: 4 HP Fire damage, bypasses stun (canon §H.1).
             // Runs unconditionally before stun-skip so Heated+Stunned units still burn.
             if let Some(ref bag) = status_opt {
@@ -288,7 +281,6 @@ pub fn advance_turn_system(
         _,
         _,
         _,
-        _,
     ) in query.iter_mut()
     {
         if stunned.is_some() {
@@ -319,7 +311,7 @@ pub fn advance_turn_system(
 
     if let Some((unit_id_ready, entity_ready, _)) = units_ready.first() {
         if turn_order.active_unit.is_none() {
-            let Ok((_, _, _, _, _, Some(mut av), _, _, _, _, _, _, _, _, _)) =
+            let Ok((_, _, _, _, _, Some(mut av), _, _, _, _, _, _, _, _)) =
                 query.get_mut(*entity_ready)
             else {
                 return;

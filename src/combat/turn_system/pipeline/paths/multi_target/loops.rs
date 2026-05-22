@@ -39,7 +39,7 @@ pub(super) fn run_target_loop(
 
         // AllAllies fan-out: heal or cleanse — only the defender unit/bag is needed.
         if inflight.action.target_shape == TargetShape::AllAllies {
-            let Ok((_, _, mut def_unit, _, _, _, _, def_ko, _, _, mut def_bag, _, _, _, _)) =
+            let Ok((_, _, mut def_unit, _, _, _, _, def_ko, _, _, mut def_bag, _, _, _)) =
                 actors.get_mut(def_entity)
             else {
                 continue;
@@ -82,7 +82,7 @@ pub(super) fn run_target_loop(
             continue;
         };
 
-        let (_, att_team_val, att_unit_val, _, _, _, _, _, _, _, att_bag_val, _, _, _, _) =
+        let (_, att_team_val, att_unit_val, _, _, _, _, _, _, _, att_bag_val, _, _, _) =
             &att_row;
         let (
             _,
@@ -96,7 +96,6 @@ pub(super) fn run_target_loop(
             _,
             def_cmdr_val,
             ref mut def_bag_val,
-            _,
             ref mut def_flags_val,
             _,
             ref mut def_dr_val,

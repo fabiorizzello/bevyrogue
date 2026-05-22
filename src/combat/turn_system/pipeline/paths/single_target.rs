@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::combat::damage::triangle_modifiers;
-use crate::combat::energy::{Energy, EnergyGainSource, RoundEnergyTracker};
+use crate::combat::energy::Energy;
 use crate::combat::events::{CombatEvent, CombatEventKind};
 use crate::combat::floating::FloatingDamage;
 use crate::combat::kernel::{CombatBeatId, CombatKernelRegistry};
@@ -19,7 +19,7 @@ use crate::combat::stun::Stunned;
 use crate::combat::turn_order::TurnOrder;
 use crate::combat::types::UnitId;
 use crate::combat::ult_gauge::UltGaugeMetadata;
-use crate::combat::unit::{BasicStreak, Ko, Unit};
+use crate::combat::unit::{Ko, Unit};
 
 use super::super::super::{ResolveActorsQuery, emit_combat_beat, emit_combat_event, set_phase};
 use super::dispatch_blueprint_transitions;
@@ -38,7 +38,7 @@ pub(in crate::combat::turn_system::pipeline) fn run(
     actors: &mut ResolveActorsQuery,
     rng: &mut Option<ResMut<CombatRng>>,
     entropy_q: &mut Query<&mut CombatEntropy, With<Unit>>,
-    energy_q: &mut Query<(&mut Energy, Option<&mut RoundEnergyTracker>)>,
+    energy_q: &mut Query<&mut Energy>,
     gauge_meta_q: &Query<&UltGaugeMetadata>,
     ext_regs: Option<&crate::combat::runtime::ExtRegistries>,
     intent_queue: &mut Option<ResMut<IntentQueue>>,
@@ -51,7 +51,7 @@ pub(in crate::combat::turn_system::pipeline) fn run(
 ) {
     let mut post_action_roster: Vec<PostActionUnitSnapshot> = actors
         .iter()
-        .map(|(_, team, unit, _, _, _, _, ko, _, _, _, _, _, slot, _)| {
+        .map(|(_, team, unit, _, _, _, _, ko, _, _, _, _, slot, _)| {
             PostActionUnitSnapshot::new(
                 unit.id,
                 *team,
@@ -79,7 +79,6 @@ pub(in crate::combat::turn_system::pipeline) fn run(
         attacker_stunned,
         _attacker_commander,
         attacker_bag,
-        mut attacker_streak,
         _attacker_round_flags,
         _attacker_slot,
         _attacker_dr,
@@ -96,7 +95,6 @@ pub(in crate::combat::turn_system::pipeline) fn run(
         _,
         defender_commander,
         mut defender_bag,
-        _,
         mut defender_round_flags,
         _defender_slot,
         defender_dr,
@@ -174,13 +172,6 @@ pub(in crate::combat::turn_system::pipeline) fn run(
     let Some(mut attacker_ult) = attacker_ult else {
         return;
     };
-    let mut local_streak = BasicStreak::default();
-    let streak_ref: &mut BasicStreak = if let Some(ref mut s) = attacker_streak {
-        &mut **s
-    } else {
-        &mut local_streak
-    };
-
     let hp_before = defender_unit.hp_current;
     let low_hp_threshold = defender_unit.hp_max * 3 / 10;
     let ult_before = attacker_ult.current;
@@ -216,7 +207,6 @@ pub(in crate::combat::turn_system::pipeline) fn run(
         &mut attacker_ult,
         sp,
         &mut sp_tracker,
-        streak_ref,
         defender_commander.is_some(),
         defender_break_sealed,
         defender_bag.as_deref(),
@@ -569,17 +559,8 @@ pub(in crate::combat::turn_system::pipeline) fn run(
     }
 
     if outcome.succeeded && inflight.action.energy_grant > 0 {
-        if let Ok((mut energy, mut tracker)) = energy_q.get_mut(attacker_entity) {
-            let granted_by_round_cap = tracker
-                .as_deref_mut()
-                .map(|tracker| {
-                    tracker.try_gain(
-                        EnergyGainSource::SecondaryAction,
-                        inflight.action.energy_grant,
-                    )
-                })
-                .unwrap_or(inflight.action.energy_grant);
-            let applied = energy.gain_capped(granted_by_round_cap);
+        if let Ok(mut energy) = energy_q.get_mut(attacker_entity) {
+            let applied = energy.gain_capped(inflight.action.energy_grant);
             if applied > 0 {
                 emit_combat_event(
                     event_writer,

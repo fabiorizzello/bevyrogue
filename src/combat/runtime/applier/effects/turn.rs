@@ -2,7 +2,7 @@ use bevy::log;
 use bevy::prelude::*;
 
 use crate::combat::{
-    energy::{Energy, EnergyGainSource, RoundEnergyTracker},
+    energy::Energy,
     events::CombatEventKind,
     runtime::intent::CastId,
     types::UnitId,
@@ -62,15 +62,8 @@ pub(in crate::combat::runtime::applier) fn apply_add_energy(
         return;
     };
 
-    let granted_by_round_cap =
-        if let Some(mut tracker) = world.get_mut::<RoundEnergyTracker>(entity) {
-            tracker.try_gain(EnergyGainSource::SecondaryAction, amount)
-        } else {
-            amount
-        };
-
     let gained = if let Some(mut energy) = world.get_mut::<Energy>(entity) {
-        energy.gain_capped(granted_by_round_cap)
+        energy.gain_capped(amount)
     } else {
         log::warn!(
             "intent_applier AddEnergy: target {:?} missing Energy component",

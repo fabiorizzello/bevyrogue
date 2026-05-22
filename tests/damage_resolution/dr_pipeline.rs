@@ -18,7 +18,7 @@ use bevyrogue::combat::{
     toughness::Toughness,
     types::{Attribute, DamageTag, EvoStage, SkillId, UnitId},
     ultimate::{UltAccumulationTrigger, UltimateCharge},
-    unit::{BasicStreak, Unit},
+    unit::Unit,
 };
 use bevyrogue::data::skills_ron::TargetShape;
 
@@ -112,7 +112,6 @@ fn run(
         &mut ult,
         &mut sp,
         &mut RoundSpTracker::default(),
-        &mut BasicStreak::default(),
         false,
         false,
         None,

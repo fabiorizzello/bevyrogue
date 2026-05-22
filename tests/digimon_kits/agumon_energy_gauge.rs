@@ -9,7 +9,7 @@ use bevyrogue::combat::{
     types::{Attribute, SkillId, UnitId},
     ult_gauge::UltGaugeMetadata,
     ultimate::UltimateCharge,
-    unit::{BasicStreak, Unit},
+    unit::Unit,
 };
 use bevyrogue::data::units_ron::{UnitDef, UnitRoster};
 
@@ -70,7 +70,6 @@ fn spawn_from_def(
             current: energy_current,
             max: 100,
         },
-        BasicStreak::default(),
         UltGaugeMetadata(def.blueprint_metadata.clone()),
     ));
 }

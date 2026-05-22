@@ -6,7 +6,7 @@ use crate::combat::runtime::{
 };
 use crate::combat::{
     action_query::{ActionQueryKind, build_snapshot_from_ecs, query_intent_legality},
-    energy::{Energy, RoundEnergyTracker},
+    energy::Energy,
     events::{ActionIntentKind, CombatEvent, CombatEventKind},
     kernel::{CombatBeatId, CombatKernelRegistry},
     log::ActionLog,
@@ -26,7 +26,7 @@ pub struct ActionRuntimeParams<'w, 's> {
         &'static mut crate::combat::rng::CombatEntropy,
         With<crate::combat::unit::Unit>,
     >,
-    energy_q: Query<'w, 's, (&'static mut Energy, Option<&'static mut RoundEnergyTracker>)>,
+    energy_q: Query<'w, 's, &'static mut Energy>,
     ext_regs: Option<Res<'w, ExtRegistries>>,
     intent_queue: Option<ResMut<'w, IntentQueue>>,
     intent_execution_meta: Option<ResMut<'w, IntentExecutionMeta>>,
@@ -107,7 +107,6 @@ pub fn resolve_action_system(
                         ko,
                         stunned,
                         commander,
-                        _,
                         _,
                         _,
                         _,

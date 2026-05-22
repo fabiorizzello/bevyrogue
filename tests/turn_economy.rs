@@ -1,12 +1,10 @@
 //! Aggregated harness for the turn_economy domain. See .gsd/KNOWLEDGE.md R003.
 //!
-//! Hosts tests for turn system, SP economy, energy, ultimate meter, and streaks.
+//! Hosts tests for turn system, SP economy, energy, and ultimate meter.
 
 #[path = "common/mod.rs"]
 mod common;
 
-#[path = "turn_economy/combat_resolution_streak.rs"]
-mod combat_resolution_streak;
 #[path = "turn_economy/energy_internals.rs"]
 mod energy_internals;
 #[path = "turn_economy/resource_caps.rs"]

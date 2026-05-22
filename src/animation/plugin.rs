@@ -326,6 +326,29 @@ fn track_animation_clip_loads(
     );
 }
 
+/// Returns the asset directory that owns `path` — everything before the final
+/// `/` — or `None` for a bare filename. Bevy asset paths are always
+/// `/`-separated regardless of host platform, so we split on `/` directly
+/// rather than going through `std::path` (which would use `\` on Windows).
+fn asset_owner_dir(path: &str) -> Option<&str> {
+    path.rfind('/').map(|idx| &path[..idx])
+}
+
+/// Pairs an animation graph to the clip living in the *same asset directory*
+/// (i.e. the same Digimon), returning that clip's index into `clip_paths`.
+///
+/// Pairing by owning directory — not by range name — is what keeps
+/// `renamon/anim_graph.ron` validated against `renamon/clip.ron`. Several
+/// Digimon expose an identically named `"skill"` range, so the previous
+/// "first clip that contains the range" rule silently validated every later
+/// Digimon's graph against the first-loaded clip's frame numbers.
+fn pair_graph_to_clip(graph_path: &str, clip_paths: &[String]) -> Option<usize> {
+    let graph_owner = asset_owner_dir(graph_path)?;
+    clip_paths
+        .iter()
+        .position(|clip_path| asset_owner_dir(clip_path) == Some(graph_owner))
+}
+
 fn validate_animation_assets(
     graph_handles: Option<Res<AnimationGraphHandles>>,
     clip_handles: Option<Res<AnimationClipHandles>>,
@@ -334,7 +357,7 @@ fn validate_animation_assets(
     graphs: Res<Assets<AnimGraph>>,
     clips: Res<Assets<Clip>>,
     catalogs: Res<AnimationValidationCatalogs>,
-    graph_paths: Res<AnimationGraphPaths>,
+    asset_server: Res<AssetServer>,
     clip_paths: Res<AnimationClipPaths>,
     mut validation_state: ResMut<AnimationValidationState>,
     mut graph_events: MessageReader<AssetEvent<AnimGraph>>,
@@ -362,25 +385,35 @@ fn validate_animation_assets(
 
     let mut diagnostics = Vec::new();
 
-    for (graph_index, graph_handle) in graph_handles.0.iter().enumerate() {
+    for graph_handle in graph_handles.0.iter() {
         let Some(graph) = graphs.get(graph_handle) else {
             // Graph failed to load; skip it without blocking other graphs.
             continue;
         };
 
-        let matching_clips: Vec<_> = clip_handles
-            .0
-            .iter()
-            .enumerate()
-            .filter_map(|(clip_index, clip_handle)| {
-                clips
-                    .get(clip_handle)
-                    .filter(|clip| clip.ranges.contains_key(&graph.clip.0))
-                    .map(|clip| (clip_index, clip))
-            })
-            .collect();
+        // `graph_handles` interleaves skill and stance graphs, so it is NOT
+        // index-aligned with `AnimationGraphPaths`. The asset server is the only
+        // reliable per-handle path source here (same approach as
+        // `populate_graph_registries`).
+        let graph_path = asset_server
+            .get_path(graph_handle.id())
+            .map(|path| path.path().to_string_lossy().into_owned());
+        let graph_path_ref = graph_path.as_deref().unwrap_or("<unknown>");
 
-        let Some((clip_index, clip)) = matching_clips.first().copied() else {
+        // Pair the graph to the clip in its own directory, then resolve that
+        // clip asset. `clip_paths` is index-aligned with `clip_handles`.
+        let paired = graph_path
+            .as_deref()
+            .and_then(|path| pair_graph_to_clip(path, &clip_paths.0))
+            .and_then(|clip_index| {
+                clip_handles
+                    .0
+                    .get(clip_index)
+                    .and_then(|handle| clips.get(handle))
+                    .map(|clip| (clip_index, clip))
+            });
+
+        let Some((clip_index, clip)) = paired else {
             diagnostics.push(AnimationValidationDiagnostic {
                 severity: AnimationValidationSeverity::Error,
                 check: AnimationValidationCheck::GraphClipRange,
@@ -390,18 +423,13 @@ fn validate_animation_assets(
                     ..Default::default()
                 },
                 detail: format!(
-                    "graph clip '{}' did not match any loaded clip asset ranges",
+                    "graph clip '{}' has no clip asset in its own directory (graph={graph_path_ref})",
                     graph.clip.0
                 ),
             });
-            let graph_path = graph_paths
-                .0
-                .get(graph_index)
-                .map(String::as_str)
-                .unwrap_or("<unknown>");
             warn!(
-                "animation validation failed to find clip asset for graph path={} clip_id={}",
-                graph_path, graph.clip.0
+                "animation validation found no clip asset alongside graph path={} clip_id={}",
+                graph_path_ref, graph.clip.0
             );
             let synthetic_clip = Clip {
                 meta: ClipMeta {
@@ -424,11 +452,6 @@ fn validate_animation_assets(
 
         diagnostics.extend(validate_anim_graph(graph, clip, &catalogs).diagnostics);
 
-        let graph_path = graph_paths
-            .0
-            .get(graph_index)
-            .map(String::as_str)
-            .unwrap_or("<unknown>");
         let clip_path = clip_paths
             .0
             .get(clip_index)
@@ -436,7 +459,7 @@ fn validate_animation_assets(
             .unwrap_or("<unknown>");
         info!(
             "animation validation checked graph path={} against clip path={} clip_id={}",
-            graph_path, clip_path, graph.clip.0
+            graph_path_ref, clip_path, graph.clip.0
         );
     }
 
@@ -515,4 +538,49 @@ fn sync_validation_catalogs(
         catalogs.statuses.len(),
         catalogs.skills.len()
     );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{asset_owner_dir, pair_graph_to_clip};
+
+    #[test]
+    fn asset_owner_dir_returns_parent_or_none() {
+        assert_eq!(
+            asset_owner_dir("digimon/renamon/anim_graph.ron"),
+            Some("digimon/renamon")
+        );
+        assert_eq!(asset_owner_dir("clip.ron"), None);
+    }
+
+    #[test]
+    fn pair_graph_to_clip_matches_by_owning_directory_not_range_name() {
+        // Order mirrors DEFAULT_ANIM_CLIP_PATHS: Agumon is index 0.
+        let clip_paths = vec![
+            "digimon/agumon/clip.ron".to_string(),
+            "digimon/renamon/clip.ron".to_string(),
+        ];
+
+        // Renamon's graph must pair with Renamon's clip (index 1), even though
+        // Agumon's clip is loaded first and also exposes a "skill" range.
+        assert_eq!(
+            pair_graph_to_clip("digimon/renamon/anim_graph.ron", &clip_paths),
+            Some(1)
+        );
+        // Both the skill graph and the stance graph in a directory pair to the
+        // single clip in that same directory.
+        assert_eq!(
+            pair_graph_to_clip("digimon/agumon/anim_graph.ron", &clip_paths),
+            Some(0)
+        );
+        assert_eq!(
+            pair_graph_to_clip("digimon/agumon/stance.ron", &clip_paths),
+            Some(0)
+        );
+        // A graph with no clip alongside it pairs with nothing.
+        assert_eq!(
+            pair_graph_to_clip("digimon/gabumon/anim_graph.ron", &clip_paths),
+            None
+        );
+    }
 }

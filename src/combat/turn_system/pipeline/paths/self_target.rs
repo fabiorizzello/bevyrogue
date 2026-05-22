@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::combat::energy::{Energy, EnergyGainSource, RoundEnergyTracker};
+use crate::combat::energy::Energy;
 use crate::combat::events::{CombatEvent, CombatEventKind};
 use crate::combat::floating::FloatingDamage;
 use crate::combat::kernel::{CombatBeatId, CombatKernelRegistry};
@@ -13,7 +13,7 @@ use crate::combat::stun::Stunned;
 use crate::combat::turn_order::TurnOrder;
 use crate::combat::types::UnitId;
 use crate::combat::ult_gauge::UltGaugeMetadata;
-use crate::combat::unit::{BasicStreak, Ko};
+use crate::combat::unit::Ko;
 
 use super::super::super::{ResolveActorsQuery, emit_combat_beat, emit_combat_event, set_phase};
 use super::dispatch_blueprint_transitions;
@@ -30,7 +30,7 @@ pub(in crate::combat::turn_system::pipeline) fn run(
     event_writer: &mut MessageWriter<CombatEvent>,
     registry: Option<&CombatKernelRegistry>,
     actors: &mut ResolveActorsQuery,
-    energy_q: &mut Query<(&mut Energy, Option<&mut RoundEnergyTracker>)>,
+    energy_q: &mut Query<&mut Energy>,
     gauge_meta_q: &Query<&UltGaugeMetadata>,
     cast_id: CastId,
     attacker_entity: Entity,
@@ -57,7 +57,6 @@ pub(in crate::combat::turn_system::pipeline) fn run(
         attacker_stunned,
         attacker_commander,
         mut attacker_bag,
-        mut attacker_streak,
         attacker_round_flags,
         _attacker_slot,
         _attacker_dr,
@@ -131,12 +130,6 @@ pub(in crate::combat::turn_system::pipeline) fn run(
     let Some(mut attacker_ult) = attacker_ult else {
         return true;
     };
-    let mut local_streak = BasicStreak::default();
-    let streak_ref: &mut BasicStreak = if let Some(ref mut s) = attacker_streak {
-        &mut **s
-    } else {
-        &mut local_streak
-    };
     let mut defender_unit = attacker_unit.clone();
     let defender_team = *attacker_team;
     let defender_break_sealed = attacker_round_flags
@@ -161,7 +154,6 @@ pub(in crate::combat::turn_system::pipeline) fn run(
         &mut attacker_ult,
         sp,
         &mut sp_tracker,
-        streak_ref,
         attacker_commander.is_some(),
         defender_break_sealed,
         None,
@@ -318,17 +310,8 @@ pub(in crate::combat::turn_system::pipeline) fn run(
     }
 
     if outcome.succeeded && inflight.action.energy_grant > 0 {
-        if let Ok((mut energy, mut tracker)) = energy_q.get_mut(attacker_entity) {
-            let granted_by_round_cap = tracker
-                .as_deref_mut()
-                .map(|tracker| {
-                    tracker.try_gain(
-                        EnergyGainSource::SecondaryAction,
-                        inflight.action.energy_grant,
-                    )
-                })
-                .unwrap_or(inflight.action.energy_grant);
-            let applied = energy.gain_capped(granted_by_round_cap);
+        if let Ok(mut energy) = energy_q.get_mut(attacker_entity) {
+            let applied = energy.gain_capped(inflight.action.energy_grant);
             if applied > 0 {
                 emit_combat_event(
                     event_writer,

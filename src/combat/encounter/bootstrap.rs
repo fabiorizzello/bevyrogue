@@ -9,7 +9,7 @@ use std::collections::HashSet;
 use crate::combat::av::ActionValue;
 use crate::combat::buffs::DrBag;
 use crate::combat::counterplay::EnemyCounterplayKit;
-use crate::combat::energy::{Energy, RoundEnergyTracker};
+use crate::combat::energy::Energy;
 use crate::combat::kit::{FormIdentityKit, UnitSkills};
 use crate::combat::resistance::TempoResistance;
 use crate::combat::round_flags::RoundFlags;
@@ -17,7 +17,7 @@ use crate::combat::speed::{Speed, SpeedModifier};
 use crate::combat::status_effect::StatusBag;
 use crate::combat::toughness::{Toughness, ToughnessCategory};
 use crate::combat::ultimate::{UltAccumulationTrigger, UltimateCharge};
-use crate::combat::unit::{BasicStreak, Commander, SlotIndex, Unit};
+use crate::combat::unit::{Commander, SlotIndex, Unit};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SelectionRequest {
@@ -191,8 +191,6 @@ pub fn spawn_unit_from_def(commands: &mut Commands, def: &UnitDef) -> Entity {
             follow_up: def.follow_up.clone(),
         },
         Energy::default(),
-        RoundEnergyTracker::default(),
-        BasicStreak::default(),
         UltGaugeMetadata(def.blueprint_metadata.clone()),
     ));
 

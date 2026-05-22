@@ -282,11 +282,6 @@ pub(super) fn render_columns(
                     if let (Some(current), Some(max)) = (ally.energy_cur, ally.energy_max) {
                         ui.label(format!("Energy (separate resource): {current}/{max}"))
                             .on_hover_text("Separate per-unit resource. Present in the model today, but not yet wired as this unit's ult gauge.");
-                        if let (Some(sec), Some(ext)) =
-                            (ally.energy_secondary_gained, ally.energy_external_gained)
-                        {
-                            ui.label(format!("Round energy caps used: secondary {sec}/10 · external {ext}/30"));
-                        }
                     }
                 }
                 if ally.is_stunned {

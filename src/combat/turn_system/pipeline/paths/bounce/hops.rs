@@ -82,7 +82,7 @@ pub(super) fn run_hop_loop(
         let snapshot = {
             let entries = actors
                 .iter()
-                .map(|(_, team, unit, _, _, _, _, ko, _, _, _, _, _, slot, _)| {
+                .map(|(_, team, unit, _, _, _, _, ko, _, _, _, _, slot, _)| {
                     let alive = ko.is_none() && unit.hp_current > 0;
                     let hp_per_mille = if unit.hp_max > 0 {
                         ((unit.hp_current.max(0) as u64 * 1000) / unit.hp_max as u64) as u32
@@ -144,7 +144,7 @@ pub(super) fn run_hop_loop(
             continue;
         };
 
-        let (_, _att_team_val, att_unit_val, _, _, _, _, _, _, _, att_bag_val, _, _, _, _) =
+        let (_, _att_team_val, att_unit_val, _, _, _, _, _, _, _, att_bag_val, _, _, _) =
             &att_row;
         let (
             _,
@@ -158,7 +158,6 @@ pub(super) fn run_hop_loop(
             _,
             def_cmdr_val,
             ref mut _def_bag_val,
-            _,
             ref mut def_flags_val,
             _,
             ref mut _def_dr_val2,

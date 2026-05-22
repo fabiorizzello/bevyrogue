@@ -83,7 +83,6 @@ pub fn combat_panel(
         commander,
         stunned,
         energy,
-        tracker,
         gauge_meta,
     ) in &units_q
     {
@@ -99,7 +98,6 @@ pub fn combat_panel(
             stunned.is_some(),
             commander.is_some(),
             energy,
-            tracker,
             gauge_meta,
         ));
 
@@ -131,8 +129,6 @@ pub fn combat_panel(
             toughness: visible_toughness(*team, tough.as_deref()),
             energy_cur: energy.map(|value| value.current),
             energy_max: energy.map(|value| value.max),
-            energy_secondary_gained: tracker.map(|value| value.secondary_gained),
-            energy_external_gained: tracker.map(|value| value.external_gained),
         });
     }
     unit_displays.sort_by_key(|unit| unit.id.0);

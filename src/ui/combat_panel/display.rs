@@ -32,8 +32,6 @@ pub(super) struct UnitDisplay {
     pub(super) toughness: Option<crate::combat::toughness::ToughnessView>,
     pub(super) energy_cur: Option<i32>,
     pub(super) energy_max: Option<i32>,
-    pub(super) energy_secondary_gained: Option<i32>,
-    pub(super) energy_external_gained: Option<i32>,
 }
 
 #[cfg(feature = "windowed")]

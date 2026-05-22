@@ -13,3 +13,4 @@
 {"ts":"2026-05-16T11:54:34.072Z","severity":"error","component":"safety","message":"evidence-xref: Claimed exitCode=0 but actual exitCode=101"}
 {"ts":"2026-05-17T06:29:20.972Z","severity":"error","component":"safety","message":"evidence-xref: Claimed exitCode=0 but actual exitCode=101"}
 {"ts":"2026-05-17T06:29:20.974Z","severity":"error","component":"safety","message":"evidence-xref: Claimed exitCode=0 but actual exitCode=101"}
+{"ts":"2026-05-22T09:17:00.107Z","severity":"error","component":"tool","message":"gsd_summary_save: PROJECT.md saved to PROJECT.md but parsed zero milestones — registration produced no DB rows","context":{"tool":"gsd_summary_save"}}

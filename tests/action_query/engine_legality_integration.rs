@@ -237,8 +237,6 @@ fn snapshot_unit(fixture: &UnitFixture, is_active: bool) -> UnitQuerySnapshot {
         ultimate_trigger: 100,
         ultimate_ready: false,
         energy: 0,
-        energy_secondary_gained: 0,
-        energy_external_gained: 0,
         skills: fixture.skills.clone(),
         toughness: None,
         ..Default::default()

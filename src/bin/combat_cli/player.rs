@@ -5,7 +5,7 @@ use bevyrogue::combat::action_query::{
     ActionQueryKind, ActionStatus, TargetStatus, build_snapshot_from_ecs_with_sp,
     first_enabled_target_id,
 };
-use bevyrogue::combat::energy::{Energy, RoundEnergyTracker};
+use bevyrogue::combat::energy::Energy;
 use bevyrogue::combat::kit::UnitSkills;
 use bevyrogue::combat::sp::SpPool;
 use bevyrogue::combat::state::{CombatPhase, CombatState};
@@ -43,7 +43,6 @@ pub fn player_action_system(
         Option<&bevyrogue::combat::counterplay::EnemyCounterplayKit>,
         Option<&Stunned>,
         Option<&Energy>,
-        Option<&RoundEnergyTracker>,
         Option<&UltGaugeMetadata>,
     )>,
     sp_pool: Res<SpPool>,
@@ -88,10 +87,9 @@ pub fn player_action_system(
         _,
         _,
         _,
-        _,
     )) = units
         .iter()
-        .find(|(u, _, _, _, _, _, _, _, _, _, _, _)| u.id == actor_id)
+        .find(|(u, _, _, _, _, _, _, _, _, _, _)| u.id == actor_id)
     else {
         return;
     };
@@ -123,7 +121,6 @@ pub fn player_action_system(
                 counterplay,
                 stunned,
                 energy,
-                tracker,
                 ult_metadata,
             )| {
                 (
@@ -138,7 +135,6 @@ pub fn player_action_system(
                     stunned.is_some(),
                     commander.is_some(),
                     energy,
-                    tracker,
                     ult_metadata,
                 )
             },

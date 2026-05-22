@@ -1,4 +1,4 @@
-use crate::combat::energy::{Energy, RoundEnergyTracker};
+use crate::combat::energy::Energy;
 use crate::combat::kit::UnitSkills;
 use crate::combat::sp::SpPool;
 use crate::combat::state::{CombatPhase, CombatState};
@@ -36,8 +36,6 @@ pub struct UnitQuerySnapshot {
     pub energy_max: i32,
     pub gauge_meta: Option<crate::combat::ult_gauge::UltGaugeMetadata>,
     pub energy_data: Option<Energy>,
-    pub energy_secondary_gained: i32,
-    pub energy_external_gained: i32,
     pub skills: Option<UnitSkills>,
     pub toughness: Option<Toughness>,
 }
@@ -61,8 +59,6 @@ impl Default for UnitQuerySnapshot {
             energy_max: 10,
             gauge_meta: None,
             energy_data: None,
-            energy_secondary_gained: 0,
-            energy_external_gained: 0,
             skills: None,
             toughness: None,
         }
@@ -87,7 +83,6 @@ pub fn build_snapshot_from_ecs(
         bool, // is_stunned
         bool, // is_commander
         Option<&Energy>,
-        Option<&RoundEnergyTracker>,
         Option<&crate::combat::ult_gauge::UltGaugeMetadata>,
     )>,
 ) -> CombatQuerySnapshot {
@@ -117,7 +112,6 @@ pub fn build_snapshot_from_ecs_with_sp(
         bool, // is_stunned
         bool, // is_commander
         Option<&Energy>,
-        Option<&RoundEnergyTracker>,
         Option<&crate::combat::ult_gauge::UltGaugeMetadata>,
     )>,
 ) -> CombatQuerySnapshot {
@@ -135,7 +129,6 @@ pub fn build_snapshot_from_ecs_with_sp(
         is_stunned,
         is_commander,
         energy,
-        energy_tracker,
         gauge_meta,
     ) in units_data
     {
@@ -162,8 +155,6 @@ pub fn build_snapshot_from_ecs_with_sp(
             energy_max: energy.map(|e| e.max).unwrap_or(10),
             gauge_meta: gauge_meta.cloned(),
             energy_data: energy.copied(),
-            energy_secondary_gained: energy_tracker.map(|t| t.secondary_gained).unwrap_or(0),
-            energy_external_gained: energy_tracker.map(|t| t.external_gained).unwrap_or(0),
             skills: skills.cloned(),
             toughness: toughness.cloned(),
         });
@@ -247,7 +238,6 @@ pub struct TargetAffordance {
 pub enum ResourceKind {
     Sp,
     Ultimate,
-    EnergyCap,
 }
 
 // Consumed by tests/action_affordance_query.rs.

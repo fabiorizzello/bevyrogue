@@ -35,7 +35,7 @@ pub(crate) fn step_declaration(
     let (_entity, kit) =
         actors
             .iter()
-            .find_map(|(entity, _, unit, kit, _, _, _, _, _, _, _, _, _, _, _)| {
+            .find_map(|(entity, _, unit, kit, _, _, _, _, _, _, _, _, _, _)| {
                 if unit.id == attacker_id {
                     Some((entity, kit))
                 } else {

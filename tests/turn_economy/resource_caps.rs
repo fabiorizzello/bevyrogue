@@ -1,7 +1,7 @@
 use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::{
     av::ActionValueUpdated,
-    energy::{Energy, RoundEnergyTracker},
+    energy::Energy,
     events::{CombatEvent, CombatEventKind},
     follow_up::{
         FollowUpIntent, FollowUpTrace, follow_up_listener_system, form_identity_listener_system,
@@ -18,7 +18,7 @@ use bevyrogue::combat::{
     turn_system::{ActionIntent, advance_turn_system, resolve_action_system},
     types::{Attribute, DamageTag, EvoStage, SkillId, UnitId},
     ultimate::{UltAccumulationTrigger, UltimateCharge},
-    unit::{BasicStreak, Unit},
+    unit::Unit,
 };
 use bevyrogue::data::{
     SkillBookHandle,
@@ -215,9 +215,7 @@ fn spawn_greymon(app: &mut App, def: &bevyrogue::data::units_ron::UnitDef) -> En
                 charge_per_event: def.ultimate_charge_per_event,
             },
             Energy::default(),
-            RoundEnergyTracker::default(),
             RoundFlags::default(),
-            BasicStreak::default(),
         ))
         .id()
 }
@@ -297,122 +295,6 @@ fn setup_form_identity_app(skill_book: SkillBook) -> App {
     app
 }
 
-/// Proves the slice demo scenario: a Child unit gains a -1 SP discount on its
-/// Skill after 2 consecutive Basic actions, and the discount does not fire
-/// again until the streak rebuilds.
-#[test]
-fn child_discount_after_two_basics() {
-    let mut app = build_app();
-
-    let child = app
-        .world_mut()
-        .spawn((
-            Unit {
-                id: UnitId(1),
-                name: "ChildUnit".into(),
-                hp_max: 200,
-                hp_current: 200,
-                attribute: Attribute::Vaccine,
-                resists: vec![],
-                evo_stage: EvoStage::Child,
-            },
-            Team::Ally,
-            Toughness::new(1000, vec![]),
-            make_ult(),
-            UnitSkills {
-                basic: SkillId("basic".into()),
-                skills: vec![SkillId("skill".into())],
-                ultimate: SkillId("basic".into()),
-                follow_up: None,
-            },
-            BasicStreak::default(),
-        ))
-        .id();
-
-    // Dummy enemy — needs Unit + Team + Toughness to satisfy ResolveActorsQuery
-    let _enemy = app
-        .world_mut()
-        .spawn((
-            Unit {
-                id: UnitId(2),
-                name: "Dummy".into(),
-                hp_max: 10_000,
-                hp_current: 10_000,
-                attribute: Attribute::Virus,
-                resists: vec![],
-                evo_stage: EvoStage::Adult,
-            },
-            Team::Enemy,
-            Toughness::new(1000, vec![]),
-            make_ult(),
-        ))
-        .id();
-
-    // Two Basic actions: each grants +1 SP and increments the streak counter.
-    cast(
-        &mut app,
-        ActionIntent::Basic {
-            attacker: UnitId(1),
-            target: UnitId(2),
-        },
-    );
-    cast(
-        &mut app,
-        ActionIntent::Basic {
-            attacker: UnitId(1),
-            target: UnitId(2),
-        },
-    );
-
-    let streak_after_basics = app.world().get::<BasicStreak>(child).unwrap().count;
-    assert_eq!(
-        streak_after_basics, 2,
-        "streak should be 2 after two basics"
-    );
-
-    // SP: 3 (start) + 1 + 1 = 5
-    let sp_before_skill = app.world().resource::<SpPool>().current;
-    assert_eq!(sp_before_skill, 5, "SP should be 5 after two basics");
-
-    // First Skill: cost 3, but Child discount applies → effective cost 2 → SP = 5-2 = 3
-    cast(
-        &mut app,
-        ActionIntent::Skill {
-            attacker: UnitId(1),
-            skill_id: SkillId("skill".into()),
-            target: UnitId(2),
-        },
-    );
-
-    let sp_after_discounted = app.world().resource::<SpPool>().current;
-    assert_eq!(
-        sp_after_discounted, 3,
-        "Child -1 SP discount: expected 5-2=3, got {sp_after_discounted}"
-    );
-
-    let streak_after_discount = app.world().get::<BasicStreak>(child).unwrap().count;
-    assert_eq!(
-        streak_after_discount, 0,
-        "streak must reset to 0 when discount fires"
-    );
-
-    // Second Skill immediately after: streak = 0, no discount → cost 3 → SP = 3-3 = 0
-    cast(
-        &mut app,
-        ActionIntent::Skill {
-            attacker: UnitId(1),
-            skill_id: SkillId("skill".into()),
-            target: UnitId(2),
-        },
-    );
-
-    let sp_after_no_discount = app.world().resource::<SpPool>().current;
-    assert_eq!(
-        sp_after_no_discount, 0,
-        "no discount after streak reset: expected 3-3=0, got {sp_after_no_discount}"
-    );
-}
-
 /// Proves RoundSpTracker enforces the non-Basic SP cap (+2/round), and that
 /// resetting the tracker restores the full budget for the next round.
 #[test]
@@ -446,7 +328,7 @@ fn sp_non_basic_cap_enforced() {
 }
 
 #[test]
-fn energy_grant_caps_at_round_budget_and_emits_truthful_amounts() {
+fn energy_grant_accumulates_without_round_cap() {
     let mut app = build_app();
 
     let attacker = app
@@ -474,7 +356,6 @@ fn energy_grant_caps_at_round_budget_and_emits_truthful_amounts() {
                 current: 0,
                 max: 50,
             },
-            RoundEnergyTracker::default(),
         ))
         .id();
 
@@ -510,21 +391,15 @@ fn energy_grant_caps_at_round_budget_and_emits_truthful_amounts() {
     );
 
     let first_events = drain_events(&mut cursor, &app);
-    let first_energy_amounts = energy_gain_amounts(&first_events);
     assert_eq!(
-        first_energy_amounts,
-        vec![10],
-        "first grant should emit the capped round amount"
+        energy_gain_amounts(&first_events),
+        vec![15],
+        "first grant should emit the full GrantEnergy(15) amount"
     );
-    let attacker_energy = app.world().get::<Energy>(attacker).unwrap();
     assert_eq!(
-        attacker_energy.current, 10,
-        "first grant should apply 10 Energy total"
-    );
-    let tracker = app.world().get::<RoundEnergyTracker>(attacker).unwrap();
-    assert_eq!(
-        tracker.secondary_gained, 10,
-        "tracker should consume the full secondary budget"
+        app.world().get::<Energy>(attacker).unwrap().current,
+        15,
+        "first grant should apply the full 15 Energy"
     );
 
     cast(
@@ -537,20 +412,15 @@ fn energy_grant_caps_at_round_budget_and_emits_truthful_amounts() {
     );
 
     let second_events = drain_events(&mut cursor, &app);
-    let second_energy_amounts = energy_gain_amounts(&second_events);
-    assert!(
-        second_energy_amounts.iter().all(|amount| *amount <= 0),
-        "second same-round grant should not emit a positive EnergyGained amount"
-    );
-    let attacker_energy = app.world().get::<Energy>(attacker).unwrap();
     assert_eq!(
-        attacker_energy.current, 10,
-        "second grant should be blocked by round cap"
+        energy_gain_amounts(&second_events),
+        vec![15],
+        "a second same-round grant is no longer blocked by any per-round cap"
     );
-    let tracker = app.world().get::<RoundEnergyTracker>(attacker).unwrap();
     assert_eq!(
-        tracker.secondary_gained, 10,
-        "round tracker should stay capped at 10"
+        app.world().get::<Energy>(attacker).unwrap().current,
+        30,
+        "same-round grants accumulate freely up to Energy.max"
     );
 }
 
@@ -583,7 +453,6 @@ fn energy_grant_truthfully_clips_at_energy_max() {
                 current: 8,
                 max: 12,
             },
-            RoundEnergyTracker::default(),
         ))
         .id();
 
@@ -631,15 +500,10 @@ fn energy_grant_truthfully_clips_at_energy_max() {
         attacker_energy.current, 12,
         "Energy should clamp to max after grant"
     );
-    let tracker = app.world().get::<RoundEnergyTracker>(attacker).unwrap();
-    assert_eq!(
-        tracker.secondary_gained, 10,
-        "round tracker budget should still record the accepted 10"
-    );
 }
 
 #[test]
-fn round_energy_tracker_resets_on_turn_start() {
+fn round_flags_reset_on_turn_start() {
     let mut app = build_app();
 
     let actor = app
@@ -662,10 +526,6 @@ fn round_energy_tracker_resets_on_turn_start() {
                 acted_this_turn: false,
                 acted_last_turn: false,
             },
-            RoundEnergyTracker {
-                secondary_gained: 7,
-                external_gained: 9,
-            },
         ))
         .id();
 
@@ -683,20 +543,10 @@ fn round_energy_tracker_resets_on_turn_start() {
         !flags.form_identity_used,
         "round flags should reset at turn start"
     );
-
-    let tracker = app.world().get::<RoundEnergyTracker>(actor).unwrap();
-    assert_eq!(
-        tracker.secondary_gained, 0,
-        "secondary energy budget should reset at turn start"
-    );
-    assert_eq!(
-        tracker.external_gained, 0,
-        "external energy budget should reset at turn start"
-    );
 }
 
 #[test]
-fn canonical_form_identity_energy_respects_round_tracker_caps() {
+fn canonical_form_identity_energy_accumulates_without_round_cap() {
     let roster = load_roster();
     let mut app = setup_form_identity_app(load_skill_book());
 
@@ -708,96 +558,24 @@ fn canonical_form_identity_energy_respects_round_tracker_caps() {
 
     let fire_skill = greymon.skill_ids[0].clone();
 
-    // First trigger: 5 Energy, tracker budget at 5/10.
-    app.world_mut().write_message(ActionIntent::Skill {
-        attacker: greymon.id,
-        skill_id: fire_skill.clone(),
-        target: enemy_id,
-    });
-    app.update();
-    assert_eq!(
-        unit_energy(&mut app, greymon.id),
-        5,
-        "first Form Identity grant should apply 5 Energy"
-    );
-    assert_eq!(
-        app.world()
-            .get::<RoundEnergyTracker>(greymon_entity)
+    // Each Form Identity trigger grants the canonical +5 Energy. The per-round cap is gone,
+    // so repeatedly re-triggering (by clearing the listener guard) keeps accumulating +5 with
+    // no ceiling other than Energy.max.
+    for expected in [5, 10, 15, 20] {
+        app.world_mut()
+            .get_mut::<RoundFlags>(greymon_entity)
             .unwrap()
-            .secondary_gained,
-        5
-    );
-
-    // Force a second same-round trigger to prove the tracker cap, not the listener guard, is
-    // what stops the grant from exceeding 10 in a single round.
-    app.world_mut()
-        .get_mut::<RoundFlags>(greymon_entity)
-        .unwrap()
-        .form_identity_used = false;
-    app.world_mut().write_message(ActionIntent::Skill {
-        attacker: greymon.id,
-        skill_id: fire_skill.clone(),
-        target: enemy_id,
-    });
-    app.update();
-    assert_eq!(
-        unit_energy(&mut app, greymon.id),
-        10,
-        "second same-round grant should reach the 10 Energy cap"
-    );
-    assert_eq!(
-        app.world()
-            .get::<RoundEnergyTracker>(greymon_entity)
-            .unwrap()
-            .secondary_gained,
-        10
-    );
-
-    // Third same-round trigger cannot bypass the cap even if the Form Identity guard is reset.
-    app.world_mut()
-        .get_mut::<RoundFlags>(greymon_entity)
-        .unwrap()
-        .form_identity_used = false;
-    app.world_mut().write_message(ActionIntent::Skill {
-        attacker: greymon.id,
-        skill_id: fire_skill,
-        target: enemy_id,
-    });
-    app.update();
-    assert_eq!(
-        unit_energy(&mut app, greymon.id),
-        10,
-        "same-round tracker cap should block a third grant"
-    );
-    assert_eq!(
-        app.world()
-            .get::<RoundEnergyTracker>(greymon_entity)
-            .unwrap()
-            .secondary_gained,
-        10
-    );
-
-    // New round: reset the tracker and guard, then prove the canonical +5 can happen again.
-    {
-        let mut tracker = app
-            .world_mut()
-            .get_mut::<RoundEnergyTracker>(greymon_entity)
-            .unwrap();
-        tracker.reset();
+            .form_identity_used = false;
+        app.world_mut().write_message(ActionIntent::Skill {
+            attacker: greymon.id,
+            skill_id: fire_skill.clone(),
+            target: enemy_id,
+        });
+        app.update();
+        assert_eq!(
+            unit_energy(&mut app, greymon.id),
+            expected,
+            "each Form Identity grant adds +5 with no per-round cap"
+        );
     }
-    app.world_mut()
-        .get_mut::<RoundFlags>(greymon_entity)
-        .unwrap()
-        .form_identity_used = false;
-    app.world_mut().write_message(ActionIntent::Skill {
-        attacker: greymon.id,
-        skill_id: greymon.skill_ids[0].clone(),
-        target: enemy_id,
-    });
-    app.update();
-    assert_eq!(
-        unit_energy(&mut app, greymon.id),
-        15,
-        "tracker reset should allow the canonical +5 grant again"
-    );
 }

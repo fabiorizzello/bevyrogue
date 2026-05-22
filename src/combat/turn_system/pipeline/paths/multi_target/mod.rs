@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::combat::energy::{Energy, RoundEnergyTracker};
+use crate::combat::energy::Energy;
 use crate::combat::events::{CombatEvent, CombatEventKind};
 use crate::combat::kernel::{CombatBeatId, CombatKernelRegistry};
 use crate::combat::log::{ActionLog, LogEntry};
@@ -9,7 +9,7 @@ use crate::combat::runtime::intent::CastId;
 use crate::combat::sp::SpPool;
 use crate::combat::state::{CombatPhase, CombatState, InFlightAction, UltEffect};
 use crate::combat::turn_order::TurnOrder;
-use crate::combat::types::{EvoStage, UnitId};
+use crate::combat::types::UnitId;
 use crate::combat::ult_gauge::UltGaugeMetadata;
 use crate::combat::unit::SlotIndex;
 use crate::data::skills_ron::TargetShape;
@@ -31,7 +31,7 @@ pub(in crate::combat::turn_system::pipeline) fn run(
     event_writer: &mut MessageWriter<CombatEvent>,
     registry: Option<&CombatKernelRegistry>,
     actors: &mut ResolveActorsQuery,
-    energy_q: &mut Query<(&mut Energy, Option<&mut RoundEnergyTracker>)>,
+    energy_q: &mut Query<&mut Energy>,
     gauge_meta_q: &Query<&UltGaugeMetadata>,
     cast_id: CastId,
     attacker_entity: Entity,
@@ -53,7 +53,7 @@ pub(in crate::combat::turn_system::pipeline) fn run(
     let snapshot = {
         let entries = actors
             .iter()
-            .map(|(_, team, unit, _, _, _, _, ko, _, _, _, _, _, slot, _)| {
+            .map(|(_, team, unit, _, _, _, _, ko, _, _, _, _, slot, _)| {
                 let alive = ko.is_none() && unit.hp_current > 0;
                 let hp_per_mille = if unit.hp_max > 0 {
                     ((unit.hp_current.max(0) as u64 * 1000) / unit.hp_max as u64) as u32
@@ -88,7 +88,7 @@ pub(in crate::combat::turn_system::pipeline) fn run(
         let Ok((
             _,
             _,
-            attacker_unit,
+            _,
             _,
             att_ult_opt,
             _,
@@ -97,7 +97,6 @@ pub(in crate::combat::turn_system::pipeline) fn run(
             att_stun,
             _,
             _,
-            mut att_streak_opt,
             _,
             _,
             _,
@@ -145,22 +144,7 @@ pub(in crate::combat::turn_system::pipeline) fn run(
             return true;
         };
 
-        // SP cost with Child streak discount (hoisted from apply_effects)
-        let effective_sp_cost = if matches!(inflight.action.ult_effect, UltEffect::None)
-            && inflight.action.sp_cost > 0
-            && attacker_unit.evo_stage == EvoStage::Child
-            && att_streak_opt
-                .as_deref()
-                .map(|s| s.qualifies_for_discount())
-                .unwrap_or(false)
-        {
-            if let Some(ref mut streak) = att_streak_opt {
-                streak.reset();
-            }
-            (inflight.action.sp_cost - 1).max(0)
-        } else {
-            inflight.action.sp_cost
-        };
+        let effective_sp_cost = inflight.action.sp_cost;
 
         if effective_sp_cost > 0 && !sp.spend(effective_sp_cost) {
             emit_combat_event(

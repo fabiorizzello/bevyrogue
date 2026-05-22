@@ -28,7 +28,7 @@
 - [x] **S08: S08** `risk:high` `depends:[]`
   > After this: After this: R009 has executable proof of typed pure graph input with no world globals or mutable graph context; R013 has structured failure visibility for cue timeout, missing skill-id, hot reload at next spawn, and dead target mid-loop.
 
-- [ ] **S09: S09** `risk:medium` `depends:[]`
+- [x] **S09: S09** `risk:medium` `depends:[]`
   > After this: After this: M002 has an explicit producer consumer boundary map, evidence for stance return and skill graph mapping and VFX handle seam, captured console output, and measured frame-time baseline comparison for the windowed soak.
 
 ## Boundary Map

@@ -12,7 +12,7 @@ use bevyrogue::combat::state::ResolvedAction;
 use bevyrogue::combat::team::Team;
 use bevyrogue::combat::toughness::Toughness;
 use bevyrogue::combat::ultimate::UltimateCharge;
-use bevyrogue::combat::unit::{BasicStreak, Unit};
+use bevyrogue::combat::unit::Unit;
 
 use super::actions::default_ult;
 use super::units::{attacker, defender};
@@ -37,7 +37,6 @@ pub struct LegacyOpsHarness {
     pub ult: UltimateCharge,
     pub sp: SpPool,
     pub round_sp: RoundSpTracker,
-    pub streak: BasicStreak,
 }
 
 impl Default for LegacyOpsHarness {
@@ -50,7 +49,6 @@ impl Default for LegacyOpsHarness {
             ult: default_ult(),
             sp: SpPool { current: 5, max: 5 },
             round_sp: RoundSpTracker::default(),
-            streak: BasicStreak::default(),
         }
     }
 }
@@ -75,7 +73,6 @@ impl LegacyOpsHarness {
             &mut self.ult,
             &mut self.sp,
             &mut self.round_sp,
-            &mut self.streak,
             opts.defender_is_commander,
             opts.defender_break_sealed,
             opts.defender_status,

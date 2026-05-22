@@ -299,6 +299,16 @@ fn validate_particle_ref(
     field: &str,
     diagnostics: &mut Vec<AnimationValidationDiagnostic>,
 ) {
+    // No particle vocabulary source is wired in production yet: `vfx.ron` is
+    // explicitly future scope (docs/future_design_draft/02-05_tunable_catalog.md),
+    // and `sync_validation_catalogs` only fills statuses + skills. While the
+    // catalog has no source, an empty set means "particles are unvalidated",
+    // not "every particle is unknown" — otherwise every SpawnParticle in every
+    // graph would false-positive. The check re-arms automatically once a source
+    // populates the catalog.
+    if catalogs.particles.is_empty() {
+        return;
+    }
     if !catalogs.particles.contains(particle) {
         diagnostics.push(AnimationValidationDiagnostic {
             severity: AnimationValidationSeverity::Error,

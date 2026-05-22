@@ -1,4 +1,3 @@
-use crate::combat::energy::EnergyGainSource;
 use crate::data::skills_ron::{LegalityReasonCode, SkillDef};
 
 use super::super::types::{
@@ -6,38 +5,6 @@ use super::super::types::{
     UnitQuerySnapshot,
 };
 use super::shared::ult_readiness_from_snapshot;
-
-// Consumed by tests/action_affordance_query.rs.
-pub fn query_energy_cap_affordance(
-    unit: &UnitQuerySnapshot,
-    source: EnergyGainSource,
-    requested: i32,
-) -> ResourceAffordanceDetail {
-    let cap = match source {
-        EnergyGainSource::SecondaryAction => 10,
-        EnergyGainSource::External => 30,
-    };
-    let used = match source {
-        EnergyGainSource::SecondaryAction => unit.energy_secondary_gained,
-        EnergyGainSource::External => unit.energy_external_gained,
-    };
-    let current = (cap - used).max(0);
-
-    let status = if current >= requested {
-        ResourceStatus::Enabled
-    } else {
-        ResourceStatus::Disabled {
-            reason: LegalityReasonCode::EnergyCapReached,
-        }
-    };
-
-    ResourceAffordanceDetail {
-        kind: ResourceKind::EnergyCap,
-        status,
-        current: Some(current),
-        required: Some(requested),
-    }
-}
 
 // Called from build_resource_details -> query_action_affordance which is consumed by tests.
 fn resource_detail_status(
@@ -52,7 +19,6 @@ fn resource_detail_status(
             reason: match kind {
                 ResourceKind::Sp => LegalityReasonCode::SpShortfall,
                 ResourceKind::Ultimate => LegalityReasonCode::UltimateNotReady,
-                ResourceKind::EnergyCap => LegalityReasonCode::EnergyCapReached,
             },
         }
     };

@@ -17,7 +17,7 @@
             frames: (50, 53),
         ),
         "diamond_storm_recover": (
-            frames: (54, 56),
+            frames: (54, 54),
         ),
     },
     transitions: [

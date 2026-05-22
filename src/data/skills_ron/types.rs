@@ -120,7 +120,6 @@ pub enum LegalityReasonCode {
     TamerCommandDeferred,
     ChargedTelegraphDeferred,
     EnemyTraitDeferred,
-    EnergyCapReached,
     /// A skill carries two effect kinds that are mutually exclusive in v0 (e.g. Heal + Cleanse).
     MixedEffectKinds,
 }

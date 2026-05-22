@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::combat::energy::{Energy, RoundEnergyTracker};
+use crate::combat::energy::Energy;
 use crate::combat::events::CombatEvent;
 use crate::combat::kernel::CombatKernelRegistry;
 use crate::combat::log::ActionLog;
@@ -29,7 +29,7 @@ pub(crate) fn step_app(
     actors: &mut ResolveActorsQuery,
     rng: &mut Option<ResMut<CombatRng>>,
     entropy_q: &mut Query<&mut CombatEntropy, With<Unit>>,
-    energy_q: &mut Query<(&mut Energy, Option<&mut RoundEnergyTracker>)>,
+    energy_q: &mut Query<&mut Energy>,
     gauge_meta_q: &Query<&UltGaugeMetadata>,
     ext_regs: Option<&ExtRegistries>,
     intent_queue: &mut Option<ResMut<IntentQueue>>,

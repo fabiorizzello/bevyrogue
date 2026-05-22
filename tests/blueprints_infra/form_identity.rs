@@ -1,6 +1,6 @@
 use bevy::{ecs::message::MessageCursor, prelude::*};
 use bevyrogue::combat::{
-    energy::{Energy, RoundEnergyTracker},
+    energy::Energy,
     events::{CombatEvent, CombatEventKind},
     follow_up::FollowUpTrace,
     kit::{FormIdentityKit, UnitSkills},
@@ -10,7 +10,7 @@ use bevyrogue::combat::{
     turn_system::ActionIntent,
     types::{Attribute, DamageTag, EvoStage, SkillId, UnitId},
     ultimate::{UltAccumulationTrigger, UltimateCharge},
-    unit::{BasicStreak, Unit},
+    unit::Unit,
 };
 use bevyrogue::data::units_ron::{UnitDef, UnitRoster};
 
@@ -65,9 +65,7 @@ fn spawn_greymon(app: &mut App, def: &UnitDef) -> Entity {
                 charge_per_event: def.ultimate_charge_per_event,
             },
             Energy::default(),
-            RoundEnergyTracker::default(),
             RoundFlags::default(),
-            BasicStreak::default(),
         ))
         .id()
 }
@@ -295,9 +293,7 @@ fn spawn_unit_with_fi(app: &mut App, def: &UnitDef) -> Entity {
                 charge_per_event: def.ultimate_charge_per_event,
             },
             Energy::default(),
-            RoundEnergyTracker::default(),
             RoundFlags::default(),
-            BasicStreak::default(),
         ))
         .id()
 }

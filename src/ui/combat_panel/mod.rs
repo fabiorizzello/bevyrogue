@@ -25,7 +25,7 @@ pub use render::combat_panel;
 use crate::combat::{
     blueprints::agumon::{OWNER as AGUMON_BLUEPRINT_OWNER, baby_burner::DETONATE_SIGNAL_NAME},
     counterplay::EnemyCounterplayKit,
-    energy::{Energy, RoundEnergyTracker},
+    energy::Energy,
     events::{CombatEvent, CombatEventKind, CombatKernelTransition},
     kit::UnitSkills,
     preview::PreviewDamageSummary,
@@ -246,7 +246,6 @@ pub(crate) type CombatPanelUnitsQuery<'w, 's> = Query<
         Option<&'static Commander>,
         Option<&'static Stunned>,
         Option<&'static Energy>,
-        Option<&'static RoundEnergyTracker>,
         Option<&'static UltGaugeMetadata>,
     ),
 >;

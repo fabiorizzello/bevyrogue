@@ -9,10 +9,9 @@ use crate::combat::{
     status_effect::StatusBag,
     team::Team,
     toughness::{Toughness, can_apply_toughness_damage, classify},
-    types::EvoStage,
     ult_gauge::{UltGaugeMetadata, drain_energy_on_ult_reset},
     ultimate::UltimateCharge,
-    unit::{BasicStreak, Unit},
+    unit::Unit,
 };
 
 use super::types::{ResolutionOutcome, ko_payload};
@@ -218,7 +217,6 @@ pub fn apply_legacy_ops(
     attacker_ult: &mut UltimateCharge,
     sp: &mut crate::combat::sp::SpPool,
     _sp_tracker: &mut RoundSpTracker,
-    basic_streak: &mut BasicStreak,
     defender_is_commander: bool,
     defender_break_sealed: bool,
     defender_status: Option<&StatusBag>,
@@ -272,17 +270,7 @@ pub fn apply_legacy_ops(
     }
 
     // 2. Resource Consumption
-    // Child discount: -1 SP on next Skill after 2+ consecutive Basics
-    let effective_sp_cost = if matches!(resolved.ult_effect, UltEffect::None)
-        && resolved.sp_cost > 0
-        && attacker_unit.evo_stage == EvoStage::Child
-        && basic_streak.qualifies_for_discount()
-    {
-        basic_streak.reset();
-        (resolved.sp_cost - 1).max(0)
-    } else {
-        resolved.sp_cost
-    };
+    let effective_sp_cost = resolved.sp_cost;
 
     if effective_sp_cost > 0 && !sp.spend(effective_sp_cost) {
         return (
@@ -406,7 +394,6 @@ pub fn apply_legacy_ops(
             sp.gain(1);
             let cpe = attacker_ult.charge_per_event;
             attacker_ult.try_add(cpe);
-            basic_streak.increment();
         }
         UltEffect::None => {}
         UltEffect::Reset => {

@@ -10,7 +10,7 @@ use crate::combat::team::Team;
 use crate::combat::toughness::Toughness;
 use crate::combat::types::{SkillId, UnitId};
 use crate::combat::ultimate::UltimateCharge;
-use crate::combat::unit::{BasicStreak, Commander, Ko, SlotIndex, Unit};
+use crate::combat::unit::{Commander, Ko, SlotIndex, Unit};
 
 #[derive(Message, Debug, Clone, PartialEq, Eq)]
 pub enum ActionIntent {
@@ -47,7 +47,6 @@ pub(crate) type ResolveActorsQuery<'w, 's> = Query<
         Option<&'static Stunned>,
         Option<&'static Commander>,
         Option<&'static mut StatusBag>,
-        Option<&'static mut BasicStreak>,
         Option<&'static mut RoundFlags>,
         Option<&'static SlotIndex>,
         Option<&'static mut DrBag>,

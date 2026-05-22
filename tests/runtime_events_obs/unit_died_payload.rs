@@ -12,7 +12,7 @@ use bevyrogue::combat::{
     toughness::Toughness,
     types::{Attribute, DamageTag, EvoStage, SkillId, UnitId},
     ultimate::{UltAccumulationTrigger, UltimateCharge},
-    unit::{BasicStreak, Unit},
+    unit::Unit,
 };
 
 fn make_unit(id: u32, hp: i32) -> Unit {
@@ -87,7 +87,6 @@ fn unit_died_carries_defender_status_snapshot() {
         &mut ult,
         &mut sp,
         &mut RoundSpTracker::default(),
-        &mut BasicStreak::default(),
         false,
         false,
         Some(&defender_bag),
@@ -168,7 +167,6 @@ fn unit_died_not_emitted_on_survival() {
         &mut ult,
         &mut sp,
         &mut RoundSpTracker::default(),
-        &mut BasicStreak::default(),
         false,
         false,
         None,

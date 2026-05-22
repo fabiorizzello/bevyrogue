@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::combat::energy::{Energy, EnergyGainSource, RoundEnergyTracker};
+use crate::combat::energy::Energy;
 use crate::combat::events::{CombatEvent, CombatEventKind};
 use crate::combat::kernel::CombatKernelRegistry;
 use crate::combat::log::ActionLog;
@@ -23,7 +23,7 @@ pub(super) fn finalize(
     event_writer: &mut MessageWriter<CombatEvent>,
     registry: Option<&CombatKernelRegistry>,
     actors: &mut ResolveActorsQuery,
-    energy_q: &mut Query<(&mut Energy, Option<&mut RoundEnergyTracker>)>,
+    energy_q: &mut Query<&mut Energy>,
     gauge_meta_q: &Query<&UltGaugeMetadata>,
     cast_id: CastId,
     attacker_entity: Entity,
@@ -32,7 +32,7 @@ pub(super) fn finalize(
 ) -> bool {
     // Phase 3: post-loop attacker resource effects + once-per-cast events
     let ult_delta = {
-        let Ok((_, _, _, _, att_ult_opt, _, _, _, _, _, att_bag_opt, mut att_streak_opt, _, _, _)) =
+        let Ok((_, _, _, _, att_ult_opt, _, _, _, _, _, att_bag_opt, _, _, _)) =
             actors.get_mut(attacker_entity)
         else {
             set_phase(state, CombatPhase::WaitingAction);
@@ -51,9 +51,6 @@ pub(super) fn finalize(
                 sp.gain(1);
                 let cpe = att_ult.charge_per_event;
                 att_ult.try_add(cpe);
-                if let Some(ref mut streak) = att_streak_opt {
-                    streak.increment();
-                }
             }
             UltEffect::None => {}
             UltEffect::Reset => {
@@ -163,17 +160,8 @@ pub(super) fn finalize(
     }
 
     if inflight.action.energy_grant > 0 {
-        if let Ok((mut energy, mut tracker)) = energy_q.get_mut(attacker_entity) {
-            let granted_by_round_cap = tracker
-                .as_deref_mut()
-                .map(|tracker| {
-                    tracker.try_gain(
-                        EnergyGainSource::SecondaryAction,
-                        inflight.action.energy_grant,
-                    )
-                })
-                .unwrap_or(inflight.action.energy_grant);
-            let applied = energy.gain_capped(granted_by_round_cap);
+        if let Ok(mut energy) = energy_q.get_mut(attacker_entity) {
+            let applied = energy.gain_capped(inflight.action.energy_grant);
             if applied > 0 {
                 emit_combat_event(
                     event_writer,

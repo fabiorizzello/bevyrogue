@@ -14,7 +14,7 @@ use bevyrogue::combat::{
     turn_system::{ActionIntent, advance_turn_system, resolve_action_system},
     types::{Attribute, DamageTag, EvoStage, SkillId, UnitId},
     ultimate::{UltAccumulationTrigger, UltimateCharge},
-    unit::{BasicStreak, Unit},
+    unit::Unit,
 };
 use bevyrogue::data::{
     SkillBookHandle,
@@ -110,7 +110,6 @@ fn spawn_attacker(app: &mut App) {
             ultimate: SkillId(FIRE_BASIC.into()),
             follow_up: None,
         },
-        BasicStreak::default(),
     ));
 }
 

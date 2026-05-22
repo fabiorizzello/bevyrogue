@@ -33,6 +33,8 @@ mod timeline_mode_parity;
 mod timeline_onturnstart_kills;
 #[path = "timeline/timeline_cue_barrier_pipeline.rs"]
 mod timeline_cue_barrier_pipeline;
+#[path = "timeline/timeline_basic_sp_gain.rs"]
+mod timeline_basic_sp_gain;
 #[path = "timeline/timeline_loop_hop_cue_parity.rs"]
 mod timeline_loop_hop_cue_parity;
 #[path = "timeline/timeline_two_clock_parity.rs"]

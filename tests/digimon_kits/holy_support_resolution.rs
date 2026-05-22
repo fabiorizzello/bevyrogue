@@ -17,7 +17,7 @@ use bevyrogue::combat::toughness::Toughness;
 use bevyrogue::combat::turn_system::ActionIntent;
 use bevyrogue::combat::types::{Attribute, DamageTag, EvoStage, SkillId, UnitId};
 use bevyrogue::combat::ultimate::{UltAccumulationTrigger, UltimateCharge};
-use bevyrogue::combat::unit::{BasicStreak, Unit};
+use bevyrogue::combat::unit::Unit;
 use bevyrogue::data::skills_ron::SkillBook;
 
 fn load_skill_book() -> SkillBook {
@@ -124,7 +124,6 @@ fn patamon_ult_builds_grace_through_the_blueprint_kernel_path() {
         charge_per_event: 25,
     };
     let mut sp = SpPool::default();
-    let mut streak = BasicStreak::default();
     let resolved = resolved_skill(&book, "patamon_ult", attacker.id, defender.id);
 
     let (outcome, _events) = apply_legacy_ops(
@@ -136,7 +135,6 @@ fn patamon_ult_builds_grace_through_the_blueprint_kernel_path() {
         &mut ult,
         &mut sp,
         &mut RoundSpTracker::default(),
-        &mut streak,
         false,
         false,
         None,

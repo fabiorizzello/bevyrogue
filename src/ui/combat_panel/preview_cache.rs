@@ -5,7 +5,7 @@ use bevy::prelude::*;
 use crate::combat::{
     action_query::{ActionStatus, build_snapshot_from_ecs_with_sp, first_enabled_target_id},
     counterplay::EnemyCounterplayKit,
-    energy::{Energy, RoundEnergyTracker},
+    energy::Energy,
     kit::UnitSkills,
     preview::{PreviewDamageSummary, query_skill_preview, summarize_preview_damage},
     runtime::intent::CastIdGen,
@@ -75,7 +75,6 @@ pub fn refresh_preview_damage_cache(world: &mut World) {
                 Option<&'static Commander>,
                 Option<&'static Stunned>,
                 Option<&'static Energy>,
-                Option<&'static RoundEnergyTracker>,
                 Option<&'static UltGaugeMetadata>,
             )>();
             for (
@@ -89,7 +88,6 @@ pub fn refresh_preview_damage_cache(world: &mut World) {
                 commander,
                 stunned,
                 energy,
-                tracker,
                 gauge_meta,
             ) in units_q.iter(world)
             {
@@ -108,7 +106,6 @@ pub fn refresh_preview_damage_cache(world: &mut World) {
                     stunned.is_some(),
                     commander.is_some(),
                     energy,
-                    tracker,
                     gauge_meta,
                 ));
             }

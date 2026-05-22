@@ -3,7 +3,7 @@ use bevy::{ecs::system::SystemParam, prelude::*};
 use crate::combat::{
     StatusBag,
     buffs::DrBag,
-    energy::{Energy, RoundEnergyTracker},
+    energy::Energy,
     events::{ActionIntentKind, CombatEvent, CombatEventKind},
     kernel::{CombatBeatId, CombatKernelRegistry},
     log::ActionLog,
@@ -15,7 +15,7 @@ use crate::combat::{
     turn_order::TurnOrder,
     turn_system::{ActionIntent, emit_combat_beat, emit_combat_event, step_app, step_declaration},
     ultimate::UltimateCharge,
-    unit::{BasicStreak, Commander, Ko, SlotIndex, Unit},
+    unit::{Commander, Ko, SlotIndex, Unit},
 };
 use crate::data::{SkillBookHandle, skills_ron::SkillBook};
 
@@ -30,7 +30,7 @@ pub struct FollowUpRuntimeParams<'w, 's> {
         &'static mut crate::combat::rng::CombatEntropy,
         With<crate::combat::unit::Unit>,
     >,
-    energy_q: Query<'w, 's, (&'static mut Energy, Option<&'static mut RoundEnergyTracker>)>,
+    energy_q: Query<'w, 's, &'static mut Energy>,
     ext_regs: Option<Res<'w, ExtRegistries>>,
     intent_queue: Option<ResMut<'w, IntentQueue>>,
     intent_execution_meta: Option<ResMut<'w, IntentExecutionMeta>>,
@@ -52,7 +52,6 @@ type ResolveActorsQuery<'w, 's> = Query<
         Option<&'static Stunned>,
         Option<&'static Commander>,
         Option<&'static mut StatusBag>,
-        Option<&'static mut BasicStreak>,
         Option<&'static mut RoundFlags>,
         Option<&'static SlotIndex>,
         Option<&'static mut DrBag>,
@@ -224,7 +223,7 @@ pub fn resolve_follow_up_action_system(
         );
 
         if intent.origin_kind == FollowUpOriginKind::FormIdentity {
-            for (_, _, unit, _, _, _, _, _, _, _, _, _, mut round_flags, _, _) in actors.iter_mut()
+            for (_, _, unit, _, _, _, _, _, _, _, _, mut round_flags, _, _) in actors.iter_mut()
             {
                 if unit.id == intent.attacker {
                     if let Some(ref mut flags) = round_flags {
