@@ -3,7 +3,7 @@ use inquire::Select;
 
 use bevyrogue::combat::action_query::{
     ActionQueryKind, ActionStatus, TargetStatus, build_snapshot_from_ecs_with_sp,
-    first_enabled_target_id,
+    first_enabled_target_id, mark_unit_active, query_action_affordance,
 };
 use bevyrogue::combat::energy::Energy;
 use bevyrogue::combat::kit::UnitSkills;
@@ -13,7 +13,7 @@ use bevyrogue::combat::stun::Stunned;
 use bevyrogue::combat::team::Team;
 use bevyrogue::combat::toughness::Toughness;
 use bevyrogue::combat::turn_order::TurnOrder;
-use bevyrogue::combat::turn_system::ActionIntent;
+use bevyrogue::combat::turn_system::{ActionIntent, UltBurstRequest};
 use bevyrogue::combat::types::UnitId;
 use bevyrogue::combat::ultimate::UltimateCharge;
 use bevyrogue::combat::ult_gauge::UltGaugeMetadata;
@@ -32,6 +32,7 @@ pub fn player_action_system(
     mut player_acted: ResMut<PlayerActed>,
     mut order: ResMut<TurnOrder>,
     mut intent_writer: MessageWriter<ActionIntent>,
+    mut burst_writer: MessageWriter<UltBurstRequest>,
     units: Query<(
         &Unit,
         &Team,
@@ -147,7 +148,7 @@ pub fn player_action_system(
         sp_pool.current,
         actor_id,
         actor_id,
-        units_data,
+        units_data.clone(),
     );
 
     let action_entries = build_action_entries(&snapshot, skill_book, actor_id, actor_skills);
@@ -218,6 +219,83 @@ pub fn player_action_system(
         player_acted.0 = true;
         order.active_unit = None;
         return;
+    }
+
+    // ── Out-of-turn ultimate burst (interactive only) ─────────────────────
+    // Offer a free burst for any ready off-turn ally before the active unit
+    // commits. Firing a burst does NOT consume the active unit's turn — it just
+    // emits an UltBurstRequest and returns; the player is re-prompted next frame
+    // (with the burst already resolved). The non-interactive proof path returns
+    // earlier, so this never perturbs deterministic CI runs (R004).
+    let mut burst_choices: Vec<(UnitId, String, Vec<(UnitId, String)>)> = Vec::new();
+    for (unit, team, _ult, _skills, ko, _cmd, _tough, _cp, _stun, _energy, _meta) in units.iter() {
+        if *team != Team::Ally || unit.id == actor_id || ko.is_some() {
+            continue;
+        }
+        let mut snap = build_snapshot_from_ecs_with_sp(
+            &state,
+            &order,
+            sp_pool.current,
+            unit.id,
+            unit.id,
+            units_data.clone(),
+        );
+        mark_unit_active(&mut snap, unit.id);
+        let aff = query_action_affordance(&snap, skill_book, unit.id, ActionQueryKind::Ultimate);
+        if !matches!(aff.action, ActionStatus::Enabled) {
+            continue;
+        }
+        let targets: Vec<(UnitId, String)> = aff
+            .targets
+            .iter()
+            .filter(|(_, t)| matches!(t.status, TargetStatus::Enabled))
+            .filter_map(|(tid, t)| {
+                units
+                    .iter()
+                    .find(|(u, _, _, _, _, _, _, _, _, _, _)| u.id == *tid)
+                    .map(|(u, tteam, _, _, _, _, _, _, _, _, _)| {
+                        (*tid, target_entry_label(u, tteam, t))
+                    })
+            })
+            .collect();
+        if !targets.is_empty() {
+            burst_choices.push((unit.id, format!("⚡ Burst: {} Ultimate", unit.name), targets));
+        }
+    }
+
+    if !burst_choices.is_empty() {
+        const CONTINUE: &str = "▶ Continue my turn";
+        let mut labels: Vec<String> = burst_choices.iter().map(|(_, label, _)| label.clone()).collect();
+        labels.push(CONTINUE.to_string());
+        let picked = Select::new("Out-of-turn Burst available:", labels)
+            .prompt()
+            .unwrap_or_else(|_| CONTINUE.to_string());
+        if picked != CONTINUE {
+            if let Some((attacker, _, targets)) =
+                burst_choices.into_iter().find(|(_, label, _)| *label == picked)
+            {
+                let target_id = if targets.len() == 1 {
+                    targets[0].0
+                } else {
+                    let tlabels: Vec<String> = targets.iter().map(|(_, l)| l.clone()).collect();
+                    let chosen = Select::new("Burst target:", tlabels.clone())
+                        .prompt()
+                        .unwrap_or_else(|_| tlabels[0].clone());
+                    targets
+                        .iter()
+                        .find(|(_, l)| *l == chosen)
+                        .map(|(id, _)| *id)
+                        .unwrap_or(targets[0].0)
+                };
+                println!("[CLI] out-of-turn burst requested: {attacker:?} -> {target_id:?}");
+                burst_writer.write(UltBurstRequest {
+                    attacker,
+                    target: target_id,
+                });
+                // Free action: leave active_unit / PlayerActed untouched.
+                return;
+            }
+        }
     }
 
     let enabled_actions: Vec<_> = action_entries
