@@ -28,6 +28,13 @@
         ),
         "sharp_claws_strike": (
             frames: (3, 5),
+            on_enter: [
+                SpawnParticle(
+                    name: "sharp_claws_slash",
+                    origin: TargetCenter,
+                    motion: Static,
+                ),
+            ],
             cues: [
                 (at: 1, command: ReleaseKernel(())),
             ],

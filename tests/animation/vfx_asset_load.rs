@@ -127,8 +127,10 @@ fn agumon_charge_curves_grow_and_brighten() {
     assert_eq!(eval_scale(&charge.appearance.scale, 0.25), 0.9);
     assert_eq!(eval_scale(&charge.appearance.scale, 1.0), 0.9);
 
-    assert_eq!(eval_color(&charge.appearance.color, 0.0), [1.0, 0.75, 0.25, 0.35]);
-    assert_eq!(eval_color(&charge.appearance.color, 1.0), [1.0, 0.75, 0.25, 0.88]);
+    // Overbright linear RGB (>1.0) so the windowed HDR+bloom camera blooms the
+    // charge orb (M004/S05 color policy); alpha still climbs 0.35 -> 0.88.
+    assert_eq!(eval_color(&charge.appearance.color, 0.0), [1.8, 1.2, 0.35, 0.35]);
+    assert_eq!(eval_color(&charge.appearance.color, 1.0), [2.8, 1.7, 0.45, 0.88]);
 }
 
 #[test]
@@ -172,9 +174,9 @@ fn agumon_flash_color_curve_fades_from_bright_core() {
     let flash = resolve_effect(&asset, "baby_flame.impact_flash").expect("flash present");
     let color = &flash.appearance.color;
 
-    assert_eq!(eval_color(color, 0.0), [1.0, 0.82, 0.45, 0.95], "flash spawns near-opaque");
-    assert_eq!(eval_color(color, 1.0), [1.0, 0.82, 0.45, 0.0], "flash fades out");
-    assert_rgba_approx(eval_color(color, 0.5), [1.0, 0.82, 0.45, 0.475], "flash midpoint");
+    assert_eq!(eval_color(color, 0.0), [3.6, 2.2, 0.8, 0.95], "flash spawns near-opaque");
+    assert_eq!(eval_color(color, 1.0), [3.6, 2.2, 0.8, 0.0], "flash fades out");
+    assert_rgba_approx(eval_color(color, 0.5), [3.6, 2.2, 0.8, 0.475], "flash midpoint");
     // Flash holds a constant scale across its (short) life.
     assert_eq!(eval_scale(&flash.appearance.scale, 0.5), 1.0);
 }
@@ -235,11 +237,11 @@ fn baby_burner_flash_curves_match_authored_values() {
     let asset = agumon_vfx();
     let flash = resolve_effect(&asset, "baby_burner.flash").expect("flash present");
 
-    assert_eq!(eval_color(&flash.appearance.color, 0.0), [1.0, 0.82, 0.45, 0.95]);
-    assert_eq!(eval_color(&flash.appearance.color, 1.0), [1.0, 0.82, 0.45, 0.0]);
+    assert_eq!(eval_color(&flash.appearance.color, 0.0), [3.6, 2.2, 0.8, 0.95]);
+    assert_eq!(eval_color(&flash.appearance.color, 1.0), [3.6, 2.2, 0.8, 0.0]);
     assert_rgba_approx(
         eval_color(&flash.appearance.color, 0.5),
-        [1.0, 0.82, 0.45, 0.475],
+        [3.6, 2.2, 0.8, 0.475],
         "flash midpoint alpha",
     );
     // Scale holds constant across life.

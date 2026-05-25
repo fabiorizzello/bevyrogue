@@ -98,13 +98,14 @@ fn shard_color_curve_matches_what_the_per_tick_branch_writes() {
     let impact = resolve_effect(&asset, IMPACT_EFFECT_ID).expect("impact present");
     let color = &impact.appearance.color;
 
-    // Constant ember hue, alpha linear-fades to transparent over life.
-    assert_eq!(eval_color(color, 0.0), [1.0, 0.55, 0.2, 0.9], "spawn rgba");
+    // Constant overbright ember hue (>1.0 R for HDR bloom, M004/S05 policy),
+    // alpha linear-fades to transparent over life.
+    assert_eq!(eval_color(color, 0.0), [2.2, 1.0, 0.3, 0.9], "spawn rgba");
     let mid = eval_color(color, 0.5);
-    for (i, (a, e)) in mid.iter().zip([1.0, 0.55, 0.2, 0.45].iter()).enumerate() {
+    for (i, (a, e)) in mid.iter().zip([2.2, 1.0, 0.3, 0.45].iter()).enumerate() {
         assert!((a - e).abs() < EPS, "midpoint channel {i}: expected ~{e}, got {a}");
     }
-    assert_eq!(eval_color(color, 1.0), [1.0, 0.55, 0.2, 0.0], "death rgba");
+    assert_eq!(eval_color(color, 1.0), [2.2, 1.0, 0.3, 0.0], "death rgba");
 }
 
 /// The generalized dispatcher (`advance_vfx_particles`) resolves every effect's

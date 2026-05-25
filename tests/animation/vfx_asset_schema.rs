@@ -51,12 +51,13 @@ fn all_authored_effects_round_trip() {
     let serialized = ron::to_string(&asset).expect("asset serializes");
     let reparsed: VfxAsset = ron::from_str(&serialized).expect("asset re-deserializes");
     assert_eq!(asset, reparsed, "all effects must round-trip losslessly");
-    // Five Baby Flame effects plus the data-driven Baby Burner detonate burst
-    // and its chained baby_burner.flash (S03 T02), all on the owned path.
+    // Five Baby Flame effects, the data-driven Baby Burner detonate burst and its
+    // chained baby_burner.flash (S03 T02), plus the Sharp Claws slash (S05 T02) —
+    // all on the owned path.
     assert_eq!(
         asset.effects.len(),
-        7,
-        "asset ships the five Baby Flame effects + detonate + flash"
+        8,
+        "asset ships the five Baby Flame effects + detonate + flash + sharp_claws.slash"
     );
 }
 

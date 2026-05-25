@@ -150,6 +150,7 @@ struct VfxVisuals {
     baby_flame_charge: Handle<Image>,
     baby_flame_projectile: Handle<Image>,
     baby_flame_impact: Handle<Image>,
+    sharp_claws_slash: Handle<Image>,
 }
 
 /// Default animation playback rate (frames of clip per second) when no
@@ -311,6 +312,7 @@ fn load_vfx_visuals(mut commands: Commands, asset_server: Res<AssetServer>) {
         baby_flame_charge: asset_server.load("vfx/baby_flame_charge.png"),
         baby_flame_projectile: asset_server.load("vfx/baby_flame_projectile.png"),
         baby_flame_impact: asset_server.load("vfx/baby_flame_impact.png"),
+        sharp_claws_slash: asset_server.load("vfx/sharp_claws_slash.png"),
     });
 }
 
@@ -329,6 +331,10 @@ const AGUMON_IMPACT_FLASH_EFFECT_ID: &str = "baby_flame.impact_flash";
 /// Burner port is S03), but routed through the unified effect path with a minimal
 /// owned effect so it keeps rendering after VfxParticleKind was deleted.
 const AGUMON_DETONATE_EFFECT_ID: &str = "baby_burner.detonate";
+/// Sharp Claws slash. Owned, data-driven effect (M004/S05): a single
+/// target-anchored streak spawned on the `sharp_claws_strike` node enter,
+/// resolved through the same `resolve_effect` path as every other effect.
+const AGUMON_SHARP_CLAWS_EFFECT_ID: &str = "sharp_claws.slash";
 
 /// Handle to Agumon's owned `VfxAsset` (M004/S01). Held in a resource so every
 /// Baby Flame effect can source its placement verb + appearance curves from data.
@@ -870,6 +876,7 @@ fn on_enter_effect_ids(particle_name: &str) -> &'static [&'static str] {
         "baby_flame_charge" => &[AGUMON_CHARGE_EFFECT_ID, AGUMON_EMBER_EFFECT_ID],
         "baby_flame_projectile" => &[AGUMON_PROJECTILE_EFFECT_ID],
         "baby_flame_impact" => &[AGUMON_IMPACT_EFFECT_ID],
+        "sharp_claws_slash" => &[AGUMON_SHARP_CLAWS_EFFECT_ID],
         _ => &[],
     }
 }
@@ -884,6 +891,7 @@ fn vfx_texture_handle(key: &str, visuals: Option<&VfxVisuals>) -> Option<Handle<
         "baby_flame_charge" => Some(visuals.baby_flame_charge.clone()),
         "baby_flame_projectile" => Some(visuals.baby_flame_projectile.clone()),
         "baby_flame_impact" => Some(visuals.baby_flame_impact.clone()),
+        "sharp_claws_slash" => Some(visuals.sharp_claws_slash.clone()),
         _ => None,
     }
 }
