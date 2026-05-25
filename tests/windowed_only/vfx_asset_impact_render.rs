@@ -1,13 +1,14 @@
-//! M004/S01 T04 — windowed integration of the Baby Flame impact fan-out data
-//! path.
+//! M004/S01 T04 — windowed integration of the Baby Flame impact / follow-through
+//! data path.
 //!
 //! `src/windowed/render.rs` lives in the binary crate, so its private spawn/tick
 //! helpers can't be called here. What this test pins is the *contract render.rs
-//! consumes*: the authored `assets/digimon/agumon/vfx.ron` resolves to the
-//! impact effect, [`spawn_plan`] yields the shard count/spread/ttl the burst
-//! loop reads, and [`eval_scale`]/[`eval_color`] produce the per-tick outward
-//! distance + rgba the shard branch writes onto each particle. It runs under the
-//! `windowed` feature (matching the render path's gate) without opening a window.
+//! consumes*: the authored `assets/digimon/agumon/vfx.ron` resolves the central
+//! impact burst and its chained fan-out follow-through, [`spawn_plan`] yields the
+//! count/spread/ttl values the dispatcher reads, and [`eval_scale`]/[`eval_color`]
+//! produce the per-tick outward distance + rgba the shard branch writes onto each
+//! particle. It runs under the `windowed` feature (matching the render path's
+//! gate) without opening a window.
 //!
 //! Compile-time `include_str!` of a git-tracked asset — never a gitignored path.
 #![cfg(feature = "windowed")]
@@ -19,8 +20,9 @@ use bevyrogue::animation::{
 use bevyrogue::combat::blueprints::agumon::register_agumon_ext;
 use bevyrogue::combat::runtime::ExtRegistries;
 
-/// The effect id render.rs resolves (`AGUMON_IMPACT_EFFECT_ID`).
+/// The effect ids render.rs resolves for Baby Flame's impact chain.
 const IMPACT_EFFECT_ID: &str = "baby_flame.impact";
+const IMPACT_FLASH_EFFECT_ID: &str = "baby_flame.impact_flash";
 /// Tight epsilon for interpolated f32 samples.
 const EPS: f32 = 1e-6;
 
@@ -37,21 +39,19 @@ fn data_shard_offset(plan: &ImpactSpawnPlan, frac: f32, phase: f32) -> [f32; 2] 
 }
 
 #[test]
-fn impact_effect_resolves_to_the_spawn_plan_the_burst_loop_consumes() {
+fn impact_effect_resolves_to_the_central_burst_the_dispatcher_consumes() {
     let asset = agumon_vfx();
     let impact = resolve_effect(&asset, IMPACT_EFFECT_ID)
         .expect("render.rs resolves baby_flame.impact from the data path");
 
-    // The burst loop sources count + lifetime from here; the per-tick branch
-    // sources the outward distance from spread_px.
     assert_eq!(
         spawn_plan(impact),
         ImpactSpawnPlan {
-            count: 8,
-            spread_px: 64.0,
-            ttl_ticks: 5,
+            count: 1,
+            spread_px: 0.0,
+            ttl_ticks: 4,
         },
-        "data path must reproduce the hardcoded BABY_FLAME_IMPACT_SHARD_* burst constants"
+        "data path must reproduce the authored central-burst impact contract"
     );
 
     // A missing id resolves to None so render.rs logs + falls back rather than panicking.
@@ -62,13 +62,13 @@ fn impact_effect_resolves_to_the_spawn_plan_the_burst_loop_consumes() {
 }
 
 #[test]
-fn shard_offset_curve_matches_what_the_per_tick_branch_writes() {
+fn impact_flash_shard_offset_curve_matches_what_the_per_tick_branch_writes() {
     let asset = agumon_vfx();
-    let impact = resolve_effect(&asset, IMPACT_EFFECT_ID).expect("impact present");
-    let plan = spawn_plan(impact);
-    let scale = &impact.appearance.scale;
+    let impact_flash = resolve_effect(&asset, IMPACT_FLASH_EFFECT_ID).expect("impact_flash present");
+    let plan = spawn_plan(impact_flash);
+    let scale = &impact_flash.appearance.scale;
 
-    // age 0 of ttl 5 -> progress 0.0 -> no outward travel.
+    // age 0 -> progress 0.0 -> no outward travel.
     let frac0 = eval_scale(scale, 0.0);
     assert_eq!(frac0, 0.0);
     let off0 = data_shard_offset(&plan, frac0, 0.0);
@@ -78,7 +78,7 @@ fn shard_offset_curve_matches_what_the_per_tick_branch_writes() {
     let frac_mid = eval_scale(scale, 0.5);
     assert_eq!(frac_mid, 0.75);
     let off_mid = data_shard_offset(&plan, frac_mid, 0.0);
-    assert!((off_mid[0] - 48.0).abs() < EPS, "0.75 * 64.0 spread = 48px outward");
+    assert!((off_mid[0] - 54.0).abs() < EPS, "0.75 * 72.0 spread = 54px outward");
     assert!(off_mid[1].abs() < EPS);
 
     // End of life -> full spread along a quarter-turn fan direction (+y).
@@ -93,19 +93,18 @@ fn shard_offset_curve_matches_what_the_per_tick_branch_writes() {
 }
 
 #[test]
-fn shard_color_curve_matches_what_the_per_tick_branch_writes() {
+fn impact_flash_shard_color_curve_matches_what_the_per_tick_branch_writes() {
     let asset = agumon_vfx();
-    let impact = resolve_effect(&asset, IMPACT_EFFECT_ID).expect("impact present");
-    let color = &impact.appearance.color;
+    let impact_flash = resolve_effect(&asset, IMPACT_FLASH_EFFECT_ID).expect("impact_flash present");
+    let color = &impact_flash.appearance.color;
 
-    // Constant overbright ember hue (>1.0 R for HDR bloom, M004/S05 policy),
-    // alpha linear-fades to transparent over life.
-    assert_eq!(eval_color(color, 0.0), [2.2, 1.0, 0.3, 0.9], "spawn rgba");
+    // Constant overbright ember hue (>1.0 RGB for HDR bloom), alpha linear-fades to transparent.
+    assert_eq!(eval_color(color, 0.0), [2.0, 1.4, 0.9, 0.95], "spawn rgba");
     let mid = eval_color(color, 0.5);
-    for (i, (a, e)) in mid.iter().zip([2.2, 1.0, 0.3, 0.45].iter()).enumerate() {
+    for (i, (a, e)) in mid.iter().zip([2.0, 1.4, 0.9, 0.475].iter()).enumerate() {
         assert!((a - e).abs() < EPS, "midpoint channel {i}: expected ~{e}, got {a}");
     }
-    assert_eq!(eval_color(color, 1.0), [2.2, 1.0, 0.3, 0.0], "death rgba");
+    assert_eq!(eval_color(color, 1.0), [2.0, 1.4, 0.9, 0.0], "death rgba");
 }
 
 /// The generalized dispatcher (`advance_vfx_particles`) resolves every effect's
@@ -195,7 +194,7 @@ fn resolved_verbs_yield_the_expected_anchored_offsets() {
     // arc_launch lerps caster->target by progress; halfway is the midpoint.
     let ctx_mid = PlacementCtx {
         age_ticks: 2,
-        ttl_ticks: 4,
+        ttl_ticks: 5,
         progress: 0.5,
         phase: 0.0,
         caster_xy: [0.0, 0.0],
@@ -206,17 +205,26 @@ fn resolved_verbs_yield_the_expected_anchored_offsets() {
 }
 
 /// The hardcoded projectile->impact burst is now data: the projectile's
-/// `on_expire` chains the impact fan, which the dispatcher spawns on expiry.
+/// `on_expire` chains the central impact burst, which then chains the radiating
+/// fan-out follow-through.
 #[test]
-fn projectile_on_expire_chains_the_impact_fan() {
+fn projectile_on_expire_chains_the_impact_then_flash_fan() {
     let asset = agumon_vfx();
     let projectile = resolve_effect(&asset, "baby_flame.projectile").expect("projectile present");
     let chained = projectile
         .on_expire
         .as_ref()
         .expect("projectile chains an on_expire effect");
-    assert_eq!(chained.0, "baby_flame.impact");
-    // FanOut is the verb the dispatcher special-cases for shard travel.
+    assert_eq!(chained.0, IMPACT_EFFECT_ID);
+
     let impact = resolve_effect(&asset, &chained.0).expect("chained impact present");
-    assert!(matches!(impact.placement.params, PlacementParams::FanOut { .. }));
+    assert!(matches!(impact.placement.params, PlacementParams::Static));
+
+    let impact_flash = resolve_effect(&asset, IMPACT_FLASH_EFFECT_ID).expect("impact_flash present");
+    assert!(matches!(impact_flash.placement.params, PlacementParams::FanOut { .. }));
+    assert_eq!(
+        impact.on_expire.as_ref().map(|next| next.0.as_str()),
+        Some(IMPACT_FLASH_EFFECT_ID),
+        "central impact must chain the radiating follow-through"
+    );
 }
