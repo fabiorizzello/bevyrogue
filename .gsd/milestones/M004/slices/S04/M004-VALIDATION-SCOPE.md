@@ -4,6 +4,8 @@ Milestone M004 / Slice S04 / Task T01.
 
 This artifact removes the validation ambiguity around M004 by stating **what S01-S04 do validate, what they only re-verify/support, what remains pending for S05/S06, and which producer→consumer boundaries own each proof**.
 
+For rerun milestone validation, treat this S04 artifact as the historical scope/boundary source and `.gsd/milestones/M004/slices/S07/M004-VALIDATION-REMEDIATION.md` as the **canonical closeout surface** that consolidates the final S04/S05/S06 dispositions.
+
 ## Summary
 
 M004 currently owns **no active global requirements** in `.gsd/REQUIREMENTS.md`. The file's coverage summary reports **Active requirements: 0**. That means M004 should **not** claim to validate a new global requirement unless new requirement records are added through the GSD requirement tools.
