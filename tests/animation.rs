@@ -26,6 +26,8 @@ mod atlas_binding;
 mod clip_atlas_parity;
 #[path = "animation/skill_graph_mapping_extensibility.rs"]
 mod skill_graph_mapping_extensibility;
+#[path = "animation/vfx_asset_schema.rs"]
+mod vfx_asset_schema;
 #[path = "animation/vfx_handle_seam.rs"]
 mod vfx_handle_seam;
 #[path = "animation/vfx_spawn_descriptor.rs"]
