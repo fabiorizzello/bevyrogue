@@ -26,6 +26,8 @@ mod atlas_binding;
 mod clip_atlas_parity;
 #[path = "animation/placement_verbs.rs"]
 mod placement_verbs;
+#[path = "animation/render_no_vfx_kind_guard.rs"]
+mod render_no_vfx_kind_guard;
 #[path = "animation/skill_graph_mapping_extensibility.rs"]
 mod skill_graph_mapping_extensibility;
 #[path = "animation/vfx_asset_eval.rs"]
