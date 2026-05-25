@@ -114,3 +114,121 @@ pub struct ColorKeyframe {
     /// Linear RGBA in `0.0..=1.0` per channel.
     pub rgba: [f32; 4],
 }
+
+/// Default scale returned by [`eval_scale`] for an empty curve.
+const DEFAULT_SCALE: f32 = 1.0;
+/// Default color (opaque white) returned by [`eval_color`] for an empty curve.
+const DEFAULT_COLOR: [f32; 4] = [1.0, 1.0, 1.0, 1.0];
+
+/// Concrete, render-free spawn parameters the windowed layer reads to build the
+/// impact fan-out without re-deriving anything from the asset (R004: pure).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct ImpactSpawnPlan {
+    /// Number of particles to spawn.
+    pub count: u32,
+    /// Spatial spread, in pixels, applied at spawn.
+    pub spread_px: f32,
+    /// Lifetime of each particle, in deterministic ticks.
+    pub ttl_ticks: u32,
+}
+
+/// Look up an [`EffectDef`] by its namespaced id. Returns `None` when absent so
+/// the windowed layer can log + fall back rather than panic (slice verification).
+pub fn resolve_effect<'a>(asset: &'a VfxAsset, effect_id: &str) -> Option<&'a EffectDef> {
+    asset.effects.get(&EffectId(effect_id.to_owned()))
+}
+
+/// Build the concrete [`ImpactSpawnPlan`] for an effect from its [`Appearance`].
+/// Pure: no I/O, no Bevy world/render types.
+pub fn spawn_plan(effect: &EffectDef) -> ImpactSpawnPlan {
+    ImpactSpawnPlan {
+        count: effect.appearance.count,
+        spread_px: effect.appearance.spread_px,
+        ttl_ticks: effect.appearance.ttl_ticks,
+    }
+}
+
+/// Evaluate a [`ScaleCurve`] at normalized lifetime `progress`.
+///
+/// Piecewise-linear between keyframes sorted by `t`. `progress` is clamped to
+/// `[0, 1]`; before the first keyframe returns the first value, after the last
+/// returns the last, and an empty curve returns [`DEFAULT_SCALE`]. Pure and
+/// deterministic (R004): identical input yields identical output.
+pub fn eval_scale(curve: &ScaleCurve, progress: f32) -> f32 {
+    eval_curve(
+        &curve.0,
+        progress,
+        DEFAULT_SCALE,
+        |kf| kf.t,
+        |kf| kf.value,
+        |a, b, frac| a + (b - a) * frac,
+    )
+}
+
+/// Evaluate a [`ColorCurve`] at normalized lifetime `progress`.
+///
+/// Same piecewise-linear semantics as [`eval_scale`] (per-channel linear
+/// interpolation); an empty curve returns [`DEFAULT_COLOR`].
+pub fn eval_color(curve: &ColorCurve, progress: f32) -> [f32; 4] {
+    eval_curve(
+        &curve.0,
+        progress,
+        DEFAULT_COLOR,
+        |kf| kf.t,
+        |kf| kf.rgba,
+        |a, b, frac| {
+            [
+                a[0] + (b[0] - a[0]) * frac,
+                a[1] + (b[1] - a[1]) * frac,
+                a[2] + (b[2] - a[2]) * frac,
+                a[3] + (b[3] - a[3]) * frac,
+            ]
+        },
+    )
+}
+
+/// Shared piecewise-linear evaluator over an unsorted keyframe slice.
+///
+/// Sorts keyframe *indices* by `t` (no keyframe mutation, so callers keep their
+/// authored order) using [`f32::total_cmp`] for a deterministic total order, then
+/// clamps `progress`, handles the empty/before-first/after-last edges, and
+/// linearly interpolates within the bracketing segment via `lerp`.
+fn eval_curve<K, V: Copy>(
+    keys: &[K],
+    progress: f32,
+    default: V,
+    t_of: impl Fn(&K) -> f32,
+    v_of: impl Fn(&K) -> V,
+    lerp: impl Fn(V, V, f32) -> V,
+) -> V {
+    if keys.is_empty() {
+        return default;
+    }
+
+    let mut order: Vec<usize> = (0..keys.len()).collect();
+    order.sort_by(|&a, &b| t_of(&keys[a]).total_cmp(&t_of(&keys[b])));
+
+    let p = progress.clamp(0.0, 1.0);
+    let first = order[0];
+    if p <= t_of(&keys[first]) {
+        return v_of(&keys[first]);
+    }
+    let last = order[order.len() - 1];
+    if p >= t_of(&keys[last]) {
+        return v_of(&keys[last]);
+    }
+
+    for pair in order.windows(2) {
+        let (i0, i1) = (pair[0], pair[1]);
+        let (t0, t1) = (t_of(&keys[i0]), t_of(&keys[i1]));
+        if p >= t0 && p <= t1 {
+            // `t1 > t0` here unless duplicate `t`s collapse the span; guard /0.
+            let span = t1 - t0;
+            let frac = if span > 0.0 { (p - t0) / span } else { 0.0 };
+            return lerp(v_of(&keys[i0]), v_of(&keys[i1]), frac);
+        }
+    }
+
+    // Unreachable: p is strictly between first and last t after the edge checks.
+    v_of(&keys[last])
+}
