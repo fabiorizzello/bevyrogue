@@ -1,6 +1,11 @@
 use std::collections::HashSet;
 
-use bevy::prelude::*;
+use bevy::{
+    core_pipeline::tonemapping::{DebandDither, Tonemapping},
+    post_process::bloom::Bloom,
+    prelude::*,
+    render::view::Hdr,
+};
 use bevy_common_assets::ron::RonAssetPlugin;
 
 use bevyrogue::animation::{
@@ -292,7 +297,13 @@ impl Plugin for RenderPlugin {
 }
 
 fn setup_camera(mut commands: Commands) {
-    commands.spawn(Camera2d);
+    commands.spawn((
+        Camera2d,
+        Hdr,
+        Bloom::NATURAL,
+        Tonemapping::TonyMcMapface,
+        DebandDither::Enabled,
+    ));
 }
 
 fn load_vfx_visuals(mut commands: Commands, asset_server: Res<AssetServer>) {
@@ -924,7 +935,7 @@ fn spawn_effect_by_id(
         source_scale,
     );
     let rgba = eval_color(&effect.appearance.color, 0.0);
-    let color = Color::srgba(rgba[0], rgba[1], rgba[2], rgba[3]);
+    let color = Color::linear_rgba(rgba[0], rgba[1], rgba[2], rgba[3]);
     let size = Vec2::splat(effect.appearance.size_px);
     for i in 0..count {
         let phase = (i as f32 / count as f32) * std::f32::consts::TAU;
@@ -1197,7 +1208,7 @@ fn advance_vfx_particles(
                 Vec3::splat(eval_scale(&effect.appearance.scale, progress))
             };
             let rgba = eval_color(&effect.appearance.color, progress);
-            sprite.color = Color::srgba(rgba[0], rgba[1], rgba[2], rgba[3]);
+            sprite.color = Color::linear_rgba(rgba[0], rgba[1], rgba[2], rgba[3]);
 
             let on_expire = effect.on_expire.clone();
 

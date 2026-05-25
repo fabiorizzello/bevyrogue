@@ -160,10 +160,10 @@ fn agumon_impact_color_curve_holds_hue_and_fades_alpha() {
     let color = &impact.appearance.color;
 
     // Endpoints are exact authored keyframe values.
-    assert_eq!(eval_color(color, 0.0), [1.0, 0.55, 0.2, 0.9], "spawn: alpha 0.9");
-    assert_eq!(eval_color(color, 1.0), [1.0, 0.55, 0.2, 0.0], "death: alpha 0.0");
+    assert_eq!(eval_color(color, 0.0), [2.2, 1.0, 0.3, 0.9], "spawn: alpha 0.9");
+    assert_eq!(eval_color(color, 1.0), [2.2, 1.0, 0.3, 0.0], "death: alpha 0.0");
     // Midpoint: hue constant, alpha linearly halved (interpolated -> approx).
-    assert_rgba_approx(eval_color(color, 0.5), [1.0, 0.55, 0.2, 0.45], "midpoint fade");
+    assert_rgba_approx(eval_color(color, 0.5), [2.2, 1.0, 0.3, 0.45], "midpoint fade");
 }
 
 #[test]
@@ -221,11 +221,11 @@ fn baby_burner_detonate_curves_match_authored_values() {
     assert_eq!(eval_scale(&det.appearance.scale, 1.0), 1.0);
 
     // Color: holds hue, alpha linear-fades to transparent.
-    assert_eq!(eval_color(&det.appearance.color, 0.0), [1.0, 0.55, 0.2, 0.9]);
-    assert_eq!(eval_color(&det.appearance.color, 1.0), [1.0, 0.55, 0.2, 0.0]);
+    assert_eq!(eval_color(&det.appearance.color, 0.0), [2.2, 1.0, 0.3, 0.9]);
+    assert_eq!(eval_color(&det.appearance.color, 1.0), [2.2, 1.0, 0.3, 0.0]);
     assert_rgba_approx(
         eval_color(&det.appearance.color, 0.5),
-        [1.0, 0.55, 0.2, 0.45],
+        [2.2, 1.0, 0.3, 0.45],
         "detonate midpoint alpha fade",
     );
 }
@@ -311,3 +311,4 @@ fn validate_effects_names_a_dangling_on_expire() {
         "validation must name the offending effect and missing on_expire target"
     );
 }
+

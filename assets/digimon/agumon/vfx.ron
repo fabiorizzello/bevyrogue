@@ -7,26 +7,26 @@
 // scale/color curves) lives here instead of the hardcoded src/windowed/render.rs
 // constants the dispatcher removes in T03.
 //
+// M004/S05 HDR policy: these color curves are render-facing linear intensity,
+// not clamped UI colors. Channels may intentionally exceed 1.0 so the windowed
+// HDR+bloom camera can bloom-cap bright charge/projectile/impact flashes.
+//
 // Provenance of the numbers (render.rs), preserving the K001 visual baseline:
 //   charge      count 1, ttl 24, size 22.0, tex baby_flame_charge,
 //               scale 0.42->~0.9 over first quarter of life (growth=min(age,6)/6),
 //               alpha 0.35->0.88 (4-tick micro-pulse dropped — documented K001 dev),
-//               hue srgba(1.0, 0.75, 0.25, _)  [render.rs:1342-1355, :1069]
+//               hue/intensity warm orange, overbright for bloom
 //   ember       count 7 = BABY_FLAME_EMBER_COUNT, ttl 24 = BABY_FLAME_EMBER_TTL,
 //               size 11.0 = BABY_FLAME_EMBER_SIZE, tex baby_flame_charge,
 //               converge_inward radius 58.0 = BABY_FLAME_EMBER_RADIUS_PX,
-//               omega 0.9 = BABY_FLAME_EMBER_OMEGA, alpha 0.9->0.0,
-//               hue srgba(1.0, 0.85, 0.4, _)  [render.rs:948-957, :1070]
+//               omega 0.9 = BABY_FLAME_EMBER_OMEGA, alpha 0.9->0.0
 //   projectile  count 1, ttl 4, size 16.0, tex baby_flame_projectile,
-//               arc_launch toward target, hue srgba(1.0, 0.45, 0.15, ~0.95);
-//               on_expire chains baby_flame.impact — the data replacement for the
-//               hardcoded projectile->impact burst  [render.rs:1428-1436, :1071]
+//               arc_launch toward target; on_expire chains baby_flame.impact —
+//               the data replacement for the hardcoded projectile->impact burst
 //   impact      count 8 = BABY_FLAME_IMPACT_SHARD_COUNT, ttl 5 = *_SHARD_TTL,
 //               size 14.0 = *_SHARD_SIZE, tex baby_flame_impact,
-//               fan_out spread 64.0 = *_SHARD_SPREAD_PX, ease-out 1-(1-t)^2,
-//               hue srgba(1.0, 0.55, 0.2, _) alpha 0.9->0.0  [render.rs:972-981, :1073]
-//   impact_flash count 1, ttl 2, size 26.0, tex baby_flame_impact, static,
-//               hue srgba(1.0, 0.82, 0.45, _) alpha 0.95->0.0  [render.rs:1072]
+//               fan_out spread 64.0 = *_SHARD_SPREAD_PX, ease-out 1-(1-t)^2
+//   impact_flash count 1, ttl 2, size 26.0, tex baby_flame_impact, static
 //
 // Per R012 this presentation asset carries numeric appearance values, but it is
 // a SEPARATE asset from the SpawnParticle command — no numeric gameplay payload
@@ -53,9 +53,9 @@
                     (t: 1.0, value: 0.9),
                 ],
                 color: [
-                    (t: 0.0, rgba: (1.0, 0.75, 0.25, 0.35)),
-                    (t: 0.25, rgba: (1.0, 0.75, 0.25, 0.88)),
-                    (t: 1.0, rgba: (1.0, 0.75, 0.25, 0.88)),
+                    (t: 0.0, rgba: (1.8, 1.2, 0.35, 0.35)),
+                    (t: 0.25, rgba: (2.8, 1.7, 0.45, 0.88)),
+                    (t: 1.0, rgba: (2.8, 1.7, 0.45, 0.88)),
                 ],
             ),
         ),
@@ -100,8 +100,8 @@
                     (t: 1.0, value: 1.0),
                 ],
                 color: [
-                    (t: 0.0, rgba: (1.0, 0.45, 0.15, 0.95)),
-                    (t: 1.0, rgba: (1.0, 0.45, 0.15, 0.95)),
+                    (t: 0.0, rgba: (3.2, 1.1, 0.3, 0.95)),
+                    (t: 1.0, rgba: (3.2, 1.1, 0.3, 0.95)),
                 ],
             ),
             on_expire: Some("baby_flame.impact"),
@@ -127,8 +127,8 @@
                 ],
                 // Constant ember hue, alpha linear-fades to transparent.
                 color: [
-                    (t: 0.0, rgba: (1.0, 0.55, 0.2, 0.9)),
-                    (t: 1.0, rgba: (1.0, 0.55, 0.2, 0.0)),
+                    (t: 0.0, rgba: (2.2, 1.0, 0.3, 0.9)),
+                    (t: 1.0, rgba: (2.2, 1.0, 0.3, 0.0)),
                 ],
             ),
         ),
@@ -153,8 +153,8 @@
                     (t: 1.0, value: 1.0),
                 ],
                 color: [
-                    (t: 0.0, rgba: (1.0, 0.55, 0.2, 0.9)),
-                    (t: 1.0, rgba: (1.0, 0.55, 0.2, 0.0)),
+                    (t: 0.0, rgba: (2.2, 1.0, 0.3, 0.9)),
+                    (t: 1.0, rgba: (2.2, 1.0, 0.3, 0.0)),
                 ],
             ),
             on_expire: Some("baby_burner.flash"),
@@ -177,8 +177,8 @@
                     (t: 1.0, value: 1.0),
                 ],
                 color: [
-                    (t: 0.0, rgba: (1.0, 0.82, 0.45, 0.95)),
-                    (t: 1.0, rgba: (1.0, 0.82, 0.45, 0.0)),
+                    (t: 0.0, rgba: (3.6, 2.2, 0.8, 0.95)),
+                    (t: 1.0, rgba: (3.6, 2.2, 0.8, 0.0)),
                 ],
             ),
         ),
@@ -200,8 +200,8 @@
                     (t: 1.0, value: 1.0),
                 ],
                 color: [
-                    (t: 0.0, rgba: (1.0, 0.82, 0.45, 0.95)),
-                    (t: 1.0, rgba: (1.0, 0.82, 0.45, 0.0)),
+                    (t: 0.0, rgba: (3.6, 2.2, 0.8, 0.95)),
+                    (t: 1.0, rgba: (3.6, 2.2, 0.8, 0.0)),
                 ],
             ),
         ),

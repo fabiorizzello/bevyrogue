@@ -8,6 +8,8 @@ mod frame_time_soak;
 mod phase_strip_readonly;
 #[path = "windowed_only/vfx_asset_impact_render.rs"]
 mod vfx_asset_impact_render;
+#[path = "windowed_only/vfx_rendering_acceptance.rs"]
+mod vfx_rendering_acceptance;
 #[path = "windowed_only/windowed_hud_hp_bar.rs"]
 mod windowed_hud_hp_bar;
 #[path = "windowed_only/windowed_preview_cache.rs"]
