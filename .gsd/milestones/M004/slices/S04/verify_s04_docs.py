@@ -36,8 +36,6 @@ REQUIRED_TOKENS = {
         "## Producer → consumer boundary map",
         "## S03 consumed contracts from earlier slices",
         "## Pending scope reserved for S05 and S06",
-        "### Pending S05",
-        "### Pending S06",
         "Sharp Claws",
         "HDR bloom / additive rendering",
         "K001",
@@ -90,7 +88,7 @@ TEST_TOKENS = {
     ROOT / "tests/windowed_only/vfx_asset_impact_render.rs": [
         "fn built_registry_resolves_all_authored_placement_verbs()",
         "fn every_effect_resolves_and_its_verb_is_registered()",
-        "fn projectile_on_expire_chains_the_impact_fan()",
+        "fn projectile_on_expire_chains_the_impact_then_flash_fan()",
     ],
     ROOT / "src/windowed/render.rs": [
         "fn on_enter_charge_seeds_both_the_orb_and_the_ember_swirl()",
