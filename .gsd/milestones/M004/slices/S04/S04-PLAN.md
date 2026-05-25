@@ -30,12 +30,12 @@ Upstream surfaces consumed: S01/S02/S03 summaries, current M004 context and road
   - Files: `.gsd/milestones/M004/slices/S04/M004-VALIDATION-SCOPE.md`
   - Verify: test -s .gsd/milestones/M004/slices/S04/M004-VALIDATION-SCOPE.md
 
-- [ ] **T02: Write producer consumer boundary map** `est:1h`
+- [x] **T02: Write producer consumer boundary map** `est:1h`
   Expected executor skills frontmatter: design-an-interface, write-docs, tdd, verify-before-complete.
   - Files: `.gsd/milestones/M004/slices/S04/M004-BOUNDARY-MAP.md`
   - Verify: test -s .gsd/milestones/M004/slices/S04/M004-BOUNDARY-MAP.md
 
-- [ ] **T03: Repair S03 dependency metadata and add doc checker** `est:45m`
+- [x] **T03: Repair S03 dependency metadata and add doc checker** `est:45m`
   Expected executor skills frontmatter: write-docs, tdd, verify-before-complete.
   - Files: `.gsd/milestones/M004/slices/S03/S03-SUMMARY.md`, `.gsd/milestones/M004/slices/S04/verify_s04_docs.py`
   - Verify: python3 .gsd/milestones/M004/slices/S04/verify_s04_docs.py

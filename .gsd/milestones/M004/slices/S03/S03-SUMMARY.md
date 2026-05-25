@@ -7,7 +7,8 @@ provides:
   - baby_burner.detonate enriched fan-out burst + flash (data-driven, RON-only)
   - DanglingVariant validation coverage
 requires:
-  []
+  - S01: typed VfxAsset schema; resolve/eval API (`resolve_effect`, `eval_scale`, `eval_color`); owned `assets/digimon/agumon/vfx.ron` load path
+  - S02: `PlacementExt` registry axis; registered Agumon placement verbs; `validate_effects`; registry-resolved windowed VFX data path
 affects:
   []
 key_files:
