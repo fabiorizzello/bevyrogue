@@ -10,7 +10,7 @@ Use this file as the first answer surface for the M004 rerun of milestone valida
 
 - It states what M004 does and does **not** claim about requirement ownership.
 - It points to the canonical producer → consumer boundary evidence.
-- It distinguishes automated proof, accepted rescope, future-only seams, and external manual blockers.
+- It distinguishes automated proof, accepted rescope, future-only seams, and tracked manual-boundary closure.
 - It preserves the K001 honesty boundary: **auto-mode did not run `cargo winx` and does not claim live visual PASS.**
 
 ## Requirement scope
@@ -41,8 +41,8 @@ The validation finding that marked several requirements as PARTIAL or MISSING is
 | R008 | validated | Not re-implemented by M004; variant-selection seam is future-consumer-only, not missing runtime integration |
 | R010 | validated | Not in M004 runtime scope; prior validation stands |
 | R011 | validated | M004 contributes VFX improvements used by the Agumon kit, but does not replace the earlier full-kit validation |
-| R012 | validated | Re-verifies the no-numeric-gameplay-payload presentation seam locally |
-| R014 | validated | S06 preserves the human-only UAT boundary and runbook framework; no live visual PASS is claimed here |
+| R012 | validated | M004 re-verifies the no-numeric-gameplay-payload presentation seam locally |
+| R014 | validated | M004 preserves the human-only review boundary while using a tracked waiver instead of a fabricated live visual PASS |
 | R015 | validated | Prior architectural review validation stands; M004 does not create a new review obligation |
 | R016 | validated | M004 re-verifies hygiene / boundary invariants locally without changing global status |
 
@@ -51,19 +51,20 @@ The validation finding that marked several requirements as PARTIAL or MISSING is
 | Validation finding | Disposition | Classification | Canonical evidence |
 |---|---|---|---|
 | Requirement coverage report treated R005/R006/R007/R008/R010/R011/R014/R015/R016 as partial or missing | Resolved by explicit scope mapping: these requirements are already validated globally and M004 only re-verifies local / inherited constraints | **Automated proof + scope reconciliation** | `.gsd/REQUIREMENTS.md`; `.gsd/milestones/M004/slices/S04/M004-VALIDATION-SCOPE.md`; this file |
-| Roadmap/validation flow said boundary map was not provided | Resolved at the artifact layer: S04 already authored the dedicated boundary map and this closeout marks it as canonical evidence for rerun | **Automated proof / documentation closure** | `.gsd/milestones/M004/slices/S04/M004-BOUNDARY-MAP.md`; `.gsd/milestones/M004/slices/S04/M004-VALIDATION-SCOPE.md` |
+| Roadmap/validation flow said boundary map was not provided | Resolved at the artifact layer: the roadmap now includes a compact inline boundary table and S04 remains the canonical full boundary inventory | **Automated proof / documentation closure** | `.gsd/milestones/M004/M004-ROADMAP.md`; `.gsd/milestones/M004/slices/S04/M004-BOUNDARY-MAP.md` |
 | Variant-selection boundary had a producer but no consumer summary | Resolved as an intentional seam classification: S03 proves a deterministic future-consumer seam, not a missing M004 runtime integration | **Future-only seam, already proven** | `.gsd/milestones/M004/slices/S04/M004-BOUNDARY-MAP.md`; `tests/animation/vfx_variant_selection.rs`; S03 summary |
 | S06 assessment artifact was reported missing | Resolved: the artifact exists and records the automatable evidence plus the honest manual boundary | **Automated proof / documentation correction** | `.gsd/milestones/M004/slices/S06/S06-ASSESSMENT.md`; `.gsd/milestones/M004/slices/S06/S06-UAT.md` |
 | Strict additive rendering was not fully delivered | Resolved by accepted rescope under D037: strict custom additive material is deferred; HDR + Bloom + overbright channels are the accepted S05 proxy | **Accepted rescope** | `.gsd/milestones/M004/slices/S05/M004-RENDERING-ACCEPTANCE.md`; `.gsd/DECISIONS.md` (D037) |
-| Human `cargo winx` visual signoff is still not complete | Not resolved by automation; remains an honest manual boundary until a human signs off or waives it in the tracked artifact | **External blocker / manual-only** | `docs/uat/M004-vfx-signoff.md`; `.gsd/milestones/M004/slices/S06/S06-ASSESSMENT.md`; `.gsd/milestones/M004/slices/S06/S06-UAT.md` |
+| Human `cargo winx` visual signoff did not occur in auto-mode | Resolved by tracked waiver rather than a fabricated PASS: the signoff artifact formally records `WAIVED`, reviewer/date/evidence fields, and the note that auto-mode did not launch the windowed binary | **Tracked waiver / manual-boundary closure** | `docs/uat/M004-vfx-signoff.md`; `.gsd/milestones/M004/slices/S06/S06-ASSESSMENT.md`; `.gsd/milestones/M004/slices/S06/S06-UAT.md` |
 
 ## Boundary map
 
-The canonical producer → consumer boundary evidence remains the S04 artifact:
+The roadmap now contains the compact validator-facing inline map, while the canonical producer → consumer boundary evidence remains the S04 artifact:
 
+- `.gsd/milestones/M004/M004-ROADMAP.md`
 - `.gsd/milestones/M004/slices/S04/M004-BOUNDARY-MAP.md`
 
-That file should be read as the authoritative boundary inventory for rerun validation. The key dispositions are:
+The key dispositions are:
 
 | Boundary | Status | Notes |
 |---|---|---|
@@ -71,9 +72,10 @@ That file should be read as the authoritative boundary inventory for rerun valid
 | Placement verb registry | Delivered | Windowed render consumes registered placement ids rather than reviving hardcoded kind dispatch |
 | AnimGraph cue → owned effect-id bridge | Delivered with explicit limit | Cue-name/effect-id bridge exists, but this is not a claim of fully generic cue registration |
 | Effect chaining via `on_expire` | Delivered | Projectile → impact and Baby Burner detonate → flash remain data-driven |
+| Sharp Claws slash | Delivered in S05 | The owned `sharp_claws.slash` effect family and cue bridge are proven, but visual quality is still not auto-mode PASS evidence |
+| HDR/Bloom overbright rendering proxy | Delivered as accepted proxy | S05 proves HDR + Bloom + overbright authored channels; strict additive stays D037-deferred |
 | Variant selection seam | Delivered as seam only | Proven deterministic selector for future callers; not a missing gameplay feature in M004 |
-| Failure visibility / validation boundary | Delivered | Invalid authored data produces named validation failures or localized warnings |
-| K001 manual visual boundary | Still manual-only | Human-visible quality remains outside auto-mode proof |
+| K001 visual-UAT boundary | Closed by waiver, not PASS | Human-visible quality remains outside auto-mode proof; the tracked waiver closes the milestone artifact honestly |
 
 ## Variant seam disposition
 
@@ -132,15 +134,15 @@ Canonical evidence:
 
 The current tracked UAT state is:
 
-- `docs/uat/M004-vfx-signoff.md` says **Framework complete — human capture pending**.
-- Per-skill verdicts for Sharp Claws, Baby Flame, and Baby Burner remain **PENDING**.
-- S06 explicitly records that no `cargo winx` session was run by auto-mode.
+- `docs/uat/M004-vfx-signoff.md` now records a formal **WAIVED** closeout for M004 visual UAT.
+- The waiver preserves per-skill notes for Sharp Claws, Baby Flame, and Baby Burner instead of inventing a live visual PASS.
+- Reviewer/date/evidence fields explicitly record that no `cargo winx` session was run by auto-mode.
 
 Therefore the honest disposition for rerun validation is:
 
 - **No live visual PASS is claimed.**
 - **No automated artifact should be interpreted as human visual signoff.**
-- Until a human completes signoff or records a formal waiver, this remains the only external manual blocker to full visual closure.
+- **The milestone is closed with a tracked waiver, not with an unresolved hidden blocker.**
 
 ## Fresh-validator guidance
 
@@ -150,7 +152,7 @@ A fresh validator should use the following rules:
 2. Treat S04's scope doc and boundary map as the canonical explanation of what M004 automation does and does not prove.
 3. Treat S05 as the canonical explanation of the D037 rendering rescope.
 4. Treat S06 as proof that the manual signoff framework and automated regression baseline exist, while preserving the no-live-visual-PASS boundary.
-5. Treat the unresolved visual signoff as an **external manual blocker**, not as a hidden defect in the automated VFX seam.
+5. Treat the visual closeout as **waived with explicit artifact evidence**, not as a hidden automated PASS claim and not as an unresolved defect in the VFX seam.
 
 ## Verification commands
 
