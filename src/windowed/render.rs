@@ -31,21 +31,31 @@ pub(super) struct AgumonSprite {
     last_missing_skill_graph_cue: Option<String>,
 }
 
-#[derive(Component, Debug, Clone, PartialEq, Eq)]
+#[derive(Component, Debug, Clone, PartialEq)]
 struct VfxParticle {
     ttl_ticks: u32,
     age_ticks: u32,
     motion: VfxMotion,
     kind: VfxParticleKind,
     anchor: Option<VfxAnchor>,
+    /// Per-particle seed angle (radians). Charge embers use it as the starting
+    /// orbit angle; impact shards use it as the fan-out direction. 0.0 for the
+    /// single-quad kinds, which derive everything from `age_ticks`.
+    phase: f32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum VfxParticleKind {
     Generic,
     BabyFlameCharge,
+    /// Small orbiter spiralling inward toward the mouth during the charge,
+    /// reading as a vortex feeding the core flame. Reuses the charge sprite.
+    BabyFlameEmber,
     BabyFlameProjectile,
     BabyFlameImpact,
+    /// Dissolving fragment that fans outward from the impact point and fades.
+    /// Reuses the impact sprite.
+    BabyFlameImpactShard,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -164,6 +174,26 @@ const VFX_PARTICLE_SIZE: f32 = 18.0;
 const VFX_PARTICLE_Z: f32 = 1.0;
 const VFX_MOUTH_OFFSET_X_PX: f32 = 92.0;
 const VFX_MOUTH_OFFSET_Y_PX: f32 = 24.0;
+
+// --- Baby Flame three-phase VFX polish (tunable; verify visually via `cargo winx`) ---
+/// Embers spawned in a ring around the mouth at charge start, spiralling inward.
+const BABY_FLAME_EMBER_COUNT: u32 = 7;
+/// Embers live the full charge window alongside the core flame quad.
+const BABY_FLAME_EMBER_TTL: u32 = 24;
+/// Starting orbit radius (world px) of the ember ring before it spirals in.
+const BABY_FLAME_EMBER_RADIUS_PX: f32 = 58.0;
+/// Angular velocity of the swirl, radians per animation tick.
+const BABY_FLAME_EMBER_OMEGA: f32 = 0.9;
+/// On-screen size of a single ember quad.
+const BABY_FLAME_EMBER_SIZE: f32 = 11.0;
+/// Shards spawned at the impact point, fanning outward and fading.
+const BABY_FLAME_IMPACT_SHARD_COUNT: u32 = 8;
+/// How long the dissolve fan lingers (animation ticks).
+const BABY_FLAME_IMPACT_SHARD_TTL: u32 = 5;
+/// Maximum outward travel (world px) a shard reaches at end of life.
+const BABY_FLAME_IMPACT_SHARD_SPREAD_PX: f32 = 64.0;
+/// On-screen size of a single dissolve shard.
+const BABY_FLAME_IMPACT_SHARD_SIZE: f32 = 14.0;
 
 /// Fixed-rate animation clock for the windowed presentation layer.
 ///
@@ -609,7 +639,21 @@ fn advance_agumon_presentation(
                                 sprite.unit_id,
                                 render_sprite.flip_x,
                                 transform.scale.x,
+                                0.0,
                             );
+                            // The charge core is joined by a ring of embers that
+                            // spiral inward, reading as a vortex feeding the flame.
+                            if vfx_particle_kind(&descriptor) == VfxParticleKind::BabyFlameCharge {
+                                spawn_baby_flame_embers(
+                                    &mut commands,
+                                    vfx_visuals.as_deref(),
+                                    caster_xy,
+                                    target_xy,
+                                    sprite.unit_id,
+                                    render_sprite.flip_x,
+                                    transform.scale.x,
+                                );
+                            }
                             let resolved_xy =
                                 resolve_vfx_spawn_xy(&descriptor, caster_xy, target_xy);
                             trace!(
@@ -645,7 +689,11 @@ fn advance_agumon_presentation(
                     if mode_skill_id == Some(BABY_FLAME_SKILL_ID) {
                         for (entity, particle, source) in &vfx_particles {
                             if source.unit_id == sprite.unit_id
-                                && particle.kind == VfxParticleKind::BabyFlameCharge
+                                && matches!(
+                                    particle.kind,
+                                    VfxParticleKind::BabyFlameCharge
+                                        | VfxParticleKind::BabyFlameEmber
+                                )
                             {
                                 commands.entity(entity).despawn();
                             }
@@ -666,6 +714,7 @@ fn advance_agumon_presentation(
                                 sprite.unit_id,
                                 render_sprite.flip_x,
                                 transform.scale.x,
+                                0.0,
                             );
                             trace!(
                                 target: "windowed.agumon_playback",
@@ -752,8 +801,10 @@ fn mouth_anchor_xy(caster_xy: [f32; 2], flip_x: bool, sprite_scale: f32) -> [f32
 fn vfx_particle_kind(descriptor: &VfxSpawnDescriptor) -> VfxParticleKind {
     match descriptor.particle.0.as_str() {
         "baby_flame_charge" => VfxParticleKind::BabyFlameCharge,
+        "baby_flame_ember" => VfxParticleKind::BabyFlameEmber,
         "baby_flame_projectile" => VfxParticleKind::BabyFlameProjectile,
         "baby_flame_impact" => VfxParticleKind::BabyFlameImpact,
+        "baby_flame_impact_shard" => VfxParticleKind::BabyFlameImpactShard,
         _ => VfxParticleKind::Generic,
     }
 }
@@ -762,8 +813,11 @@ fn vfx_particle_ttl(kind: VfxParticleKind) -> u32 {
     match kind {
         VfxParticleKind::Generic => VFX_PARTICLE_TTL_TICKS,
         VfxParticleKind::BabyFlameCharge => 24,
-        VfxParticleKind::BabyFlameProjectile => 6,
+        VfxParticleKind::BabyFlameEmber => BABY_FLAME_EMBER_TTL,
+        // Shorter flight = the launch reads as fast and snappy.
+        VfxParticleKind::BabyFlameProjectile => 4,
         VfxParticleKind::BabyFlameImpact => 2,
+        VfxParticleKind::BabyFlameImpactShard => BABY_FLAME_IMPACT_SHARD_TTL,
     }
 }
 
@@ -771,17 +825,22 @@ fn vfx_particle_size(kind: VfxParticleKind) -> f32 {
     match kind {
         VfxParticleKind::Generic => VFX_PARTICLE_SIZE,
         VfxParticleKind::BabyFlameCharge => 22.0,
+        VfxParticleKind::BabyFlameEmber => BABY_FLAME_EMBER_SIZE,
         VfxParticleKind::BabyFlameProjectile => 16.0,
         VfxParticleKind::BabyFlameImpact => 26.0,
+        VfxParticleKind::BabyFlameImpactShard => BABY_FLAME_IMPACT_SHARD_SIZE,
     }
 }
 
 fn vfx_particle_anchor(kind: VfxParticleKind) -> Option<VfxAnchor> {
     match kind {
-        VfxParticleKind::BabyFlameCharge => Some(VfxAnchor::Mouth),
+        VfxParticleKind::BabyFlameCharge | VfxParticleKind::BabyFlameEmber => {
+            Some(VfxAnchor::Mouth)
+        }
         VfxParticleKind::Generic
         | VfxParticleKind::BabyFlameProjectile
-        | VfxParticleKind::BabyFlameImpact => None,
+        | VfxParticleKind::BabyFlameImpact
+        | VfxParticleKind::BabyFlameImpactShard => None,
     }
 }
 
@@ -803,11 +862,127 @@ fn baby_flame_impact_descriptor() -> VfxSpawnDescriptor {
     .expect("SpawnParticle baby_flame_impact must distill to a renderable VFX descriptor")
 }
 
+fn baby_flame_ember_descriptor() -> VfxSpawnDescriptor {
+    VfxSpawnDescriptor::from_command(&Command::SpawnParticle {
+        name: ParticleId("baby_flame_ember".into()),
+        origin: VfxLocus::CasterCenter,
+        motion: VfxMotion::Static,
+    })
+    .expect("SpawnParticle baby_flame_ember must distill to a renderable VFX descriptor")
+}
+
+fn baby_flame_impact_shard_descriptor() -> VfxSpawnDescriptor {
+    VfxSpawnDescriptor::from_command(&Command::SpawnParticle {
+        name: ParticleId("baby_flame_impact_shard".into()),
+        origin: VfxLocus::TargetCenter,
+        motion: VfxMotion::Static,
+    })
+    .expect("SpawnParticle baby_flame_impact_shard must distill to a renderable VFX descriptor")
+}
+
+/// Offset (world px) of a charge ember relative to the mouth anchor at `age`
+/// ticks into its life. Radius shrinks linearly toward the mouth while the
+/// angle sweeps, producing an inward spiral that feeds the core flame.
+fn baby_flame_ember_offset(age: u32, ttl: u32, phase: f32) -> [f32; 2] {
+    let progress = if ttl == 0 {
+        1.0
+    } else {
+        (age as f32 / ttl as f32).clamp(0.0, 1.0)
+    };
+    let radius = BABY_FLAME_EMBER_RADIUS_PX * (1.0 - progress);
+    let angle = phase + (age as f32 * BABY_FLAME_EMBER_OMEGA);
+    [radius * angle.cos(), radius * angle.sin()]
+}
+
+/// Alpha of a charge ember: bright at the rim, fading as it merges into the
+/// mouth so the swirl dissolves into the core rather than popping out.
+fn baby_flame_ember_alpha(age: u32, ttl: u32) -> f32 {
+    let progress = if ttl == 0 {
+        1.0
+    } else {
+        (age as f32 / ttl as f32).clamp(0.0, 1.0)
+    };
+    (0.9 * (1.0 - progress)).max(0.0)
+}
+
+/// Offset (world px) of an impact shard relative to the impact origin at `age`
+/// ticks. Ease-out so shards burst fast then settle, reading as a dissolve.
+fn baby_flame_shard_offset(age: u32, ttl: u32, phase: f32) -> [f32; 2] {
+    let progress = if ttl == 0 {
+        1.0
+    } else {
+        (age as f32 / ttl as f32).clamp(0.0, 1.0)
+    };
+    let eased = 1.0 - (1.0 - progress) * (1.0 - progress);
+    let dist = BABY_FLAME_IMPACT_SHARD_SPREAD_PX * eased;
+    [dist * phase.cos(), dist * phase.sin()]
+}
+
+/// Alpha of an impact shard: linear fade to transparent over its life.
+fn baby_flame_shard_alpha(age: u32, ttl: u32) -> f32 {
+    let progress = if ttl == 0 {
+        1.0
+    } else {
+        (age as f32 / ttl as f32).clamp(0.0, 1.0)
+    };
+    (0.9 * (1.0 - progress)).max(0.0)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn spawn_baby_flame_embers(
+    commands: &mut Commands,
+    visuals: Option<&VfxVisuals>,
+    caster_xy: [f32; 2],
+    target_xy: [f32; 2],
+    source_unit: UnitId,
+    source_flip_x: bool,
+    source_scale: f32,
+) {
+    let descriptor = baby_flame_ember_descriptor();
+    for i in 0..BABY_FLAME_EMBER_COUNT {
+        let phase = (i as f32 / BABY_FLAME_EMBER_COUNT as f32) * std::f32::consts::TAU;
+        spawn_vfx_particle(
+            commands,
+            &descriptor,
+            visuals,
+            caster_xy,
+            target_xy,
+            source_unit,
+            source_flip_x,
+            source_scale,
+            phase,
+        );
+    }
+}
+
+fn spawn_baby_flame_impact_burst(
+    commands: &mut Commands,
+    visuals: Option<&VfxVisuals>,
+    origin_xy: [f32; 2],
+    source_unit: UnitId,
+) {
+    // Bright central flash.
+    let core = baby_flame_impact_descriptor();
+    spawn_vfx_particle(
+        commands, &core, visuals, origin_xy, origin_xy, source_unit, false, 1.0, 0.0,
+    );
+    // Dissolve fan: shards radiate outward from the impact point and fade.
+    let shard = baby_flame_impact_shard_descriptor();
+    for i in 0..BABY_FLAME_IMPACT_SHARD_COUNT {
+        let phase = (i as f32 / BABY_FLAME_IMPACT_SHARD_COUNT as f32) * std::f32::consts::TAU;
+        spawn_vfx_particle(
+            commands, &shard, visuals, origin_xy, origin_xy, source_unit, false, 1.0, phase,
+        );
+    }
+}
+
 fn vfx_particle_color(descriptor: &VfxSpawnDescriptor) -> Color {
     match vfx_particle_kind(descriptor) {
         VfxParticleKind::BabyFlameCharge => Color::srgba(1.0, 0.75, 0.25, 0.9),
+        VfxParticleKind::BabyFlameEmber => Color::srgba(1.0, 0.85, 0.4, 0.85),
         VfxParticleKind::BabyFlameProjectile => Color::srgba(1.0, 0.45, 0.15, 0.95),
         VfxParticleKind::BabyFlameImpact => Color::srgba(1.0, 0.82, 0.45, 0.95),
+        VfxParticleKind::BabyFlameImpactShard => Color::srgba(1.0, 0.55, 0.2, 0.9),
         VfxParticleKind::Generic => {
             let name = descriptor.particle.0.as_str();
             if name.contains("burner") {
@@ -827,9 +1002,13 @@ fn vfx_particle_image(
 ) -> Option<Handle<Image>> {
     let visuals = visuals?;
     match kind {
-        VfxParticleKind::BabyFlameCharge => Some(visuals.baby_flame_charge.clone()),
+        VfxParticleKind::BabyFlameCharge | VfxParticleKind::BabyFlameEmber => {
+            Some(visuals.baby_flame_charge.clone())
+        }
         VfxParticleKind::BabyFlameProjectile => Some(visuals.baby_flame_projectile.clone()),
-        VfxParticleKind::BabyFlameImpact => Some(visuals.baby_flame_impact.clone()),
+        VfxParticleKind::BabyFlameImpact | VfxParticleKind::BabyFlameImpactShard => {
+            Some(visuals.baby_flame_impact.clone())
+        }
         VfxParticleKind::Generic => None,
     }
 }
@@ -924,6 +1103,7 @@ fn spawn_detonate_particles(
             trigger.source,
             false,
             1.0,
+            0.0,
         );
         let resolved_xy = resolve_vfx_spawn_xy(&descriptor, caster_xy, target_xy);
         trace!(
@@ -941,6 +1121,7 @@ fn spawn_detonate_particles(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn spawn_vfx_particle(
     commands: &mut Commands,
     descriptor: &VfxSpawnDescriptor,
@@ -950,6 +1131,7 @@ fn spawn_vfx_particle(
     source_unit: UnitId,
     source_flip_x: bool,
     source_scale: f32,
+    phase: f32,
 ) -> Entity {
     let kind = vfx_particle_kind(descriptor);
     let resolved_xy = match vfx_particle_anchor(kind) {
@@ -980,6 +1162,7 @@ fn spawn_vfx_particle(
                 motion: descriptor.motion.clone(),
                 kind,
                 anchor: vfx_particle_anchor(kind),
+                phase,
             },
             VfxParticleTarget {
                 world_xy: target_xy,
@@ -1023,24 +1206,43 @@ fn advance_vfx_particles(
                         mouth_anchor_xy(source_xy, source_sprite.flip_x, source_transform.scale.x);
                     transform.translation.x = anchored_xy[0];
                     transform.translation.y = anchored_xy[1];
+                    if particle.kind == VfxParticleKind::BabyFlameEmber {
+                        let off = baby_flame_ember_offset(
+                            particle.age_ticks,
+                            BABY_FLAME_EMBER_TTL,
+                            particle.phase,
+                        );
+                        transform.translation.x += off[0];
+                        transform.translation.y += off[1];
+                    }
                 }
-                if particle.kind == VfxParticleKind::BabyFlameCharge {
-                    let growth = (particle.age_ticks as f32).min(6.0) / 6.0;
-                    let pulse_phase = (particle.age_ticks % 4) as f32;
-                    let pulse = match pulse_phase as u32 {
-                        0 => 0.0,
-                        1 => 0.03,
-                        2 => 0.06,
-                        _ => 0.03,
-                    };
-                    let scale = 0.42 + (growth * 0.48) + pulse;
-                    transform.scale = Vec3::splat(scale);
+                match particle.kind {
+                    VfxParticleKind::BabyFlameCharge => {
+                        let growth = (particle.age_ticks as f32).min(6.0) / 6.0;
+                        let pulse_phase = (particle.age_ticks % 4) as f32;
+                        let pulse = match pulse_phase as u32 {
+                            0 => 0.0,
+                            1 => 0.03,
+                            2 => 0.06,
+                            _ => 0.03,
+                        };
+                        let scale = 0.42 + (growth * 0.48) + pulse;
+                        transform.scale = Vec3::splat(scale);
 
-                    let alpha = 0.35 + (growth * 0.45) + (pulse * 0.6);
-                    sprite.color.set_alpha(alpha.min(0.88));
-                } else {
-                    transform.scale = Vec3::ONE;
-                    sprite.color.set_alpha(1.0);
+                        let alpha = 0.35 + (growth * 0.45) + (pulse * 0.6);
+                        sprite.color.set_alpha(alpha.min(0.88));
+                    }
+                    VfxParticleKind::BabyFlameEmber => {
+                        transform.scale = Vec3::ONE;
+                        sprite.color.set_alpha(baby_flame_ember_alpha(
+                            particle.age_ticks,
+                            BABY_FLAME_EMBER_TTL,
+                        ));
+                    }
+                    _ => {
+                        transform.scale = Vec3::ONE;
+                        sprite.color.set_alpha(1.0);
+                    }
                 }
             }
 
@@ -1051,7 +1253,9 @@ fn advance_vfx_particles(
                     let dy = target.world_xy[1] - transform.translation.y;
                     let factor = match &particle.motion {
                         VfxMotion::FollowTarget => 0.45,
-                        VfxMotion::ArcToTarget => 0.3,
+                        // Faster lerp toward the target = the flame visibly rips
+                        // across the gap instead of drifting.
+                        VfxMotion::ArcToTarget => 0.55,
                         VfxMotion::Static => 0.0,
                     };
                     transform.translation.x += dx * factor;
@@ -1059,28 +1263,29 @@ fn advance_vfx_particles(
                 }
             }
 
+            if particle.kind == VfxParticleKind::BabyFlameImpactShard {
+                let off = baby_flame_shard_offset(
+                    particle.age_ticks,
+                    BABY_FLAME_IMPACT_SHARD_TTL,
+                    particle.phase,
+                );
+                transform.translation.x = target.world_xy[0] + off[0];
+                transform.translation.y = target.world_xy[1] + off[1];
+                sprite.color.set_alpha(baby_flame_shard_alpha(
+                    particle.age_ticks,
+                    BABY_FLAME_IMPACT_SHARD_TTL,
+                ));
+            }
+
             particle.age_ticks += 1;
             particle.ttl_ticks = decrement_vfx_ttl(particle.ttl_ticks);
             if particle.ttl_ticks == 0 {
                 if particle.kind == VfxParticleKind::BabyFlameProjectile {
-                    let descriptor = baby_flame_impact_descriptor();
-                    let entity = spawn_vfx_particle(
+                    spawn_baby_flame_impact_burst(
                         &mut commands,
-                        &descriptor,
                         vfx_visuals.as_deref(),
                         [transform.translation.x, transform.translation.y],
-                        target.world_xy,
                         source.unit_id,
-                        false,
-                        1.0,
-                    );
-                    trace!(
-                        target: "windowed.agumon_playback",
-                        entity = ?entity,
-                        particle = %descriptor.particle.0,
-                        source_unit = ?source.unit_id,
-                        target_xy = ?target.world_xy,
-                        "spawned Baby Flame impact burst"
                     );
                 }
                 trace!(
@@ -1427,8 +1632,90 @@ mod tests {
             vfx_particle_anchor(vfx_particle_kind(&charge)),
             Some(VfxAnchor::Mouth)
         );
-        assert_eq!(vfx_particle_ttl(vfx_particle_kind(&projectile)), 6);
+        assert_eq!(vfx_particle_ttl(vfx_particle_kind(&projectile)), 4);
         assert_eq!(vfx_particle_ttl(vfx_particle_kind(&impact)), 2);
+    }
+
+    #[test]
+    fn baby_flame_polish_kinds_map_anchor_and_reuse_existing_sprites() {
+        let ember = VfxSpawnDescriptor {
+            particle: bevyrogue::animation::ParticleId("baby_flame_ember".into()),
+            locus: VfxLocus::CasterCenter,
+            motion: VfxMotion::Static,
+        };
+        let shard = baby_flame_impact_shard_descriptor();
+
+        assert_eq!(vfx_particle_kind(&ember), VfxParticleKind::BabyFlameEmber);
+        assert_eq!(
+            vfx_particle_kind(&shard),
+            VfxParticleKind::BabyFlameImpactShard
+        );
+        // Embers ride the mouth like the charge core; shards burst free.
+        assert_eq!(
+            vfx_particle_anchor(VfxParticleKind::BabyFlameEmber),
+            Some(VfxAnchor::Mouth)
+        );
+        assert_eq!(
+            vfx_particle_anchor(VfxParticleKind::BabyFlameImpactShard),
+            None
+        );
+        assert_eq!(
+            vfx_particle_ttl(VfxParticleKind::BabyFlameEmber),
+            BABY_FLAME_EMBER_TTL
+        );
+        assert_eq!(
+            vfx_particle_ttl(VfxParticleKind::BabyFlameImpactShard),
+            BABY_FLAME_IMPACT_SHARD_TTL
+        );
+    }
+
+    #[test]
+    fn ember_spirals_inward_and_fades() {
+        // At birth the ember sits on the outer rim; by end of life it has
+        // collapsed onto the mouth and gone transparent.
+        let start = baby_flame_ember_offset(0, BABY_FLAME_EMBER_TTL, 0.0);
+        let start_radius = (start[0] * start[0] + start[1] * start[1]).sqrt();
+        assert!((start_radius - BABY_FLAME_EMBER_RADIUS_PX).abs() < 0.001);
+
+        let end = baby_flame_ember_offset(
+            BABY_FLAME_EMBER_TTL,
+            BABY_FLAME_EMBER_TTL,
+            0.0,
+        );
+        let end_radius = (end[0] * end[0] + end[1] * end[1]).sqrt();
+        assert!(end_radius < 0.001, "ember should reach the mouth: {end_radius}");
+
+        assert!(baby_flame_ember_alpha(0, BABY_FLAME_EMBER_TTL) > 0.8);
+        assert!(baby_flame_ember_alpha(BABY_FLAME_EMBER_TTL, BABY_FLAME_EMBER_TTL) < 0.001);
+    }
+
+    #[test]
+    fn shard_fans_outward_along_phase_and_fades() {
+        // A shard travels along its phase direction, reaching full spread by the
+        // end of its life, while its alpha decays to zero.
+        let mid = baby_flame_shard_offset(0, BABY_FLAME_IMPACT_SHARD_TTL, 0.0);
+        assert!(mid[0].abs() < 0.001 && mid[1].abs() < 0.001, "starts at origin");
+
+        let end = baby_flame_shard_offset(
+            BABY_FLAME_IMPACT_SHARD_TTL,
+            BABY_FLAME_IMPACT_SHARD_TTL,
+            0.0,
+        );
+        assert!((end[0] - BABY_FLAME_IMPACT_SHARD_SPREAD_PX).abs() < 0.001);
+        assert!(end[1].abs() < 0.001, "phase 0 fans along +x");
+
+        // A quarter-turn phase fans along +y instead.
+        let quarter = baby_flame_shard_offset(
+            BABY_FLAME_IMPACT_SHARD_TTL,
+            BABY_FLAME_IMPACT_SHARD_TTL,
+            std::f32::consts::FRAC_PI_2,
+        );
+        assert!(quarter[0].abs() < 0.01 && quarter[1] > BABY_FLAME_IMPACT_SHARD_SPREAD_PX - 0.01);
+
+        assert!(baby_flame_shard_alpha(0, BABY_FLAME_IMPACT_SHARD_TTL) > 0.8);
+        assert!(
+            baby_flame_shard_alpha(BABY_FLAME_IMPACT_SHARD_TTL, BABY_FLAME_IMPACT_SHARD_TTL) < 0.001
+        );
     }
 
     #[test]
