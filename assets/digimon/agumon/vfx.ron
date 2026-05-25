@@ -1,0 +1,61 @@
+// Agumon owned VFX asset (M004/S01, D033/D034).
+//
+// Typed, editor-ready `VfxAsset`: a map of namespaced effect id -> EffectDef.
+// This slice ports only the Baby Flame impact fan-out (+ its central flash) to
+// prove the content-as-data path end-to-end; the windowed layer reads these
+// numbers instead of the hardcoded src/windowed/render.rs constants.
+//
+// Provenance of the numbers (render.rs):
+//   - count 8        = BABY_FLAME_IMPACT_SHARD_COUNT
+//   - ttl_ticks 5    = BABY_FLAME_IMPACT_SHARD_TTL
+//   - spread_px 64.0 = BABY_FLAME_IMPACT_SHARD_SPREAD_PX
+//   - scale curve    = baby_flame_shard_offset ease-out 1-(1-t)^2, sampled
+//                      (0.0->0.0, 0.5->0.75, 1.0->1.0) as the outward fraction
+//   - color curve    = shard color srgba(1.0, 0.55, 0.2, _) with the
+//                      baby_flame_shard_alpha linear fade 0.9 -> 0.0
+//   - flash color    = central impact srgba(1.0, 0.82, 0.45, _), ttl 2
+//
+// Per R012 this presentation asset carries numeric appearance values, but it is
+// a SEPARATE asset from the SpawnParticle command — no numeric gameplay payload
+// is added to the command surface.
+(
+    effects: {
+        // Dissolve fan: shards radiate outward from the impact point and fade.
+        "baby_flame.impact": (
+            placement: (verb: "impact.fan_out"),
+            appearance: (
+                count: 8,
+                spread_px: 64.0,
+                ttl_ticks: 5,
+                // Ease-out outward fraction: bursts fast, then settles.
+                scale: [
+                    (t: 0.0, value: 0.0),
+                    (t: 0.5, value: 0.75),
+                    (t: 1.0, value: 1.0),
+                ],
+                // Constant ember hue, alpha linear-fades to transparent.
+                color: [
+                    (t: 0.0, rgba: (1.0, 0.55, 0.2, 0.9)),
+                    (t: 1.0, rgba: (1.0, 0.55, 0.2, 0.0)),
+                ],
+            ),
+        ),
+        // Bright central flash at the impact origin.
+        "baby_flame.impact_flash": (
+            placement: (verb: "impact.flash"),
+            appearance: (
+                count: 1,
+                spread_px: 0.0,
+                ttl_ticks: 2,
+                scale: [
+                    (t: 0.0, value: 1.0),
+                    (t: 1.0, value: 1.0),
+                ],
+                color: [
+                    (t: 0.0, rgba: (1.0, 0.82, 0.45, 0.95)),
+                    (t: 1.0, rgba: (1.0, 0.82, 0.45, 0.0)),
+                ],
+            ),
+        ),
+    },
+)

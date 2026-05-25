@@ -28,6 +28,8 @@ mod clip_atlas_parity;
 mod skill_graph_mapping_extensibility;
 #[path = "animation/vfx_asset_eval.rs"]
 mod vfx_asset_eval;
+#[path = "animation/vfx_asset_load.rs"]
+mod vfx_asset_load;
 #[path = "animation/vfx_asset_schema.rs"]
 mod vfx_asset_schema;
 #[path = "animation/vfx_handle_seam.rs"]
