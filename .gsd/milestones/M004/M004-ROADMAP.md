@@ -24,10 +24,10 @@
 - [x] **S04: S04** `risk:medium` `depends:[]`
   > After this: After this: M004 states exactly which requirements it validates, the boundary map is populated, S03 declares its consumed S01 and S02 contracts, and validation no longer flags documentation or scope ambiguity.
 
-- [ ] **S05: S05** `risk:high` `depends:[]`
+- [x] **S05: S05** `risk:high` `depends:[]`
   > After this: After this: Sharp Claws VFX is either authored and tested in assets/digimon/agumon/vfx.ron or explicitly rescoped, HDR bloom additive rendering criteria are implemented or rescoped, and automated evidence covers the chosen outcome.
 
-- [ ] **S06: Windowed visual signoff remediation** `risk:medium` `depends:[S05]`
+- [ ] **S06: S06** `risk:medium` `depends:[]`
   > After this: After this: human cargo winx UAT for Baby Flame, Baby Burner, and Sharp Claws is captured or formally waived, with no remaining unchecked visual signoff requirements for M004.
 
 ## Boundary Map

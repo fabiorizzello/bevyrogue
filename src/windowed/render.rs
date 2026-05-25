@@ -13,7 +13,7 @@ use bevyrogue::animation::{
     AnimationGraphLookupDiagnostics, AtlasGeometry, Clip, EffectId, FrameCueCommand,
     NodeId, PlacementAnchor, PlacementCtx, PlacementParams, ResolvedAnimGraph, ResolvedAnimGraphSource,
     SkillGraphRegistry, StanceGraphRegistry, VfxAsset, VfxMotion, VfxSpawnDescriptor, eval_color,
-    eval_scale, resolve_effect,
+    eval_rotation, eval_scale, resolve_effect,
 };
 use bevyrogue::combat::runtime::{
     CueBarrierStatus, CueReleaseResult, ExtRegistries, SuspendedTimelineState,
@@ -147,8 +147,17 @@ pub(super) struct AgumonAtlas {
 
 #[derive(Resource, Debug, Clone)]
 struct VfxVisuals {
-    baby_flame_charge: Handle<Image>,
-    baby_flame_projectile: Handle<Image>,
+    // Composable "atom" set (S06): single-element glow primitives the particle
+    // engine layers + rotates into the full effect. `baby_flame_impact` and
+    // `sharp_claws_slash` are retained for the baby_burner.* + sharp_claws paths.
+    flame_core: Handle<Image>,
+    flame_spark: Handle<Image>,
+    flame_streak: Handle<Image>,
+    flame_orb: Handle<Image>,
+    flame_tall: Handle<Image>,
+    flame_comet: Handle<Image>,
+    flame_burst: Handle<Image>,
+    flame_ring: Handle<Image>,
     baby_flame_impact: Handle<Image>,
     sharp_claws_slash: Handle<Image>,
 }
@@ -309,8 +318,14 @@ fn setup_camera(mut commands: Commands) {
 
 fn load_vfx_visuals(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(VfxVisuals {
-        baby_flame_charge: asset_server.load("vfx/baby_flame_charge.png"),
-        baby_flame_projectile: asset_server.load("vfx/baby_flame_projectile.png"),
+        flame_core: asset_server.load("vfx/flame_core.png"),
+        flame_spark: asset_server.load("vfx/flame_spark.png"),
+        flame_streak: asset_server.load("vfx/flame_streak.png"),
+        flame_orb: asset_server.load("vfx/flame_orb.png"),
+        flame_tall: asset_server.load("vfx/flame_tall.png"),
+        flame_comet: asset_server.load("vfx/flame_comet.png"),
+        flame_burst: asset_server.load("vfx/flame_burst.png"),
+        flame_ring: asset_server.load("vfx/flame_ring.png"),
         baby_flame_impact: asset_server.load("vfx/baby_flame_impact.png"),
         sharp_claws_slash: asset_server.load("vfx/sharp_claws_slash.png"),
     });
@@ -888,8 +903,14 @@ fn on_enter_effect_ids(particle_name: &str) -> &'static [&'static str] {
 fn vfx_texture_handle(key: &str, visuals: Option<&VfxVisuals>) -> Option<Handle<Image>> {
     let visuals = visuals?;
     match key {
-        "baby_flame_charge" => Some(visuals.baby_flame_charge.clone()),
-        "baby_flame_projectile" => Some(visuals.baby_flame_projectile.clone()),
+        "flame_core" => Some(visuals.flame_core.clone()),
+        "flame_spark" => Some(visuals.flame_spark.clone()),
+        "flame_streak" => Some(visuals.flame_streak.clone()),
+        "flame_orb" => Some(visuals.flame_orb.clone()),
+        "flame_tall" => Some(visuals.flame_tall.clone()),
+        "flame_comet" => Some(visuals.flame_comet.clone()),
+        "flame_burst" => Some(visuals.flame_burst.clone()),
+        "flame_ring" => Some(visuals.flame_ring.clone()),
         "baby_flame_impact" => Some(visuals.baby_flame_impact.clone()),
         "sharp_claws_slash" => Some(visuals.sharp_claws_slash.clone()),
         _ => None,
@@ -956,9 +977,22 @@ fn spawn_effect_by_id(
             },
             None => Sprite::from_color(color, size),
         };
+        // Seed the spawn-frame rotation (age 0) so rotated effects don't pop from
+        // axis-aligned on their first tick; per-tick rotation is then driven by
+        // `advance_vfx_particles`. Static rotation yields 0.0 (no change).
+        let spawn_ctx = PlacementCtx {
+            age_ticks: 0,
+            ttl_ticks: effect.appearance.ttl_ticks,
+            progress: 0.0,
+            phase,
+            caster_xy,
+            target_xy,
+        };
+        let spawn_angle = eval_rotation(&effect.appearance.rotation, &spawn_ctx);
         commands.spawn((
             sprite,
-            Transform::from_xyz(base[0], base[1], VFX_PARTICLE_Z),
+            Transform::from_xyz(base[0], base[1], VFX_PARTICLE_Z)
+                .with_rotation(Quat::from_rotation_z(spawn_angle)),
             VfxParticle {
                 ttl_ticks: effect.appearance.ttl_ticks,
                 age_ticks: 0,
@@ -1215,6 +1249,11 @@ fn advance_vfx_particles(
             } else {
                 Vec3::splat(eval_scale(&effect.appearance.scale, progress))
             };
+            // Per-particle quad rotation (S06): a single asymmetric sprite (flame
+            // tongue) fans into fire via decorrelated `phase`-driven angles. Static
+            // rotation evaluates to 0.0, preserving the prior axis-aligned billboard.
+            transform.rotation =
+                Quat::from_rotation_z(eval_rotation(&effect.appearance.rotation, &ctx));
             let rgba = eval_color(&effect.appearance.color, progress);
             sprite.color = Color::linear_rgba(rgba[0], rgba[1], rgba[2], rgba[3]);
 

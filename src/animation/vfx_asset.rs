@@ -102,6 +102,51 @@ pub struct Appearance {
     /// Windowed-resolved image key (replaces the per-kind texture match the
     /// dispatcher removes in T03). Headless code never loads it.
     pub texture: String,
+    /// Per-particle quad rotation policy (M004/S06). Defaulted so existing assets
+    /// that omit it keep loading under `deny_unknown_fields`; [`RotationParams::Static`]
+    /// reproduces the prior axis-aligned billboard behavior exactly.
+    #[serde(default)]
+    pub rotation: RotationParams,
+}
+
+/// Per-particle quad rotation policy (radians, CCW). Editor-ready closed
+/// vocabulary (D034/D035) mirroring [`PlacementParams`]: each variant is a
+/// closed-form, deterministic function of the per-tick [`PlacementCtx`],
+/// evaluated by [`eval_rotation`].
+///
+/// Windowed billboards are otherwise axis-aligned, so this is the lever that
+/// lets a single asymmetric sprite (e.g. one flame tongue) fan into a fire by
+/// spawning many at decorrelated angles. Defaults to [`Static`](Self::Static) so
+/// assets predating this field load unchanged.
+#[derive(Debug, Clone, Copy, PartialEq, Default, Serialize, Deserialize, Reflect)]
+#[serde(deny_unknown_fields)]
+pub enum RotationParams {
+    /// Axis-aligned: no rotation (default, == prior billboard behavior).
+    #[default]
+    Static,
+    /// Orient by the per-particle `phase` (radial layouts: charge/impact
+    /// tongues), plus a constant `offset_rad` and a per-tick spin `omega`.
+    Radial {
+        /// Constant angle added to `phase`, radians.
+        offset_rad: f32,
+        /// Spin rate, radians per tick.
+        omega: f32,
+    },
+    /// Orient toward the target along the caster->target heading (e.g. a launched
+    /// streak), plus a constant `offset_rad` and a per-tick spin `omega`.
+    TowardTarget {
+        /// Constant angle added to the caster->target heading, radians.
+        offset_rad: f32,
+        /// Spin rate, radians per tick.
+        omega: f32,
+    },
+    /// Fixed orientation `angle_rad` plus a per-tick spin `omega`.
+    Fixed {
+        /// Base orientation, radians.
+        angle_rad: f32,
+        /// Spin rate, radians per tick.
+        omega: f32,
+    },
 }
 
 /// Scale-over-lifetime curve as an ordered list of keyframes.
@@ -201,6 +246,18 @@ pub enum PlacementParams {
     },
     /// Closed-form lerp from caster toward target over the particle's life.
     ArcLaunch {},
+    /// Deterministic sum-of-sines wander (no RNG, R004) for follow-through
+    /// embers/smoke: organic drift without a noise field. `amp_px` is the wander
+    /// amplitude, `freq` the base octave rate (radians/tick), `rise_px` a net
+    /// vertical drift applied over life (positive = upward; negative falls).
+    Turbulence {
+        /// Wander amplitude in world px.
+        amp_px: f32,
+        /// Base wander frequency, radians per tick.
+        freq: f32,
+        /// Net vertical drift over full life, world px (progress-scaled).
+        rise_px: f32,
+    },
     /// Fixed at the anchor; the verb contributes no offset.
     Static,
 }
@@ -395,6 +452,24 @@ pub fn eval_color(curve: &ColorCurve, progress: f32) -> [f32; 4] {
     )
 }
 
+/// Evaluate a [`RotationParams`] to a quad rotation angle (radians, CCW) for the
+/// current tick. Pure and deterministic (R004): identical [`PlacementCtx`] yields
+/// identical output; no RNG, no clock, no Bevy world/render types. `TowardTarget`
+/// reads the closed-form caster->target heading from the context.
+pub fn eval_rotation(rotation: &RotationParams, ctx: &PlacementCtx) -> f32 {
+    let spin = ctx.age_ticks as f32;
+    match *rotation {
+        RotationParams::Static => 0.0,
+        RotationParams::Radial { offset_rad, omega } => ctx.phase + offset_rad + spin * omega,
+        RotationParams::TowardTarget { offset_rad, omega } => {
+            let dx = ctx.target_xy[0] - ctx.caster_xy[0];
+            let dy = ctx.target_xy[1] - ctx.caster_xy[1];
+            dy.atan2(dx) + offset_rad + spin * omega
+        }
+        RotationParams::Fixed { angle_rad, omega } => angle_rad + spin * omega,
+    }
+}
+
 /// Shared piecewise-linear evaluator over an unsorted keyframe slice.
 ///
 /// Sorts keyframe *indices* by `t` (no keyframe mutation, so callers keep their
@@ -439,4 +514,60 @@ fn eval_curve<K, V: Copy>(
 
     // Unreachable: p is strictly between first and last t after the edge checks.
     v_of(&keys[last])
+}
+
+#[cfg(test)]
+mod rotation_tests {
+    use super::*;
+
+    fn ctx(age: u32, phase: f32, caster: [f32; 2], target: [f32; 2]) -> PlacementCtx {
+        PlacementCtx {
+            age_ticks: age,
+            ttl_ticks: 10,
+            progress: age as f32 / 10.0,
+            phase,
+            caster_xy: caster,
+            target_xy: target,
+        }
+    }
+
+    #[test]
+    fn static_rotation_is_always_zero() {
+        let c = ctx(5, 1.23, [0.0, 0.0], [100.0, 0.0]);
+        assert_eq!(eval_rotation(&RotationParams::Static, &c), 0.0);
+    }
+
+    #[test]
+    fn radial_orients_by_phase_then_spins_with_age() {
+        let rot = RotationParams::Radial { offset_rad: 0.5, omega: 0.1 };
+        // age 0: phase + offset only.
+        let a0 = eval_rotation(&rot, &ctx(0, 1.0, [0.0, 0.0], [0.0, 0.0]));
+        assert!((a0 - 1.5).abs() < 1e-6);
+        // age 3: + 3*omega.
+        let a3 = eval_rotation(&rot, &ctx(3, 1.0, [0.0, 0.0], [0.0, 0.0]));
+        assert!((a3 - (1.5 + 0.3)).abs() < 1e-6);
+    }
+
+    #[test]
+    fn toward_target_points_along_caster_to_target_heading() {
+        let rot = RotationParams::TowardTarget { offset_rad: 0.0, omega: 0.0 };
+        // Target straight right -> heading 0.
+        let right = eval_rotation(&rot, &ctx(0, 9.9, [10.0, 10.0], [110.0, 10.0]));
+        assert!(right.abs() < 1e-6, "heading right is 0 rad, got {right}");
+        // Target straight up -> heading +pi/2.
+        let up = eval_rotation(&rot, &ctx(0, 9.9, [10.0, 10.0], [10.0, 110.0]));
+        assert!((up - std::f32::consts::FRAC_PI_2).abs() < 1e-6, "heading up is pi/2, got {up}");
+    }
+
+    #[test]
+    fn eval_rotation_is_deterministic() {
+        let rot = RotationParams::Fixed { angle_rad: 0.2, omega: 0.05 };
+        let c = ctx(7, 2.0, [1.0, 2.0], [3.0, 4.0]);
+        assert_eq!(eval_rotation(&rot, &c), eval_rotation(&rot, &c));
+    }
+
+    #[test]
+    fn rotation_defaults_to_static() {
+        assert_eq!(RotationParams::default(), RotationParams::Static);
+    }
 }

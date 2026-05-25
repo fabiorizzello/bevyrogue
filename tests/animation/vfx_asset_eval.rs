@@ -162,6 +162,7 @@ fn resolve_effect_and_spawn_plan_read_appearance() {
             color: color_curve(),
             size_px: 14.0,
             texture: "baby_flame_impact".to_owned(),
+            rotation: Default::default(),
         },
         on_expire: None,
     };

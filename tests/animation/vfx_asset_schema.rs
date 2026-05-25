@@ -7,7 +7,8 @@
 //! `Appearance.size_px`/`texture` fields.
 
 use bevyrogue::animation::{
-    Appearance, ColorCurve, Placement, PlacementAnchor, PlacementParams, ScaleCurve, VfxAsset,
+    Appearance, ColorCurve, Placement, PlacementAnchor, PlacementParams, RotationParams,
+    ScaleCurve, VfxAsset,
 };
 
 const SAMPLE: &str = r#"(
@@ -118,6 +119,7 @@ fn appearance_is_reflectable_with_expected_fields() {
         color: ColorCurve(vec![]),
         size_px: 1.0,
         texture: "t".to_owned(),
+        rotation: RotationParams::Static,
     };
 
     let field_names: Vec<&str> = (0..appearance.field_len())
@@ -125,8 +127,58 @@ fn appearance_is_reflectable_with_expected_fields() {
         .collect();
     assert_eq!(
         field_names,
-        vec!["count", "spread_px", "ttl_ticks", "scale", "color", "size_px", "texture"],
-        "Reflect must expose Appearance's typed fields (incl. new size_px/texture) for the GUI editor"
+        vec!["count", "spread_px", "ttl_ticks", "scale", "color", "size_px", "texture", "rotation"],
+        "Reflect must expose Appearance's typed fields (incl. size_px/texture + the S06 rotation) for the GUI editor"
+    );
+}
+
+#[test]
+fn omitted_rotation_defaults_to_static() {
+    // SAMPLE authors no `rotation`; the serde default must fill Static so assets
+    // predating the field load unchanged under deny_unknown_fields.
+    let asset: VfxAsset = ron::from_str(SAMPLE).expect("sample parses");
+    let effect = asset.effects.values().next().expect("one effect");
+    assert_eq!(effect.appearance.rotation, RotationParams::Static);
+}
+
+#[test]
+fn rotation_and_turbulence_round_trip() {
+    // Exercises both S06 additions: the `rotation` appearance field and the
+    // `Turbulence` placement-params variant, end-to-end through RON.
+    let sample = r#"(
+        effects: {
+            "x.tongue": (
+                placement: (
+                    verb: "agumon/baby_flame/turbulence",
+                    params: Turbulence(amp_px: 6.0, freq: 0.4, rise_px: 18.0),
+                    anchor: TargetCenter,
+                ),
+                appearance: (
+                    count: 4,
+                    spread_px: 0.0,
+                    ttl_ticks: 9,
+                    size_px: 12.0,
+                    texture: "flame_tongue",
+                    scale: [(t: 0.0, value: 1.0)],
+                    color: [(t: 0.0, rgba: (2.0, 1.0, 0.3, 1.0))],
+                    rotation: Radial(offset_rad: 0.0, omega: 0.25),
+                ),
+            ),
+        },
+    )"#;
+    let parsed: VfxAsset = ron::from_str(sample).expect("rotation + turbulence sample parses");
+    let serialized = ron::to_string(&parsed).expect("serializes");
+    let reparsed: VfxAsset = ron::from_str(&serialized).expect("re-deserializes");
+    assert_eq!(parsed, reparsed, "rotation + turbulence must round-trip losslessly");
+
+    let effect = parsed.effects.values().next().expect("one effect");
+    assert_eq!(
+        effect.appearance.rotation,
+        RotationParams::Radial { offset_rad: 0.0, omega: 0.25 }
+    );
+    assert_eq!(
+        effect.placement.params,
+        PlacementParams::Turbulence { amp_px: 6.0, freq: 0.4, rise_px: 18.0 }
     );
 }
 

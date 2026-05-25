@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T04",
+  "unitId": "M004/S05/T04",
+  "timestamp": 1779733629002,
+  "passed": true,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "test -s .gsd/milestones/M004/slices/S05/M004-RENDERING-ACCEPTANCE.md\ncargo test --test animation vfx_asset_load -- --nocapture\ncargo test --test animation vfx_asset_eval -- --nocapture\ncargo test --test animation render_no_vfx_kind_guard -- --nocapture\ncargo check --features windowed\ncargo test --features windowed --test windowed_only vfx_asset_impact_render -- --nocapture\ncargo test --features windowed --test windowed_only vfx_rendering_acceptance -- --nocapture",
+      "exitCode": 0,
+      "durationMs": 1187,
+      "verdict": "pass"
+    }
+  ]
+}

@@ -58,6 +58,8 @@ pub fn register_agumon_ext(regs: &mut crate::combat::runtime::ExtRegistries) {
         .register("agumon/baby_flame/arc_launch", placement::arc_launch);
     regs.placements
         .register("agumon/baby_flame/static", placement::static_placement);
+    regs.placements
+        .register("agumon/baby_flame/turbulence", placement::turbulence);
 }
 
 pub fn register_validation_ext(regs: &mut crate::combat::runtime::ExtRegistries) {

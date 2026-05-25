@@ -38,14 +38,14 @@ cargo test --features windowed --test windowed_only vfx_rendering_acceptance -- 
   - Verify: cargo check --features windowed
 cargo test --test animation vfx_asset_load -- --nocapture
 
-- [ ] **T03: Harden Sharp Claws and no-hardcoding contracts** `est:1h`
+- [x] **T03: Harden Sharp Claws and no-hardcoding contracts** `est:1h`
   Expected executor skills: rust-development, rust-testing, tdd, verify-before-complete.
   - Files: `tests/animation/vfx_asset_load.rs`, `tests/animation/vfx_asset_eval.rs`, `tests/animation/render_no_vfx_kind_guard.rs`, `src/windowed/render.rs`
   - Verify: cargo test --test animation vfx_asset_load -- --nocapture
 cargo test --test animation vfx_asset_eval -- --nocapture
 cargo test --test animation render_no_vfx_kind_guard -- --nocapture
 
-- [ ] **T04: Record rendering acceptance outcome and run final evidence** `est:45m`
+- [x] **T04: Record rendering acceptance outcome and run final evidence** `est:45m`
   Expected executor skills: write-docs, rust-development, rust-testing, verify-before-complete.
   - Files: `.gsd/milestones/M004/slices/S05/M004-RENDERING-ACCEPTANCE.md`
   - Verify: test -s .gsd/milestones/M004/slices/S05/M004-RENDERING-ACCEPTANCE.md

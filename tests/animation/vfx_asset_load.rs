@@ -27,6 +27,7 @@ const KNOWN_VERBS: &[&str] = &[
     "agumon/baby_flame/converge_inward",
     "agumon/baby_flame/arc_launch",
     "agumon/baby_flame/fan_out",
+    "agumon/baby_flame/turbulence",
 ];
 
 fn agumon_vfx() -> VfxAsset {
@@ -63,7 +64,10 @@ fn agumon_vfx_contains_all_five_effects() {
 }
 
 #[test]
-fn agumon_spawn_plans_reproduce_hardcoded_constants() {
+fn agumon_spawn_plans_match_authored_atom_values() {
+    // S06: the five Baby Flame effects were re-authored onto the composable atom
+    // set (flame_orb/spark/comet/burst/streak) with rotation. These pin the new
+    // authored spawn plans, verbs, sizes, and texture keys.
     let asset = agumon_vfx();
 
     let charge = resolve_effect(&asset, "baby_flame.charge").expect("charge present");
@@ -72,35 +76,45 @@ fn agumon_spawn_plans_reproduce_hardcoded_constants() {
         ImpactSpawnPlan { count: 1, spread_px: 0.0, ttl_ticks: 24 }
     );
     assert_eq!(charge.placement.verb, "agumon/baby_flame/static");
-    assert_eq!(charge.appearance.size_px, 22.0);
-    assert_eq!(charge.appearance.texture, "baby_flame_charge");
+    assert_eq!(charge.appearance.size_px, 34.0);
+    assert_eq!(charge.appearance.texture, "flame_orb");
 
     let ember = resolve_effect(&asset, "baby_flame.ember").expect("ember present");
     assert_eq!(
         spawn_plan(ember),
-        ImpactSpawnPlan { count: 7, spread_px: 0.0, ttl_ticks: 24 },
-        "ember reproduces BABY_FLAME_EMBER_COUNT / TTL"
+        ImpactSpawnPlan { count: 9, spread_px: 0.0, ttl_ticks: 24 }
     );
     assert_eq!(ember.placement.verb, "agumon/baby_flame/converge_inward");
-    assert_eq!(ember.appearance.size_px, 11.0);
+    assert_eq!(ember.appearance.size_px, 12.0);
+    assert_eq!(ember.appearance.texture, "flame_spark");
 
     let projectile = resolve_effect(&asset, "baby_flame.projectile").expect("projectile present");
     assert_eq!(
         spawn_plan(projectile),
-        ImpactSpawnPlan { count: 1, spread_px: 0.0, ttl_ticks: 4 }
+        ImpactSpawnPlan { count: 1, spread_px: 0.0, ttl_ticks: 5 }
     );
     assert_eq!(projectile.placement.verb, "agumon/baby_flame/arc_launch");
-    assert_eq!(projectile.appearance.size_px, 16.0);
-    assert_eq!(projectile.appearance.texture, "baby_flame_projectile");
+    assert_eq!(projectile.appearance.size_px, 26.0);
+    assert_eq!(projectile.appearance.texture, "flame_comet");
 
+    // Impact is now the bright central burst (static, single particle).
     let impact = resolve_effect(&asset, "baby_flame.impact").expect("impact present");
     assert_eq!(
         spawn_plan(impact),
-        ImpactSpawnPlan { count: 8, spread_px: 64.0, ttl_ticks: 5 },
-        "impact fan-out reproduces render.rs BABY_FLAME_IMPACT_SHARD_* constants"
+        ImpactSpawnPlan { count: 1, spread_px: 0.0, ttl_ticks: 4 }
     );
-    assert_eq!(impact.placement.verb, "agumon/baby_flame/fan_out");
-    assert_eq!(impact.appearance.size_px, 14.0);
+    assert_eq!(impact.placement.verb, "agumon/baby_flame/static");
+    assert_eq!(impact.appearance.size_px, 56.0);
+    assert_eq!(impact.appearance.texture, "flame_burst");
+
+    // impact_flash is now the radiating streak fan-out follow-through.
+    let shards = resolve_effect(&asset, "baby_flame.impact_flash").expect("impact_flash present");
+    assert_eq!(
+        spawn_plan(shards),
+        ImpactSpawnPlan { count: 10, spread_px: 72.0, ttl_ticks: 7 }
+    );
+    assert_eq!(shards.placement.verb, "agumon/baby_flame/fan_out");
+    assert_eq!(shards.appearance.texture, "flame_streak");
 }
 
 #[test]
@@ -122,15 +136,15 @@ fn agumon_charge_curves_grow_and_brighten() {
     let asset = agumon_vfx();
     let charge = resolve_effect(&asset, "baby_flame.charge").expect("charge present");
 
-    // Growth maxes by 0.25 life (age 6 of 24), then holds (micro-pulse dropped).
-    assert_eq!(eval_scale(&charge.appearance.scale, 0.0), 0.42);
-    assert_eq!(eval_scale(&charge.appearance.scale, 0.25), 0.9);
-    assert_eq!(eval_scale(&charge.appearance.scale, 1.0), 0.9);
+    // Growth maxes by 0.25 life, then holds.
+    assert_eq!(eval_scale(&charge.appearance.scale, 0.0), 0.4);
+    assert_eq!(eval_scale(&charge.appearance.scale, 0.25), 1.0);
+    assert_eq!(eval_scale(&charge.appearance.scale, 1.0), 1.0);
 
-    // Overbright linear RGB (>1.0) so the windowed HDR+bloom camera blooms the
-    // charge orb (M004/S05 color policy); alpha still climbs 0.35 -> 0.88.
-    assert_eq!(eval_color(&charge.appearance.color, 0.0), [1.8, 1.2, 0.35, 0.35]);
-    assert_eq!(eval_color(&charge.appearance.color, 1.0), [2.8, 1.7, 0.45, 0.88]);
+    // Near-neutral warm HDR multiplier (>1.0 channels) so the flame_orb atom's own
+    // hue shows through and blooms; alpha climbs 0.4 -> 0.95.
+    assert_eq!(eval_color(&charge.appearance.color, 0.0), [1.5, 1.3, 1.0, 0.4]);
+    assert_eq!(eval_color(&charge.appearance.color, 1.0), [1.9, 1.6, 1.2, 0.95]);
 }
 
 #[test]
@@ -138,21 +152,28 @@ fn agumon_ember_color_fades_from_bright() {
     let asset = agumon_vfx();
     let ember = resolve_effect(&asset, "baby_flame.ember").expect("ember present");
     let color = &ember.appearance.color;
-    assert_eq!(eval_color(color, 0.0), [1.0, 0.85, 0.4, 0.9], "ember spawns bright");
-    assert_eq!(eval_color(color, 1.0), [1.0, 0.85, 0.4, 0.0], "ember fades fully");
-    assert_rgba_approx(eval_color(color, 0.5), [1.0, 0.85, 0.4, 0.45], "ember midpoint fade");
+    assert_eq!(eval_color(color, 0.0), [2.0, 1.6, 1.0, 0.95], "ember spawns bright");
+    assert_eq!(eval_color(color, 1.0), [2.0, 1.6, 1.0, 0.0], "ember fades fully");
+    assert_rgba_approx(eval_color(color, 0.5), [2.0, 1.6, 1.0, 0.475], "ember midpoint fade");
 }
 
 #[test]
-fn agumon_impact_scale_curve_evaluates_to_eased_spread() {
+fn agumon_impact_burst_scale_pops_then_settles() {
     let asset = agumon_vfx();
     let impact = resolve_effect(&asset, "baby_flame.impact").expect("impact present");
     let scale = &impact.appearance.scale;
 
-    // Ease-out outward fraction sampled at the authored keyframes.
-    assert_eq!(eval_scale(scale, 0.0), 0.0, "progress 0.0 -> no spread");
-    assert_eq!(eval_scale(scale, 0.5), 0.75, "progress 0.5 -> eased 0.75");
-    assert_eq!(eval_scale(scale, 1.0), 1.0, "progress 1.0 -> full spread");
+    // Central burst pops past full size at 0.4 life, then settles back.
+    assert_eq!(eval_scale(scale, 0.0), 0.5, "spawn: half size");
+    assert_eq!(eval_scale(scale, 0.4), 1.15, "0.4 life: overshoot pop");
+    assert_eq!(eval_scale(scale, 1.0), 1.0, "death: settled");
+
+    // The eased outward spread now lives on the impact_flash shard fan.
+    let shards = resolve_effect(&asset, "baby_flame.impact_flash").expect("shards present");
+    let fan = &shards.appearance.scale;
+    assert_eq!(eval_scale(fan, 0.0), 0.0, "shards start at center");
+    assert_eq!(eval_scale(fan, 0.5), 0.75, "shards eased outward");
+    assert_eq!(eval_scale(fan, 1.0), 1.0, "shards reach full spread");
 }
 
 #[test]
@@ -161,24 +182,24 @@ fn agumon_impact_color_curve_holds_hue_and_fades_alpha() {
     let impact = resolve_effect(&asset, "baby_flame.impact").expect("impact present");
     let color = &impact.appearance.color;
 
-    // Endpoints are exact authored keyframe values.
-    assert_eq!(eval_color(color, 0.0), [2.2, 1.0, 0.3, 0.9], "spawn: alpha 0.9");
-    assert_eq!(eval_color(color, 1.0), [2.2, 1.0, 0.3, 0.0], "death: alpha 0.0");
-    // Midpoint: hue constant, alpha linearly halved (interpolated -> approx).
-    assert_rgba_approx(eval_color(color, 0.5), [2.2, 1.0, 0.3, 0.45], "midpoint fade");
+    // Bright neutral-warm burst multiplier, alpha fades to transparent.
+    assert_eq!(eval_color(color, 0.0), [2.4, 2.0, 1.4, 0.98], "spawn: near-opaque");
+    assert_eq!(eval_color(color, 1.0), [2.4, 2.0, 1.4, 0.0], "death: alpha 0.0");
+    assert_rgba_approx(eval_color(color, 0.5), [2.4, 2.0, 1.4, 0.49], "midpoint fade");
 }
 
 #[test]
-fn agumon_flash_color_curve_fades_from_bright_core() {
+fn agumon_impact_flash_shards_fade_while_flying_out() {
     let asset = agumon_vfx();
-    let flash = resolve_effect(&asset, "baby_flame.impact_flash").expect("flash present");
-    let color = &flash.appearance.color;
+    let shards = resolve_effect(&asset, "baby_flame.impact_flash").expect("shards present");
+    let color = &shards.appearance.color;
 
-    assert_eq!(eval_color(color, 0.0), [3.6, 2.2, 0.8, 0.95], "flash spawns near-opaque");
-    assert_eq!(eval_color(color, 1.0), [3.6, 2.2, 0.8, 0.0], "flash fades out");
-    assert_rgba_approx(eval_color(color, 0.5), [3.6, 2.2, 0.8, 0.475], "flash midpoint");
-    // Flash holds a constant scale across its (short) life.
-    assert_eq!(eval_scale(&flash.appearance.scale, 0.5), 1.0);
+    assert_eq!(eval_color(color, 0.0), [2.0, 1.4, 0.9, 0.95], "shards spawn bright");
+    assert_eq!(eval_color(color, 1.0), [2.0, 1.4, 0.9, 0.0], "shards fade out");
+    assert_rgba_approx(eval_color(color, 0.5), [2.0, 1.4, 0.9, 0.475], "shards midpoint");
+    // The streak fan eases outward (scale curve drives fan_out distance), so the
+    // midpoint scale is the eased 0.75, not a held constant.
+    assert_eq!(eval_scale(&shards.appearance.scale, 0.5), 0.75);
 }
 
 #[test]
