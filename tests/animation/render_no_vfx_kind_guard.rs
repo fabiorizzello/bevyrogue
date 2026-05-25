@@ -30,3 +30,23 @@ fn render_rs_has_no_vfx_kind_dispatch() {
         );
     }
 }
+
+/// Positive contract: the data-driven spawn boundary that REPLACED VFX-kind
+/// dispatch must still be present. `on_enter_effect_ids` maps an authored
+/// SpawnParticle name to owned effect id(s); after that the particle is driven
+/// entirely by its resolved `EffectDef`. If this name->effect-id seam ever
+/// disappears, a future agent can localize that the data path regressed before
+/// the forbidden-identifier guard above would even have a chance to fire.
+#[test]
+fn render_rs_keeps_the_data_driven_effect_id_boundary() {
+    let code = strip_line_comments(SRC);
+    assert!(
+        code.contains("on_enter_effect_ids"),
+        "src/windowed/render.rs must keep the `on_enter_effect_ids` name->effect-id boundary that replaced VFX-kind dispatch"
+    );
+    // Sharp Claws must be wired through the owned effect id, not a hardcoded kind.
+    assert!(
+        code.contains("AGUMON_SHARP_CLAWS_EFFECT_ID") || code.contains("sharp_claws.slash"),
+        "Sharp Claws must route through the owned effect id, not a hardcoded VFX-kind path"
+    );
+}

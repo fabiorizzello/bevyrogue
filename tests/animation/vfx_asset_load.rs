@@ -13,7 +13,7 @@
 
 use bevyrogue::animation::{
     eval_color, eval_scale, resolve_effect, spawn_plan, validate_effects, ImpactSpawnPlan,
-    VfxAsset, VfxValidationError,
+    PlacementAnchor, VfxAsset, VfxValidationError,
 };
 
 /// Tight epsilon for the linearly-interpolated midpoint samples; f32 lerp is
@@ -246,6 +246,43 @@ fn baby_burner_flash_curves_match_authored_values() {
     );
     // Scale holds constant across life.
     assert_eq!(eval_scale(&flash.appearance.scale, 0.5), 1.0);
+}
+
+#[test]
+fn agumon_vfx_contains_sharp_claws_slash() {
+    let asset = agumon_vfx();
+    let slash = resolve_effect(&asset, "sharp_claws.slash")
+        .expect("authored asset must contain effect `sharp_claws.slash` (S05 data-driven path)");
+
+    // Reuses an already-registered placement verb — no new verb / register change.
+    assert_eq!(
+        slash.placement.verb, "agumon/baby_flame/static",
+        "Sharp Claws reuses the registered `static` verb (D037: no new placement verb)"
+    );
+    assert!(
+        KNOWN_VERBS.contains(&slash.placement.verb.as_str()),
+        "Sharp Claws verb `{}` must be one the windowed PlacementExt registry knows",
+        slash.placement.verb
+    );
+
+    // Bounded, short-lived single-particle slash (windowed has no per-particle rotation,
+    // so the claw orientation is baked into the texture).
+    let plan = spawn_plan(slash);
+    assert_eq!(
+        plan,
+        ImpactSpawnPlan { count: 1, spread_px: 0.0, ttl_ticks: 6 },
+        "Sharp Claws is a single bounded-TTL streak"
+    );
+    assert_eq!(plan.count, 1, "exactly one slash particle");
+    assert!(plan.ttl_ticks > 0 && plan.ttl_ticks <= 12, "TTL is bounded and short");
+    assert_eq!(slash.placement.anchor, PlacementAnchor::TargetCenter);
+    assert_eq!(slash.appearance.size_px, 34.0);
+    assert_eq!(
+        slash.appearance.texture, "sharp_claws_slash",
+        "texture key must match the windowed `vfx_texture_handle` / asset_server path"
+    );
+    // Terminal effect: a slash does not chain another effect on expire.
+    assert!(slash.on_expire.is_none(), "Sharp Claws slash is a terminal effect");
 }
 
 #[test]

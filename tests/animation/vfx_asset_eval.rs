@@ -105,6 +105,47 @@ fn eval_color_is_deterministic_across_repeated_calls() {
     }
 }
 
+/// Tight epsilon for linearly-interpolated midpoint samples.
+const EPS: f32 = 1e-6;
+
+#[test]
+fn sharp_claws_slash_curves_evaluate_deterministically_and_overbright() {
+    // Evaluate the *real* authored Sharp Claws curves through the pure evaluator,
+    // pinning the data path (S05): scale pops then holds, color holds an overbright
+    // (>1.0, for HDR bloom) hue while alpha fades fully out.
+    let asset: VfxAsset =
+        ron::from_str(include_str!("../../assets/digimon/agumon/vfx.ron")).expect("asset parses");
+    let slash = resolve_effect(&asset, "sharp_claws.slash").expect("sharp_claws.slash present");
+
+    // Scale: quick pop to full size by 0.3 life, then holds.
+    let scale = &slash.appearance.scale;
+    assert_eq!(eval_scale(scale, 0.0), 0.6, "spawns at 0.6 scale");
+    assert_eq!(eval_scale(scale, 0.3), 1.0, "pops to full size by 0.3 life");
+    assert_eq!(eval_scale(scale, 1.0), 1.0, "holds full size to death");
+
+    // Color: overbright pale yellow-white core, alpha fades 0.95 -> 0.0.
+    let color = &slash.appearance.color;
+    let spawn = eval_color(color, 0.0);
+    assert_eq!(spawn, [3.0, 3.0, 2.2, 0.95], "spawn: overbright core, near-opaque");
+    assert!(
+        spawn[0] > 1.0 && spawn[1] > 1.0 && spawn[2] > 1.0,
+        "RGB channels are overbright (>1.0) so the HDR+bloom camera blooms the slash"
+    );
+    assert_eq!(eval_color(color, 1.0), [3.0, 3.0, 2.2, 0.0], "death: fully transparent");
+
+    // Midpoint: hue held constant, alpha linearly halved.
+    let mid = eval_color(color, 0.5);
+    for (i, (m, e)) in mid.iter().zip([3.0, 3.0, 2.2, 0.475]).enumerate() {
+        assert!((m - e).abs() < EPS, "midpoint channel {i}: expected ~{e}, got {m}");
+    }
+
+    // Determinism (R004): repeated evaluation is bit-identical.
+    let baseline = eval_color(color, 0.42);
+    for _ in 0..1000 {
+        assert_eq!(eval_color(color, 0.42), baseline, "same input -> identical output");
+    }
+}
+
 #[test]
 fn resolve_effect_and_spawn_plan_read_appearance() {
     let effect = EffectDef {

@@ -1531,6 +1531,26 @@ mod tests {
     }
 
     #[test]
+    fn on_enter_sharp_claws_maps_only_to_the_slash_effect() {
+        // The `sharp_claws_slash` SpawnParticle maps to exactly the owned slash
+        // effect id — proving the data-driven bridge, not a VFX-kind branch.
+        assert_eq!(
+            on_enter_effect_ids("sharp_claws_slash"),
+            &[AGUMON_SHARP_CLAWS_EFFECT_ID]
+        );
+        assert_eq!(AGUMON_SHARP_CLAWS_EFFECT_ID, "sharp_claws.slash");
+
+        // Unrelated / near-miss names must NOT resolve to the Sharp Claws effect:
+        // the bridge is an exact name map, not a substring/string-kind match.
+        for name in ["sharp_claws", "slash", "baby_flame_charge", "sharp_claws_strike", ""] {
+            assert!(
+                !on_enter_effect_ids(name).contains(&AGUMON_SHARP_CLAWS_EFFECT_ID),
+                "`{name}` must not map to the Sharp Claws effect id"
+            );
+        }
+    }
+
+    #[test]
     fn anchor_base_resolves_each_anchor_against_the_right_origin() {
         let caster = [10.0, 20.0];
         let target = [80.0, -4.0];
