@@ -5,12 +5,14 @@ use bevy_common_assets::ron::RonAssetPlugin;
 
 use bevyrogue::animation::{
     AnimGraph, AnimGraphId, AnimGraphPlayer, AnimationClipHandles, AnimationClipLoadState,
-    AnimationGraphLookupDiagnostics, AtlasGeometry, Clip, Command, EffectDef, FrameCueCommand,
-    NodeId, ParticleId, ResolvedAnimGraph, ResolvedAnimGraphSource, SkillGraphRegistry,
-    StanceGraphRegistry, VfxAsset, VfxLocus, VfxMotion, VfxSpawnDescriptor, eval_color, eval_scale,
-    resolve_effect, resolve_locus, spawn_plan,
+    AnimationGraphLookupDiagnostics, AtlasGeometry, Clip, EffectId, FrameCueCommand,
+    NodeId, PlacementAnchor, PlacementCtx, PlacementParams, ResolvedAnimGraph, ResolvedAnimGraphSource,
+    SkillGraphRegistry, StanceGraphRegistry, VfxAsset, VfxMotion, VfxSpawnDescriptor, eval_color,
+    eval_scale, resolve_effect,
 };
-use bevyrogue::combat::runtime::{CueBarrierStatus, CueReleaseResult, SuspendedTimelineState};
+use bevyrogue::combat::runtime::{
+    CueBarrierStatus, CueReleaseResult, ExtRegistries, SuspendedTimelineState,
+};
 use bevyrogue::combat::team::Team;
 use bevyrogue::combat::turn_system::{continue_suspended_timeline_system, resolve_action_system};
 use bevyrogue::combat::types::UnitId;
@@ -37,32 +39,19 @@ pub(super) struct AgumonSprite {
 struct VfxParticle {
     ttl_ticks: u32,
     age_ticks: u32,
+    /// Retained per the T03 contract; position is now driven by the resolved
+    /// placement verb, so every data-driven spawn carries `Static` here.
     motion: VfxMotion,
-    kind: VfxParticleKind,
-    anchor: Option<VfxAnchor>,
-    /// Per-particle seed angle (radians). Charge embers use it as the starting
-    /// orbit angle; impact shards use it as the fan-out direction. 0.0 for the
-    /// single-quad kinds, which derive everything from `age_ticks`.
+    /// Owned effect id (resolved at spawn). The per-tick dispatcher resolves it
+    /// against the loaded `VfxAsset` to drive placement + appearance.
+    effect_id: EffectId,
+    /// World-space anchor the resolved placement offset is applied relative to,
+    /// copied from the resolved effect's `placement.anchor` at spawn.
+    anchor: PlacementAnchor,
+    /// Per-particle seed angle (radians). Swirls use it as the starting orbit
+    /// angle; fan-out bursts use it as the radial direction. 0.0 for single-quad
+    /// effects, which derive everything from `age_ticks`.
     phase: f32,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum VfxParticleKind {
-    Generic,
-    BabyFlameCharge,
-    /// Small orbiter spiralling inward toward the mouth during the charge,
-    /// reading as a vortex feeding the core flame. Reuses the charge sprite.
-    BabyFlameEmber,
-    BabyFlameProjectile,
-    BabyFlameImpact,
-    /// Dissolving fragment that fans outward from the impact point and fades.
-    /// Reuses the impact sprite.
-    BabyFlameImpactShard,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum VfxAnchor {
-    Mouth,
 }
 
 #[derive(Component, Debug, Clone, Copy, PartialEq)]
@@ -171,31 +160,13 @@ const MAX_CATCHUP_TICKS: u32 = 4;
 /// roster (8 actors) cannot fit. 0.4 → ~205px per sprite. Provisional layout
 /// value pending multi-slot positioning.
 const SPRITE_DISPLAY_SCALE: f32 = 0.4;
-const VFX_PARTICLE_TTL_TICKS: u32 = 6;
-const VFX_PARTICLE_SIZE: f32 = 18.0;
 const VFX_PARTICLE_Z: f32 = 1.0;
 const VFX_MOUTH_OFFSET_X_PX: f32 = 92.0;
 const VFX_MOUTH_OFFSET_Y_PX: f32 = 24.0;
-
-// --- Baby Flame three-phase VFX polish (tunable; verify visually via `cargo winx`) ---
-/// Embers spawned in a ring around the mouth at charge start, spiralling inward.
-const BABY_FLAME_EMBER_COUNT: u32 = 7;
-/// Embers live the full charge window alongside the core flame quad.
-const BABY_FLAME_EMBER_TTL: u32 = 24;
-/// Starting orbit radius (world px) of the ember ring before it spirals in.
-const BABY_FLAME_EMBER_RADIUS_PX: f32 = 58.0;
-/// Angular velocity of the swirl, radians per animation tick.
-const BABY_FLAME_EMBER_OMEGA: f32 = 0.9;
-/// On-screen size of a single ember quad.
-const BABY_FLAME_EMBER_SIZE: f32 = 11.0;
-/// Shards spawned at the impact point, fanning outward and fading.
-const BABY_FLAME_IMPACT_SHARD_COUNT: u32 = 8;
-/// How long the dissolve fan lingers (animation ticks).
-const BABY_FLAME_IMPACT_SHARD_TTL: u32 = 5;
-/// Maximum outward travel (world px) a shard reaches at end of life.
-const BABY_FLAME_IMPACT_SHARD_SPREAD_PX: f32 = 64.0;
-/// On-screen size of a single dissolve shard.
-const BABY_FLAME_IMPACT_SHARD_SIZE: f32 = 14.0;
+// All per-effect appearance values (count, ttl, size, spread, scale/color curves,
+// texture) now live in `assets/digimon/agumon/vfx.ron` and are read through the
+// `VfxAsset` schema; the hardcoded Baby Flame polish constants the per-kind
+// dispatcher used were deleted in T03.
 
 /// Fixed-rate animation clock for the windowed presentation layer.
 ///
@@ -334,11 +305,22 @@ fn load_vfx_visuals(mut commands: Commands, asset_server: Res<AssetServer>) {
 
 /// Path (relative to `assets/`) of Agumon's owned VFX asset.
 const AGUMON_VFX_PATH: &str = "digimon/agumon/vfx.ron";
-/// Namespaced effect id of the Baby Flame impact fan-out within the asset.
+/// Namespaced effect ids of the five Baby Flame effects within the asset. The
+/// dispatcher resolves each through `resolve_effect` to drive placement +
+/// appearance; nothing is keyed off a hardcoded VFX kind any more (T03).
+const AGUMON_CHARGE_EFFECT_ID: &str = "baby_flame.charge";
+const AGUMON_EMBER_EFFECT_ID: &str = "baby_flame.ember";
+const AGUMON_PROJECTILE_EFFECT_ID: &str = "baby_flame.projectile";
 const AGUMON_IMPACT_EFFECT_ID: &str = "baby_flame.impact";
+#[allow(dead_code)] // reachable only via projectile `on_expire`; named for clarity.
+const AGUMON_IMPACT_FLASH_EFFECT_ID: &str = "baby_flame.impact_flash";
+/// Baby Burner detonate flash. Out of scope for S02's data-port (the full Baby
+/// Burner port is S03), but routed through the unified effect path with a minimal
+/// owned effect so it keeps rendering after VfxParticleKind was deleted.
+const AGUMON_DETONATE_EFFECT_ID: &str = "baby_burner.detonate";
 
-/// Handle to Agumon's owned `VfxAsset` (M004/S01). Held in a resource so the
-/// impact fan-out can source its spawn plan and appearance curves from data.
+/// Handle to Agumon's owned `VfxAsset` (M004/S01). Held in a resource so every
+/// Baby Flame effect can source its placement verb + appearance curves from data.
 #[derive(Resource, Debug, Clone)]
 struct AgumonVfx {
     handle: Handle<VfxAsset>,
@@ -357,8 +339,9 @@ fn load_agumon_vfx(mut commands: Commands, asset_server: Res<AssetServer>) {
 
 /// Surface a load failure for Agumon's `vfx.ron` once, mirroring the missing
 /// anim-graph diagnostic. A failed/missing asset never enters `Assets<VfxAsset>`,
-/// so the impact path silently falls back to the hardcoded constants; this makes
-/// that fallback visible rather than mysterious (slice failure-visibility).
+/// so no effect ever resolves and every Baby Flame particle is skipped; there is
+/// no hardcoded fallback path any more (T03). This makes the dead VFX visible
+/// rather than mysterious (slice failure-visibility).
 fn diagnose_agumon_vfx_load(
     agumon_vfx: Option<Res<AgumonVfx>>,
     asset_server: Res<AssetServer>,
@@ -376,10 +359,9 @@ fn diagnose_agumon_vfx_load(
     ) {
         warn!(
             target: "windowed.agumon_playback",
-            effect_id = AGUMON_IMPACT_EFFECT_ID,
             path = AGUMON_VFX_PATH,
             reason = "vfx.ron failed to load or parse",
-            "falling back to hardcoded Baby Flame impact path"
+            "Baby Flame VFX disabled; no owned effects could resolve"
         );
         *warned = true;
     }
@@ -530,6 +512,8 @@ fn advance_agumon_presentation(
     mut barrier: ResMut<SuspendedTimelineState>,
     atlas: Option<Res<AgumonAtlas>>,
     vfx_visuals: Option<Res<VfxVisuals>>,
+    agumon_vfx: Option<Res<AgumonVfx>>,
+    vfx_assets: Option<Res<Assets<VfxAsset>>>,
     vfx_particles: Query<(Entity, &VfxParticle, &VfxParticleSource)>,
     mut sprites: ParamSet<(
         Query<(&mut AgumonSprite, &mut Sprite, &Transform)>,
@@ -538,6 +522,14 @@ fn advance_agumon_presentation(
 ) {
     let stance_graph =
         stance_reg.resolve_snapshot(&AnimGraphId(AGUMON_STANCE_GRAPH_ID.into()), &graphs);
+
+    // The loaded owned asset: every Baby Flame spawn site reads its effects from
+    // here. `None` (not yet loaded / load failed) means no effect resolves, so
+    // nothing spawns — surfaced once by `diagnose_agumon_vfx_load`.
+    let vfx_asset = agumon_vfx
+        .as_ref()
+        .zip(vfx_assets.as_ref())
+        .and_then(|(vfx, assets)| assets.get(&vfx.handle));
 
     {
         let active_barrier = barrier.active_status().cloned();
@@ -690,23 +682,24 @@ fn advance_agumon_presentation(
                                 continue;
                             };
 
-                            let entity = spawn_vfx_particle(
-                                &mut commands,
-                                &descriptor,
-                                vfx_visuals.as_deref(),
-                                caster_xy,
-                                target_xy,
-                                sprite.unit_id,
-                                render_sprite.flip_x,
-                                transform.scale.x,
-                                0.0,
-                                None,
-                            );
-                            // The charge core is joined by a ring of embers that
-                            // spiral inward, reading as a vortex feeding the flame.
-                            if vfx_particle_kind(&descriptor) == VfxParticleKind::BabyFlameCharge {
-                                spawn_baby_flame_embers(
+                            // Map the authored particle name to the owned effect
+                            // id(s) it spawns (the charge command also seeds the
+                            // inward ember swirl). This name->effect map at the
+                            // spawn boundary replaces VfxParticleKind dispatch.
+                            let Some(asset) = vfx_asset else {
+                                debug!(
+                                    target: "windowed.agumon_playback",
+                                    source_unit = ?sprite.unit_id,
+                                    particle = %descriptor.particle.0,
+                                    "vfx.ron not loaded; on_enter VFX skipped"
+                                );
+                                continue;
+                            };
+                            for effect_id in on_enter_effect_ids(descriptor.particle.0.as_str()) {
+                                let spawned = spawn_effect_by_id(
                                     &mut commands,
+                                    asset,
+                                    effect_id,
                                     vfx_visuals.as_deref(),
                                     caster_xy,
                                     target_xy,
@@ -714,19 +707,15 @@ fn advance_agumon_presentation(
                                     render_sprite.flip_x,
                                     transform.scale.x,
                                 );
+                                trace!(
+                                    target: "windowed.agumon_playback",
+                                    effect_id,
+                                    spawned,
+                                    caster_xy = ?caster_xy,
+                                    source_unit = ?sprite.unit_id,
+                                    "spawned windowed vfx effect on node enter"
+                                );
                             }
-                            let resolved_xy =
-                                resolve_vfx_spawn_xy(&descriptor, caster_xy, target_xy);
-                            trace!(
-                                target: "windowed.agumon_playback",
-                                entity = ?entity,
-                                particle = %descriptor.particle.0,
-                                resolved_xy = ?resolved_xy,
-                                motion = ?descriptor.motion,
-                                ttl_ticks = VFX_PARTICLE_TTL_TICKS,
-                                source_unit = ?sprite.unit_id,
-                                "spawned windowed vfx particle"
-                            );
                         }
                     }
                 }
@@ -748,12 +737,14 @@ fn advance_agumon_presentation(
                     CueReleaseResult::Released | CueReleaseResult::DuplicateRelease
                 ) {
                     if mode_skill_id == Some(BABY_FLAME_SKILL_ID) {
+                        // Despawn the charge orb + ember swirl by effect-id
+                        // membership (not VfxParticleKind) the instant the flame
+                        // launches, so the mouth clears for the projectile.
                         for (entity, particle, source) in &vfx_particles {
                             if source.unit_id == sprite.unit_id
                                 && matches!(
-                                    particle.kind,
-                                    VfxParticleKind::BabyFlameCharge
-                                        | VfxParticleKind::BabyFlameEmber
+                                    particle.effect_id.0.as_str(),
+                                    AGUMON_CHARGE_EFFECT_ID | AGUMON_EMBER_EFFECT_ID
                                 )
                             {
                                 commands.entity(entity).despawn();
@@ -765,27 +756,33 @@ fn advance_agumon_presentation(
                             sprite.unit_id,
                             [transform.translation.x, transform.translation.y],
                         ) {
-                            let descriptor = baby_flame_projectile_descriptor();
-                            let entity = spawn_vfx_particle(
-                                &mut commands,
-                                &descriptor,
-                                vfx_visuals.as_deref(),
-                                [transform.translation.x, transform.translation.y],
-                                target_xy,
-                                sprite.unit_id,
-                                render_sprite.flip_x,
-                                transform.scale.x,
-                                0.0,
-                                None,
-                            );
-                            trace!(
-                                target: "windowed.agumon_playback",
-                                entity = ?entity,
-                                particle = %descriptor.particle.0,
-                                source_unit = ?sprite.unit_id,
-                                target_xy = ?target_xy,
-                                "spawned Baby Flame projectile on release"
-                            );
+                            if let Some(asset) = vfx_asset {
+                                let spawned = spawn_effect_by_id(
+                                    &mut commands,
+                                    asset,
+                                    AGUMON_PROJECTILE_EFFECT_ID,
+                                    vfx_visuals.as_deref(),
+                                    [transform.translation.x, transform.translation.y],
+                                    target_xy,
+                                    sprite.unit_id,
+                                    render_sprite.flip_x,
+                                    transform.scale.x,
+                                );
+                                trace!(
+                                    target: "windowed.agumon_playback",
+                                    effect_id = AGUMON_PROJECTILE_EFFECT_ID,
+                                    spawned,
+                                    source_unit = ?sprite.unit_id,
+                                    target_xy = ?target_xy,
+                                    "spawned Baby Flame projectile on release"
+                                );
+                            } else {
+                                debug!(
+                                    target: "windowed.agumon_playback",
+                                    source_unit = ?sprite.unit_id,
+                                    "vfx.ron not loaded; Baby Flame projectile skipped on release"
+                                );
+                            }
                         } else {
                             debug!(
                                 target: "windowed.agumon_playback",
@@ -844,14 +841,6 @@ fn decrement_vfx_ttl(ttl_ticks: u32) -> u32 {
     ttl_ticks.saturating_sub(1)
 }
 
-fn resolve_vfx_spawn_xy(
-    descriptor: &VfxSpawnDescriptor,
-    caster_xy: [f32; 2],
-    target_xy: [f32; 2],
-) -> [f32; 2] {
-    resolve_locus(&descriptor.locus, caster_xy, target_xy)
-}
-
 fn mouth_anchor_xy(caster_xy: [f32; 2], flip_x: bool, sprite_scale: f32) -> [f32; 2] {
     let dir = if flip_x { -1.0 } else { 1.0 };
     [
@@ -860,245 +849,114 @@ fn mouth_anchor_xy(caster_xy: [f32; 2], flip_x: bool, sprite_scale: f32) -> [f32
     ]
 }
 
-fn vfx_particle_kind(descriptor: &VfxSpawnDescriptor) -> VfxParticleKind {
-    match descriptor.particle.0.as_str() {
-        "baby_flame_charge" => VfxParticleKind::BabyFlameCharge,
-        "baby_flame_ember" => VfxParticleKind::BabyFlameEmber,
-        "baby_flame_projectile" => VfxParticleKind::BabyFlameProjectile,
-        "baby_flame_impact" => VfxParticleKind::BabyFlameImpact,
-        "baby_flame_impact_shard" => VfxParticleKind::BabyFlameImpactShard,
-        _ => VfxParticleKind::Generic,
+/// Map an authored `SpawnParticle` name (from the anim graph `on_enter` command)
+/// to the owned effect id(s) it spawns. The charge command also seeds the inward
+/// ember swirl. This name->effect map at the spawn boundary is what replaced
+/// VfxParticleKind dispatch (T03): it is NOT kind resolution — every spawned
+/// particle is thereafter driven entirely by its resolved `EffectDef`.
+fn on_enter_effect_ids(particle_name: &str) -> &'static [&'static str] {
+    match particle_name {
+        "baby_flame_charge" => &[AGUMON_CHARGE_EFFECT_ID, AGUMON_EMBER_EFFECT_ID],
+        "baby_flame_projectile" => &[AGUMON_PROJECTILE_EFFECT_ID],
+        "baby_flame_impact" => &[AGUMON_IMPACT_EFFECT_ID],
+        _ => &[],
     }
 }
 
-fn vfx_particle_ttl(kind: VfxParticleKind) -> u32 {
-    match kind {
-        VfxParticleKind::Generic => VFX_PARTICLE_TTL_TICKS,
-        VfxParticleKind::BabyFlameCharge => 24,
-        VfxParticleKind::BabyFlameEmber => BABY_FLAME_EMBER_TTL,
-        // Shorter flight = the launch reads as fast and snappy.
-        VfxParticleKind::BabyFlameProjectile => 4,
-        VfxParticleKind::BabyFlameImpact => 2,
-        VfxParticleKind::BabyFlameImpactShard => BABY_FLAME_IMPACT_SHARD_TTL,
+/// Resolve an `Appearance.texture` key to a windowed image handle. A small
+/// string->handle map (NOT VfxParticleKind dispatch): an unknown/empty key
+/// resolves to `None` so the particle renders as a flat-color quad. Headless
+/// code never calls this (R016).
+fn vfx_texture_handle(key: &str, visuals: Option<&VfxVisuals>) -> Option<Handle<Image>> {
+    let visuals = visuals?;
+    match key {
+        "baby_flame_charge" => Some(visuals.baby_flame_charge.clone()),
+        "baby_flame_projectile" => Some(visuals.baby_flame_projectile.clone()),
+        "baby_flame_impact" => Some(visuals.baby_flame_impact.clone()),
+        _ => None,
     }
 }
 
-fn vfx_particle_size(kind: VfxParticleKind) -> f32 {
-    match kind {
-        VfxParticleKind::Generic => VFX_PARTICLE_SIZE,
-        VfxParticleKind::BabyFlameCharge => 22.0,
-        VfxParticleKind::BabyFlameEmber => BABY_FLAME_EMBER_SIZE,
-        VfxParticleKind::BabyFlameProjectile => 16.0,
-        VfxParticleKind::BabyFlameImpact => 26.0,
-        VfxParticleKind::BabyFlameImpactShard => BABY_FLAME_IMPACT_SHARD_SIZE,
+/// World-space base point a resolved placement offset is applied relative to.
+/// `caster_xy` is the caster's live body center; the mouth anchor derives the
+/// muzzle from it using the sprite facing + scale.
+fn anchor_base_xy(
+    anchor: PlacementAnchor,
+    caster_xy: [f32; 2],
+    target_xy: [f32; 2],
+    flip_x: bool,
+    scale: f32,
+) -> [f32; 2] {
+    match anchor {
+        PlacementAnchor::Mouth => mouth_anchor_xy(caster_xy, flip_x, scale),
+        PlacementAnchor::CasterCenter => caster_xy,
+        PlacementAnchor::TargetCenter => target_xy,
     }
 }
 
-fn vfx_particle_anchor(kind: VfxParticleKind) -> Option<VfxAnchor> {
-    match kind {
-        VfxParticleKind::BabyFlameCharge | VfxParticleKind::BabyFlameEmber => {
-            Some(VfxAnchor::Mouth)
-        }
-        VfxParticleKind::Generic
-        | VfxParticleKind::BabyFlameProjectile
-        | VfxParticleKind::BabyFlameImpact
-        | VfxParticleKind::BabyFlameImpactShard => None,
-    }
-}
-
-fn baby_flame_projectile_descriptor() -> VfxSpawnDescriptor {
-    VfxSpawnDescriptor::from_command(&Command::SpawnParticle {
-        name: ParticleId("baby_flame_projectile".into()),
-        origin: VfxLocus::CasterCenter,
-        motion: VfxMotion::ArcToTarget,
-    })
-    .expect("SpawnParticle baby_flame_projectile must distill to a renderable VFX descriptor")
-}
-
-fn baby_flame_impact_descriptor() -> VfxSpawnDescriptor {
-    VfxSpawnDescriptor::from_command(&Command::SpawnParticle {
-        name: ParticleId("baby_flame_impact".into()),
-        origin: VfxLocus::TargetCenter,
-        motion: VfxMotion::Static,
-    })
-    .expect("SpawnParticle baby_flame_impact must distill to a renderable VFX descriptor")
-}
-
-fn baby_flame_ember_descriptor() -> VfxSpawnDescriptor {
-    VfxSpawnDescriptor::from_command(&Command::SpawnParticle {
-        name: ParticleId("baby_flame_ember".into()),
-        origin: VfxLocus::CasterCenter,
-        motion: VfxMotion::Static,
-    })
-    .expect("SpawnParticle baby_flame_ember must distill to a renderable VFX descriptor")
-}
-
-fn baby_flame_impact_shard_descriptor() -> VfxSpawnDescriptor {
-    VfxSpawnDescriptor::from_command(&Command::SpawnParticle {
-        name: ParticleId("baby_flame_impact_shard".into()),
-        origin: VfxLocus::TargetCenter,
-        motion: VfxMotion::Static,
-    })
-    .expect("SpawnParticle baby_flame_impact_shard must distill to a renderable VFX descriptor")
-}
-
-/// Offset (world px) of a charge ember relative to the mouth anchor at `age`
-/// ticks into its life. Radius shrinks linearly toward the mouth while the
-/// angle sweeps, producing an inward spiral that feeds the core flame.
-fn baby_flame_ember_offset(age: u32, ttl: u32, phase: f32) -> [f32; 2] {
-    let progress = if ttl == 0 {
-        1.0
-    } else {
-        (age as f32 / ttl as f32).clamp(0.0, 1.0)
-    };
-    let radius = BABY_FLAME_EMBER_RADIUS_PX * (1.0 - progress);
-    let angle = phase + (age as f32 * BABY_FLAME_EMBER_OMEGA);
-    [radius * angle.cos(), radius * angle.sin()]
-}
-
-/// Alpha of a charge ember: bright at the rim, fading as it merges into the
-/// mouth so the swirl dissolves into the core rather than popping out.
-fn baby_flame_ember_alpha(age: u32, ttl: u32) -> f32 {
-    let progress = if ttl == 0 {
-        1.0
-    } else {
-        (age as f32 / ttl as f32).clamp(0.0, 1.0)
-    };
-    (0.9 * (1.0 - progress)).max(0.0)
-}
-
-/// Offset (world px) of an impact shard relative to the impact origin at `age`
-/// ticks. Ease-out so shards burst fast then settle, reading as a dissolve.
-fn baby_flame_shard_offset(age: u32, ttl: u32, phase: f32) -> [f32; 2] {
-    let progress = if ttl == 0 {
-        1.0
-    } else {
-        (age as f32 / ttl as f32).clamp(0.0, 1.0)
-    };
-    let eased = 1.0 - (1.0 - progress) * (1.0 - progress);
-    let dist = BABY_FLAME_IMPACT_SHARD_SPREAD_PX * eased;
-    [dist * phase.cos(), dist * phase.sin()]
-}
-
-/// Alpha of an impact shard: linear fade to transparent over its life.
-fn baby_flame_shard_alpha(age: u32, ttl: u32) -> f32 {
-    let progress = if ttl == 0 {
-        1.0
-    } else {
-        (age as f32 / ttl as f32).clamp(0.0, 1.0)
-    };
-    (0.9 * (1.0 - progress)).max(0.0)
-}
-
+/// Spawn every particle of effect `effect_id` from the owned `VfxAsset`. Reads
+/// `count`, `ttl_ticks`, `size_px`, `texture`, and the spawn-time color from the
+/// resolved `EffectDef`; per-tick position/scale/color are then driven by
+/// [`advance_vfx_particles`] through the Registry-resolved placement verb.
+/// Returns the number of particles spawned (0 if the effect id is absent — the
+/// caller logs; a load failure is surfaced once by `diagnose_agumon_vfx_load`).
 #[allow(clippy::too_many_arguments)]
-fn spawn_baby_flame_embers(
+fn spawn_effect_by_id(
     commands: &mut Commands,
+    asset: &VfxAsset,
+    effect_id: &str,
     visuals: Option<&VfxVisuals>,
     caster_xy: [f32; 2],
     target_xy: [f32; 2],
     source_unit: UnitId,
     source_flip_x: bool,
     source_scale: f32,
-) {
-    let descriptor = baby_flame_ember_descriptor();
-    for i in 0..BABY_FLAME_EMBER_COUNT {
-        let phase = (i as f32 / BABY_FLAME_EMBER_COUNT as f32) * std::f32::consts::TAU;
-        spawn_vfx_particle(
-            commands,
-            &descriptor,
-            visuals,
-            caster_xy,
-            target_xy,
-            source_unit,
-            source_flip_x,
-            source_scale,
-            phase,
-            None,
-        );
-    }
-}
-
-/// Spawn the Baby Flame impact burst: a bright central flash plus a fan of
-/// dissolving shards.
-///
-/// When `impact_effect` is `Some` (the `digimon/agumon/vfx.ron` data path is
-/// live), the shard count and lifetime come from the asset's [`spawn_plan`];
-/// otherwise the burst falls back to the hardcoded `BABY_FLAME_IMPACT_SHARD_*`
-/// constants so the VFX still renders even if the asset is missing/malformed.
-fn spawn_baby_flame_impact_burst(
-    commands: &mut Commands,
-    visuals: Option<&VfxVisuals>,
-    origin_xy: [f32; 2],
-    source_unit: UnitId,
-    impact_effect: Option<&EffectDef>,
-) {
-    // Bright central flash.
-    let core = baby_flame_impact_descriptor();
-    spawn_vfx_particle(
-        commands, &core, visuals, origin_xy, origin_xy, source_unit, false, 1.0, 0.0, None,
-    );
-    // Dissolve fan: shards radiate outward from the impact point and fade.
-    // Count + lifetime are data-driven (vfx.ron) with a hardcoded fallback.
-    let shard = baby_flame_impact_shard_descriptor();
-    let (count, ttl_override) = match impact_effect {
-        Some(effect) => {
-            let plan = spawn_plan(effect);
-            (plan.count, Some(plan.ttl_ticks))
-        }
-        None => (BABY_FLAME_IMPACT_SHARD_COUNT, None),
+) -> u32 {
+    let Some(effect) = resolve_effect(asset, effect_id) else {
+        return 0;
     };
+    let count = effect.appearance.count.max(1);
+    let base = anchor_base_xy(
+        effect.placement.anchor,
+        caster_xy,
+        target_xy,
+        source_flip_x,
+        source_scale,
+    );
+    let rgba = eval_color(&effect.appearance.color, 0.0);
+    let color = Color::srgba(rgba[0], rgba[1], rgba[2], rgba[3]);
+    let size = Vec2::splat(effect.appearance.size_px);
     for i in 0..count {
         let phase = (i as f32 / count as f32) * std::f32::consts::TAU;
-        spawn_vfx_particle(
-            commands,
-            &shard,
-            visuals,
-            origin_xy,
-            origin_xy,
-            source_unit,
-            false,
-            1.0,
-            phase,
-            ttl_override,
-        );
+        let sprite = match vfx_texture_handle(&effect.appearance.texture, visuals) {
+            Some(image) => Sprite {
+                image,
+                custom_size: Some(size),
+                color,
+                ..default()
+            },
+            None => Sprite::from_color(color, size),
+        };
+        commands.spawn((
+            sprite,
+            Transform::from_xyz(base[0], base[1], VFX_PARTICLE_Z),
+            VfxParticle {
+                ttl_ticks: effect.appearance.ttl_ticks,
+                age_ticks: 0,
+                motion: VfxMotion::Static,
+                effect_id: EffectId(effect_id.to_owned()),
+                anchor: effect.placement.anchor,
+                phase,
+            },
+            VfxParticleTarget {
+                world_xy: target_xy,
+            },
+            VfxParticleSource {
+                unit_id: source_unit,
+            },
+        ));
     }
-}
-
-fn vfx_particle_color(descriptor: &VfxSpawnDescriptor) -> Color {
-    match vfx_particle_kind(descriptor) {
-        VfxParticleKind::BabyFlameCharge => Color::srgba(1.0, 0.75, 0.25, 0.9),
-        VfxParticleKind::BabyFlameEmber => Color::srgba(1.0, 0.85, 0.4, 0.85),
-        VfxParticleKind::BabyFlameProjectile => Color::srgba(1.0, 0.45, 0.15, 0.95),
-        VfxParticleKind::BabyFlameImpact => Color::srgba(1.0, 0.82, 0.45, 0.95),
-        VfxParticleKind::BabyFlameImpactShard => Color::srgba(1.0, 0.55, 0.2, 0.9),
-        VfxParticleKind::Generic => {
-            let name = descriptor.particle.0.as_str();
-            if name.contains("burner") {
-                Color::srgb(1.0, 0.8, 0.2)
-            } else if name.contains("flame") {
-                Color::srgb(1.0, 0.45, 0.15)
-            } else {
-                Color::srgb(1.0, 1.0, 1.0)
-            }
-        }
-    }
-}
-
-fn vfx_particle_image(
-    kind: VfxParticleKind,
-    visuals: Option<&VfxVisuals>,
-) -> Option<Handle<Image>> {
-    let visuals = visuals?;
-    match kind {
-        VfxParticleKind::BabyFlameCharge | VfxParticleKind::BabyFlameEmber => {
-            Some(visuals.baby_flame_charge.clone())
-        }
-        VfxParticleKind::BabyFlameProjectile => Some(visuals.baby_flame_projectile.clone()),
-        VfxParticleKind::BabyFlameImpact | VfxParticleKind::BabyFlameImpactShard => {
-            Some(visuals.baby_flame_impact.clone())
-        }
-        VfxParticleKind::Generic => None,
-    }
+    count
 }
 
 fn should_spawn_node_vfx(
@@ -1130,15 +988,6 @@ fn nearest_non_caster_target_xy(
         .map(|(xy, _)| xy)
 }
 
-fn detonate_vfx_descriptor() -> VfxSpawnDescriptor {
-    VfxSpawnDescriptor::from_command(&Command::SpawnParticle {
-        name: ParticleId("baby_burner_detonate".into()),
-        origin: VfxLocus::TargetCenter,
-        motion: VfxMotion::Static,
-    })
-    .expect("SpawnParticle detonate command must distill to a renderable VFX descriptor")
-}
-
 fn find_sprite_xy(
     sprites: &Query<(&AgumonSprite, &Transform)>,
     unit_id: UnitId,
@@ -1152,9 +1001,24 @@ fn spawn_detonate_particles(
     mut commands: Commands,
     mut events: MessageReader<bevyrogue::combat::events::CombatEvent>,
     vfx_visuals: Option<Res<VfxVisuals>>,
+    agumon_vfx: Option<Res<AgumonVfx>>,
+    vfx_assets: Option<Res<Assets<VfxAsset>>>,
     sprites: Query<(&AgumonSprite, &Transform)>,
 ) {
     let Some(trigger) = latest_baby_burner_flash_trigger(events.read()) else {
+        return;
+    };
+
+    let Some(asset) = agumon_vfx
+        .as_ref()
+        .zip(vfx_assets.as_ref())
+        .and_then(|(vfx, assets)| assets.get(&vfx.handle))
+    else {
+        debug!(
+            target: "windowed.agumon_playback",
+            cast_id = ?trigger.cast_id,
+            "vfx.ron not loaded; Baby Burner detonate effect skipped"
+        );
         return;
     };
 
@@ -1168,7 +1032,6 @@ fn spawn_detonate_particles(
         return;
     };
 
-    let descriptor = detonate_vfx_descriptor();
     for target in trigger.targets {
         let Some(target_xy) = find_sprite_xy(&sprites, target) else {
             debug!(
@@ -1176,94 +1039,32 @@ fn spawn_detonate_particles(
                 source_unit = ?trigger.source,
                 target_unit = ?target,
                 cast_id = ?trigger.cast_id,
-                particle = %descriptor.particle.0,
                 "Baby Burner detonate particle target could not be resolved"
             );
             continue;
         };
 
-        let entity = spawn_vfx_particle(
+        let spawned = spawn_effect_by_id(
             &mut commands,
-            &descriptor,
+            asset,
+            AGUMON_DETONATE_EFFECT_ID,
             vfx_visuals.as_deref(),
             caster_xy,
             target_xy,
             trigger.source,
             false,
             1.0,
-            0.0,
-            None,
         );
-        let resolved_xy = resolve_vfx_spawn_xy(&descriptor, caster_xy, target_xy);
         trace!(
             target: "windowed.agumon_playback",
-            entity = ?entity,
             cast_id = ?trigger.cast_id,
-            particle = %descriptor.particle.0,
+            effect_id = AGUMON_DETONATE_EFFECT_ID,
+            spawned,
             source_unit = ?trigger.source,
             target_unit = ?target,
-            resolved_xy = ?resolved_xy,
-            motion = ?descriptor.motion,
-            ttl_ticks = VFX_PARTICLE_TTL_TICKS,
-            "spawned Baby Burner detonate particle"
+            "spawned Baby Burner detonate effect"
         );
     }
-}
-
-#[allow(clippy::too_many_arguments)]
-fn spawn_vfx_particle(
-    commands: &mut Commands,
-    descriptor: &VfxSpawnDescriptor,
-    visuals: Option<&VfxVisuals>,
-    caster_xy: [f32; 2],
-    target_xy: [f32; 2],
-    source_unit: UnitId,
-    source_flip_x: bool,
-    source_scale: f32,
-    phase: f32,
-    ttl_override: Option<u32>,
-) -> Entity {
-    let kind = vfx_particle_kind(descriptor);
-    let resolved_xy = match vfx_particle_anchor(kind) {
-        Some(VfxAnchor::Mouth) => mouth_anchor_xy(caster_xy, source_flip_x, source_scale),
-        None => resolve_vfx_spawn_xy(descriptor, caster_xy, target_xy),
-    };
-    // Data-driven effects override the kind's default lifetime with the asset's
-    // `ttl_ticks`; everything else keeps the hardcoded per-kind default.
-    let ttl_ticks = ttl_override.unwrap_or_else(|| vfx_particle_ttl(kind));
-    let sprite = if let Some(image) = vfx_particle_image(kind, visuals) {
-        Sprite {
-            image,
-            custom_size: Some(Vec2::splat(vfx_particle_size(kind))),
-            color: vfx_particle_color(descriptor),
-            ..default()
-        }
-    } else {
-        Sprite::from_color(
-            vfx_particle_color(descriptor),
-            Vec2::splat(vfx_particle_size(kind)),
-        )
-    };
-    commands
-        .spawn((
-            sprite,
-            Transform::from_xyz(resolved_xy[0], resolved_xy[1], VFX_PARTICLE_Z),
-            VfxParticle {
-                ttl_ticks,
-                age_ticks: 0,
-                motion: descriptor.motion.clone(),
-                kind,
-                anchor: vfx_particle_anchor(kind),
-                phase,
-            },
-            VfxParticleTarget {
-                world_xy: target_xy,
-            },
-            VfxParticleSource {
-                unit_id: source_unit,
-            },
-        ))
-        .id()
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -1273,7 +1074,9 @@ fn advance_vfx_particles(
     vfx_visuals: Option<Res<VfxVisuals>>,
     agumon_vfx: Option<Res<AgumonVfx>>,
     vfx_assets: Option<Res<Assets<VfxAsset>>>,
-    mut warned_missing_impact: Local<bool>,
+    regs: Option<Res<ExtRegistries>>,
+    mut warned_effects: Local<HashSet<String>>,
+    mut warned_verbs: Local<HashSet<String>>,
     source_sprites: Query<(&AgumonSprite, &Sprite, &Transform), Without<VfxParticle>>,
     mut particles: Query<
         (
@@ -1287,159 +1090,142 @@ fn advance_vfx_particles(
         Without<AgumonSprite>,
     >,
 ) {
-    // Resolve the Baby Flame impact effect from the owned vfx.ron data path once
-    // per frame. `None` (asset not yet loaded, load failed, or effect id absent)
-    // means the burst + shard updates below use the hardcoded fallback. A loaded
-    // asset that is missing the effect id is warned once (load failure itself is
-    // surfaced by `diagnose_agumon_vfx_load`).
-    let impact_effect: Option<&EffectDef> = match agumon_vfx
+    let asset = agumon_vfx
         .as_ref()
         .zip(vfx_assets.as_ref())
-        .and_then(|(vfx, assets)| assets.get(&vfx.handle))
-    {
-        Some(asset) => {
-            let effect = resolve_effect(asset, AGUMON_IMPACT_EFFECT_ID);
-            if effect.is_none() && !*warned_missing_impact {
-                warn!(
-                    target: "windowed.agumon_playback",
-                    effect_id = AGUMON_IMPACT_EFFECT_ID,
-                    reason = "effect id absent from loaded vfx.ron",
-                    "falling back to hardcoded Baby Flame impact path"
-                );
-                *warned_missing_impact = true;
+        .and_then(|(vfx, assets)| assets.get(&vfx.handle));
+
+    // Without the owned data path (asset not yet loaded / load failed) or the
+    // placement Registry, no particle can be driven — there is no hardcoded
+    // fallback path any more (T03). Age + despawn so none linger; the load
+    // failure itself is surfaced once by `diagnose_agumon_vfx_load`.
+    let (Some(asset), Some(regs)) = (asset, regs.as_deref()) else {
+        for _ in 0..pending_ticks.0 {
+            for (entity, mut particle, _, _, _, _) in &mut particles {
+                particle.age_ticks += 1;
+                particle.ttl_ticks = decrement_vfx_ttl(particle.ttl_ticks);
+                if particle.ttl_ticks == 0 {
+                    commands.entity(entity).despawn();
+                }
             }
-            effect
         }
-        None => None,
+        return;
     };
 
     for _ in 0..pending_ticks.0 {
         for (entity, mut particle, mut sprite, mut transform, target, source) in &mut particles {
-            if matches!(particle.anchor, Some(VfxAnchor::Mouth)) {
-                if let Some((_, source_sprite, source_transform)) = source_sprites
-                    .iter()
-                    .find(|(agumon, _, _)| agumon.unit_id == source.unit_id)
-                {
-                    let source_xy = [
-                        source_transform.translation.x,
-                        source_transform.translation.y,
-                    ];
-                    let anchored_xy =
-                        mouth_anchor_xy(source_xy, source_sprite.flip_x, source_transform.scale.x);
-                    transform.translation.x = anchored_xy[0];
-                    transform.translation.y = anchored_xy[1];
-                    if particle.kind == VfxParticleKind::BabyFlameEmber {
-                        let off = baby_flame_ember_offset(
-                            particle.age_ticks,
-                            BABY_FLAME_EMBER_TTL,
-                            particle.phase,
-                        );
-                        transform.translation.x += off[0];
-                        transform.translation.y += off[1];
-                    }
+            // Resolve the owned effect. A particle carrying an id absent from the
+            // asset is warned once (naming the id) then despawned — no panic (Q7).
+            let Some(effect) = resolve_effect(asset, &particle.effect_id.0) else {
+                if warned_effects.insert(particle.effect_id.0.clone()) {
+                    warn!(
+                        target: "windowed.agumon_playback",
+                        effect_id = %particle.effect_id.0,
+                        reason = "effect id absent from loaded vfx.ron",
+                        "skipping VFX particle; owned effect unresolved"
+                    );
                 }
-                match particle.kind {
-                    VfxParticleKind::BabyFlameCharge => {
-                        let growth = (particle.age_ticks as f32).min(6.0) / 6.0;
-                        let pulse_phase = (particle.age_ticks % 4) as f32;
-                        let pulse = match pulse_phase as u32 {
-                            0 => 0.0,
-                            1 => 0.03,
-                            2 => 0.06,
-                            _ => 0.03,
-                        };
-                        let scale = 0.42 + (growth * 0.48) + pulse;
-                        transform.scale = Vec3::splat(scale);
+                commands.entity(entity).despawn();
+                continue;
+            };
 
-                        let alpha = 0.35 + (growth * 0.45) + (pulse * 0.6);
-                        sprite.color.set_alpha(alpha.min(0.88));
-                    }
-                    VfxParticleKind::BabyFlameEmber => {
-                        transform.scale = Vec3::ONE;
-                        sprite.color.set_alpha(baby_flame_ember_alpha(
-                            particle.age_ticks,
-                            BABY_FLAME_EMBER_TTL,
-                        ));
-                    }
-                    _ => {
-                        transform.scale = Vec3::ONE;
-                        sprite.color.set_alpha(1.0);
-                    }
+            // Resolve the placement verb from the Registry. An unregistered verb
+            // id is warned once (naming effect + verb) then the particle is
+            // despawned — no panic.
+            let Some(verb) = regs.placements.get(&effect.placement.verb) else {
+                if warned_verbs.insert(effect.placement.verb.clone()) {
+                    warn!(
+                        target: "windowed.agumon_playback",
+                        effect_id = %particle.effect_id.0,
+                        verb = %effect.placement.verb,
+                        reason = "placement verb id not registered",
+                        "skipping VFX particle; placement verb unresolved"
+                    );
                 }
-            }
+                commands.entity(entity).despawn();
+                continue;
+            };
 
-            match &particle.motion {
-                VfxMotion::Static => {}
-                VfxMotion::FollowTarget | VfxMotion::ArcToTarget => {
-                    let dx = target.world_xy[0] - transform.translation.x;
-                    let dy = target.world_xy[1] - transform.translation.y;
-                    let factor = match &particle.motion {
-                        VfxMotion::FollowTarget => 0.45,
-                        // Faster lerp toward the target = the flame visibly rips
-                        // across the gap instead of drifting.
-                        VfxMotion::ArcToTarget => 0.55,
-                        VfxMotion::Static => 0.0,
-                    };
-                    transform.translation.x += dx * factor;
-                    transform.translation.y += dy * factor;
-                }
-            }
+            let full_ttl = effect.appearance.ttl_ticks;
+            let progress = if full_ttl == 0 {
+                1.0
+            } else {
+                (particle.age_ticks as f32 / full_ttl as f32).clamp(0.0, 1.0)
+            };
 
-            if particle.kind == VfxParticleKind::BabyFlameImpactShard {
-                match impact_effect {
-                    // Data path: outward fraction + rgba come from the asset's
-                    // curves, the outward distance from its `spread_px` (R004
-                    // pure eval). This replaces the hardcoded offset/alpha math
-                    // for this effect only.
-                    Some(effect) => {
-                        let plan = spawn_plan(effect);
-                        let progress = if plan.ttl_ticks == 0 {
-                            1.0
-                        } else {
-                            (particle.age_ticks as f32 / plan.ttl_ticks as f32).clamp(0.0, 1.0)
-                        };
-                        let frac = eval_scale(&effect.appearance.scale, progress);
-                        let dist = plan.spread_px * frac;
-                        transform.translation.x = target.world_xy[0] + dist * particle.phase.cos();
-                        transform.translation.y = target.world_xy[1] + dist * particle.phase.sin();
-                        let rgba = eval_color(&effect.appearance.color, progress);
-                        sprite.color = Color::srgba(rgba[0], rgba[1], rgba[2], rgba[3]);
-                    }
-                    // Fallback: original hardcoded ease-out + linear alpha fade.
-                    None => {
-                        let off = baby_flame_shard_offset(
-                            particle.age_ticks,
-                            BABY_FLAME_IMPACT_SHARD_TTL,
-                            particle.phase,
-                        );
-                        transform.translation.x = target.world_xy[0] + off[0];
-                        transform.translation.y = target.world_xy[1] + off[1];
-                        sprite.color.set_alpha(baby_flame_shard_alpha(
-                            particle.age_ticks,
-                            BABY_FLAME_IMPACT_SHARD_TTL,
-                        ));
-                    }
-                }
-            }
+            // Anchor base resolves against the caster's *live* transform so
+            // mouth/caster-anchored effects track the sprite as it moves.
+            let live_source = source_sprites
+                .iter()
+                .find(|(agumon, _, _)| agumon.unit_id == source.unit_id)
+                .map(|(_, sp, tf)| ([tf.translation.x, tf.translation.y], sp.flip_x, tf.scale.x));
+            let (caster_xy, flip_x, scale) = live_source.unwrap_or((
+                [transform.translation.x, transform.translation.y],
+                false,
+                1.0,
+            ));
+            let base = anchor_base_xy(particle.anchor, caster_xy, target.world_xy, flip_x, scale);
+
+            let ctx = PlacementCtx {
+                age_ticks: particle.age_ticks,
+                ttl_ticks: full_ttl,
+                progress,
+                phase: particle.phase,
+                caster_xy,
+                target_xy: target.world_xy,
+            };
+
+            // FanOut shards drive their outward distance from the asset's scale
+            // curve (S01 behavior) rather than the verb's own easing; the verb is
+            // still resolved above so an unregistered id is caught. Every other
+            // verb contributes its closed-form offset directly.
+            let offset = if let PlacementParams::FanOut { spread_px } = effect.placement.params {
+                let dist = spread_px * eval_scale(&effect.appearance.scale, progress);
+                [dist * particle.phase.cos(), dist * particle.phase.sin()]
+            } else {
+                verb(&ctx, &effect.placement.params)
+            };
+            transform.translation.x = base[0] + offset[0];
+            transform.translation.y = base[1] + offset[1];
+            transform.translation.z = VFX_PARTICLE_Z;
+
+            // FanOut keeps unit scale (sprite size from size_px, travel from the
+            // curve); every other effect drives sprite scale from the curve.
+            transform.scale = if matches!(effect.placement.params, PlacementParams::FanOut { .. }) {
+                Vec3::ONE
+            } else {
+                Vec3::splat(eval_scale(&effect.appearance.scale, progress))
+            };
+            let rgba = eval_color(&effect.appearance.color, progress);
+            sprite.color = Color::srgba(rgba[0], rgba[1], rgba[2], rgba[3]);
+
+            let on_expire = effect.on_expire.clone();
 
             particle.age_ticks += 1;
             particle.ttl_ticks = decrement_vfx_ttl(particle.ttl_ticks);
             if particle.ttl_ticks == 0 {
-                if particle.kind == VfxParticleKind::BabyFlameProjectile {
-                    spawn_baby_flame_impact_burst(
+                // Data-driven chain: spawn the on_expire effect at the current
+                // position (replaces the hardcoded projectile->impact burst).
+                if let Some(next) = on_expire {
+                    let pos = [transform.translation.x, transform.translation.y];
+                    spawn_effect_by_id(
                         &mut commands,
+                        asset,
+                        &next.0,
                         vfx_visuals.as_deref(),
-                        [transform.translation.x, transform.translation.y],
+                        pos,
+                        pos,
                         source.unit_id,
-                        impact_effect,
+                        flip_x,
+                        scale,
                     );
                 }
                 trace!(
                     target: "windowed.agumon_playback",
                     entity = ?entity,
                     motion = ?particle.motion,
+                    effect_id = %particle.effect_id.0,
                     source_unit = ?source.unit_id,
-                    kind = ?particle.kind,
                     "despawned windowed vfx particle"
                 );
                 commands.entity(entity).despawn();
@@ -1700,9 +1486,9 @@ mod tests {
     }
 
     #[test]
-    fn vfx_particle_ttl_reaches_zero_after_configured_ticks() {
-        let mut ttl = VFX_PARTICLE_TTL_TICKS;
-        for _ in 0..VFX_PARTICLE_TTL_TICKS {
+    fn decrement_vfx_ttl_saturates_at_zero() {
+        let mut ttl = 6u32;
+        for _ in 0..6 {
             ttl = decrement_vfx_ttl(ttl);
         }
         assert_eq!(ttl, 0);
@@ -1710,40 +1496,37 @@ mod tests {
     }
 
     #[test]
-    fn resolve_vfx_spawn_xy_honors_each_supported_locus() {
-        use bevyrogue::animation::{ParticleId, VfxLocus};
-
-        let caster_xy = [-24.0, 12.0];
-        let target_xy = [48.0, -6.0];
-
-        let caster_center = VfxSpawnDescriptor {
-            particle: ParticleId("baby_flame".into()),
-            locus: VfxLocus::CasterCenter,
-            motion: VfxMotion::ArcToTarget,
-        };
+    fn on_enter_charge_seeds_both_the_orb_and_the_ember_swirl() {
+        // The single authored `baby_flame_charge` SpawnParticle fans out to the
+        // owned charge + ember effect ids; the projectile maps to its own id.
         assert_eq!(
-            resolve_vfx_spawn_xy(&caster_center, caster_xy, target_xy),
-            caster_xy
+            on_enter_effect_ids("baby_flame_charge"),
+            &[AGUMON_CHARGE_EFFECT_ID, AGUMON_EMBER_EFFECT_ID]
         );
-
-        let target_center = VfxSpawnDescriptor {
-            particle: ParticleId("baby_flame".into()),
-            locus: VfxLocus::TargetCenter,
-            motion: VfxMotion::FollowTarget,
-        };
         assert_eq!(
-            resolve_vfx_spawn_xy(&target_center, caster_xy, target_xy),
-            target_xy
+            on_enter_effect_ids("baby_flame_projectile"),
+            &[AGUMON_PROJECTILE_EFFECT_ID]
         );
+        // An unknown particle name maps to no effects (spawns nothing, no panic).
+        assert!(on_enter_effect_ids("unknown_particle").is_empty());
+    }
 
-        let primary_target_center = VfxSpawnDescriptor {
-            particle: ParticleId("baby_flame".into()),
-            locus: bevyrogue::animation::VfxLocus::PrimaryTargetCenter,
-            motion: VfxMotion::Static,
-        };
+    #[test]
+    fn anchor_base_resolves_each_anchor_against_the_right_origin() {
+        let caster = [10.0, 20.0];
+        let target = [80.0, -4.0];
         assert_eq!(
-            resolve_vfx_spawn_xy(&primary_target_center, caster_xy, target_xy),
-            target_xy
+            anchor_base_xy(PlacementAnchor::CasterCenter, caster, target, false, 1.0),
+            caster
+        );
+        assert_eq!(
+            anchor_base_xy(PlacementAnchor::TargetCenter, caster, target, false, 1.0),
+            target
+        );
+        // Mouth derives the muzzle from the caster center + facing/scale.
+        assert_eq!(
+            anchor_base_xy(PlacementAnchor::Mouth, caster, target, false, 1.0),
+            mouth_anchor_xy(caster, false, 1.0)
         );
     }
 
@@ -1756,131 +1539,6 @@ mod tests {
         assert!((left[1] - 29.6).abs() < 0.0001);
         assert!((right[0] - -26.8).abs() < 0.0001);
         assert!((right[1] - 29.6).abs() < 0.0001);
-    }
-
-    #[test]
-    fn baby_flame_particle_specs_split_charge_projectile_and_impact() {
-        let charge = VfxSpawnDescriptor {
-            particle: bevyrogue::animation::ParticleId("baby_flame_charge".into()),
-            locus: VfxLocus::CasterCenter,
-            motion: VfxMotion::Static,
-        };
-        let projectile = baby_flame_projectile_descriptor();
-        let impact = baby_flame_impact_descriptor();
-
-        assert_eq!(vfx_particle_kind(&charge), VfxParticleKind::BabyFlameCharge);
-        assert_eq!(
-            vfx_particle_kind(&projectile),
-            VfxParticleKind::BabyFlameProjectile
-        );
-        assert_eq!(vfx_particle_kind(&impact), VfxParticleKind::BabyFlameImpact);
-        assert_eq!(
-            vfx_particle_anchor(vfx_particle_kind(&charge)),
-            Some(VfxAnchor::Mouth)
-        );
-        assert_eq!(vfx_particle_ttl(vfx_particle_kind(&projectile)), 4);
-        assert_eq!(vfx_particle_ttl(vfx_particle_kind(&impact)), 2);
-    }
-
-    #[test]
-    fn baby_flame_polish_kinds_map_anchor_and_reuse_existing_sprites() {
-        let ember = VfxSpawnDescriptor {
-            particle: bevyrogue::animation::ParticleId("baby_flame_ember".into()),
-            locus: VfxLocus::CasterCenter,
-            motion: VfxMotion::Static,
-        };
-        let shard = baby_flame_impact_shard_descriptor();
-
-        assert_eq!(vfx_particle_kind(&ember), VfxParticleKind::BabyFlameEmber);
-        assert_eq!(
-            vfx_particle_kind(&shard),
-            VfxParticleKind::BabyFlameImpactShard
-        );
-        // Embers ride the mouth like the charge core; shards burst free.
-        assert_eq!(
-            vfx_particle_anchor(VfxParticleKind::BabyFlameEmber),
-            Some(VfxAnchor::Mouth)
-        );
-        assert_eq!(
-            vfx_particle_anchor(VfxParticleKind::BabyFlameImpactShard),
-            None
-        );
-        assert_eq!(
-            vfx_particle_ttl(VfxParticleKind::BabyFlameEmber),
-            BABY_FLAME_EMBER_TTL
-        );
-        assert_eq!(
-            vfx_particle_ttl(VfxParticleKind::BabyFlameImpactShard),
-            BABY_FLAME_IMPACT_SHARD_TTL
-        );
-    }
-
-    #[test]
-    fn ember_spirals_inward_and_fades() {
-        // At birth the ember sits on the outer rim; by end of life it has
-        // collapsed onto the mouth and gone transparent.
-        let start = baby_flame_ember_offset(0, BABY_FLAME_EMBER_TTL, 0.0);
-        let start_radius = (start[0] * start[0] + start[1] * start[1]).sqrt();
-        assert!((start_radius - BABY_FLAME_EMBER_RADIUS_PX).abs() < 0.001);
-
-        let end = baby_flame_ember_offset(
-            BABY_FLAME_EMBER_TTL,
-            BABY_FLAME_EMBER_TTL,
-            0.0,
-        );
-        let end_radius = (end[0] * end[0] + end[1] * end[1]).sqrt();
-        assert!(end_radius < 0.001, "ember should reach the mouth: {end_radius}");
-
-        assert!(baby_flame_ember_alpha(0, BABY_FLAME_EMBER_TTL) > 0.8);
-        assert!(baby_flame_ember_alpha(BABY_FLAME_EMBER_TTL, BABY_FLAME_EMBER_TTL) < 0.001);
-    }
-
-    #[test]
-    fn shard_fans_outward_along_phase_and_fades() {
-        // A shard travels along its phase direction, reaching full spread by the
-        // end of its life, while its alpha decays to zero.
-        let mid = baby_flame_shard_offset(0, BABY_FLAME_IMPACT_SHARD_TTL, 0.0);
-        assert!(mid[0].abs() < 0.001 && mid[1].abs() < 0.001, "starts at origin");
-
-        let end = baby_flame_shard_offset(
-            BABY_FLAME_IMPACT_SHARD_TTL,
-            BABY_FLAME_IMPACT_SHARD_TTL,
-            0.0,
-        );
-        assert!((end[0] - BABY_FLAME_IMPACT_SHARD_SPREAD_PX).abs() < 0.001);
-        assert!(end[1].abs() < 0.001, "phase 0 fans along +x");
-
-        // A quarter-turn phase fans along +y instead.
-        let quarter = baby_flame_shard_offset(
-            BABY_FLAME_IMPACT_SHARD_TTL,
-            BABY_FLAME_IMPACT_SHARD_TTL,
-            std::f32::consts::FRAC_PI_2,
-        );
-        assert!(quarter[0].abs() < 0.01 && quarter[1] > BABY_FLAME_IMPACT_SHARD_SPREAD_PX - 0.01);
-
-        assert!(baby_flame_shard_alpha(0, BABY_FLAME_IMPACT_SHARD_TTL) > 0.8);
-        assert!(
-            baby_flame_shard_alpha(BABY_FLAME_IMPACT_SHARD_TTL, BABY_FLAME_IMPACT_SHARD_TTL) < 0.001
-        );
-    }
-
-    #[test]
-    fn detonate_descriptor_is_renderable_and_serializes_without_numeric_payload() {
-        let descriptor = detonate_vfx_descriptor();
-        assert!(descriptor.is_renderable());
-        assert_eq!(descriptor.locus, VfxLocus::TargetCenter);
-        assert_eq!(descriptor.motion, VfxMotion::Static);
-
-        let command = Command::SpawnParticle {
-            name: ParticleId("baby_burner_flash".into()),
-            origin: descriptor.locus.clone(),
-            motion: descriptor.motion.clone(),
-        };
-        let serialized = serde_json::to_string(&command).expect("SpawnParticle serializes");
-        assert!(
-            !serialized.chars().any(|ch| ch.is_ascii_digit()),
-            "serialized SpawnParticle should not carry numeric gameplay payload: {serialized}"
-        );
     }
 
     #[test]

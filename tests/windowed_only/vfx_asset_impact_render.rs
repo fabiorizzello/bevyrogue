@@ -13,8 +13,11 @@
 #![cfg(feature = "windowed")]
 
 use bevyrogue::animation::{
-    eval_color, eval_scale, resolve_effect, spawn_plan, ImpactSpawnPlan, VfxAsset,
+    eval_color, eval_scale, resolve_effect, spawn_plan, ImpactSpawnPlan, PlacementCtx,
+    PlacementParams, VfxAsset,
 };
+use bevyrogue::combat::blueprints::agumon::register_agumon_ext;
+use bevyrogue::combat::runtime::ExtRegistries;
 
 /// The effect id render.rs resolves (`AGUMON_IMPACT_EFFECT_ID`).
 const IMPACT_EFFECT_ID: &str = "baby_flame.impact";
@@ -102,4 +105,117 @@ fn shard_color_curve_matches_what_the_per_tick_branch_writes() {
         assert!((a - e).abs() < EPS, "midpoint channel {i}: expected ~{e}, got {a}");
     }
     assert_eq!(eval_color(color, 1.0), [1.0, 0.55, 0.2, 0.0], "death rgba");
+}
+
+/// The generalized dispatcher (`advance_vfx_particles`) resolves every effect's
+/// placement verb against a built `ExtRegistries`. Pin that all four authored
+/// verb ids resolve so a missing registration is caught here rather than via a
+/// runtime warn-and-skip.
+#[test]
+fn built_registry_resolves_all_authored_placement_verbs() {
+    let mut regs = ExtRegistries::default();
+    register_agumon_ext(&mut regs);
+    for verb in [
+        "agumon/baby_flame/static",
+        "agumon/baby_flame/converge_inward",
+        "agumon/baby_flame/fan_out",
+        "agumon/baby_flame/arc_launch",
+    ] {
+        assert!(
+            regs.placements.get(verb).is_some(),
+            "dispatcher must resolve placement verb `{verb}`"
+        );
+    }
+    assert!(
+        regs.placements.get("agumon/baby_flame/missing").is_none(),
+        "an unregistered verb id resolves to None so the dispatcher warns + skips"
+    );
+}
+
+/// Every effect the dispatcher spawns must resolve from the loaded asset, and
+/// each one's placement verb must be registered — the exact pairing the per-tick
+/// loop performs (`resolve_effect` -> `regs.placements.get`).
+#[test]
+fn every_effect_resolves_and_its_verb_is_registered() {
+    let asset = agumon_vfx();
+    let mut regs = ExtRegistries::default();
+    register_agumon_ext(&mut regs);
+    for id in [
+        "baby_flame.charge",
+        "baby_flame.ember",
+        "baby_flame.projectile",
+        "baby_flame.impact",
+        "baby_flame.impact_flash",
+        "baby_burner.detonate",
+    ] {
+        let effect = resolve_effect(&asset, id).unwrap_or_else(|| panic!("effect `{id}` present"));
+        assert!(
+            regs.placements.get(&effect.placement.verb).is_some(),
+            "effect `{id}` names registered verb `{}`",
+            effect.placement.verb
+        );
+    }
+}
+
+/// Feed the resolved `converge_inward` / `arc_launch` verbs the same
+/// `PlacementCtx` the dispatcher builds and pin their anchored offsets.
+#[test]
+fn resolved_verbs_yield_the_expected_anchored_offsets() {
+    let asset = agumon_vfx();
+    let mut regs = ExtRegistries::default();
+    register_agumon_ext(&mut regs);
+
+    let ember = resolve_effect(&asset, "baby_flame.ember").expect("ember present");
+    let converge = regs
+        .placements
+        .get(&ember.placement.verb)
+        .expect("converge_inward registered");
+    // At progress 0 the swirl sits on the full radius (58px) along phase 0 (+x).
+    let ctx0 = PlacementCtx {
+        age_ticks: 0,
+        ttl_ticks: 24,
+        progress: 0.0,
+        phase: 0.0,
+        caster_xy: [0.0, 0.0],
+        target_xy: [0.0, 0.0],
+    };
+    let off0 = converge(&ctx0, &ember.placement.params);
+    assert!((off0[0] - 58.0).abs() < 1e-4 && off0[1].abs() < 1e-4, "ember starts on the rim");
+    // At end of life it has collapsed onto the anchor.
+    let ctx1 = PlacementCtx { progress: 1.0, ..ctx0 };
+    let off1 = converge(&ctx1, &ember.placement.params);
+    assert!(off1[0].abs() < 1e-4 && off1[1].abs() < 1e-4, "ember merges into the mouth");
+
+    let projectile = resolve_effect(&asset, "baby_flame.projectile").expect("projectile present");
+    let arc = regs
+        .placements
+        .get(&projectile.placement.verb)
+        .expect("arc_launch registered");
+    // arc_launch lerps caster->target by progress; halfway is the midpoint.
+    let ctx_mid = PlacementCtx {
+        age_ticks: 2,
+        ttl_ticks: 4,
+        progress: 0.5,
+        phase: 0.0,
+        caster_xy: [0.0, 0.0],
+        target_xy: [100.0, 40.0],
+    };
+    let mid = arc(&ctx_mid, &projectile.placement.params);
+    assert!((mid[0] - 50.0).abs() < 1e-4 && (mid[1] - 20.0).abs() < 1e-4);
+}
+
+/// The hardcoded projectile->impact burst is now data: the projectile's
+/// `on_expire` chains the impact fan, which the dispatcher spawns on expiry.
+#[test]
+fn projectile_on_expire_chains_the_impact_fan() {
+    let asset = agumon_vfx();
+    let projectile = resolve_effect(&asset, "baby_flame.projectile").expect("projectile present");
+    let chained = projectile
+        .on_expire
+        .as_ref()
+        .expect("projectile chains an on_expire effect");
+    assert_eq!(chained.0, "baby_flame.impact");
+    // FanOut is the verb the dispatcher special-cases for shard travel.
+    let impact = resolve_effect(&asset, &chained.0).expect("chained impact present");
+    assert!(matches!(impact.placement.params, PlacementParams::FanOut { .. }));
 }

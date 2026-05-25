@@ -45,13 +45,15 @@ fn vfx_asset_round_trips_through_ron() {
 }
 
 #[test]
-fn all_five_authored_effects_round_trip() {
+fn all_authored_effects_round_trip() {
     let asset: VfxAsset =
         ron::from_str(include_str!("../../assets/digimon/agumon/vfx.ron")).expect("asset parses");
     let serialized = ron::to_string(&asset).expect("asset serializes");
     let reparsed: VfxAsset = ron::from_str(&serialized).expect("asset re-deserializes");
-    assert_eq!(asset, reparsed, "all five effects must round-trip losslessly");
-    assert_eq!(asset.effects.len(), 5, "asset ships exactly five effects");
+    assert_eq!(asset, reparsed, "all effects must round-trip losslessly");
+    // Five Baby Flame effects (T02) plus the Baby Burner detonate flash routed
+    // through the same owned path (T03) so it renders without a hardcoded kind.
+    assert_eq!(asset.effects.len(), 6, "asset ships the five Baby Flame effects + detonate");
 }
 
 #[test]
