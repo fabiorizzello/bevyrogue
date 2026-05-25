@@ -170,6 +170,19 @@ impl ValidationSection {
     }
 }
 
+/// Placement verb: pure, render-free per-tick offset for a VFX particle (M004/S02).
+///
+/// Resolves a namespaced `verb` id from the owned VFX asset to a closed-form
+/// `fn(&PlacementCtx, &PlacementParams) -> [f32; 2]`. Lib-side only — no windowed
+/// dependency (R016) and deterministic (R004).
+pub struct PlacementExt;
+impl ExtPoint for PlacementExt {
+    type Fn = fn(
+        &crate::animation::vfx_asset::PlacementCtx,
+        &crate::animation::vfx_asset::PlacementParams,
+    ) -> [f32; 2];
+}
+
 /// Validation contributor: collect owner-keyed snapshot sections from `World`.
 pub struct ValidationExt;
 impl ExtPoint for ValidationExt {
@@ -192,6 +205,7 @@ pub struct ExtRegistries {
     pub cues: Registry<CueExt>,
     pub pre_damage_reactions: Registry<PreDamageReactionExt>,
     pub post_action_reactions: Registry<PostActionReactionExt>,
+    pub placements: Registry<PlacementExt>,
     pub validation: Registry<ValidationExt>,
 }
 

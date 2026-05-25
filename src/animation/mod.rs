@@ -1,6 +1,7 @@
 pub mod anim_graph;
 pub mod atlas;
 pub mod clip;
+pub mod placement;
 pub mod player;
 pub mod plugin;
 pub mod registry;

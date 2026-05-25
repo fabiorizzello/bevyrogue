@@ -24,6 +24,8 @@ mod anim_validation;
 mod atlas_binding;
 #[path = "animation/clip_atlas_parity.rs"]
 mod clip_atlas_parity;
+#[path = "animation/placement_verbs.rs"]
+mod placement_verbs;
 #[path = "animation/skill_graph_mapping_extensibility.rs"]
 mod skill_graph_mapping_extensibility;
 #[path = "animation/vfx_asset_eval.rs"]

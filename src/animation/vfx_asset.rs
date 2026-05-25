@@ -115,6 +115,77 @@ pub struct ColorKeyframe {
     pub rgba: [f32; 4],
 }
 
+// ─── Placement axis (M004/S02): runtime context + typed verb params ──────────
+//
+// The placement *verb* is named by string in [`Placement`] and resolved against
+// the `PlacementExt` Registry (S02). A resolved verb is a pure fn
+// `fn(&PlacementCtx, &PlacementParams) -> [f32; 2]` (see [`crate::animation::placement`]).
+// `PlacementCtx` is the render-free per-tick input; `PlacementParams` is the
+// editor-ready, closed-vocabulary, typed parameter payload. Neither references a
+// Bevy World or render type (R004 / R016).
+
+/// Pure, render-free per-tick context handed to a placement verb.
+///
+/// Carries only deterministic scalars (R004): no wall-clock, no RNG, no Bevy
+/// World/render handles. `progress`/`phase` are precomputed by the caller so the
+/// verb stays a closed-form pure function of its inputs.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct PlacementCtx {
+    /// Ticks elapsed since the particle spawned.
+    pub age_ticks: u32,
+    /// Total particle lifetime in ticks.
+    pub ttl_ticks: u32,
+    /// Normalized lifetime position, `age_ticks / ttl_ticks` clamped to `[0, 1]`.
+    pub progress: f32,
+    /// Per-particle angular phase (radians), e.g. swirl/fan seed.
+    pub phase: f32,
+    /// Caster anchor in world px.
+    pub caster_xy: [f32; 2],
+    /// Target anchor in world px.
+    pub target_xy: [f32; 2],
+}
+
+/// Anchor an effect's placement resolves relative to. Editor-ready (Reflect),
+/// closed vocabulary (D034/D035).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Reflect)]
+pub enum PlacementAnchor {
+    /// The caster's mouth muzzle anchor (charge/launch origin).
+    Mouth,
+    /// The caster's body center.
+    CasterCenter,
+    /// The target's body center (impact origin).
+    TargetCenter,
+}
+
+/// Closed, editor-ready, typed parameter payload for a placement verb (D035).
+///
+/// Each variant maps 1:1 to a pure verb in [`crate::animation::placement`].
+/// Struct-shaped variants derive `deny_unknown_fields` semantics so malformed
+/// RON fails at load with a field-naming parse error (mirrors the rest of this
+/// schema). `Reflect` proves editor-readiness — the GUI can build a form per
+/// variant by reflection.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Reflect)]
+#[serde(deny_unknown_fields)]
+pub enum PlacementParams {
+    /// Inward-spiraling swirl: radius shrinks linearly to the anchor while the
+    /// angle sweeps at `omega` rad/tick.
+    ConvergeInward {
+        /// Starting radius in world px (at `progress == 0`).
+        radius_px: f32,
+        /// Angular sweep rate, radians per tick.
+        omega: f32,
+    },
+    /// Radial burst along the per-particle `phase` direction, scaled by spread.
+    FanOut {
+        /// Maximum outward distance in world px (at `progress == 1`).
+        spread_px: f32,
+    },
+    /// Closed-form lerp from caster toward target over the particle's life.
+    ArcLaunch {},
+    /// Fixed at the anchor; the verb contributes no offset.
+    Static,
+}
+
 /// Default scale returned by [`eval_scale`] for an empty curve.
 const DEFAULT_SCALE: f32 = 1.0;
 /// Default color (opaque white) returned by [`eval_color`] for an empty curve.
