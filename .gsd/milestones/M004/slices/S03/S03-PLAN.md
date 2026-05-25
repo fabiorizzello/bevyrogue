@@ -26,7 +26,7 @@ select_variant slots in front of the existing spawn_effect_by_id path as a pure 
   - Files: `src/animation/vfx_asset.rs`, `src/animation/mod.rs`, `assets/digimon/agumon/vfx.ron`, `tests/animation/vfx_variant_selection.rs`, `tests/animation.rs`
   - Verify: cargo test --test animation 2>&1 | tail -20 && cargo build 2>&1 | tail -5
 
-- [ ] **T02: Enrich baby_burner.detonate into a real data-driven burst + flash** `est:S`
+- [x] **T02: Enrich baby_burner.detonate into a real data-driven burst + flash** `est:S`
   Why: Today's baby_burner.detonate (vfx.ron:140-161) is a deliberate S02 placeholder — a single static size-18 flat quad reproducing the old Generic-kind detonate. The 'no hardcoded VFX paths' criterion is already satisfied (grep-guard), but the K001 visual review needs a detonate worth signing off. This must reuse the existing pure verbs (fan_out + static) and the on_expire chaining mechanism (MEM076/MEM077) — no parallel math, no novel placement verb (so no register_agumon_ext change), demonstrating the milestone's RON-only reuse path.
   - Files: `assets/digimon/agumon/vfx.ron`, `tests/animation/vfx_asset_load.rs`
   - Verify: cargo test --test animation 2>&1 | tail -20 && cargo build --features windowed 2>&1 | tail -5 && cargo test --features windowed --test windowed_only 2>&1 | tail -20

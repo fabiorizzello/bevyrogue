@@ -18,8 +18,17 @@
 - [x] **S02: S02** `risk:medium` `depends:[]`
   > After this: cargo winx shows Baby Flame charge ember-swirl and fast launch rendered through Registry-resolved placement verbs; a static grep confirms VfxParticleKind and kind_from_name no longer exist in render.rs.
 
-- [ ] **S03: S03** `risk:medium` `depends:[]`
+- [x] **S03: S03** `risk:medium` `depends:[]`
   > After this: Headless test maps a VfxContext (e.g. a skill-tree unlock) to a selected effect-tree variant deterministically; cargo winx shows Baby Burner detonate rendered from assets/digimon/agumon/vfx.ron with no hardcoded VFX paths left in render.rs.
+
+- [ ] **S04: S04** `risk:medium` `depends:[]`
+  > After this: After this: M004 states exactly which requirements it validates, the boundary map is populated, S03 declares its consumed S01 and S02 contracts, and validation no longer flags documentation or scope ambiguity.
+
+- [ ] **S05: Sharp Claws and rendering acceptance remediation** `risk:high` `depends:[S04]`
+  > After this: After this: Sharp Claws VFX is either authored and tested in assets/digimon/agumon/vfx.ron or explicitly rescoped, HDR bloom additive rendering criteria are implemented or rescoped, and automated evidence covers the chosen outcome.
+
+- [ ] **S06: Windowed visual signoff remediation** `risk:medium` `depends:[S05]`
+  > After this: After this: human cargo winx UAT for Baby Flame, Baby Burner, and Sharp Claws is captured or formally waived, with no remaining unchecked visual signoff requirements for M004.
 
 ## Boundary Map
 

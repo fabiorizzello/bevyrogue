@@ -132,12 +132,35 @@
                 ],
             ),
         ),
-        // Baby Burner detonate flash. Out of scope for S02's Baby Flame port (the
-        // full Baby Burner port is S03), but routed through the unified owned
-        // effect path so it keeps rendering after VfxParticleKind was deleted.
-        // Minimal static flash at the target; reproduces the old Generic-kind
-        // detonate quad (size 18, hue srgb(1.0, 0.8, 0.2), ttl 6, no texture).
+        // Baby Burner detonate: outward shard burst at the target, mirroring
+        // baby_flame.impact's count/spread/ease-out scale + alpha-fade.
+        // Chains baby_burner.flash for a bright central pop (S03 data-driven path).
         "baby_burner.detonate": (
+            placement: (
+                verb: "agumon/baby_flame/fan_out",
+                params: FanOut(spread_px: 64.0),
+                anchor: TargetCenter,
+            ),
+            appearance: (
+                count: 8,
+                spread_px: 64.0,
+                ttl_ticks: 5,
+                size_px: 14.0,
+                texture: "baby_flame_impact",
+                scale: [
+                    (t: 0.0, value: 0.0),
+                    (t: 0.5, value: 0.75),
+                    (t: 1.0, value: 1.0),
+                ],
+                color: [
+                    (t: 0.0, rgba: (1.0, 0.55, 0.2, 0.9)),
+                    (t: 1.0, rgba: (1.0, 0.55, 0.2, 0.0)),
+                ],
+            ),
+            on_expire: Some("baby_burner.flash"),
+        ),
+        // Bright central flash at the detonate origin: mirrors baby_flame.impact_flash.
+        "baby_burner.flash": (
             placement: (
                 verb: "agumon/baby_flame/static",
                 params: Static,
@@ -146,16 +169,16 @@
             appearance: (
                 count: 1,
                 spread_px: 0.0,
-                ttl_ticks: 6,
-                size_px: 18.0,
-                texture: "",
+                ttl_ticks: 2,
+                size_px: 26.0,
+                texture: "baby_flame_impact",
                 scale: [
                     (t: 0.0, value: 1.0),
                     (t: 1.0, value: 1.0),
                 ],
                 color: [
-                    (t: 0.0, rgba: (1.0, 0.8, 0.2, 1.0)),
-                    (t: 1.0, rgba: (1.0, 0.8, 0.2, 1.0)),
+                    (t: 0.0, rgba: (1.0, 0.82, 0.45, 0.95)),
+                    (t: 1.0, rgba: (1.0, 0.82, 0.45, 0.0)),
                 ],
             ),
         ),

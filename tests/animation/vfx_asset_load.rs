@@ -180,6 +180,73 @@ fn agumon_flash_color_curve_fades_from_bright_core() {
 }
 
 #[test]
+fn baby_burner_detonate_is_fan_out_burst_chaining_flash() {
+    let asset = agumon_vfx();
+    let det = resolve_effect(&asset, "baby_burner.detonate").expect("detonate present");
+
+    assert_eq!(det.placement.verb, "agumon/baby_flame/fan_out");
+    assert_eq!(
+        spawn_plan(det),
+        ImpactSpawnPlan { count: 8, spread_px: 64.0, ttl_ticks: 5 },
+        "detonate fan-out mirrors baby_flame.impact spawn plan"
+    );
+
+    let chained = det.on_expire.as_ref().expect("detonate must chain on_expire");
+    assert_eq!(chained.0, "baby_burner.flash", "detonate chains baby_burner.flash");
+}
+
+#[test]
+fn baby_burner_flash_is_static_and_fades() {
+    let asset = agumon_vfx();
+    let flash = resolve_effect(&asset, "baby_burner.flash").expect("flash present");
+
+    assert_eq!(flash.placement.verb, "agumon/baby_flame/static");
+    assert_eq!(
+        spawn_plan(flash),
+        ImpactSpawnPlan { count: 1, spread_px: 0.0, ttl_ticks: 2 }
+    );
+    assert_eq!(flash.appearance.size_px, 26.0);
+    // No on_expire — flash is the terminal effect.
+    assert!(flash.on_expire.is_none());
+}
+
+#[test]
+fn baby_burner_detonate_curves_match_authored_values() {
+    let asset = agumon_vfx();
+    let det = resolve_effect(&asset, "baby_burner.detonate").expect("detonate present");
+
+    // Scale: ease-out, mirrors baby_flame.impact exactly.
+    assert_eq!(eval_scale(&det.appearance.scale, 0.0), 0.0);
+    assert_eq!(eval_scale(&det.appearance.scale, 0.5), 0.75);
+    assert_eq!(eval_scale(&det.appearance.scale, 1.0), 1.0);
+
+    // Color: holds hue, alpha linear-fades to transparent.
+    assert_eq!(eval_color(&det.appearance.color, 0.0), [1.0, 0.55, 0.2, 0.9]);
+    assert_eq!(eval_color(&det.appearance.color, 1.0), [1.0, 0.55, 0.2, 0.0]);
+    assert_rgba_approx(
+        eval_color(&det.appearance.color, 0.5),
+        [1.0, 0.55, 0.2, 0.45],
+        "detonate midpoint alpha fade",
+    );
+}
+
+#[test]
+fn baby_burner_flash_curves_match_authored_values() {
+    let asset = agumon_vfx();
+    let flash = resolve_effect(&asset, "baby_burner.flash").expect("flash present");
+
+    assert_eq!(eval_color(&flash.appearance.color, 0.0), [1.0, 0.82, 0.45, 0.95]);
+    assert_eq!(eval_color(&flash.appearance.color, 1.0), [1.0, 0.82, 0.45, 0.0]);
+    assert_rgba_approx(
+        eval_color(&flash.appearance.color, 0.5),
+        [1.0, 0.82, 0.45, 0.475],
+        "flash midpoint alpha",
+    );
+    // Scale holds constant across life.
+    assert_eq!(eval_scale(&flash.appearance.scale, 0.5), 1.0);
+}
+
+#[test]
 fn validate_effects_accepts_the_real_asset() {
     let asset = agumon_vfx();
     assert_eq!(
