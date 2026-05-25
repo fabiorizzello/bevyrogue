@@ -36,6 +36,8 @@ mod vfx_asset_eval;
 mod vfx_asset_load;
 #[path = "animation/vfx_asset_schema.rs"]
 mod vfx_asset_schema;
+#[path = "animation/vfx_variant_selection.rs"]
+mod vfx_variant_selection;
 #[path = "animation/vfx_handle_seam.rs"]
 mod vfx_handle_seam;
 #[path = "animation/vfx_spawn_descriptor.rs"]

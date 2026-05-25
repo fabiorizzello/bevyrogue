@@ -183,4 +183,14 @@
             ),
         ),
     },
+    // Variant-selection table (D033 graft 5): a synthetic skill-tree unlock
+    // (`baby_burner`) maps two variation keys onto EXISTING effect ids. No real
+    // unlock system is wired — this proves the deterministic selection seam and
+    // keeps the real asset self-validating (every target resolves in `effects`).
+    variants: {
+        "baby_burner": {
+            "base": "baby_burner.detonate",
+            "empowered": "baby_flame.impact",
+        },
+    },
 )

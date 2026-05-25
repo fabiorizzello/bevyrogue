@@ -42,6 +42,14 @@ pub struct EffectId(pub String);
 pub struct VfxAsset {
     /// Each entry maps a namespaced effect id to its definition.
     pub effects: BTreeMap<EffectId, EffectDef>,
+    /// Optional variant-selection table (D033 graft 5): `skill_id -> variant_key
+    /// -> target [`EffectId`]`. Mirrors how anim_graph state picks which tree to
+    /// instantiate, but stays closed data (D035) — not a new ExtRegistries axis.
+    /// Nested `BTreeMap`s (not a tuple key) keep RON authoring readable and give a
+    /// deterministic iteration order (R004). Defaulted + empty, so existing assets
+    /// without a `variants` block keep loading under `deny_unknown_fields`.
+    #[serde(default)]
+    pub variants: BTreeMap<String, BTreeMap<String, EffectId>>,
 }
 
 /// One named effect: where it is placed, how it appears, and what (optionally)
@@ -220,6 +228,30 @@ pub fn resolve_effect<'a>(asset: &'a VfxAsset, effect_id: &str) -> Option<&'a Ef
     asset.effects.get(&EffectId(effect_id.to_owned()))
 }
 
+/// Render-free, gameplay-numeric-free selection input for the variant seam
+/// (D033 graft 5). A synthetic stand-in for a future skill-tree unlock context:
+/// `skill_id` names the unlock bucket, `variant_key` the chosen variation within
+/// it. Carries no numbers and no render/world handles (R012/MEM044, R004) — it
+/// only keys into [`VfxAsset::variants`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VfxContext {
+    /// Unlock bucket id, e.g. `"baby_burner"`.
+    pub skill_id: String,
+    /// Chosen variation within the bucket, e.g. `"empowered"`.
+    pub variant_key: String,
+}
+
+/// Deterministically select an effect-tree variant for a synthetic
+/// [`VfxContext`] (D033 graft 5). Looks up `variants[skill_id][variant_key]` and
+/// delegates to [`resolve_effect`], returning `None` for any unmapped key or a
+/// mapped-but-absent target so the caller falls back to the base effect — the
+/// same None-not-panic discipline as [`resolve_effect`]. Pure and deterministic
+/// (R004): no RNG, no clock; identical input yields an identical result.
+pub fn select_variant<'a>(asset: &'a VfxAsset, ctx: &VfxContext) -> Option<&'a EffectDef> {
+    let target = asset.variants.get(&ctx.skill_id)?.get(&ctx.variant_key)?;
+    resolve_effect(asset, &target.0)
+}
+
 /// Why a [`VfxAsset`] failed headless load-time validation. Carries the offending
 /// effect id and a precise reason so the windowed layer can warn once with the
 /// Digimon/effect/verb that broke, then skip that effect (slice verification:
@@ -240,6 +272,17 @@ pub enum VfxValidationError {
         /// The missing target effect id.
         missing: String,
     },
+    /// A `variants[skill_id][variant_key]` target effect id is not present in the
+    /// asset (D033 graft 5). Same warn-once + skip pattern as the other variants
+    /// (MEM076): surfaced as data, never a panic.
+    DanglingVariant {
+        /// The unlock bucket carrying the dangling variant reference.
+        skill_id: String,
+        /// The variant key whose target is missing.
+        variant_key: String,
+        /// The missing target effect id.
+        missing: String,
+    },
 }
 
 impl std::fmt::Display for VfxValidationError {
@@ -251,6 +294,10 @@ impl std::fmt::Display for VfxValidationError {
             Self::DanglingOnExpire { effect_id, missing } => {
                 write!(f, "effect `{effect_id}` on_expire references absent effect `{missing}`")
             }
+            Self::DanglingVariant { skill_id, variant_key, missing } => write!(
+                f,
+                "variant `{skill_id}`/`{variant_key}` references absent effect `{missing}`"
+            ),
         }
     }
 }
@@ -277,6 +324,20 @@ pub fn validate_effects(
             if !asset.effects.contains_key(target) {
                 return Err(VfxValidationError::DanglingOnExpire {
                     effect_id: id.0.clone(),
+                    missing: target.0.clone(),
+                });
+            }
+        }
+    }
+    // Variant targets are checked after the effect graph, in deterministic
+    // BTreeMap order (skill_id then variant_key), returning the first dangling
+    // target so the windowed layer warns + skips (D033 graft 5, MEM076).
+    for (skill_id, by_key) in &asset.variants {
+        for (variant_key, target) in by_key {
+            if !asset.effects.contains_key(target) {
+                return Err(VfxValidationError::DanglingVariant {
+                    skill_id: skill_id.clone(),
+                    variant_key: variant_key.clone(),
                     missing: target.0.clone(),
                 });
             }

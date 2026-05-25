@@ -12,13 +12,13 @@
 
 ## Slices
 
-- [ ] **S01: Owned vfx.ron schema + appearance curve eval (tracer bullet)** `risk:high` `depends:[]`
+- [x] **S01: S01** `risk:high` `depends:[]`
   > After this: Headless test loads assets/digimon/agumon/vfx.ron into a typed VfxAsset and evaluates appearance scale/color keyframe curves deterministically; Baby Flame impact fan-out renders from the data path in cargo winx.
 
-- [ ] **S02: Placement verbs in Registry + generic render dispatcher** `risk:medium` `depends:[S01]`
+- [x] **S02: S02** `risk:medium` `depends:[]`
   > After this: cargo winx shows Baby Flame charge ember-swirl and fast launch rendered through Registry-resolved placement verbs; a static grep confirms VfxParticleKind and kind_from_name no longer exist in render.rs.
 
-- [ ] **S03: Skill-tree variation via variant selection + Baby Burner port** `risk:medium` `depends:[S02]`
+- [ ] **S03: S03** `risk:medium` `depends:[]`
   > After this: Headless test maps a VfxContext (e.g. a skill-tree unlock) to a selected effect-tree variant deterministically; cargo winx shows Baby Burner detonate rendered from assets/digimon/agumon/vfx.ron with no hardcoded VFX paths left in render.rs.
 
 ## Boundary Map
