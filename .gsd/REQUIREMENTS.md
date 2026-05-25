@@ -36,7 +36,8 @@ This file is the explicit capability and coverage contract for the project.
 
 ### R012 — Untitled
 - Status: validated
-- Validation: Validated in M002: S04 Baby Burner reactive detonate with flash VFX via Rust-configured entity, no RON/editor; S09 vfx_handle_seam proves SpawnParticle RON round-trip with opaque ParticleId, closed VfxLocus/VfxMotion enums, no numeric gameplay payload in serialized form. S04-ASSESSMENT 9/9 PASS.
+- Supporting slices: M003/S03
+- Validation: Validated in M002: S04 Baby Burner reactive detonate with flash VFX via Rust-configured entity, no RON/editor; S09 vfx_handle_seam proves SpawnParticle RON round-trip with opaque ParticleId, closed VfxLocus/VfxMotion enums, no numeric gameplay payload in serialized form. S04-ASSESSMENT 9/9 PASS. Re-verified (not re-validated) in M003/S03: the opaque-handle seam was extended into a renderable VfxSpawnDescriptor + windowed particle pipeline while preserving the no-numeric-payload serialization invariant; `cargo test --test animation` structural vfx_spawn_descriptor coverage green. Status unchanged (already validated).
 
 ### R014 — Untitled
 - Status: validated
@@ -48,7 +49,8 @@ This file is the explicit capability and coverage contract for the project.
 
 ### R016 — Untitled
 - Status: validated
-- Validation: Validated in M002: S06 R016 invariant gate executed (7 cargo commands, R005/R006/R003/R016 hygiene scans all PASS); S08 anim_graph_input_purity + r013_failure_visibility + windowed regression sweep green; S09 clip_atlas_parity 2/2, regression guard 25 windowed_only tests exit 0. No .md added to repo root; no windowed deps outside feature gate.
+- Supporting slices: M003/S03
+- Validation: Validated in M002: S06 R016 invariant gate executed (7 cargo commands, R005/R006/R003/R016 hygiene scans all PASS); S08 anim_graph_input_purity + r013_failure_visibility + windowed regression sweep green; S09 clip_atlas_parity 2/2, regression guard 25 windowed_only tests exit 0. No .md added to repo root; no windowed deps outside feature gate. Re-verified (not re-validated) in M003/S03: full `cargo test` headless plus `cargo build --features windowed` and `cargo test --features windowed` green, confirming the new particle rendering path leaked no windowed deps into headless code. Status unchanged (already validated).
 
 ## Deferred
 
@@ -65,10 +67,10 @@ This file is the explicit capability and coverage contract for the project.
 | R008 |  | validated | none | none | Validated in M002: S01 SkillGraphRegistry resolves skill-id→graph with zero if-else dispatch; S09 skill_graph_mapping_extensibility proves 1:1 multi-id resolution and InstantFallback for unregistered ids; CompiledTimeline.id = skill_id confirmed. |
 | R010 |  | validated | none | none | Validated in M002: S03 §9 phase strip updates from EventReader<CombatEvent>; structural test asserts the UI path never mutates combat state; S03-SUMMARY verification_result: passed. |
 | R011 |  | validated | none | none | Validated in M002: S05 full Agumon kit assembled vs Agumon dummy; two-sprite encounter, HP bars, damage numbers, hurt blink, Baby Flame per-hop loop, Baby Burner timeline + detonate chain, Twin Core badge; dummy dies at 0 HP. S07 energy-backed ult loop proven end-to-end. S05-UAT passed. |
-| R012 |  | validated | none | none | Validated in M002: S04 Baby Burner reactive detonate with flash VFX via Rust-configured entity, no RON/editor; S09 vfx_handle_seam proves SpawnParticle RON round-trip with opaque ParticleId, closed VfxLocus/VfxMotion enums, no numeric gameplay payload in serialized form. S04-ASSESSMENT 9/9 PASS. |
+| R012 |  | validated | none | M003/S03 | Validated in M002: S04 Baby Burner reactive detonate with flash VFX via Rust-configured entity, no RON/editor; S09 vfx_handle_seam proves SpawnParticle RON round-trip with opaque ParticleId, closed VfxLocus/VfxMotion enums, no numeric gameplay payload in serialized form. S04-ASSESSMENT 9/9 PASS. Re-verified (not re-validated) in M003/S03: the opaque-handle seam was extended into a renderable VfxSpawnDescriptor + windowed particle pipeline while preserving the no-numeric-payload serialization invariant; `cargo test --test animation` structural vfx_spawn_descriptor coverage green. Status unchanged (already validated). |
 | R014 |  | validated | none | none | Validated in M002: S06 windowed UAT runbook + capture script delivered; architectural review report authored with 7 findings triaged (none critical); R016 invariants green; hot-reload mid-skill confirmed not corrupting world state. Live soak frame-time data pending manual capture per K001 (auto-mode cannot launch windowed binary); framework complete. |
 | R015 |  | validated | none | none | Validated in M002: S06 repomix-grounded architectural review report produced (S06-ARCHITECTURAL-REVIEW.md); 7 findings (F1–F7 all low/medium/info severity); none critical; all findings triaged to M003+ with rationale. MV03 verdict PASS. |
-| R016 |  | validated | none | none | Validated in M002: S06 R016 invariant gate executed (7 cargo commands, R005/R006/R003/R016 hygiene scans all PASS); S08 anim_graph_input_purity + r013_failure_visibility + windowed regression sweep green; S09 clip_atlas_parity 2/2, regression guard 25 windowed_only tests exit 0. No .md added to repo root; no windowed deps outside feature gate. |
+| R016 |  | validated | none | M003/S03 | Validated in M002: S06 R016 invariant gate executed (7 cargo commands, R005/R006/R003/R016 hygiene scans all PASS); S08 anim_graph_input_purity + r013_failure_visibility + windowed regression sweep green; S09 clip_atlas_parity 2/2, regression guard 25 windowed_only tests exit 0. No .md added to repo root; no windowed deps outside feature gate. Re-verified (not re-validated) in M003/S03: full `cargo test` headless plus `cargo build --features windowed` and `cargo test --features windowed` green, confirming the new particle rendering path leaked no windowed deps into headless code. Status unchanged (already validated). |
 
 ## Coverage Summary
 

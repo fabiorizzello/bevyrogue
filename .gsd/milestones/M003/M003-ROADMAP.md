@@ -1,4 +1,4 @@
-# M003: Make Agumon Render On-Screen
+# M003: M003: Make Agumon Render On-Screen
 
 **Vision:** Turn M002's proven-but-invisible combat stack into something you can watch fight. Bind the existing 512px Agumon grid atlas to the on-screen Sprite, drive Sprite.texture_atlas.index from the AnimGraphPlayer's current frame, and make all five animation surfaces — idle stance, basic (Sharp Claws), skill (Baby Flame), ultimate (Baby Burner), and the VFX flash — render as real pixels on both the Agumon ally and a mirrored Agumon dummy, with damage landing on the rendered impact frame via the existing two-clock cue barrier.
 
@@ -23,10 +23,3 @@
 ## Boundary Map
 
 ## Boundary Map
-
-- **asset_server** — loads assets/digimon/agumon_atlas.png (Handle<Image>) alongside the already-loaded Clip/AnimGraph RON. New: image load + load-state surface for the atlas PNG.
-- **Lib (bevyrogue::animation)** — new testable contract: build TextureAtlasLayout-equivalent geometry (columns/rows/frame_size) from Clip.meta and an identity frame→atlas-index map, reachable from headless tests under tests/ (which link only the lib, not the binary).
-- **src/windowed/render.rs** — binds Handle<Image> + TextureAtlas onto the on-screen Sprite (replacing Sprite{..default()}), drives texture_atlas.index from AnimGraphPlayer each tick, and extends the presentation bridge from Sharp Claws-only to Baby Flame + Baby Burner.
-- **Two-clock cue barrier (TimelineClock / Clock::Windowed, SuspendedTimelineState)** — releases on the rendered impact frame for all three timelines.
-- **VFX seam (SpawnParticle / ParticleId / VfxLocus / VfxMotion)** — routed through the Cue/reactive bus into real particle entities; no physics/colliders (CAP-7c065a44).
-- **§9 UI panels** — continue to read CombatEvent (event-driven, never mutate CombatState); BabyBurnerFlashState egui chip stays as the UI affordance while the world-particle render is added.

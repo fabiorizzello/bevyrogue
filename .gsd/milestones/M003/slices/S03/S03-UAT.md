@@ -1,7 +1,15 @@
+---
+sliceId: S03
+uatType: manual-windowed
+verdict: pass
+date: 2026-05-25T00:00:00.000Z
+---
+
 # S03: S03 — UAT
 
 **Milestone:** M003
 **Written:** 2026-05-22T13:32:09.830Z
+**Recorded pass:** 2026-05-25 (user manual `cargo winx` sign-off)
 
 # S03 UAT — VFX flash renders as visible particles
 
@@ -30,6 +38,21 @@ Manual windowed visual verification (`cargo winx`) plus observation of the exist
 - The existing egui Baby Burner flash chip still appears; the new world particle complements it rather than replacing or breaking it.
 - Particles despawn cleanly after their short TTL with no permanent artifacts left on screen.
 - Both ally and mirrored dummy can show the VFX when they are the acting side.
+
+## Recorded Result — PASS (2026-05-25)
+User ran the `cargo winx` Agumon-vs-dummy encounter (K001 manual loop) and confirmed all five surfaces render and animate on both actors:
+
+| Surface | Result | User note |
+|---------|--------|-----------|
+| Idle (both sprites) | PASS | Smooth cycling, no freeze/flicker |
+| Basic (Sharp Claws) | PASS | Damage lands on impact frame, not keypress |
+| Skill (Baby Flame) | PASS | cast→impact→recover linear; world-space particle flash **visible** at authored locus; damage on impact frame |
+| Ultimate (Baby Burner) | PASS | charge→launch→recovery; world-space detonate flash visible **and** egui chip still fires; damage on launch frame |
+| Cleanup | PASS | Particles despawn cleanly after TTL; re-triggers spawn fresh particles, no stuck quads or buildup |
+
+All Expected Outcomes met. The VFX seam is no longer inert; the world particle complements (does not replace) the preserved egui chip path.
+
+**Follow-up (out of scope for S03, deferred to a fresh polish task):** the user noted the Baby Flame particle *aesthetic* is functional but plainer than envisioned — a desired future look is a swirling charge-in-mouth feeding the flame, a fast launch, and a flame-dissolve burst on impact. This is a new polish wish beyond S03's "flash renders as visible particles" contract, which is satisfied. Tracked for M004+ / a `/gsd quick` task; reuses the three existing assets (`baby_flame_charge/projectile/impact.png`) with at most one optional ember sprite.
 
 ## Edge Cases
 - If a target becomes unavailable or cannot be resolved, the app should avoid crashing; the effect may be skipped and debug logging should indicate the unresolved target case.
