@@ -1,18 +1,29 @@
-//! M004/S01 T01 — editor-ready `VfxAsset` schema (D033/D034).
+//! M004/S02 T02 — editor-ready `VfxAsset` schema (D033/D034/D035).
 //!
-//! Asserts: (a) the typed schema round-trips through RON, (b) `deny_unknown_fields`
-//! rejects unknown fields, and (c) the schema is reflectable (D034 editor-readiness).
+//! Asserts: (a) the typed schema (now with typed placement params + anchor and
+//! per-particle size/texture) round-trips through RON, (b) `deny_unknown_fields`
+//! rejects unknown fields, and (c) the schema is reflectable (D034
+//! editor-readiness) — including the new `Placement.params`/`anchor` and
+//! `Appearance.size_px`/`texture` fields.
 
-use bevyrogue::animation::{Appearance, VfxAsset};
+use bevyrogue::animation::{
+    Appearance, ColorCurve, Placement, PlacementAnchor, PlacementParams, ScaleCurve, VfxAsset,
+};
 
 const SAMPLE: &str = r#"(
     effects: {
         "baby_flame.impact": (
-            placement: (verb: "impact.fan_out"),
+            placement: (
+                verb: "agumon/baby_flame/fan_out",
+                params: FanOut(spread_px: 64.0),
+                anchor: TargetCenter,
+            ),
             appearance: (
                 count: 8,
                 spread_px: 24.0,
                 ttl_ticks: 30,
+                size_px: 14.0,
+                texture: "baby_flame_impact",
                 scale: [(t: 0.0, value: 0.2), (t: 1.0, value: 1.0)],
                 color: [
                     (t: 0.0, rgba: (1.0, 0.8, 0.2, 1.0)),
@@ -34,16 +45,28 @@ fn vfx_asset_round_trips_through_ron() {
 }
 
 #[test]
+fn all_five_authored_effects_round_trip() {
+    let asset: VfxAsset =
+        ron::from_str(include_str!("../../assets/digimon/agumon/vfx.ron")).expect("asset parses");
+    let serialized = ron::to_string(&asset).expect("asset serializes");
+    let reparsed: VfxAsset = ron::from_str(&serialized).expect("asset re-deserializes");
+    assert_eq!(asset, reparsed, "all five effects must round-trip losslessly");
+    assert_eq!(asset.effects.len(), 5, "asset ships exactly five effects");
+}
+
+#[test]
 fn unknown_field_is_rejected() {
     // Same shape as SAMPLE but with an unknown field inside an Appearance.
     let bad = r#"(
         effects: {
             "x": (
-                placement: (verb: "v"),
+                placement: (verb: "v", params: Static, anchor: Mouth),
                 appearance: (
                     count: 1,
                     spread_px: 0.0,
                     ttl_ticks: 1,
+                    size_px: 1.0,
+                    texture: "t",
                     scale: [],
                     color: [],
                     bogus_field: 3,
@@ -58,6 +81,25 @@ fn unknown_field_is_rejected() {
 }
 
 #[test]
+fn unknown_placement_field_is_rejected() {
+    let bad = r#"(
+        effects: {
+            "x": (
+                placement: (verb: "v", params: Static, anchor: Mouth, bogus: 1),
+                appearance: (
+                    count: 1, spread_px: 0.0, ttl_ticks: 1, size_px: 1.0,
+                    texture: "t", scale: [], color: [],
+                ),
+            ),
+        },
+    )"#;
+    assert!(
+        ron::from_str::<VfxAsset>(bad).is_err(),
+        "deny_unknown_fields must reject an unknown Placement field"
+    );
+}
+
+#[test]
 fn appearance_is_reflectable_with_expected_fields() {
     use bevy::reflect::Struct;
 
@@ -65,8 +107,10 @@ fn appearance_is_reflectable_with_expected_fields() {
         count: 1,
         spread_px: 0.0,
         ttl_ticks: 1,
-        scale: bevyrogue::animation::ScaleCurve(vec![]),
-        color: bevyrogue::animation::ColorCurve(vec![]),
+        scale: ScaleCurve(vec![]),
+        color: ColorCurve(vec![]),
+        size_px: 1.0,
+        texture: "t".to_owned(),
     };
 
     let field_names: Vec<&str> = (0..appearance.field_len())
@@ -74,7 +118,27 @@ fn appearance_is_reflectable_with_expected_fields() {
         .collect();
     assert_eq!(
         field_names,
-        vec!["count", "spread_px", "ttl_ticks", "scale", "color"],
-        "Reflect must expose Appearance's typed fields for the future GUI editor"
+        vec!["count", "spread_px", "ttl_ticks", "scale", "color", "size_px", "texture"],
+        "Reflect must expose Appearance's typed fields (incl. new size_px/texture) for the GUI editor"
+    );
+}
+
+#[test]
+fn placement_is_reflectable_with_typed_params_and_anchor() {
+    use bevy::reflect::Struct;
+
+    let placement = Placement {
+        verb: "agumon/baby_flame/fan_out".to_owned(),
+        params: PlacementParams::FanOut { spread_px: 64.0 },
+        anchor: PlacementAnchor::TargetCenter,
+    };
+
+    let field_names: Vec<&str> = (0..placement.field_len())
+        .map(|i| placement.name_at(i).expect("field name at index"))
+        .collect();
+    assert_eq!(
+        field_names,
+        vec!["verb", "params", "anchor"],
+        "Reflect must expose Placement's verb + typed params + anchor for the GUI editor"
     );
 }

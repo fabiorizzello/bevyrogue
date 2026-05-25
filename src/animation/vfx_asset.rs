@@ -58,14 +58,19 @@ pub struct EffectDef {
     pub on_expire: Option<EffectId>,
 }
 
-/// Typed placement reference. `verb` names a namespaced Registry id by string;
-/// resolution is deferred to S02 (here it is data only). Kept as a struct so
-/// future typed placement parameters extend it without a serde shape change.
+/// Typed placement reference. `verb` names a namespaced `PlacementExt` Registry
+/// id by string (resolved at the windowed layer in S02); `params` is the typed,
+/// editor-ready payload that verb consumes; `anchor` is the world-space origin
+/// the resolved offset is applied relative to.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Reflect)]
 #[serde(deny_unknown_fields)]
 pub struct Placement {
-    /// Namespaced Registry verb id (e.g. `"impact.fan_out"`).
+    /// Namespaced Registry verb id (e.g. `"agumon/baby_flame/fan_out"`).
     pub verb: String,
+    /// Typed, closed-vocabulary parameter payload for the verb (D035).
+    pub params: PlacementParams,
+    /// World-space anchor the resolved offset is applied relative to.
+    pub anchor: PlacementAnchor,
 }
 
 /// Typed, introspectable appearance description — the editor-readiness surface
@@ -83,6 +88,12 @@ pub struct Appearance {
     pub scale: ScaleCurve,
     /// Color-over-lifetime curve.
     pub color: ColorCurve,
+    /// Per-particle quad size in pixels (replaces the per-kind
+    /// `vfx_particle_size` match the dispatcher removes in T03).
+    pub size_px: f32,
+    /// Windowed-resolved image key (replaces the per-kind texture match the
+    /// dispatcher removes in T03). Headless code never loads it.
+    pub texture: String,
 }
 
 /// Scale-over-lifetime curve as an ordered list of keyframes.
@@ -207,6 +218,71 @@ pub struct ImpactSpawnPlan {
 /// the windowed layer can log + fall back rather than panic (slice verification).
 pub fn resolve_effect<'a>(asset: &'a VfxAsset, effect_id: &str) -> Option<&'a EffectDef> {
     asset.effects.get(&EffectId(effect_id.to_owned()))
+}
+
+/// Why a [`VfxAsset`] failed headless load-time validation. Carries the offending
+/// effect id and a precise reason so the windowed layer can warn once with the
+/// Digimon/effect/verb that broke, then skip that effect (slice verification:
+/// surfaced as data, never a panic).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum VfxValidationError {
+    /// `effect.placement.verb` is not in the set of registered verb ids.
+    UnknownVerb {
+        /// The effect whose placement names an unregistered verb.
+        effect_id: String,
+        /// The unresolvable verb id.
+        verb: String,
+    },
+    /// `effect.on_expire` points at an effect id not present in the asset.
+    DanglingOnExpire {
+        /// The effect carrying the dangling chain reference.
+        effect_id: String,
+        /// The missing target effect id.
+        missing: String,
+    },
+}
+
+impl std::fmt::Display for VfxValidationError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::UnknownVerb { effect_id, verb } => {
+                write!(f, "effect `{effect_id}` references unregistered placement verb `{verb}`")
+            }
+            Self::DanglingOnExpire { effect_id, missing } => {
+                write!(f, "effect `{effect_id}` on_expire references absent effect `{missing}`")
+            }
+        }
+    }
+}
+
+impl std::error::Error for VfxValidationError {}
+
+/// Headless load-time validation (CONTEXT-mandated): every effect's placement
+/// verb must be in `known_verbs`, and every `on_expire` id must resolve to a
+/// present effect. Returns the first offending pair (deterministic `BTreeMap`
+/// order, R004) as data so the caller warns + skips rather than panics. Pure: no
+/// I/O, no Bevy world/render types.
+pub fn validate_effects(
+    asset: &VfxAsset,
+    known_verbs: &[&str],
+) -> Result<(), VfxValidationError> {
+    for (id, effect) in &asset.effects {
+        if !known_verbs.contains(&effect.placement.verb.as_str()) {
+            return Err(VfxValidationError::UnknownVerb {
+                effect_id: id.0.clone(),
+                verb: effect.placement.verb.clone(),
+            });
+        }
+        if let Some(target) = &effect.on_expire {
+            if !asset.effects.contains_key(target) {
+                return Err(VfxValidationError::DanglingOnExpire {
+                    effect_id: id.0.clone(),
+                    missing: target.0.clone(),
+                });
+            }
+        }
+    }
+    Ok(())
 }
 
 /// Build the concrete [`ImpactSpawnPlan`] for an effect from its [`Appearance`].

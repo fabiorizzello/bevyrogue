@@ -1,32 +1,124 @@
-// Agumon owned VFX asset (M004/S01, D033/D034).
+// Agumon owned VFX asset (M004/S02, D033/D034/D035).
 //
 // Typed, editor-ready `VfxAsset`: a map of namespaced effect id -> EffectDef.
-// This slice ports only the Baby Flame impact fan-out (+ its central flash) to
-// prove the content-as-data path end-to-end; the windowed layer reads these
-// numbers instead of the hardcoded src/windowed/render.rs constants.
+// S02 ports ALL five Baby Flame effects to the owned data path. Every per-tick
+// position is driven by a Registry-resolved placement verb (`placement.verb` +
+// typed `placement.params`), and every appearance value (ttl, size, texture,
+// scale/color curves) lives here instead of the hardcoded src/windowed/render.rs
+// constants the dispatcher removes in T03.
 //
-// Provenance of the numbers (render.rs):
-//   - count 8        = BABY_FLAME_IMPACT_SHARD_COUNT
-//   - ttl_ticks 5    = BABY_FLAME_IMPACT_SHARD_TTL
-//   - spread_px 64.0 = BABY_FLAME_IMPACT_SHARD_SPREAD_PX
-//   - scale curve    = baby_flame_shard_offset ease-out 1-(1-t)^2, sampled
-//                      (0.0->0.0, 0.5->0.75, 1.0->1.0) as the outward fraction
-//   - color curve    = shard color srgba(1.0, 0.55, 0.2, _) with the
-//                      baby_flame_shard_alpha linear fade 0.9 -> 0.0
-//   - flash color    = central impact srgba(1.0, 0.82, 0.45, _), ttl 2
+// Provenance of the numbers (render.rs), preserving the K001 visual baseline:
+//   charge      count 1, ttl 24, size 22.0, tex baby_flame_charge,
+//               scale 0.42->~0.9 over first quarter of life (growth=min(age,6)/6),
+//               alpha 0.35->0.88 (4-tick micro-pulse dropped — documented K001 dev),
+//               hue srgba(1.0, 0.75, 0.25, _)  [render.rs:1342-1355, :1069]
+//   ember       count 7 = BABY_FLAME_EMBER_COUNT, ttl 24 = BABY_FLAME_EMBER_TTL,
+//               size 11.0 = BABY_FLAME_EMBER_SIZE, tex baby_flame_charge,
+//               converge_inward radius 58.0 = BABY_FLAME_EMBER_RADIUS_PX,
+//               omega 0.9 = BABY_FLAME_EMBER_OMEGA, alpha 0.9->0.0,
+//               hue srgba(1.0, 0.85, 0.4, _)  [render.rs:948-957, :1070]
+//   projectile  count 1, ttl 4, size 16.0, tex baby_flame_projectile,
+//               arc_launch toward target, hue srgba(1.0, 0.45, 0.15, ~0.95);
+//               on_expire chains baby_flame.impact — the data replacement for the
+//               hardcoded projectile->impact burst  [render.rs:1428-1436, :1071]
+//   impact      count 8 = BABY_FLAME_IMPACT_SHARD_COUNT, ttl 5 = *_SHARD_TTL,
+//               size 14.0 = *_SHARD_SIZE, tex baby_flame_impact,
+//               fan_out spread 64.0 = *_SHARD_SPREAD_PX, ease-out 1-(1-t)^2,
+//               hue srgba(1.0, 0.55, 0.2, _) alpha 0.9->0.0  [render.rs:972-981, :1073]
+//   impact_flash count 1, ttl 2, size 26.0, tex baby_flame_impact, static,
+//               hue srgba(1.0, 0.82, 0.45, _) alpha 0.95->0.0  [render.rs:1072]
 //
 // Per R012 this presentation asset carries numeric appearance values, but it is
 // a SEPARATE asset from the SpawnParticle command — no numeric gameplay payload
 // is added to the command surface.
 (
     effects: {
+        // Charge orb: grows + brightens at the caster's mouth before launch.
+        "baby_flame.charge": (
+            placement: (
+                verb: "agumon/baby_flame/static",
+                params: Static,
+                anchor: Mouth,
+            ),
+            appearance: (
+                count: 1,
+                spread_px: 0.0,
+                ttl_ticks: 24,
+                size_px: 22.0,
+                texture: "baby_flame_charge",
+                // Growth maxes at age 6 (=0.25 life) then holds — micro-pulse dropped.
+                scale: [
+                    (t: 0.0, value: 0.42),
+                    (t: 0.25, value: 0.9),
+                    (t: 1.0, value: 0.9),
+                ],
+                color: [
+                    (t: 0.0, rgba: (1.0, 0.75, 0.25, 0.35)),
+                    (t: 0.25, rgba: (1.0, 0.75, 0.25, 0.88)),
+                    (t: 1.0, rgba: (1.0, 0.75, 0.25, 0.88)),
+                ],
+            ),
+        ),
+        // Ember swirl: embers spiral inward to the mouth and fade as they merge.
+        "baby_flame.ember": (
+            placement: (
+                verb: "agumon/baby_flame/converge_inward",
+                params: ConvergeInward(radius_px: 58.0, omega: 0.9),
+                anchor: Mouth,
+            ),
+            appearance: (
+                count: 7,
+                spread_px: 0.0,
+                ttl_ticks: 24,
+                size_px: 11.0,
+                texture: "baby_flame_charge",
+                scale: [
+                    (t: 0.0, value: 1.0),
+                    (t: 1.0, value: 1.0),
+                ],
+                color: [
+                    (t: 0.0, rgba: (1.0, 0.85, 0.4, 0.9)),
+                    (t: 1.0, rgba: (1.0, 0.85, 0.4, 0.0)),
+                ],
+            ),
+        ),
+        // Projectile: the flame rips across the gap, then chains the impact burst.
+        "baby_flame.projectile": (
+            placement: (
+                verb: "agumon/baby_flame/arc_launch",
+                params: ArcLaunch(),
+                anchor: CasterCenter,
+            ),
+            appearance: (
+                count: 1,
+                spread_px: 0.0,
+                ttl_ticks: 4,
+                size_px: 16.0,
+                texture: "baby_flame_projectile",
+                scale: [
+                    (t: 0.0, value: 1.0),
+                    (t: 1.0, value: 1.0),
+                ],
+                color: [
+                    (t: 0.0, rgba: (1.0, 0.45, 0.15, 0.95)),
+                    (t: 1.0, rgba: (1.0, 0.45, 0.15, 0.95)),
+                ],
+            ),
+            on_expire: Some("baby_flame.impact"),
+        ),
         // Dissolve fan: shards radiate outward from the impact point and fade.
         "baby_flame.impact": (
-            placement: (verb: "impact.fan_out"),
+            placement: (
+                verb: "agumon/baby_flame/fan_out",
+                params: FanOut(spread_px: 64.0),
+                anchor: TargetCenter,
+            ),
             appearance: (
                 count: 8,
                 spread_px: 64.0,
                 ttl_ticks: 5,
+                size_px: 14.0,
+                texture: "baby_flame_impact",
                 // Ease-out outward fraction: bursts fast, then settles.
                 scale: [
                     (t: 0.0, value: 0.0),
@@ -42,11 +134,17 @@
         ),
         // Bright central flash at the impact origin.
         "baby_flame.impact_flash": (
-            placement: (verb: "impact.flash"),
+            placement: (
+                verb: "agumon/baby_flame/static",
+                params: Static,
+                anchor: TargetCenter,
+            ),
             appearance: (
                 count: 1,
                 spread_px: 0.0,
                 ttl_ticks: 2,
+                size_px: 26.0,
+                texture: "baby_flame_impact",
                 scale: [
                     (t: 0.0, value: 1.0),
                     (t: 1.0, value: 1.0),

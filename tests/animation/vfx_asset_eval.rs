@@ -7,7 +7,8 @@
 
 use bevyrogue::animation::{
     eval_color, eval_scale, resolve_effect, spawn_plan, Appearance, ColorCurve, ColorKeyframe,
-    EffectDef, ImpactSpawnPlan, Placement, ScaleCurve, ScaleKeyframe, VfxAsset,
+    EffectDef, ImpactSpawnPlan, Placement, PlacementAnchor, PlacementParams, ScaleCurve,
+    ScaleKeyframe, VfxAsset,
 };
 
 fn scale_curve() -> ScaleCurve {
@@ -107,13 +108,19 @@ fn eval_color_is_deterministic_across_repeated_calls() {
 #[test]
 fn resolve_effect_and_spawn_plan_read_appearance() {
     let effect = EffectDef {
-        placement: Placement { verb: "impact.fan_out".to_owned() },
+        placement: Placement {
+            verb: "agumon/baby_flame/fan_out".to_owned(),
+            params: PlacementParams::FanOut { spread_px: 64.0 },
+            anchor: PlacementAnchor::TargetCenter,
+        },
         appearance: Appearance {
             count: 8,
             spread_px: 24.0,
             ttl_ticks: 30,
             scale: scale_curve(),
             color: color_curve(),
+            size_px: 14.0,
+            texture: "baby_flame_impact".to_owned(),
         },
         on_expire: None,
     };
@@ -121,11 +128,17 @@ fn resolve_effect_and_spawn_plan_read_appearance() {
         r#"(
             effects: {
                 "baby_flame.impact": (
-                    placement: (verb: "impact.fan_out"),
+                    placement: (
+                        verb: "agumon/baby_flame/fan_out",
+                        params: FanOut(spread_px: 64.0),
+                        anchor: TargetCenter,
+                    ),
                     appearance: (
                         count: 8,
                         spread_px: 24.0,
                         ttl_ticks: 30,
+                        size_px: 14.0,
+                        texture: "baby_flame_impact",
                         scale: [(t: 0.0, value: 0.2), (t: 1.0, value: 1.0)],
                         color: [
                             (t: 0.0, rgba: (1.0, 0.8, 0.2, 1.0)),
