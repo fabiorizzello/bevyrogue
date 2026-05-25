@@ -31,7 +31,7 @@ Upstream consumed: Command::SpawnParticle/ParticleId/VfxLocus/VfxMotion (src/ani
   - Files: `src/windowed/render.rs`
   - Verify: cargo test --features windowed --bin bevyrogue
 
-- [ ] **T03: Spawn world particles on the Baby Burner detonate signal (windowed), keeping the egui chip** `est:1.5h`
+- [x] **T03: Spawn world particles on the Baby Burner detonate signal (windowed), keeping the egui chip** `est:1.5h`
   Why: Baby Burner's 'detonate flash' is today only an egui chip (BabyBurnerFlashState, src/ui/combat_panel/mod.rs:128) driven by the OnKernelTransition::Blueprint detonate signal — never a world particle. The slice phrase 'SpawnParticle/detonate seam' names both sources; this funnels the detonate signal through the same renderable particle infra built in T02 so the ultimate's flash appears as pixels on both actors, while the chip stays as the UI affordance (boundary map is explicit on keeping it).
   - Files: `src/windowed/render.rs`
   - Verify: cargo test --features windowed --bin bevyrogue

@@ -3,10 +3,10 @@ use std::collections::HashSet;
 use bevy::prelude::*;
 
 use bevyrogue::animation::{
-    resolve_locus, AnimGraph, AnimGraphId, AnimGraphPlayer, AnimationClipHandles,
-    AnimationClipLoadState, AnimationGraphLookupDiagnostics, AtlasGeometry, Clip, Command,
-    FrameCueCommand, NodeId, ParticleId, ResolvedAnimGraph, ResolvedAnimGraphSource,
-    SkillGraphRegistry, StanceGraphRegistry, VfxLocus, VfxMotion, VfxSpawnDescriptor,
+    AnimGraph, AnimGraphId, AnimGraphPlayer, AnimationClipHandles, AnimationClipLoadState,
+    AnimationGraphLookupDiagnostics, AtlasGeometry, Clip, Command, FrameCueCommand, NodeId,
+    ParticleId, ResolvedAnimGraph, ResolvedAnimGraphSource, SkillGraphRegistry,
+    StanceGraphRegistry, VfxLocus, VfxMotion, VfxSpawnDescriptor, resolve_locus,
 };
 use bevyrogue::combat::runtime::{CueBarrierStatus, CueReleaseResult, SuspendedTimelineState};
 use bevyrogue::combat::team::Team;
@@ -34,7 +34,23 @@ pub(super) struct AgumonSprite {
 #[derive(Component, Debug, Clone, PartialEq, Eq)]
 struct VfxParticle {
     ttl_ticks: u32,
+    age_ticks: u32,
     motion: VfxMotion,
+    kind: VfxParticleKind,
+    anchor: Option<VfxAnchor>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum VfxParticleKind {
+    Generic,
+    BabyFlameCharge,
+    BabyFlameProjectile,
+    BabyFlameImpact,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum VfxAnchor {
+    Mouth,
 }
 
 #[derive(Component, Debug, Clone, Copy, PartialEq)]
@@ -123,6 +139,13 @@ pub(super) struct AgumonAtlas {
     geometry: AtlasGeometry,
 }
 
+#[derive(Resource, Debug, Clone)]
+struct VfxVisuals {
+    baby_flame_charge: Handle<Image>,
+    baby_flame_projectile: Handle<Image>,
+    baby_flame_impact: Handle<Image>,
+}
+
 /// Default animation playback rate (frames of clip per second) when no
 /// `BEVYROGUE_ANIM_FPS` override is set. 12 fps is a classic "snappy" pixel-art
 /// step: the 6-frame idle loop cycles in ~0.5s rather than ~0.1s at 60fps.
@@ -139,6 +162,8 @@ const SPRITE_DISPLAY_SCALE: f32 = 0.4;
 const VFX_PARTICLE_TTL_TICKS: u32 = 6;
 const VFX_PARTICLE_SIZE: f32 = 18.0;
 const VFX_PARTICLE_Z: f32 = 1.0;
+const VFX_MOUTH_OFFSET_X_PX: f32 = 92.0;
+const VFX_MOUTH_OFFSET_Y_PX: f32 = 24.0;
 
 /// Fixed-rate animation clock for the windowed presentation layer.
 ///
@@ -235,7 +260,7 @@ impl Plugin for RenderPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(AnimationClock::from_env())
             .insert_resource(PendingAnimationTicks::default())
-            .add_systems(Startup, setup_camera)
+            .add_systems(Startup, (setup_camera, load_vfx_visuals))
             .add_systems(Update, build_agumon_atlas.before(spawn_unit_sprites))
             .add_systems(Update, spawn_unit_sprites)
             .add_systems(Update, sample_animation_ticks.before(advance_vfx_particles))
@@ -260,6 +285,14 @@ impl Plugin for RenderPlugin {
 
 fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera2d);
+}
+
+fn load_vfx_visuals(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.insert_resource(VfxVisuals {
+        baby_flame_charge: asset_server.load("vfx/baby_flame_charge.png"),
+        baby_flame_projectile: asset_server.load("vfx/baby_flame_projectile.png"),
+        baby_flame_impact: asset_server.load("vfx/baby_flame_impact.png"),
+    });
 }
 
 fn sample_animation_ticks(
@@ -406,6 +439,8 @@ fn advance_agumon_presentation(
     mut lookup_diagnostics: ResMut<AnimationGraphLookupDiagnostics>,
     mut barrier: ResMut<SuspendedTimelineState>,
     atlas: Option<Res<AgumonAtlas>>,
+    vfx_visuals: Option<Res<VfxVisuals>>,
+    vfx_particles: Query<(Entity, &VfxParticle, &VfxParticleSource)>,
     mut sprites: ParamSet<(
         Query<(&mut AgumonSprite, &mut Sprite, &Transform)>,
         Query<(&AgumonSprite, &Transform)>,
@@ -543,8 +578,11 @@ fn advance_agumon_presentation(
                 if let Some(node_id) = entered {
                     if let Some(node) = graph.nodes.get(&NodeId(node_id.to_string())) {
                         let caster_xy = [transform.translation.x, transform.translation.y];
-                        let target_xy =
-                            nearest_non_caster_target_xy(&sprite_positions, sprite.unit_id, caster_xy);
+                        let target_xy = nearest_non_caster_target_xy(
+                            &sprite_positions,
+                            sprite.unit_id,
+                            caster_xy,
+                        );
 
                         for command in &node.on_enter {
                             let Some(descriptor) = VfxSpawnDescriptor::from_command(command) else {
@@ -565,11 +603,15 @@ fn advance_agumon_presentation(
                             let entity = spawn_vfx_particle(
                                 &mut commands,
                                 &descriptor,
+                                vfx_visuals.as_deref(),
                                 caster_xy,
                                 target_xy,
                                 sprite.unit_id,
+                                render_sprite.flip_x,
+                                transform.scale.x,
                             );
-                            let resolved_xy = resolve_vfx_spawn_xy(&descriptor, caster_xy, target_xy);
+                            let resolved_xy =
+                                resolve_vfx_spawn_xy(&descriptor, caster_xy, target_xy);
                             trace!(
                                 target: "windowed.agumon_playback",
                                 entity = ?entity,
@@ -600,6 +642,48 @@ fn advance_agumon_presentation(
                     result,
                     CueReleaseResult::Released | CueReleaseResult::DuplicateRelease
                 ) {
+                    if mode_skill_id == Some(BABY_FLAME_SKILL_ID) {
+                        for (entity, particle, source) in &vfx_particles {
+                            if source.unit_id == sprite.unit_id
+                                && particle.kind == VfxParticleKind::BabyFlameCharge
+                            {
+                                commands.entity(entity).despawn();
+                            }
+                        }
+
+                        if let Some(target_xy) = nearest_non_caster_target_xy(
+                            &sprite_positions,
+                            sprite.unit_id,
+                            [transform.translation.x, transform.translation.y],
+                        ) {
+                            let descriptor = baby_flame_projectile_descriptor();
+                            let entity = spawn_vfx_particle(
+                                &mut commands,
+                                &descriptor,
+                                vfx_visuals.as_deref(),
+                                [transform.translation.x, transform.translation.y],
+                                target_xy,
+                                sprite.unit_id,
+                                render_sprite.flip_x,
+                                transform.scale.x,
+                            );
+                            trace!(
+                                target: "windowed.agumon_playback",
+                                entity = ?entity,
+                                particle = %descriptor.particle.0,
+                                source_unit = ?sprite.unit_id,
+                                target_xy = ?target_xy,
+                                "spawned Baby Flame projectile on release"
+                            );
+                        } else {
+                            debug!(
+                                target: "windowed.agumon_playback",
+                                source_unit = ?sprite.unit_id,
+                                "Baby Flame projectile target could not be resolved on release"
+                            );
+                        }
+                    }
+
                     // Arm the KernelCue-gated FSM transition. The node actually
                     // changes on the next tick's advance_result; this only arms the
                     // pending cue. Skills with a forward KernelCue edge advance
@@ -657,14 +741,96 @@ fn resolve_vfx_spawn_xy(
     resolve_locus(&descriptor.locus, caster_xy, target_xy)
 }
 
+fn mouth_anchor_xy(caster_xy: [f32; 2], flip_x: bool, sprite_scale: f32) -> [f32; 2] {
+    let dir = if flip_x { -1.0 } else { 1.0 };
+    [
+        caster_xy[0] + ((VFX_MOUTH_OFFSET_X_PX * sprite_scale) * dir),
+        caster_xy[1] + (VFX_MOUTH_OFFSET_Y_PX * sprite_scale),
+    ]
+}
+
+fn vfx_particle_kind(descriptor: &VfxSpawnDescriptor) -> VfxParticleKind {
+    match descriptor.particle.0.as_str() {
+        "baby_flame_charge" => VfxParticleKind::BabyFlameCharge,
+        "baby_flame_projectile" => VfxParticleKind::BabyFlameProjectile,
+        "baby_flame_impact" => VfxParticleKind::BabyFlameImpact,
+        _ => VfxParticleKind::Generic,
+    }
+}
+
+fn vfx_particle_ttl(kind: VfxParticleKind) -> u32 {
+    match kind {
+        VfxParticleKind::Generic => VFX_PARTICLE_TTL_TICKS,
+        VfxParticleKind::BabyFlameCharge => 24,
+        VfxParticleKind::BabyFlameProjectile => 6,
+        VfxParticleKind::BabyFlameImpact => 2,
+    }
+}
+
+fn vfx_particle_size(kind: VfxParticleKind) -> f32 {
+    match kind {
+        VfxParticleKind::Generic => VFX_PARTICLE_SIZE,
+        VfxParticleKind::BabyFlameCharge => 22.0,
+        VfxParticleKind::BabyFlameProjectile => 16.0,
+        VfxParticleKind::BabyFlameImpact => 26.0,
+    }
+}
+
+fn vfx_particle_anchor(kind: VfxParticleKind) -> Option<VfxAnchor> {
+    match kind {
+        VfxParticleKind::BabyFlameCharge => Some(VfxAnchor::Mouth),
+        VfxParticleKind::Generic
+        | VfxParticleKind::BabyFlameProjectile
+        | VfxParticleKind::BabyFlameImpact => None,
+    }
+}
+
+fn baby_flame_projectile_descriptor() -> VfxSpawnDescriptor {
+    VfxSpawnDescriptor::from_command(&Command::SpawnParticle {
+        name: ParticleId("baby_flame_projectile".into()),
+        origin: VfxLocus::CasterCenter,
+        motion: VfxMotion::ArcToTarget,
+    })
+    .expect("SpawnParticle baby_flame_projectile must distill to a renderable VFX descriptor")
+}
+
+fn baby_flame_impact_descriptor() -> VfxSpawnDescriptor {
+    VfxSpawnDescriptor::from_command(&Command::SpawnParticle {
+        name: ParticleId("baby_flame_impact".into()),
+        origin: VfxLocus::TargetCenter,
+        motion: VfxMotion::Static,
+    })
+    .expect("SpawnParticle baby_flame_impact must distill to a renderable VFX descriptor")
+}
+
 fn vfx_particle_color(descriptor: &VfxSpawnDescriptor) -> Color {
-    let name = descriptor.particle.0.as_str();
-    if name.contains("burner") {
-        Color::srgb(1.0, 0.8, 0.2)
-    } else if name.contains("flame") {
-        Color::srgb(1.0, 0.45, 0.15)
-    } else {
-        Color::srgb(1.0, 1.0, 1.0)
+    match vfx_particle_kind(descriptor) {
+        VfxParticleKind::BabyFlameCharge => Color::srgba(1.0, 0.75, 0.25, 0.9),
+        VfxParticleKind::BabyFlameProjectile => Color::srgba(1.0, 0.45, 0.15, 0.95),
+        VfxParticleKind::BabyFlameImpact => Color::srgba(1.0, 0.82, 0.45, 0.95),
+        VfxParticleKind::Generic => {
+            let name = descriptor.particle.0.as_str();
+            if name.contains("burner") {
+                Color::srgb(1.0, 0.8, 0.2)
+            } else if name.contains("flame") {
+                Color::srgb(1.0, 0.45, 0.15)
+            } else {
+                Color::srgb(1.0, 1.0, 1.0)
+            }
+        }
+    }
+}
+
+fn vfx_particle_image(
+    kind: VfxParticleKind,
+    visuals: Option<&VfxVisuals>,
+) -> Option<Handle<Image>> {
+    let visuals = visuals?;
+    match kind {
+        VfxParticleKind::BabyFlameCharge => Some(visuals.baby_flame_charge.clone()),
+        VfxParticleKind::BabyFlameProjectile => Some(visuals.baby_flame_projectile.clone()),
+        VfxParticleKind::BabyFlameImpact => Some(visuals.baby_flame_impact.clone()),
+        VfxParticleKind::Generic => None,
     }
 }
 
@@ -711,14 +877,14 @@ fn find_sprite_xy(
     unit_id: UnitId,
 ) -> Option<[f32; 2]> {
     sprites.iter().find_map(|(sprite, transform)| {
-        (sprite.unit_id == unit_id)
-            .then_some([transform.translation.x, transform.translation.y])
+        (sprite.unit_id == unit_id).then_some([transform.translation.x, transform.translation.y])
     })
 }
 
 fn spawn_detonate_particles(
     mut commands: Commands,
     mut events: MessageReader<bevyrogue::combat::events::CombatEvent>,
+    vfx_visuals: Option<Res<VfxVisuals>>,
     sprites: Query<(&AgumonSprite, &Transform)>,
 ) {
     let Some(trigger) = latest_baby_burner_flash_trigger(events.read()) else {
@@ -752,9 +918,12 @@ fn spawn_detonate_particles(
         let entity = spawn_vfx_particle(
             &mut commands,
             &descriptor,
+            vfx_visuals.as_deref(),
             caster_xy,
             target_xy,
             trigger.source,
+            false,
+            1.0,
         );
         let resolved_xy = resolve_vfx_spawn_xy(&descriptor, caster_xy, target_xy);
         trace!(
@@ -775,21 +944,49 @@ fn spawn_detonate_particles(
 fn spawn_vfx_particle(
     commands: &mut Commands,
     descriptor: &VfxSpawnDescriptor,
+    visuals: Option<&VfxVisuals>,
     caster_xy: [f32; 2],
     target_xy: [f32; 2],
     source_unit: UnitId,
+    source_flip_x: bool,
+    source_scale: f32,
 ) -> Entity {
-    let resolved_xy = resolve_vfx_spawn_xy(descriptor, caster_xy, target_xy);
+    let kind = vfx_particle_kind(descriptor);
+    let resolved_xy = match vfx_particle_anchor(kind) {
+        Some(VfxAnchor::Mouth) => mouth_anchor_xy(caster_xy, source_flip_x, source_scale),
+        None => resolve_vfx_spawn_xy(descriptor, caster_xy, target_xy),
+    };
+    let ttl_ticks = vfx_particle_ttl(kind);
+    let sprite = if let Some(image) = vfx_particle_image(kind, visuals) {
+        Sprite {
+            image,
+            custom_size: Some(Vec2::splat(vfx_particle_size(kind))),
+            color: vfx_particle_color(descriptor),
+            ..default()
+        }
+    } else {
+        Sprite::from_color(
+            vfx_particle_color(descriptor),
+            Vec2::splat(vfx_particle_size(kind)),
+        )
+    };
     commands
         .spawn((
-            Sprite::from_color(vfx_particle_color(descriptor), Vec2::splat(VFX_PARTICLE_SIZE)),
+            sprite,
             Transform::from_xyz(resolved_xy[0], resolved_xy[1], VFX_PARTICLE_Z),
             VfxParticle {
-                ttl_ticks: VFX_PARTICLE_TTL_TICKS,
+                ttl_ticks,
+                age_ticks: 0,
                 motion: descriptor.motion.clone(),
+                kind,
+                anchor: vfx_particle_anchor(kind),
             },
-            VfxParticleTarget { world_xy: target_xy },
-            VfxParticleSource { unit_id: source_unit },
+            VfxParticleTarget {
+                world_xy: target_xy,
+            },
+            VfxParticleSource {
+                unit_id: source_unit,
+            },
         ))
         .id()
 }
@@ -797,18 +994,56 @@ fn spawn_vfx_particle(
 fn advance_vfx_particles(
     mut commands: Commands,
     pending_ticks: Res<PendingAnimationTicks>,
+    vfx_visuals: Option<Res<VfxVisuals>>,
+    source_sprites: Query<(&AgumonSprite, &Sprite, &Transform), Without<VfxParticle>>,
     mut particles: Query<
         (
             Entity,
             &mut VfxParticle,
+            &mut Sprite,
             &mut Transform,
             &VfxParticleTarget,
             &VfxParticleSource,
         ),
+        Without<AgumonSprite>,
     >,
 ) {
     for _ in 0..pending_ticks.0 {
-        for (entity, mut particle, mut transform, target, source) in &mut particles {
+        for (entity, mut particle, mut sprite, mut transform, target, source) in &mut particles {
+            if matches!(particle.anchor, Some(VfxAnchor::Mouth)) {
+                if let Some((_, source_sprite, source_transform)) = source_sprites
+                    .iter()
+                    .find(|(agumon, _, _)| agumon.unit_id == source.unit_id)
+                {
+                    let source_xy = [
+                        source_transform.translation.x,
+                        source_transform.translation.y,
+                    ];
+                    let anchored_xy =
+                        mouth_anchor_xy(source_xy, source_sprite.flip_x, source_transform.scale.x);
+                    transform.translation.x = anchored_xy[0];
+                    transform.translation.y = anchored_xy[1];
+                }
+                if particle.kind == VfxParticleKind::BabyFlameCharge {
+                    let growth = (particle.age_ticks as f32).min(6.0) / 6.0;
+                    let pulse_phase = (particle.age_ticks % 4) as f32;
+                    let pulse = match pulse_phase as u32 {
+                        0 => 0.0,
+                        1 => 0.03,
+                        2 => 0.06,
+                        _ => 0.03,
+                    };
+                    let scale = 0.42 + (growth * 0.48) + pulse;
+                    transform.scale = Vec3::splat(scale);
+
+                    let alpha = 0.35 + (growth * 0.45) + (pulse * 0.6);
+                    sprite.color.set_alpha(alpha.min(0.88));
+                } else {
+                    transform.scale = Vec3::ONE;
+                    sprite.color.set_alpha(1.0);
+                }
+            }
+
             match &particle.motion {
                 VfxMotion::Static => {}
                 VfxMotion::FollowTarget | VfxMotion::ArcToTarget => {
@@ -824,13 +1059,36 @@ fn advance_vfx_particles(
                 }
             }
 
+            particle.age_ticks += 1;
             particle.ttl_ticks = decrement_vfx_ttl(particle.ttl_ticks);
             if particle.ttl_ticks == 0 {
+                if particle.kind == VfxParticleKind::BabyFlameProjectile {
+                    let descriptor = baby_flame_impact_descriptor();
+                    let entity = spawn_vfx_particle(
+                        &mut commands,
+                        &descriptor,
+                        vfx_visuals.as_deref(),
+                        [transform.translation.x, transform.translation.y],
+                        target.world_xy,
+                        source.unit_id,
+                        false,
+                        1.0,
+                    );
+                    trace!(
+                        target: "windowed.agumon_playback",
+                        entity = ?entity,
+                        particle = %descriptor.particle.0,
+                        source_unit = ?source.unit_id,
+                        target_xy = ?target.world_xy,
+                        "spawned Baby Flame impact burst"
+                    );
+                }
                 trace!(
                     target: "windowed.agumon_playback",
                     entity = ?entity,
                     motion = ?particle.motion,
                     source_unit = ?source.unit_id,
+                    kind = ?particle.kind,
                     "despawned windowed vfx particle"
                 );
                 commands.entity(entity).despawn();
@@ -1081,7 +1339,6 @@ mod tests {
         }
     }
 
-
     #[test]
     fn entered_node_only_reports_actual_node_changes() {
         assert_eq!(entered_node("baby_flame_cast", "baby_flame_cast"), None);
@@ -1113,14 +1370,20 @@ mod tests {
             locus: VfxLocus::CasterCenter,
             motion: VfxMotion::ArcToTarget,
         };
-        assert_eq!(resolve_vfx_spawn_xy(&caster_center, caster_xy, target_xy), caster_xy);
+        assert_eq!(
+            resolve_vfx_spawn_xy(&caster_center, caster_xy, target_xy),
+            caster_xy
+        );
 
         let target_center = VfxSpawnDescriptor {
             particle: ParticleId("baby_flame".into()),
             locus: VfxLocus::TargetCenter,
             motion: VfxMotion::FollowTarget,
         };
-        assert_eq!(resolve_vfx_spawn_xy(&target_center, caster_xy, target_xy), target_xy);
+        assert_eq!(
+            resolve_vfx_spawn_xy(&target_center, caster_xy, target_xy),
+            target_xy
+        );
 
         let primary_target_center = VfxSpawnDescriptor {
             particle: ParticleId("baby_flame".into()),
@@ -1131,6 +1394,41 @@ mod tests {
             resolve_vfx_spawn_xy(&primary_target_center, caster_xy, target_xy),
             target_xy
         );
+    }
+
+    #[test]
+    fn mouth_anchor_offsets_follow_sprite_facing() {
+        let center = [10.0, 20.0];
+        let left = mouth_anchor_xy(center, false, SPRITE_DISPLAY_SCALE);
+        let right = mouth_anchor_xy(center, true, SPRITE_DISPLAY_SCALE);
+        assert!((left[0] - 46.8).abs() < 0.0001);
+        assert!((left[1] - 29.6).abs() < 0.0001);
+        assert!((right[0] - -26.8).abs() < 0.0001);
+        assert!((right[1] - 29.6).abs() < 0.0001);
+    }
+
+    #[test]
+    fn baby_flame_particle_specs_split_charge_projectile_and_impact() {
+        let charge = VfxSpawnDescriptor {
+            particle: bevyrogue::animation::ParticleId("baby_flame_charge".into()),
+            locus: VfxLocus::CasterCenter,
+            motion: VfxMotion::Static,
+        };
+        let projectile = baby_flame_projectile_descriptor();
+        let impact = baby_flame_impact_descriptor();
+
+        assert_eq!(vfx_particle_kind(&charge), VfxParticleKind::BabyFlameCharge);
+        assert_eq!(
+            vfx_particle_kind(&projectile),
+            VfxParticleKind::BabyFlameProjectile
+        );
+        assert_eq!(vfx_particle_kind(&impact), VfxParticleKind::BabyFlameImpact);
+        assert_eq!(
+            vfx_particle_anchor(vfx_particle_kind(&charge)),
+            Some(VfxAnchor::Mouth)
+        );
+        assert_eq!(vfx_particle_ttl(vfx_particle_kind(&projectile)), 6);
+        assert_eq!(vfx_particle_ttl(vfx_particle_kind(&impact)), 2);
     }
 
     #[test]

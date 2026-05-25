@@ -7,9 +7,9 @@
             frames: (60, 68),
             on_enter: [
                 SpawnParticle(
-                    name: "baby_flame",
+                    name: "baby_flame_charge",
                     origin: CasterCenter,
-                    motion: ArcToTarget,
+                    motion: Static,
                 ),
             ],
         ),

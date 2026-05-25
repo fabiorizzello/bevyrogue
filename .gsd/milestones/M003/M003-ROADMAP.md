@@ -17,7 +17,7 @@
 - [x] **S02: S02** `risk:high` `depends:[]`
   > After this: Headless: impact-frame damage invariant holds on the rendered frame for Baby Flame (skill range) and Baby Burner (heavy_attack range) — release fires on the cue frame, not auto-released. Visual (user-run cargo winx, K001): skill (Baby Flame) and ultimate (Baby Burner) play their correct atlas frame ranges as smooth animation on both actors with damage/effects landing on the impact frame.
 
-- [ ] **S03: S03** `risk:medium` `depends:[]`
+- [x] **S03: S03** `risk:medium` `depends:[]`
   > After this: Headless: a structural test asserts the SpawnParticle/detonate seam yields a renderable particle spawn (entity with visual components, VfxLocus/VfxMotion honored) rather than only an opaque ParticleId, with no numeric gameplay payload in the serialized form (vfx_handle_seam parity preserved). Visual (user-run cargo winx, K001): the VFX flash appears as visible particles during skill and ultimate on both actors.
 
 ## Boundary Map
