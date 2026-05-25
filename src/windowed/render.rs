@@ -1,12 +1,14 @@
 use std::collections::HashSet;
 
 use bevy::prelude::*;
+use bevy_common_assets::ron::RonAssetPlugin;
 
 use bevyrogue::animation::{
     AnimGraph, AnimGraphId, AnimGraphPlayer, AnimationClipHandles, AnimationClipLoadState,
-    AnimationGraphLookupDiagnostics, AtlasGeometry, Clip, Command, FrameCueCommand, NodeId,
-    ParticleId, ResolvedAnimGraph, ResolvedAnimGraphSource, SkillGraphRegistry,
-    StanceGraphRegistry, VfxLocus, VfxMotion, VfxSpawnDescriptor, resolve_locus,
+    AnimationGraphLookupDiagnostics, AtlasGeometry, Clip, Command, EffectDef, FrameCueCommand,
+    NodeId, ParticleId, ResolvedAnimGraph, ResolvedAnimGraphSource, SkillGraphRegistry,
+    StanceGraphRegistry, VfxAsset, VfxLocus, VfxMotion, VfxSpawnDescriptor, eval_color, eval_scale,
+    resolve_effect, resolve_locus, spawn_plan,
 };
 use bevyrogue::combat::runtime::{CueBarrierStatus, CueReleaseResult, SuspendedTimelineState};
 use bevyrogue::combat::team::Team;
@@ -288,9 +290,14 @@ pub struct RenderPlugin;
 
 impl Plugin for RenderPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(AnimationClock::from_env())
+        // Owned per-Digimon VFX schema (M004/S01, D033/D034). Mirrors the
+        // AnimGraph loader: a `.ron` -> typed `VfxAsset` loader, windowed-gated so
+        // no rendering/asset dependency leaks into the headless build (R016).
+        app.add_plugins(RonAssetPlugin::<VfxAsset>::new(&["ron"]))
+            .insert_resource(AnimationClock::from_env())
             .insert_resource(PendingAnimationTicks::default())
-            .add_systems(Startup, (setup_camera, load_vfx_visuals))
+            .add_systems(Startup, (setup_camera, load_vfx_visuals, load_agumon_vfx))
+            .add_systems(Update, diagnose_agumon_vfx_load)
             .add_systems(Update, build_agumon_atlas.before(spawn_unit_sprites))
             .add_systems(Update, spawn_unit_sprites)
             .add_systems(Update, sample_animation_ticks.before(advance_vfx_particles))
@@ -323,6 +330,59 @@ fn load_vfx_visuals(mut commands: Commands, asset_server: Res<AssetServer>) {
         baby_flame_projectile: asset_server.load("vfx/baby_flame_projectile.png"),
         baby_flame_impact: asset_server.load("vfx/baby_flame_impact.png"),
     });
+}
+
+/// Path (relative to `assets/`) of Agumon's owned VFX asset.
+const AGUMON_VFX_PATH: &str = "digimon/agumon/vfx.ron";
+/// Namespaced effect id of the Baby Flame impact fan-out within the asset.
+const AGUMON_IMPACT_EFFECT_ID: &str = "baby_flame.impact";
+
+/// Handle to Agumon's owned `VfxAsset` (M004/S01). Held in a resource so the
+/// impact fan-out can source its spawn plan and appearance curves from data.
+#[derive(Resource, Debug, Clone)]
+struct AgumonVfx {
+    handle: Handle<VfxAsset>,
+}
+
+fn load_agumon_vfx(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.insert_resource(AgumonVfx {
+        handle: asset_server.load(AGUMON_VFX_PATH),
+    });
+    info!(
+        target: "windowed.agumon_playback",
+        path = AGUMON_VFX_PATH,
+        "agumon vfx asset load requested"
+    );
+}
+
+/// Surface a load failure for Agumon's `vfx.ron` once, mirroring the missing
+/// anim-graph diagnostic. A failed/missing asset never enters `Assets<VfxAsset>`,
+/// so the impact path silently falls back to the hardcoded constants; this makes
+/// that fallback visible rather than mysterious (slice failure-visibility).
+fn diagnose_agumon_vfx_load(
+    agumon_vfx: Option<Res<AgumonVfx>>,
+    asset_server: Res<AssetServer>,
+    mut warned: Local<bool>,
+) {
+    if *warned {
+        return;
+    }
+    let Some(agumon_vfx) = agumon_vfx else {
+        return;
+    };
+    if matches!(
+        asset_server.load_state(agumon_vfx.handle.id()),
+        bevy::asset::LoadState::Failed(_)
+    ) {
+        warn!(
+            target: "windowed.agumon_playback",
+            effect_id = AGUMON_IMPACT_EFFECT_ID,
+            path = AGUMON_VFX_PATH,
+            reason = "vfx.ron failed to load or parse",
+            "falling back to hardcoded Baby Flame impact path"
+        );
+        *warned = true;
+    }
 }
 
 fn sample_animation_ticks(
@@ -640,6 +700,7 @@ fn advance_agumon_presentation(
                                 render_sprite.flip_x,
                                 transform.scale.x,
                                 0.0,
+                                None,
                             );
                             // The charge core is joined by a ring of embers that
                             // spiral inward, reading as a vortex feeding the flame.
@@ -715,6 +776,7 @@ fn advance_agumon_presentation(
                                 render_sprite.flip_x,
                                 transform.scale.x,
                                 0.0,
+                                None,
                             );
                             trace!(
                                 target: "windowed.agumon_playback",
@@ -951,27 +1013,53 @@ fn spawn_baby_flame_embers(
             source_flip_x,
             source_scale,
             phase,
+            None,
         );
     }
 }
 
+/// Spawn the Baby Flame impact burst: a bright central flash plus a fan of
+/// dissolving shards.
+///
+/// When `impact_effect` is `Some` (the `digimon/agumon/vfx.ron` data path is
+/// live), the shard count and lifetime come from the asset's [`spawn_plan`];
+/// otherwise the burst falls back to the hardcoded `BABY_FLAME_IMPACT_SHARD_*`
+/// constants so the VFX still renders even if the asset is missing/malformed.
 fn spawn_baby_flame_impact_burst(
     commands: &mut Commands,
     visuals: Option<&VfxVisuals>,
     origin_xy: [f32; 2],
     source_unit: UnitId,
+    impact_effect: Option<&EffectDef>,
 ) {
     // Bright central flash.
     let core = baby_flame_impact_descriptor();
     spawn_vfx_particle(
-        commands, &core, visuals, origin_xy, origin_xy, source_unit, false, 1.0, 0.0,
+        commands, &core, visuals, origin_xy, origin_xy, source_unit, false, 1.0, 0.0, None,
     );
     // Dissolve fan: shards radiate outward from the impact point and fade.
+    // Count + lifetime are data-driven (vfx.ron) with a hardcoded fallback.
     let shard = baby_flame_impact_shard_descriptor();
-    for i in 0..BABY_FLAME_IMPACT_SHARD_COUNT {
-        let phase = (i as f32 / BABY_FLAME_IMPACT_SHARD_COUNT as f32) * std::f32::consts::TAU;
+    let (count, ttl_override) = match impact_effect {
+        Some(effect) => {
+            let plan = spawn_plan(effect);
+            (plan.count, Some(plan.ttl_ticks))
+        }
+        None => (BABY_FLAME_IMPACT_SHARD_COUNT, None),
+    };
+    for i in 0..count {
+        let phase = (i as f32 / count as f32) * std::f32::consts::TAU;
         spawn_vfx_particle(
-            commands, &shard, visuals, origin_xy, origin_xy, source_unit, false, 1.0, phase,
+            commands,
+            &shard,
+            visuals,
+            origin_xy,
+            origin_xy,
+            source_unit,
+            false,
+            1.0,
+            phase,
+            ttl_override,
         );
     }
 }
@@ -1104,6 +1192,7 @@ fn spawn_detonate_particles(
             false,
             1.0,
             0.0,
+            None,
         );
         let resolved_xy = resolve_vfx_spawn_xy(&descriptor, caster_xy, target_xy);
         trace!(
@@ -1132,13 +1221,16 @@ fn spawn_vfx_particle(
     source_flip_x: bool,
     source_scale: f32,
     phase: f32,
+    ttl_override: Option<u32>,
 ) -> Entity {
     let kind = vfx_particle_kind(descriptor);
     let resolved_xy = match vfx_particle_anchor(kind) {
         Some(VfxAnchor::Mouth) => mouth_anchor_xy(caster_xy, source_flip_x, source_scale),
         None => resolve_vfx_spawn_xy(descriptor, caster_xy, target_xy),
     };
-    let ttl_ticks = vfx_particle_ttl(kind);
+    // Data-driven effects override the kind's default lifetime with the asset's
+    // `ttl_ticks`; everything else keeps the hardcoded per-kind default.
+    let ttl_ticks = ttl_override.unwrap_or_else(|| vfx_particle_ttl(kind));
     let sprite = if let Some(image) = vfx_particle_image(kind, visuals) {
         Sprite {
             image,
@@ -1174,10 +1266,14 @@ fn spawn_vfx_particle(
         .id()
 }
 
+#[allow(clippy::too_many_arguments)]
 fn advance_vfx_particles(
     mut commands: Commands,
     pending_ticks: Res<PendingAnimationTicks>,
     vfx_visuals: Option<Res<VfxVisuals>>,
+    agumon_vfx: Option<Res<AgumonVfx>>,
+    vfx_assets: Option<Res<Assets<VfxAsset>>>,
+    mut warned_missing_impact: Local<bool>,
     source_sprites: Query<(&AgumonSprite, &Sprite, &Transform), Without<VfxParticle>>,
     mut particles: Query<
         (
@@ -1191,6 +1287,32 @@ fn advance_vfx_particles(
         Without<AgumonSprite>,
     >,
 ) {
+    // Resolve the Baby Flame impact effect from the owned vfx.ron data path once
+    // per frame. `None` (asset not yet loaded, load failed, or effect id absent)
+    // means the burst + shard updates below use the hardcoded fallback. A loaded
+    // asset that is missing the effect id is warned once (load failure itself is
+    // surfaced by `diagnose_agumon_vfx_load`).
+    let impact_effect: Option<&EffectDef> = match agumon_vfx
+        .as_ref()
+        .zip(vfx_assets.as_ref())
+        .and_then(|(vfx, assets)| assets.get(&vfx.handle))
+    {
+        Some(asset) => {
+            let effect = resolve_effect(asset, AGUMON_IMPACT_EFFECT_ID);
+            if effect.is_none() && !*warned_missing_impact {
+                warn!(
+                    target: "windowed.agumon_playback",
+                    effect_id = AGUMON_IMPACT_EFFECT_ID,
+                    reason = "effect id absent from loaded vfx.ron",
+                    "falling back to hardcoded Baby Flame impact path"
+                );
+                *warned_missing_impact = true;
+            }
+            effect
+        }
+        None => None,
+    };
+
     for _ in 0..pending_ticks.0 {
         for (entity, mut particle, mut sprite, mut transform, target, source) in &mut particles {
             if matches!(particle.anchor, Some(VfxAnchor::Mouth)) {
@@ -1264,17 +1386,40 @@ fn advance_vfx_particles(
             }
 
             if particle.kind == VfxParticleKind::BabyFlameImpactShard {
-                let off = baby_flame_shard_offset(
-                    particle.age_ticks,
-                    BABY_FLAME_IMPACT_SHARD_TTL,
-                    particle.phase,
-                );
-                transform.translation.x = target.world_xy[0] + off[0];
-                transform.translation.y = target.world_xy[1] + off[1];
-                sprite.color.set_alpha(baby_flame_shard_alpha(
-                    particle.age_ticks,
-                    BABY_FLAME_IMPACT_SHARD_TTL,
-                ));
+                match impact_effect {
+                    // Data path: outward fraction + rgba come from the asset's
+                    // curves, the outward distance from its `spread_px` (R004
+                    // pure eval). This replaces the hardcoded offset/alpha math
+                    // for this effect only.
+                    Some(effect) => {
+                        let plan = spawn_plan(effect);
+                        let progress = if plan.ttl_ticks == 0 {
+                            1.0
+                        } else {
+                            (particle.age_ticks as f32 / plan.ttl_ticks as f32).clamp(0.0, 1.0)
+                        };
+                        let frac = eval_scale(&effect.appearance.scale, progress);
+                        let dist = plan.spread_px * frac;
+                        transform.translation.x = target.world_xy[0] + dist * particle.phase.cos();
+                        transform.translation.y = target.world_xy[1] + dist * particle.phase.sin();
+                        let rgba = eval_color(&effect.appearance.color, progress);
+                        sprite.color = Color::srgba(rgba[0], rgba[1], rgba[2], rgba[3]);
+                    }
+                    // Fallback: original hardcoded ease-out + linear alpha fade.
+                    None => {
+                        let off = baby_flame_shard_offset(
+                            particle.age_ticks,
+                            BABY_FLAME_IMPACT_SHARD_TTL,
+                            particle.phase,
+                        );
+                        transform.translation.x = target.world_xy[0] + off[0];
+                        transform.translation.y = target.world_xy[1] + off[1];
+                        sprite.color.set_alpha(baby_flame_shard_alpha(
+                            particle.age_ticks,
+                            BABY_FLAME_IMPACT_SHARD_TTL,
+                        ));
+                    }
+                }
             }
 
             particle.age_ticks += 1;
@@ -1286,6 +1431,7 @@ fn advance_vfx_particles(
                         vfx_visuals.as_deref(),
                         [transform.translation.x, transform.translation.y],
                         source.unit_id,
+                        impact_effect,
                     );
                 }
                 trace!(
