@@ -10,6 +10,8 @@ mod phase_strip_readonly;
 mod vfx_asset_impact_render;
 #[path = "windowed_only/vfx_windowed_contracts.rs"]
 mod vfx_windowed_contracts;
+#[path = "windowed_only/windowed_hit_feedback.rs"]
+mod windowed_hit_feedback;
 #[path = "windowed_only/windowed_hud_hp_bar.rs"]
 mod windowed_hud_hp_bar;
 #[path = "windowed_only/windowed_preview_cache.rs"]
