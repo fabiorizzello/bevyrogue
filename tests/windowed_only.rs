@@ -2,6 +2,8 @@
 //!
 //! Hosts tests for windowed-only UI features (phase strip, preview cache).
 
+#[path = "windowed_only/enoki_impact_effect_parses.rs"]
+mod enoki_impact_effect_parses;
 #[path = "windowed_only/frame_time_soak.rs"]
 mod frame_time_soak;
 #[path = "windowed_only/phase_strip_readonly.rs"]

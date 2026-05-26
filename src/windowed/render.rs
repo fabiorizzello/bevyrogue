@@ -7,6 +7,7 @@ use bevy::{
     render::view::Hdr,
 };
 use bevy_common_assets::ron::RonAssetPlugin;
+use bevy_enoki::{EnokiPlugin, Particle2dEffect};
 
 use bevyrogue::animation::{
     AnimGraph, AnimGraphId, AnimGraphPlayer, AnimationClipHandles, AnimationClipLoadState,
@@ -359,12 +360,27 @@ impl Plugin for RenderPlugin {
         // AnimGraph loader: a `.ron` -> typed `VfxAsset` loader, windowed-gated so
         // no rendering/asset dependency leaks into the headless build (R016).
         app.add_plugins(RonAssetPlugin::<VfxAsset>::new(&["ron"]))
+            // bevy_enoki's GPU 2D particle backend (M005/S04). EnokiPlugin brings
+            // its own `Particle2dEffect` asset loader, so the `.particle.ron` needs
+            // no RonAssetPlugin registration; the loader is selected by asset type.
+            // Windowed-gated like everything in this module so no render-stack dep
+            // leaks into the headless build (R005/R016).
+            .add_plugins(EnokiPlugin)
             .insert_resource(AnimationClock::from_env())
             .insert_resource(PendingAnimationTicks::default())
             .init_resource::<HitFlashState>()
             .init_resource::<HitShakeState>()
-            .add_systems(Startup, (setup_camera, load_vfx_visuals, load_agumon_vfx))
+            .add_systems(
+                Startup,
+                (
+                    setup_camera,
+                    load_vfx_visuals,
+                    load_agumon_vfx,
+                    load_agumon_enoki_vfx,
+                ),
+            )
             .add_systems(Update, diagnose_agumon_vfx_load)
+            .add_systems(Update, diagnose_agumon_enoki_vfx_load)
             .add_systems(Update, build_agumon_atlas.before(spawn_unit_sprites))
             .add_systems(Update, spawn_unit_sprites)
             .add_systems(Update, sample_animation_ticks.before(advance_vfx_particles))
@@ -526,6 +542,62 @@ fn diagnose_agumon_vfx_load(
             path = AGUMON_VFX_PATH,
             reason = "vfx.ron failed to load or parse",
             "Baby Flame VFX disabled; no owned effects could resolve"
+        );
+        *warned = true;
+    }
+}
+
+/// Path (relative to `assets/`) of Agumon's enoki impact-burst effect. A separate
+/// asset from the owned `VfxAsset` schema: this drives the bevy_enoki GPU particle
+/// backend (M005/S04) for the `baby_flame.impact` contact flash.
+const AGUMON_ENOKI_IMPACT_PATH: &str = "digimon/agumon/baby_flame_impact.particle.ron";
+
+/// Handle to Agumon's enoki `Particle2dEffect` (M005/S04). Held in a resource so a
+/// future spawn seam can attach it to a `ParticleSpawner` for the `baby_flame.impact`
+/// contact flash. Loading the handle does not move any particle lifetime into the
+/// kernel/FSM timeline (D031/D032 untouched).
+#[derive(Resource, Debug, Clone)]
+struct AgumonEnokiVfx {
+    handle: Handle<Particle2dEffect>,
+}
+
+fn load_agumon_enoki_vfx(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.insert_resource(AgumonEnokiVfx {
+        handle: asset_server.load(AGUMON_ENOKI_IMPACT_PATH),
+    });
+    info!(
+        target: "windowed.agumon_playback",
+        path = AGUMON_ENOKI_IMPACT_PATH,
+        "agumon enoki impact effect load requested"
+    );
+}
+
+/// Surface a load failure for Agumon's enoki impact `.particle.ron` once, mirroring
+/// `diagnose_agumon_vfx_load`. A failed/missing effect asset means the
+/// `baby_flame.impact` contact flash silently spawns nothing through the enoki
+/// backend; this makes the dead VFX visible rather than mysterious (slice
+/// failure-visibility).
+fn diagnose_agumon_enoki_vfx_load(
+    agumon_enoki_vfx: Option<Res<AgumonEnokiVfx>>,
+    asset_server: Res<AssetServer>,
+    mut warned: Local<bool>,
+) {
+    if *warned {
+        return;
+    }
+    let Some(agumon_enoki_vfx) = agumon_enoki_vfx else {
+        return;
+    };
+    if matches!(
+        asset_server.load_state(agumon_enoki_vfx.handle.id()),
+        bevy::asset::LoadState::Failed(_)
+    ) {
+        warn!(
+            target: "windowed.agumon_playback",
+            path = AGUMON_ENOKI_IMPACT_PATH,
+            effect = AGUMON_IMPACT_EFFECT_ID,
+            reason = "baby_flame_impact.particle.ron failed to load or parse",
+            "baby_flame.impact enoki VFX disabled; no enoki particles will spawn"
         );
         *warned = true;
     }

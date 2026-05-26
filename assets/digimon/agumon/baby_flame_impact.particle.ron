@@ -1,0 +1,42 @@
+// Agumon `baby_flame.impact` contact flash — a single-shot ember burst for the
+// bevy_enoki GPU 2D particle backend (M005/S04). One-shot: spawn_rate 0 so the
+// spawner emits `spawn_amount` particles in a single burst, then idles. A short
+// lifetime + outward radial scatter + fade-to-transparent reads as a quick
+// flame contact flash. This is enoki's `Particle2dEffect` schema (distinct from
+// the owned `VfxAsset` schema); all fields are listed because the loader's RON
+// deserialize has no field defaults.
+(
+    // One-shot burst: zero continuous rate, all particles emitted at once.
+    spawn_rate: 0.0,
+    spawn_amount: 28,
+    // Seed the burst from a small disc so embers don't all start at one point.
+    emission_shape: Circle(5.0),
+    // Quick contact flash: ~0.3s with mild per-particle variance.
+    lifetime: (0.32, 0.25),
+    // Fast outward scatter that decelerates (negative acceleration) + damping.
+    linear_speed: Some((150.0, 0.4)),
+    linear_acceleration: Some((-240.0, 0.1)),
+    // No fixed direction: omitted so enoki scatters radially from the emission shape.
+    direction: None,
+    angular_speed: None,
+    angular_acceleration: None,
+    scale: Some((10.0, 0.35)),
+    // Base tint; the color_curve drives the actual flame gradient over lifetime.
+    color: Some((red: 1.0, green: 0.55, blue: 0.15, alpha: 1.0)),
+    gravity_direction: None,
+    gravity_speed: None,
+    linear_damp: Some((4.0, 0.0)),
+    angular_damp: None,
+    // Shrink to nothing so each ember collapses as it dies.
+    scale_curve: Some((points: [
+        (1.0, 0.0, None),
+        (0.0, 1.0, Some(SineInOut)),
+    ])),
+    // Hot yellow-white at impact -> deep orange-red, fading to fully transparent.
+    color_curve: Some((points: [
+        ((red: 1.0, green: 0.9, blue: 0.5, alpha: 1.0), 0.0, None),
+        ((red: 1.0, green: 0.35, blue: 0.05, alpha: 0.0), 1.0, Some(SineInOut)),
+    ])),
+    attractors: None,
+    relative_positioning: None,
+)
