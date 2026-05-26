@@ -69,6 +69,17 @@ struct VfxParticleSource {
     unit_id: UnitId,
 }
 
+/// Terminal marker: this sprite has been seeded into its `death` stance node and
+/// is exiting the field. Kept as a *separate* component rather than a new
+/// `AgumonPlaybackMode` variant so the `mode` match arms in `sync_agumon_mode` /
+/// `classify_same_skill_sync` stay closed (S02-RESEARCH). Its presence tells
+/// `advance_agumon_presentation` to (a) skip mode reconciliation so a still-active
+/// barrier cannot re-`start_skill` the dying sprite, and (b) leave the sprite on
+/// its final death frame instead of idle-restoring it on node exit. The fade-out
+/// driver (T02) consumes this marker to lerp the sprite out and despawn it.
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
+struct DeathExiting;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum AgumonPlaybackMode {
     Idle,
@@ -310,6 +321,17 @@ impl Plugin for RenderPlugin {
             .add_systems(
                 Update,
                 drive_hurt_reactions
+                    .after(spawn_unit_sprites)
+                    .after(resolve_action_system)
+                    .before(advance_agumon_presentation)
+                    .before(continue_suspended_timeline_system),
+            )
+            .add_systems(
+                Update,
+                // AFTER the hurt driver enforces death-precedence: a target both
+                // struck and killed in one window resolves to `death`, not `hurt`.
+                drive_death_reactions
+                    .after(drive_hurt_reactions)
                     .after(spawn_unit_sprites)
                     .after(resolve_action_system)
                     .before(advance_agumon_presentation)
@@ -569,7 +591,7 @@ fn advance_agumon_presentation(
     vfx_assets: Option<Res<Assets<VfxAsset>>>,
     vfx_particles: Query<(Entity, &VfxParticle, &VfxParticleSource)>,
     mut sprites: ParamSet<(
-        Query<(&mut AgumonSprite, &mut Sprite, &Transform)>,
+        Query<(&mut AgumonSprite, &mut Sprite, &Transform, Option<&DeathExiting>)>,
         Query<(&AgumonSprite, &Transform)>,
     )>,
 ) {
@@ -621,17 +643,22 @@ fn advance_agumon_presentation(
                 )
             })
             .collect();
-        for (mut sprite, mut render_sprite, transform) in &mut sprites.p0() {
+        for (mut sprite, mut render_sprite, transform, death_exiting) in &mut sprites.p0() {
             let prev_node = sprite.player.current_node.0.clone();
 
-            sync_agumon_mode(
-                &mut sprite,
-                active_barrier.as_ref(),
-                &skill_reg,
-                &stance_reg,
-                &graphs,
-                &mut lookup_diagnostics,
-            );
+            // A dying sprite is resting on (or playing out) its death node. Skip
+            // mode reconciliation entirely: a still-active kernel barrier must not
+            // re-`start_skill` the dying caster back into its interrupted skill.
+            if death_exiting.is_none() {
+                sync_agumon_mode(
+                    &mut sprite,
+                    active_barrier.as_ref(),
+                    &skill_reg,
+                    &stance_reg,
+                    &graphs,
+                    &mut lookup_diagnostics,
+                );
+            }
 
             let graph = sprite.graph.graph().clone();
             let advance = sprite.player.advance_result(&graph);
@@ -868,7 +895,17 @@ fn advance_agumon_presentation(
             }
 
             if advance.exited {
-                if let Some(stance_graph) = stance_graph.clone() {
+                if death_exiting.is_some() {
+                    // The death node has played out. Leave the sprite resting on
+                    // its final death frame — the fade-out + despawn is wired in
+                    // T02. Never idle-restore a dying sprite.
+                    trace!(
+                        target: "windowed.agumon_playback",
+                        unit_id = ?sprite.unit_id,
+                        node = sprite.player.current_node.0.as_str(),
+                        "death node exited; holding final death frame (idle restore suppressed)"
+                    );
+                } else if let Some(stance_graph) = stance_graph.clone() {
                     let preserve_missing = active_barrier.as_ref().and_then(|status| {
                         (sprite.graph.source == ResolvedAnimGraphSource::InstantFallback
                             && sprite.last_missing_skill_graph_cue.as_deref()
@@ -952,6 +989,75 @@ fn drive_hurt_reactions(
             reaction = ?StanceReaction::Hurt,
             node = hurt_node.0.as_str(),
             "drove struck sprite into hurt stance node"
+        );
+    }
+}
+
+/// `true` iff the pure lib mapping classifies this event kind as a death
+/// reaction. The death pipeline gates on this; a non-death event (e.g.
+/// `OnHitTaken`) must never enter it (Q7 negative test).
+fn is_death_reaction(kind: &bevyrogue::combat::events::CombatEventKind) -> bool {
+    stance_reaction_for(kind) == Some(StanceReaction::Death)
+}
+
+/// Bridge the combat event bus to the struck sprite's `death` stance reaction.
+///
+/// For each `CombatEvent` the pure lib mapping ([`stance_reaction_for`])
+/// classifies as [`StanceReaction::Death`], drive the *target* unit's sprite
+/// into its `death` node — the visible half of S02. Unlike [`drive_hurt_reactions`]
+/// this is *un-gated by mode*: death interrupts an in-flight skill cast. The
+/// dying sprite is also tagged [`DeathExiting`] so `advance_agumon_presentation`
+/// skips mode reconciliation (a still-active barrier cannot re-`start_skill` it)
+/// and leaves it resting on its final death frame instead of idle-restoring.
+///
+/// Registered AFTER `drive_hurt_reactions`, enforcing death-precedence: a target
+/// both struck and killed in one window resolves to `death`, never `hurt`.
+///
+/// Reads events and writes presentation components/entities only; it never
+/// mutates combat or kernel state (R010). A dropped/duplicated `UnitDied`
+/// degrades to "stays on the death frame" (idempotent marker insert, no stuck
+/// frame); a death event for a unit with no live sprite is a no-op.
+fn drive_death_reactions(
+    mut commands: Commands,
+    mut events: MessageReader<bevyrogue::combat::events::CombatEvent>,
+    stance_reg: Res<StanceGraphRegistry>,
+    graphs: Res<Assets<AnimGraph>>,
+    mut sprites: Query<(Entity, &mut AgumonSprite)>,
+) {
+    // Dedup by target: a unit reported dead more than once in the same window
+    // still plays `death` once. Only `Death` survives the filter.
+    let dying: HashSet<UnitId> = events
+        .read()
+        .filter(|event| is_death_reaction(&event.kind))
+        .map(|event| event.target)
+        .collect();
+    if dying.is_empty() {
+        return;
+    }
+
+    let Some(stance_graph) =
+        stance_reg.resolve_snapshot(&AnimGraphId(AGUMON_STANCE_GRAPH_ID.into()), &graphs)
+    else {
+        return;
+    };
+    let death_node = StanceReaction::Death.stance_node();
+
+    for (entity, mut sprite) in &mut sprites {
+        if !dying.contains(&sprite.unit_id) {
+            continue;
+        }
+        let prior_mode = sprite.mode.clone();
+        // Death interrupts any in-flight skill: drive unconditionally (no
+        // `matches!(mode, Idle)` guard, unlike the hurt path).
+        sprite.drive_stance_reaction(death_node.clone(), stance_graph.clone());
+        commands.entity(entity).insert(DeathExiting);
+        trace!(
+            target: "windowed.agumon_playback",
+            unit_id = ?sprite.unit_id,
+            reaction = ?StanceReaction::Death,
+            node = death_node.0.as_str(),
+            prior_mode = ?prior_mode,
+            "drove struck sprite into death stance node (skill interrupt; marked DeathExiting)"
         );
     }
 }
@@ -1632,6 +1738,18 @@ mod tests {
             entered_node("baby_flame_cast", "baby_flame_impact"),
             Some("baby_flame_impact")
         );
+    }
+
+    #[test]
+    fn is_death_reaction_only_matches_unit_died() {
+        use bevyrogue::combat::events::CombatEventKind;
+        // A KO event enters the death pipeline...
+        assert!(is_death_reaction(&CombatEventKind::UnitDied {
+            status_remaining: vec![],
+            heated_remaining: 0,
+        }));
+        // ...while a non-lethal hit (the hurt path) never does (Q7 negative test).
+        assert!(!is_death_reaction(&CombatEventKind::OnHitTaken { amount: 5 }));
     }
 
     #[test]
