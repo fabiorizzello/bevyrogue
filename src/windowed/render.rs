@@ -34,15 +34,26 @@ use super::{
     BABY_FLAME_CAST_NODE, BABY_FLAME_SKILL_ID, SHARP_CLAWS_SKILL_ID, SHARP_CLAWS_WINDUP_NODE,
 };
 
-/// Marker + FSM state for the on-screen Agumon preview actor.
+/// Marker + FSM state for an on-screen Digimon preview actor. Carries the
+/// stance/skill animation-graph ids as DATA (`stance_graph_id` / `skill_graph_id`)
+/// rather than reading module-level `AGUMON_*` consts, so adding a new Digimon
+/// (S04/S05) means spawning this component with different ids — no edits here.
 #[derive(Component, Debug, Clone)]
-pub(super) struct AgumonSprite {
+pub(super) struct DigimonSprite {
     pub(super) unit_id: UnitId,
     pub(super) player: AnimGraphPlayer,
     graph: ResolvedAnimGraph,
-    mode: AgumonPlaybackMode,
+    mode: DigimonPlaybackMode,
     last_release_frame: Option<ReleaseFrameKey>,
     last_missing_skill_graph_cue: Option<String>,
+    /// `AnimGraphId` of this Digimon's stance graph (idle/hurt/death). The data
+    /// source for every stance `resolve_snapshot` this sprite drives; preserved
+    /// across mode transitions so idle-restore / hurt / death always resolve the
+    /// correct graph without consulting a const.
+    stance_graph_id: String,
+    /// `AnimGraphId` of this Digimon's skill graph. The data source for the skill
+    /// `resolve_snapshot` in `sync_agumon_mode`.
+    skill_graph_id: String,
 }
 
 /// Tags a persistent enoki emitter spawned for the Baby Flame charge orb / ember
@@ -77,7 +88,7 @@ struct ProjectileFlight {
 
 /// Terminal marker: this sprite has been seeded into its `death` stance node and
 /// is exiting the field. Kept as a *separate* component rather than a new
-/// `AgumonPlaybackMode` variant so the `mode` match arms in `sync_agumon_mode` /
+/// `DigimonPlaybackMode` variant so the `mode` match arms in `sync_agumon_mode` /
 /// `classify_same_skill_sync` stay closed (S02-RESEARCH). Its presence tells
 /// `advance_agumon_presentation` to (a) skip mode reconciliation so a still-active
 /// barrier cannot re-`start_skill` the dying sprite, and (b) leave the sprite on
@@ -103,7 +114,7 @@ struct FadeOut {
 /// enough not to clutter the field.
 const DEATH_FADE_TICKS: u32 = 8;
 
-/// Binary-local rest position of an `AgumonSprite`, captured at spawn. The hit
+/// Binary-local rest position of an `DigimonSprite`, captured at spawn. The hit
 /// shake offset (S03/T02) is applied *relative to this* so the sprite always
 /// restores to its exact spawn `(x, 0.0)` without accumulating drift — research
 /// warns that hardcoding the ±200 layout value goes stale, so capture it once at
@@ -128,7 +139,7 @@ struct CanvasDamageNumber {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-enum AgumonPlaybackMode {
+enum DigimonPlaybackMode {
     Idle,
     /// An Agumon skill is presenting. `skill_id` keys the active cast,
     /// `awaiting_cue_id` is the barrier cue currently gating the kernel (it hops
@@ -148,16 +159,23 @@ pub(super) struct ReleaseFrameKey {
     pub(super) local_frame: u32,
 }
 
-impl AgumonSprite {
-    pub(super) fn idle_for(unit_id: UnitId, graph: ResolvedAnimGraph) -> Self {
+impl DigimonSprite {
+    pub(super) fn idle_for(
+        unit_id: UnitId,
+        graph: ResolvedAnimGraph,
+        stance_graph_id: String,
+        skill_graph_id: String,
+    ) -> Self {
         let entry = graph.graph().entry.clone();
         Self {
             unit_id,
             player: AnimGraphPlayer::new(entry),
             graph,
-            mode: AgumonPlaybackMode::Idle,
+            mode: DigimonPlaybackMode::Idle,
             last_release_frame: None,
             last_missing_skill_graph_cue: None,
+            stance_graph_id,
+            skill_graph_id,
         }
     }
 
@@ -170,7 +188,7 @@ impl AgumonSprite {
     ) {
         self.player = AnimGraphPlayer::new(NodeId(start_node.to_string()));
         self.graph = graph;
-        self.mode = AgumonPlaybackMode::Skill {
+        self.mode = DigimonPlaybackMode::Skill {
             skill_id: skill_id.to_string(),
             awaiting_cue_id: awaiting_cue_id.to_string(),
             start_node: start_node.to_string(),
@@ -187,7 +205,7 @@ impl AgumonSprite {
         let entry = graph.graph().entry.clone();
         self.player = AnimGraphPlayer::new(entry);
         self.graph = graph;
-        self.mode = AgumonPlaybackMode::Idle;
+        self.mode = DigimonPlaybackMode::Idle;
         self.last_release_frame = None;
         self.last_missing_skill_graph_cue = preserve_missing_skill_graph_cue;
     }
@@ -696,7 +714,7 @@ fn build_agumon_atlas(
     });
 }
 
-/// Spawns one `AgumonSprite` entity per unit that does not yet have one.
+/// Spawns one `DigimonSprite` entity per unit that does not yet have one.
 /// Runs every frame but is idempotent: once a sprite exists for a unit it is skipped.
 /// Waits for the stance graph to be loaded before spawning anything.
 fn spawn_unit_sprites(
@@ -705,7 +723,7 @@ fn spawn_unit_sprites(
     graphs: Res<Assets<AnimGraph>>,
     atlas: Option<Res<AgumonAtlas>>,
     units: Query<(&Unit, &Team)>,
-    sprites: Query<&AgumonSprite>,
+    sprites: Query<&DigimonSprite>,
 ) {
     let Some(stance_graph) =
         stance_reg.resolve_snapshot(&AnimGraphId(AGUMON_STANCE_GRAPH_ID.into()), &graphs)
@@ -728,7 +746,14 @@ fn spawn_unit_sprites(
         let flip_x = *team == Team::Enemy;
         let x = if flip_x { 200.0_f32 } else { -200.0_f32 };
         commands.spawn((
-            AgumonSprite::idle_for(unit.id, stance_graph.clone()),
+            // S03: only Agumon exists, so the spawn site is the const data source
+            // for both graph ids. S04 replaces these consts with per-blueprint data.
+            DigimonSprite::idle_for(
+                unit.id,
+                stance_graph.clone(),
+                AGUMON_STANCE_GRAPH_ID.into(),
+                AGUMON_SKILL_GRAPH_ID.into(),
+            ),
             Sprite {
                 image: atlas.image.clone(),
                 texture_atlas: Some(TextureAtlas {
@@ -764,19 +789,16 @@ fn advance_agumon_presentation(
     mut sprites: ParamSet<(
         Query<(
             Entity,
-            &mut AgumonSprite,
+            &mut DigimonSprite,
             &mut Sprite,
             &mut Transform,
             &SpriteRest,
             Option<&DeathExiting>,
             Option<&FadeOut>,
         )>,
-        Query<(&AgumonSprite, &Transform)>,
+        Query<(&DigimonSprite, &Transform)>,
     )>,
 ) {
-    let stance_graph =
-        stance_reg.resolve_snapshot(&AnimGraphId(AGUMON_STANCE_GRAPH_ID.into()), &graphs);
-
     {
         let active_barrier = barrier.active_status().cloned();
         if let Some(status) = active_barrier.as_ref() {
@@ -880,7 +902,7 @@ fn advance_agumon_presentation(
             }
 
             // Transient hit feedback (S03/T02): flash tint + positional shake.
-            // Flash is the SOLE colour writer for AgumonSprite (flash_tint is
+            // Flash is the SOLE colour writer for DigimonSprite (flash_tint is
             // WHITE at remaining 0, so steady state stays white) — but skip the
             // write while the death fade owns the colour, so it never fights
             // advance_death_fade's alpha lerp (D031/D032 barrier untouched).
@@ -929,7 +951,7 @@ fn advance_agumon_presentation(
                 "agumon windowed playback tick"
             );
 
-            let pending_release = if let AgumonPlaybackMode::Skill {
+            let pending_release = if let DigimonPlaybackMode::Skill {
                 awaiting_cue_id, ..
             } = &sprite.mode
             {
@@ -1118,7 +1140,10 @@ fn advance_agumon_presentation(
                         fade_ticks = DEATH_FADE_TICKS,
                         "death node exited; seeding fade-out off field (idle restore suppressed)"
                     );
-                } else if let Some(stance_graph) = stance_graph.clone() {
+                } else if let Some(stance_graph) = stance_reg.resolve_snapshot(
+                    &AnimGraphId(sprite.stance_graph_id.clone().into()),
+                    &graphs,
+                ) {
                     let preserve_missing = active_barrier.as_ref().and_then(|status| {
                         (sprite.graph.source == ResolvedAnimGraphSource::InstantFallback
                             && sprite.last_missing_skill_graph_cue.as_deref()
@@ -1158,7 +1183,7 @@ fn drive_hurt_reactions(
     mut events: MessageReader<bevyrogue::combat::events::CombatEvent>,
     stance_reg: Res<StanceGraphRegistry>,
     graphs: Res<Assets<AnimGraph>>,
-    mut sprites: Query<&mut AgumonSprite>,
+    mut sprites: Query<&mut DigimonSprite>,
 ) {
     // Dedup by target: a unit struck twice within the same window still plays
     // `hurt` once. `Death` and every non-reaction event resolve to `None` here
@@ -1172,19 +1197,21 @@ fn drive_hurt_reactions(
         return;
     }
 
-    let Some(stance_graph) =
-        stance_reg.resolve_snapshot(&AnimGraphId(AGUMON_STANCE_GRAPH_ID.into()), &graphs)
-    else {
-        return;
-    };
     let hurt_node = StanceReaction::Hurt.stance_node();
 
     for mut sprite in &mut sprites {
         if !struck.contains(&sprite.unit_id) {
             continue;
         }
+        // Resolve this sprite's own stance graph by its carried id (data, not a
+        // const) — adding a Digimon with a different stance graph needs no edit here.
+        let Some(stance_graph) = stance_reg
+            .resolve_snapshot(&AnimGraphId(sprite.stance_graph_id.clone().into()), &graphs)
+        else {
+            continue;
+        };
         // Do not interrupt an in-flight skill cast on the struck unit (S01).
-        if !matches!(sprite.mode, AgumonPlaybackMode::Idle) {
+        if !matches!(sprite.mode, DigimonPlaybackMode::Idle) {
             trace!(
                 target: "windowed.agumon_playback",
                 unit_id = ?sprite.unit_id,
@@ -1235,7 +1262,7 @@ fn drive_death_reactions(
     mut events: MessageReader<bevyrogue::combat::events::CombatEvent>,
     stance_reg: Res<StanceGraphRegistry>,
     graphs: Res<Assets<AnimGraph>>,
-    mut sprites: Query<(Entity, &mut AgumonSprite)>,
+    mut sprites: Query<(Entity, &mut DigimonSprite)>,
 ) {
     // Dedup by target: a unit reported dead more than once in the same window
     // still plays `death` once. Only `Death` survives the filter.
@@ -1248,17 +1275,18 @@ fn drive_death_reactions(
         return;
     }
 
-    let Some(stance_graph) =
-        stance_reg.resolve_snapshot(&AnimGraphId(AGUMON_STANCE_GRAPH_ID.into()), &graphs)
-    else {
-        return;
-    };
     let death_node = StanceReaction::Death.stance_node();
 
     for (entity, mut sprite) in &mut sprites {
         if !dying.contains(&sprite.unit_id) {
             continue;
         }
+        // Resolve this sprite's own stance graph by its carried id (data, not a const).
+        let Some(stance_graph) = stance_reg
+            .resolve_snapshot(&AnimGraphId(sprite.stance_graph_id.clone().into()), &graphs)
+        else {
+            continue;
+        };
         let prior_mode = sprite.mode.clone();
         // Death interrupts any in-flight skill: drive unconditionally (no
         // `matches!(mode, Idle)` guard, unlike the hurt path).
@@ -1424,11 +1452,11 @@ fn spawn_effect_by_id(
 }
 
 fn should_spawn_node_vfx(
-    mode: &AgumonPlaybackMode,
+    mode: &DigimonPlaybackMode,
     active_barrier: Option<&CueBarrierStatus>,
     unit_id: UnitId,
 ) -> bool {
-    matches!(mode, AgumonPlaybackMode::Skill { .. })
+    matches!(mode, DigimonPlaybackMode::Skill { .. })
         && active_barrier
             .map(|status| barrier_targets_sprite(status, unit_id))
             .unwrap_or(true)
@@ -1453,7 +1481,7 @@ fn nearest_non_caster_target_xy(
 }
 
 fn find_sprite_xy(
-    sprites: &Query<(&AgumonSprite, &Transform)>,
+    sprites: &Query<(&DigimonSprite, &Transform)>,
     unit_id: UnitId,
 ) -> Option<[f32; 2]> {
     sprites.iter().find_map(|(sprite, transform)| {
@@ -1478,7 +1506,7 @@ fn find_sprite_xy(
 fn spawn_canvas_damage_numbers(
     mut commands: Commands,
     mut events: MessageReader<bevyrogue::combat::events::CombatEvent>,
-    sprites: Query<(&AgumonSprite, &Transform)>,
+    sprites: Query<(&DigimonSprite, &Transform)>,
 ) {
     for event in events.read() {
         let Some(amount) = hit_damage_amount(&event.kind) else {
@@ -1546,7 +1574,7 @@ fn spawn_detonate_particles(
     mut commands: Commands,
     mut events: MessageReader<bevyrogue::combat::events::CombatEvent>,
     agumon_enoki_vfx: Option<Res<AgumonEnokiVfx>>,
-    sprites: Query<(&AgumonSprite, &Transform)>,
+    sprites: Query<(&DigimonSprite, &Transform)>,
 ) {
     let Some(trigger) = latest_baby_burner_flash_trigger(events.read()) else {
         return;
@@ -1652,7 +1680,7 @@ fn advance_enoki_projectiles(
 }
 
 fn sync_agumon_mode(
-    sprite: &mut AgumonSprite,
+    sprite: &mut DigimonSprite,
     active_barrier: Option<&CueBarrierStatus>,
     skill_reg: &SkillGraphRegistry,
     stance_reg: &StanceGraphRegistry,
@@ -1684,7 +1712,7 @@ fn sync_agumon_mode(
             return;
         }
         SameSkillSync::CueChanged => {
-            if let AgumonPlaybackMode::Skill {
+            if let DigimonPlaybackMode::Skill {
                 awaiting_cue_id, ..
             } = &mut sprite.mode
             {
@@ -1709,8 +1737,10 @@ fn sync_agumon_mode(
         return;
     }
 
+    // Resolve the skill graph by this sprite's carried id (data, not a const).
+    let skill_graph_id = sprite.skill_graph_id.clone();
     let resolved_graph = skill_reg.resolve_snapshot_or_instant_fallback(
-        &AnimGraphId(AGUMON_SKILL_GRAPH_ID.into()),
+        &AnimGraphId(skill_graph_id.clone().into()),
         graphs,
         lookup_diagnostics,
     );
@@ -1720,7 +1750,7 @@ fn sync_agumon_mode(
             target: "windowed.agumon_playback",
             cue_id = status.cue_id,
             skill_id = %status.skill_id.0,
-            graph_id = AGUMON_SKILL_GRAPH_ID,
+            graph_id = %skill_graph_id,
             diagnostic = lookup_diagnostics.last_message.as_deref().unwrap_or("missing"),
             "skill presentation graph missing; running deterministic instant fallback"
         );
@@ -1743,12 +1773,13 @@ fn sync_agumon_mode(
     );
 
     if sprite.graph.source == ResolvedAnimGraphSource::InstantFallback {
+        let stance_graph_id = sprite.stance_graph_id.clone();
         if let Some(stance_graph) =
-            stance_reg.resolve_snapshot(&AnimGraphId(AGUMON_STANCE_GRAPH_ID.into()), graphs)
+            stance_reg.resolve_snapshot(&AnimGraphId(stance_graph_id.clone().into()), graphs)
         {
             trace!(
                 target: "windowed.agumon_playback",
-                graph_id = AGUMON_STANCE_GRAPH_ID,
+                graph_id = %stance_graph_id,
                 stance_entry = %stance_graph.graph().entry.0,
                 "stance snapshot remains available for post-fallback idle restore"
             );
@@ -1784,12 +1815,12 @@ enum SameSkillSync {
 /// This is the load-bearing seam that lets multi-barrier skills advance their
 /// FSM in place instead of restarting the player on every barrier hop.
 fn classify_same_skill_sync(
-    mode: &AgumonPlaybackMode,
+    mode: &DigimonPlaybackMode,
     skill_id: &str,
     cue_id: &str,
 ) -> SameSkillSync {
     match mode {
-        AgumonPlaybackMode::Skill {
+        DigimonPlaybackMode::Skill {
             skill_id: active,
             awaiting_cue_id,
             ..
@@ -1813,10 +1844,10 @@ fn barrier_targets_sprite(status: &CueBarrierStatus, unit_id: UnitId) -> bool {
 
 /// `(skill_id, awaiting_cue_id)` for the active mode, used to enrich the
 /// per-tick playback trace. `Idle` carries neither.
-fn mode_trace_fields(mode: &AgumonPlaybackMode) -> (Option<&str>, Option<&str>) {
+fn mode_trace_fields(mode: &DigimonPlaybackMode) -> (Option<&str>, Option<&str>) {
     match mode {
-        AgumonPlaybackMode::Idle => (None, None),
-        AgumonPlaybackMode::Skill {
+        DigimonPlaybackMode::Idle => (None, None),
+        DigimonPlaybackMode::Skill {
             skill_id,
             awaiting_cue_id,
             ..
@@ -2023,7 +2054,7 @@ mod tests {
 
     #[test]
     fn same_skill_cue_hop_advances_without_resetting_player() {
-        let mode = AgumonPlaybackMode::Skill {
+        let mode = DigimonPlaybackMode::Skill {
             skill_id: AGUMON_ULT_SKILL_ID.into(),
             awaiting_cue_id: "agumon/baby_burner/windup".into(),
             start_node: BABY_BURNER_CHARGE_NODE.into(),
@@ -2046,7 +2077,7 @@ mod tests {
             SameSkillSync::DifferentSkill
         );
         assert_eq!(
-            classify_same_skill_sync(&AgumonPlaybackMode::Idle, AGUMON_ULT_SKILL_ID, "x"),
+            classify_same_skill_sync(&DigimonPlaybackMode::Idle, AGUMON_ULT_SKILL_ID, "x"),
             SameSkillSync::DifferentSkill
         );
     }
