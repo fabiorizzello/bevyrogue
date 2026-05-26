@@ -54,7 +54,7 @@ The validation finding that marked several requirements as PARTIAL or MISSING is
 | Roadmap/validation flow said boundary map was not provided | Resolved at the artifact layer: the roadmap now includes a compact inline boundary table and S04 remains the canonical full boundary inventory | **Automated proof / documentation closure** | `.gsd/milestones/M004/M004-ROADMAP.md`; `.gsd/milestones/M004/slices/S04/M004-BOUNDARY-MAP.md` |
 | Variant-selection boundary had a producer but no consumer summary | Resolved as an intentional seam classification: S03 proves a deterministic future-consumer seam, not a missing M004 runtime integration | **Future-only seam, already proven** | `.gsd/milestones/M004/slices/S04/M004-BOUNDARY-MAP.md`; `tests/animation/vfx_variant_selection.rs`; S03 summary |
 | S06 assessment artifact was reported missing | Resolved: the artifact exists and records the automatable evidence plus the honest manual boundary | **Automated proof / documentation correction** | `.gsd/milestones/M004/slices/S06/S06-ASSESSMENT.md`; `.gsd/milestones/M004/slices/S06/S06-UAT.md` |
-| Strict additive rendering was not fully delivered | Resolved by accepted rescope under D037: strict custom additive material is deferred; HDR + Bloom + overbright channels are the accepted S05 proxy | **Accepted rescope** | `.gsd/milestones/M004/slices/S05/M004-RENDERING-ACCEPTANCE.md`; `.gsd/DECISIONS.md` (D037) |
+| Strict additive rendering was not fully delivered | Resolved by accepted rescope under D037: strict custom additive material is deferred; HDR/Bloom camera wiring plus preserved authored linear color values are the S05 technical preconditions | **Accepted rescope** | `.gsd/milestones/M004/slices/S05/M004-RENDERING-ACCEPTANCE.md`; `.gsd/DECISIONS.md` (D037) |
 | Human `cargo winx` visual signoff did not occur in auto-mode | Resolved by tracked waiver rather than a fabricated PASS: the signoff artifact formally records `WAIVED`, reviewer/date/evidence fields, and the note that auto-mode did not launch the windowed binary | **Tracked waiver / manual-boundary closure** | `docs/uat/M004-vfx-signoff.md`; `.gsd/milestones/M004/slices/S06/S06-ASSESSMENT.md`; `.gsd/milestones/M004/slices/S06/S06-UAT.md` |
 
 ## Boundary map
@@ -73,7 +73,7 @@ The key dispositions are:
 | AnimGraph cue → owned effect-id bridge | Delivered with explicit limit | Cue-name/effect-id bridge exists, but this is not a claim of fully generic cue registration |
 | Effect chaining via `on_expire` | Delivered | Projectile → impact and Baby Burner detonate → flash remain data-driven |
 | Sharp Claws slash | Delivered in S05 | The owned `sharp_claws.slash` effect family and cue bridge are proven, but visual quality is still not auto-mode PASS evidence |
-| HDR/Bloom overbright rendering proxy | Delivered as accepted proxy | S05 proves HDR + Bloom + overbright authored channels; strict additive stays D037-deferred |
+| HDR/Bloom windowed render path | Delivered as technical precondition | S05 proves HDR-capable camera wiring and preserved authored linear color values; strict additive stays D037-deferred |
 | Variant selection seam | Delivered as seam only | Proven deterministic selector for future callers; not a missing gameplay feature in M004 |
 | K001 visual-UAT boundary | Closed by waiver, not PASS | Human-visible quality remains outside auto-mode proof; the tracked waiver closes the milestone artifact honestly |
 
@@ -122,7 +122,7 @@ The closeout disposition is:
 
 That means milestone rerun validation should count:
 
-- HDR + Bloom + overbright authored channels as the accepted delivered rendering proxy,
+- HDR-capable camera wiring and preserved authored linear color values as technical render-path preconditions,
 - strict additive material as **deferred by decision**, not silently missing work.
 
 Canonical evidence:
@@ -171,7 +171,7 @@ cargo test --test animation vfx_asset_eval -- --nocapture
 cargo test --test animation render_no_vfx_kind_guard -- --nocapture
 cargo check --features windowed
 cargo test --features windowed --test windowed_only vfx_asset_impact_render -- --nocapture
-cargo test --features windowed --test windowed_only vfx_rendering_acceptance -- --nocapture
+cargo test --features windowed --test windowed_only vfx_windowed_contracts -- --nocapture
 ```
 
 None of the above constitutes a claim that `cargo winx` was run by auto-mode.

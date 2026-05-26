@@ -32,7 +32,7 @@
    ```
    cargo test --test animation vfx_asset_eval -- --nocapture
    ```
-   Expected: 12 passed, 0 failed. Key passing test: `sharp_claws_slash_curves_evaluate_deterministically_and_overbright` — all RGB channels >1.0 (HDR-bloom proxy), alpha fade 0.95→0.0, 1000 evals bit-identical.
+   Expected: 12 passed, 0 failed. Key passing test: `sharp_claws_slash_curves_evaluate_deterministically` — authored scale/color values are preserved, alpha fades 0.95→0.0, and 1000 evals are bit-identical.
 
 4. **Run no-VFX-kind regression guard:**
    ```
@@ -52,11 +52,11 @@
    ```
    Expected: 7 passed.
 
-7. **Windowed HDR/bloom acceptance:**
+7. **Windowed render-path contracts:**
    ```
-   cargo test --features windowed --test windowed_only vfx_rendering_acceptance -- --nocapture
+   cargo test --features windowed --test windowed_only vfx_windowed_contracts -- --nocapture
    ```
-   Expected: 2 passed. Tests: camera has HDR+Bloom+Tonemapping+DebandDither; Agumon VFX colors are overbright (all RGB >1.0).
+   Expected: 1 passed. Test: camera/render path keeps HDR+Bloom+Tonemapping+DebandDither and uses `Color::linear_rgba` for authored values.
 
 ## Expected Outcomes
 
@@ -69,7 +69,7 @@
 
 - **Near-miss name routing:** `on_enter_effect_ids("sharp_claws")`, `on_enter_effect_ids("slash")`, `on_enter_effect_ids("")` must NOT resolve to `AGUMON_SHARP_CLAWS_EFFECT_ID`. Covered by the unit test.
 - **Stale verb removal:** If `agumon/baby_flame/static` is ever deregistered, `vfx_asset_load::agumon_vfx_contains_sharp_claws_slash` will fail immediately, localizing the regression.
-- **Overbright color clamp:** If vfx.ron colors are changed to <1.0, `vfx_rendering_acceptance::agumon_vfx_keeps_bloom_capable_overbright_color_channels` fails, localizing the bloom regression.
+- **Render-path config drift:** If `setup_camera` loses HDR/Bloom/Tonemapping/DebandDither or render writes stop using `Color::linear_rgba`, `vfx_windowed_contracts::setup_camera_configures_hdr_bloom_tonemapping_and_deband_dither` fails, localizing the technical regression.
 
 ## Not Proven By This UAT
 

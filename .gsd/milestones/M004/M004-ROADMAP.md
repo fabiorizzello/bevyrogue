@@ -35,4 +35,15 @@
 
 ## Boundary Map
 
-Not provided.
+This roadmap keeps a compact validator-facing boundary summary inline. The canonical full producer → consumer contract inventory remains `.gsd/milestones/M004/slices/S04/M004-BOUNDARY-MAP.md`, and the final validation-remediation disposition lives in `.gsd/milestones/M004/slices/S07/M004-VALIDATION-REMEDIATION.md`.
+
+| Boundary | Status | Canonical evidence |
+|---|---|---|
+| VfxAsset/schema/eval | Delivered | S01 schema/load/eval tests; `.gsd/milestones/M004/slices/S04/M004-BOUNDARY-MAP.md` |
+| Placement/appearance registry | Delivered | S02 registry-resolved render seam; `.gsd/milestones/M004/slices/S04/M004-BOUNDARY-MAP.md` |
+| Projectile/impact chain | Delivered | `projectile_on_expire_chains_the_impact_then_flash_fan`; `.gsd/milestones/M004/slices/S04/M004-BOUNDARY-MAP.md` |
+| Baby Burner detonate | Delivered | S03 detonate → flash chain; `.gsd/milestones/M004/slices/S04/M004-BOUNDARY-MAP.md` |
+| Sharp Claws slash | Delivered in S05 | `.gsd/milestones/M004/slices/S05/M004-RENDERING-ACCEPTANCE.md` |
+| HDR/Bloom windowed render path | Delivered as technical precondition | S05 acceptance + D037 rescope |
+| Variant selection seam | Delivered as seam only | S03 selector proof; S04 boundary map; S07 remediation |
+| K001 visual-UAT boundary | Closed by waiver, not PASS | `docs/uat/M004-vfx-signoff.md`; S06 assessment/UAT; S07 remediation |

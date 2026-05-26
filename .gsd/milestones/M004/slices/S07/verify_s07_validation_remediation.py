@@ -28,7 +28,7 @@ EVIDENCE_FILES = [
     ROOT / "tests/animation/vfx_asset_eval.rs",
     ROOT / "tests/animation/render_no_vfx_kind_guard.rs",
     ROOT / "tests/windowed_only/vfx_asset_impact_render.rs",
-    ROOT / "tests/windowed_only/vfx_rendering_acceptance.rs",
+    ROOT / "tests/windowed_only/vfx_windowed_contracts.rs",
 ]
 
 DOC_SURFACES = {
@@ -73,7 +73,7 @@ ROADMAP_TOKENS = [
     "## Boundary Map",
     "This roadmap keeps a compact validator-facing boundary summary inline.",
     "| Variant selection seam | Delivered as seam only |",
-    "| HDR/Bloom overbright rendering proxy | Delivered as accepted proxy |",
+    "| HDR/Bloom windowed render path | Delivered as technical precondition |",
     "| K001 visual-UAT boundary | Closed by waiver, not PASS |",
     CURRENT_PROOF_TOKEN,
 ]

@@ -1,18 +1,18 @@
 # M004 Rendering Acceptance & Rescope (S05)
 
 This artifact is the authoritative record of what S05 delivered for M004's
-rendering-acceptance scope, what its **automated** evidence proves, what
+windowed render-path scope, what its **automated** evidence proves, what
 decision **D037** defers, and what **S06** (manual visual signoff) still owns.
 A future validator should read this before counting any S05 evidence toward
-milestone validation — so that automated proof is not mistaken for human UAT,
-and HDR/overbright delivery is not mistaken for strict additive material.
+milestone validation — so that automated proof is not mistaken for human UAT
+or for visual-quality acceptance.
 
 ## Scope at a glance
 
 | Area | Status | Evidence owner |
 |------|--------|----------------|
-| Windowed HDR + bloom camera policy | **Delivered** | `src/windowed/render.rs`, `tests/windowed_only/vfx_rendering_acceptance.rs` |
-| Overbright (HDR-capable) data-driven VFX colors | **Delivered** | `assets/digimon/agumon/vfx.ron`, `tests/animation/vfx_asset_eval.rs` |
+| Windowed HDR + bloom camera policy | **Delivered** | `src/windowed/render.rs`, `tests/windowed_only/vfx_windowed_contracts.rs` |
+| Authored linear VFX color data | **Delivered** | `assets/digimon/agumon/vfx.ron`, `tests/animation/vfx_asset_eval.rs` |
 | Sharp Claws VFX (data-driven, RON + AnimGraph + bridge) | **Delivered** | `assets/digimon/agumon/vfx.ron`, `assets/digimon/agumon/anim_graph.ron`, `src/windowed/render.rs`, `tests/animation/vfx_asset_load.rs` |
 | No-hardcoded-VFX-kind regression guard | **Delivered** | `tests/animation/render_no_vfx_kind_guard.rs` |
 | Strict custom additive particle material | **Deferred (D037)** | See "What D037 defers" |
@@ -30,18 +30,19 @@ rendering instead of being clamped as sRGB UI values.
 - Bevy 0.18 does not expose the older `Camera { hdr: true }` field; the
   equivalent local contract is the `Hdr` component plus Bloom/Tonemapping/
   DebandDither (see T01 deviation).
-- Proof: `tests/windowed_only/vfx_rendering_acceptance.rs` fails fast if the
-  camera loses HDR/bloom/tonemapping/dithering, or if Agumon bloom-capable
-  effects are clamped back to `<= 1.0` RGB. This is a headless test harness; it
-  does **not** launch the game window (K001 respected).
+- Proof: `tests/windowed_only/vfx_windowed_contracts.rs` fails fast if the
+  camera loses HDR/bloom/tonemapping/dithering, or if the render path
+  stops writing VFX colors with `Color::linear_rgba`. This is a headless test
+  harness; it does **not** launch the game window (K001 respected).
 
-### 2. Overbright data-driven VFX colors
-Agumon's bloom-facing effect color curves in `assets/digimon/agumon/vfx.ron`
-use intentional overbright linear intensity (`> 1.0` RGB) for charge,
-projectile, impact, and flash effects, so the HDR + bloom camera blooms them.
+### 2. Authored linear VFX color data
+Agumon's effect color curves in `assets/digimon/agumon/vfx.ron` remain owned
+authored data. Automated proof only asserts that the pure evaluator preserves
+those values deterministically; whether the resulting effect looks good is still
+a human-only judgment.
 
 - Proof: `tests/animation/vfx_asset_eval.rs` drives the pure curve evaluator
-  on the real asset and asserts overbright RGB channels and deterministic,
+  on the real asset and asserts authored scale/color values plus deterministic,
   bit-identical repeated evaluation (R004).
 
 ### 3. Sharp Claws VFX — fully data-driven
@@ -84,10 +85,12 @@ path does not expose true additive blending; honest additive delivery would
 require a custom `Material2d` plus particle mesh/material conversion, which is
 higher risk than the S05 acceptance gap.
 
-S05 therefore delivers **HDR bloom + overbright VFX colors** — which exercises
-the existing data-driven seam and produces a bloom-driven glow — but does
-**not** implement strict additive blending. No test in this slice asserts
-additive-material delivery, and this artifact makes no such claim.
+S05 therefore delivers technical windowed render-path prerequisites — HDR/Bloom
+camera wiring, linear color writes, and authored VFX data exercised through the
+existing seam — but does **not** implement strict additive blending and does
+**not** claim automated visual acceptance. No test in this slice asserts
+additive-material delivery or human-perceived quality, and this artifact makes
+no such claim.
 
 ## What S06 still owns (do not claim here)
 
@@ -108,7 +111,7 @@ cargo test --test animation vfx_asset_eval -- --nocapture
 cargo test --test animation render_no_vfx_kind_guard -- --nocapture
 cargo check --features windowed
 cargo test --features windowed --test windowed_only vfx_asset_impact_render -- --nocapture
-cargo test --features windowed --test windowed_only vfx_rendering_acceptance -- --nocapture
+cargo test --features windowed --test windowed_only vfx_windowed_contracts -- --nocapture
 ```
 
 These are compile and headless test-harness commands only; none launches the

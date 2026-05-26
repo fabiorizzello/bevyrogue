@@ -18,7 +18,7 @@
 2. Run `python3 .gsd/milestones/M004/slices/S07/verify_s07_validation_remediation.py`.
    - **Expected:** exits 0 and confirms roadmap boundary-map, remediation closeout, waiver disposition, and proof-token surfaces are consistent.
 3. Open `.gsd/milestones/M004/M004-ROADMAP.md` and inspect the `## Boundary Map` section.
-   - **Expected:** no `Not provided.` placeholder remains; the inline table includes rows for VfxAsset/schema/eval, placement/appearance registry, projectile/impact chain, Baby Burner detonate, Sharp Claws slash, HDR/Bloom overbright rendering proxy, variant selection seam, and K001 visual-UAT boundary.
+   - **Expected:** no `Not provided.` placeholder remains; the inline table includes rows for VfxAsset/schema/eval, placement/appearance registry, projectile/impact chain, Baby Burner detonate, Sharp Claws slash, HDR/Bloom windowed render path, variant selection seam, and K001 visual-UAT boundary.
 4. Open `.gsd/milestones/M004/slices/S07/M004-VALIDATION-REMEDIATION.md`.
    - **Expected:** it includes explicit sections for Requirement scope, Boundary map, Variant seam disposition, S06 evidence, D037 rendering rescope, UAT disposition, and Verification commands; it states auto-mode did not run `cargo winx`.
 5. Open `docs/uat/M004-vfx-signoff.md`.
@@ -29,7 +29,7 @@
    - `cargo test --test animation render_no_vfx_kind_guard -- --nocapture`
    - `cargo check --features windowed`
    - `cargo test --features windowed --test windowed_only vfx_asset_impact_render -- --nocapture`
-   - `cargo test --features windowed --test windowed_only vfx_rendering_acceptance -- --nocapture`
+   - `cargo test --features windowed --test windowed_only vfx_windowed_contracts -- --nocapture`
    - **Expected:** every command exits 0.
 
 ## Edge Cases

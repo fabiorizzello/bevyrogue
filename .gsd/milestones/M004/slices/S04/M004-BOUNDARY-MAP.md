@@ -35,8 +35,8 @@ These limits are part of the contract and should be preserved in any later valid
 
 - **Variant selection is proven only as a deterministic seam.** It is **not** proof that a real gameplay unlock/progression system selects variants in live combat.
 - **`src/windowed/render.rs` still uses effect-id constants and texture-key mapping.** That is a cue/effect bridge and texture lookup surface, **not** a return to `VfxParticleKind` dispatch.
-- **Sharp Claws and the HDR/Bloom rendering proxy are delivered by later slices, not by the original S04 proof set alone.** Read `.gsd/milestones/M004/slices/S05/M004-RENDERING-ACCEPTANCE.md` for the canonical post-S05 acceptance evidence.
-- **Strict additive rendering is not delivered in M004.** D037 defers a custom additive material; the accepted delivered proxy is HDR + Bloom + overbright authored channels.
+- **Sharp Claws and the HDR/Bloom windowed render path are delivered by later slices, not by the original S04 proof set alone.** Read `.gsd/milestones/M004/slices/S05/M004-RENDERING-ACCEPTANCE.md` for the canonical post-S05 acceptance evidence.
+- **Strict additive rendering is not delivered in M004.** D037 defers a custom additive material; S05 delivers technical render-path preconditions (HDR/Bloom camera wiring plus preserved authored linear color values), not automated visual acceptance.
 - **Live visual quality remains a human-only judgment boundary unless the tracked signoff artifact explicitly records a waiver.** Auto-mode must not claim the effects already looked correct in a real `cargo winx` session.
 
 ## Reader test
@@ -47,4 +47,4 @@ A fresh validator should be able to answer three questions from this file alone:
 2. Which on-disk test will fail if that seam breaks?
 3. Which gaps are still pending manual or later-slice work?
 
-For M004, the answer is: **S01-S03 prove the authored asset/schema, registry-resolved placement, cue→effect bridge, data-driven chaining, variant-selection seam, and localized validation failures; S05 adds Sharp Claws plus the HDR/Bloom rendering proxy; D037 defers strict additive; and K001 visual closure must be either human signoff or a tracked waiver rather than an auto-mode PASS claim.**
+For M004, the answer is: **S01-S03 prove the authored asset/schema, registry-resolved placement, cue→effect bridge, data-driven chaining, variant-selection seam, and localized validation failures; S05 adds Sharp Claws plus the HDR/Bloom windowed render path technical preconditions; D037 defers strict additive; and K001 visual closure must be either human signoff or a tracked waiver rather than an auto-mode PASS claim.**
