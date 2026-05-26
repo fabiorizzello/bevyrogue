@@ -2,6 +2,8 @@
 //!
 //! Hosts tests for windowed-only UI features (phase strip, preview cache).
 
+#[path = "windowed_only/agumon_module_extraction.rs"]
+mod agumon_module_extraction;
 #[path = "windowed_only/digimon_sprite_cue_dispatch.rs"]
 mod digimon_sprite_cue_dispatch;
 #[path = "windowed_only/enoki_impact_effect_parses.rs"]

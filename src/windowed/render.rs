@@ -33,8 +33,8 @@ use bevyrogue::ui::hit_feedback::{
 
 /// Marker + FSM state for an on-screen Digimon preview actor. Carries the
 /// stance/skill animation-graph ids as DATA (`stance_graph_id` / `skill_graph_id`)
-/// rather than reading module-level `AGUMON_*` consts, so adding a new Digimon
-/// (S04/S05) means spawning this component with different ids — no edits here.
+/// rather than reading module-level species-specific consts, so adding a new
+/// Digimon (S04/S05) means spawning this component with different ids — no edits here.
 #[derive(Component, Debug, Clone)]
 pub(super) struct DigimonSprite {
     pub(super) unit_id: UnitId,
@@ -650,8 +650,8 @@ pub(in crate::windowed) struct SkillStartNodeRegistry {
 /// Engine-generic per-Digimon sprite presentation data (S04): the stance/skill
 /// animation-graph ids and the atlas image path + clip index used by
 /// [`build_digimon_atlas`] / [`spawn_unit_sprites`]. The per-Digimon module
-/// populates it instead of the engine reading `AGUMON_*` consts and a hardcoded
-/// atlas path. For S04 it holds the single Agumon entry; S05 adds more.
+/// populates it instead of the engine reading species-specific consts and a
+/// hardcoded atlas path. For S04 it holds the single Agumon entry; S05 adds more.
 #[derive(Resource, Debug, Clone, Default)]
 pub(in crate::windowed) struct SpritePresentationRegistry {
     pub(in crate::windowed) entries: Vec<SpritePresentationEntry>,
@@ -852,7 +852,7 @@ fn spawn_unit_sprites(
         let x = if flip_x { 200.0_f32 } else { -200.0_f32 };
         commands.spawn((
             // S04: the stance/skill graph ids are seeded from the per-Digimon
-            // presentation registry entry, not engine `AGUMON_*` consts.
+            // presentation registry entry, not engine species-specific consts.
             DigimonSprite::idle_for(
                 unit.id,
                 stance_graph.clone(),
