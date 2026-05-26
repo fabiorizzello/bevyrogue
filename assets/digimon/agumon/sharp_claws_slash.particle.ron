@@ -1,0 +1,45 @@
+// Agumon `sharp_claws.slash` contact burst — a quick pale yellow-white slash
+// flash for the bevy_enoki GPU 2D particle backend (M005/S05). One-shot:
+// spawn_rate 0 so the spawner emits `spawn_amount` particles in a single burst,
+// then idles. Echoes the vfx.ron `sharp_claws.slash` intent: overbright pale
+// yellow-white (3.0, 3.0, 2.2) tint, target-anchored, a fast pop-and-fade slash.
+// This is enoki's `Particle2dEffect` schema (distinct from the owned `VfxAsset`
+// schema); all 19 fields are listed because the loader's RON deserialize has no
+// field defaults (MEM102).
+(
+    // One-shot burst: zero continuous rate, all particles emitted at once.
+    spawn_rate: 0.0,
+    // Modest count — a slash reads as a tight sliver, not a wide explosion.
+    spawn_amount: 18,
+    // Seed from a small disc so the slivers don't all start on one point.
+    emission_shape: Circle(4.0),
+    // Quick slash flash: ~0.25s with mild per-particle variance.
+    lifetime: (0.25, 0.18),
+    // Fast outward scatter that decelerates (negative acceleration) + damping.
+    linear_speed: Some((170.0, 0.4)),
+    linear_acceleration: Some((-260.0, 0.1)),
+    // No fixed direction: omitted so enoki scatters radially from the shape.
+    direction: None,
+    angular_speed: None,
+    angular_acceleration: None,
+    scale: Some((9.0, 0.35)),
+    // Base tint; the color_curve drives the pale yellow-white gradient over life.
+    color: Some((red: 1.0, green: 1.0, blue: 0.75, alpha: 1.0)),
+    gravity_direction: None,
+    gravity_speed: None,
+    linear_damp: Some((4.5, 0.0)),
+    angular_damp: None,
+    // Pop in to full size, then shrink to nothing as each sliver dies.
+    scale_curve: Some((points: [
+        (0.2, 0.0, None),
+        (1.0, 0.25, Some(SineOut)),
+        (0.0, 1.0, Some(SineInOut)),
+    ])),
+    // Overbright pale yellow-white at strike -> transparent (HDR bloom, S05).
+    color_curve: Some((points: [
+        ((red: 3.0, green: 3.0, blue: 2.2, alpha: 1.0), 0.0, None),
+        ((red: 2.4, green: 2.2, blue: 1.4, alpha: 0.0), 1.0, Some(SineInOut)),
+    ])),
+    attractors: None,
+    relative_positioning: None,
+)

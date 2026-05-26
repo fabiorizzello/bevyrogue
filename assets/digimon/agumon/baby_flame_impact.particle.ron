@@ -8,14 +8,17 @@
 (
     // One-shot burst: zero continuous rate, all particles emitted at once.
     spawn_rate: 0.0,
-    spawn_amount: 28,
+    // Raised from 28 to fold the radiating impact_flash shards into this single
+    // enoki burst — it now reads as the central flash PLUS the outward shards.
+    spawn_amount: 40,
     // Seed the burst from a small disc so embers don't all start at one point.
     emission_shape: Circle(5.0),
     // Quick contact flash: ~0.3s with mild per-particle variance.
     lifetime: (0.32, 0.25),
-    // Fast outward scatter that decelerates (negative acceleration) + damping.
-    linear_speed: Some((150.0, 0.4)),
-    linear_acceleration: Some((-240.0, 0.1)),
+    // Faster outward scatter (raised from 150) so the wider shards radiate, then
+    // decelerates (negative acceleration) + damping.
+    linear_speed: Some((190.0, 0.45)),
+    linear_acceleration: Some((-260.0, 0.1)),
     // No fixed direction: omitted so enoki scatters radially from the emission shape.
     direction: None,
     angular_speed: None,

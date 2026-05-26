@@ -6,6 +6,8 @@
 mod enoki_impact_effect_parses;
 #[path = "windowed_only/enoki_impact_render.rs"]
 mod enoki_impact_render;
+#[path = "windowed_only/enoki_skill_effects_parse.rs"]
+mod enoki_skill_effects_parse;
 #[path = "windowed_only/frame_time_soak.rs"]
 mod frame_time_soak;
 #[path = "windowed_only/phase_strip_readonly.rs"]

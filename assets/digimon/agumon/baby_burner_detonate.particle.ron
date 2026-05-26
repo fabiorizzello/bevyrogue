@@ -1,0 +1,48 @@
+// Agumon `baby_burner.detonate` contact burst — an orange radial shard burst
+// for the bevy_enoki GPU 2D particle backend (M005/S05). One-shot: spawn_rate 0
+// so the spawner emits `spawn_amount` particles in a single burst, then idles.
+// Folds the central `baby_burner.flash` pop into this one enoki burst: a larger
+// `spawn_amount` and wider `linear_speed` than baby_flame.impact give it more
+// outward reach, while a brighter initial color-curve core reads as the central
+// flash. Echoes the vfx.ron `baby_burner.detonate` intent: hot orange
+// (2.2, 1.0, 0.3) tint, target-anchored. This is enoki's `Particle2dEffect`
+// schema (distinct from the owned `VfxAsset` schema); all 19 fields are listed
+// because the loader's RON deserialize has no field defaults (MEM102).
+(
+    // One-shot burst: zero continuous rate, all particles emitted at once.
+    spawn_rate: 0.0,
+    // Larger than baby_flame.impact (28) — the ultimate detonation is wider.
+    spawn_amount: 44,
+    // Seed from a slightly larger disc so the core flash has body.
+    emission_shape: Circle(7.0),
+    // Short detonation flash with mild per-particle variance.
+    lifetime: (0.38, 0.28),
+    // Wider outward scatter than impact (150) that decelerates + damps.
+    linear_speed: Some((220.0, 0.45)),
+    linear_acceleration: Some((-300.0, 0.1)),
+    // No fixed direction: omitted so enoki scatters radially from the shape.
+    direction: None,
+    angular_speed: None,
+    angular_acceleration: None,
+    scale: Some((12.0, 0.4)),
+    // Base tint; the color_curve drives the hot orange gradient over lifetime.
+    color: Some((red: 1.0, green: 0.45, blue: 0.12, alpha: 1.0)),
+    gravity_direction: None,
+    gravity_speed: None,
+    linear_damp: Some((4.0, 0.0)),
+    angular_damp: None,
+    // Shrink to nothing so each shard collapses as it dies.
+    scale_curve: Some((points: [
+        (1.0, 0.0, None),
+        (0.0, 1.0, Some(SineInOut)),
+    ])),
+    // Brighter-than-orange core at detonation (the folded central flash pop) ->
+    // hot orange (2.2, 1.0, 0.3) -> transparent (HDR bloom, S05).
+    color_curve: Some((points: [
+        ((red: 3.4, green: 2.0, blue: 0.8, alpha: 1.0), 0.0, None),
+        ((red: 2.2, green: 1.0, blue: 0.3, alpha: 0.85), 0.35, Some(SineOut)),
+        ((red: 2.2, green: 0.7, blue: 0.2, alpha: 0.0), 1.0, Some(SineInOut)),
+    ])),
+    attractors: None,
+    relative_positioning: None,
+)
