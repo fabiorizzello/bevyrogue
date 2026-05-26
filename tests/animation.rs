@@ -30,6 +30,8 @@ mod placement_verbs;
 mod render_no_vfx_kind_guard;
 #[path = "animation/skill_graph_mapping_extensibility.rs"]
 mod skill_graph_mapping_extensibility;
+#[path = "animation/stance_reaction_mapping.rs"]
+mod stance_reaction_mapping;
 #[path = "animation/vfx_asset_eval.rs"]
 mod vfx_asset_eval;
 #[path = "animation/vfx_asset_load.rs"]

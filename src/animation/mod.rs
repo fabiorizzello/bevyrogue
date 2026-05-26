@@ -4,6 +4,7 @@ pub mod clip;
 pub mod placement;
 pub mod player;
 pub mod plugin;
+pub mod reaction;
 pub mod registry;
 pub mod validation;
 pub mod vfx;
@@ -14,6 +15,7 @@ pub use atlas::*;
 pub use clip::*;
 pub use player::{AnimAdvanceResult, AnimGraphPlayer};
 pub use plugin::*;
+pub use reaction::*;
 pub use registry::{
     AnimationGraphLookupDiagnostics, AnimationStancePaths, MISSING_GRAPH_FALLBACK_NODE_ID,
     MissingGraphDiagnostic, ResolvedAnimGraph, ResolvedAnimGraphSource, SkillGraphPaths,
