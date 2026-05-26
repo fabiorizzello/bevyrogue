@@ -8,9 +8,11 @@
 //!   2. `spawn_effect_by_id` routes any effect id present in the enoki handle map
 //!      (`enoki.handles.get(effect_id)`) through an enoki one-shot bundle
 //!      (`ParticleSpawner` + `ParticleEffectHandle` + `OneShot`); enoki is the sole
-//!      particle renderer (M006/S01 T04 deleted the quad fallback), and the map is
-//!      keyed by all three contact-burst ids (sharp_claws.slash, baby_flame.impact,
-//!      baby_burner.detonate).
+//!      particle renderer (M006/S01 T04 deleted the quad system), and the map is
+//!      keyed by all six Agumon ids (baby_flame.charge/ember/projectile/impact,
+//!      sharp_claws.slash, baby_burner.detonate). The enoki-native lifecycle layer
+//!      (ChargeEmberEnokiMarker, ProjectileFlight, advance_enoki_projectiles) that
+//!      replaced the quad per-frame work is present.
 //!   3. The kernel/FSM control flow (`fire_kernel_cue` + `request_release`) is
 //!      untouched (D031/D032) — only what gets spawned for a matched id changed.
 #![cfg(feature = "windowed")]
@@ -72,9 +74,51 @@ fn spawn_effect_by_id_routes_mapped_ids_through_an_enoki_one_shot() {
 }
 
 #[test]
-fn enoki_handle_map_is_keyed_by_all_three_contact_burst_ids() {
+fn quad_vfx_system_is_fully_deleted_from_render_src() {
+    // M006/S01 T04 deleted the custom quad VFX system, leaving enoki as the sole
+    // particle renderer (D043). Pin that its defining code symbols are gone from
+    // render.rs. Historical mentions survive only inside comments, so match on
+    // code-shaped tokens (`fn ...`, struct literal `VfxParticle {`, the spawn
+    // loop) rather than bare substrings that the surviving comments would trip.
+    assert!(
+        !RENDER_SRC.contains("fn advance_vfx_particles"),
+        "the quad advance_vfx_particles system must be deleted — enoki advances particles now"
+    );
+    assert!(
+        !RENDER_SRC.contains("VfxParticle {"),
+        "the quad VfxParticle component bundle must no longer be spawned"
+    );
+    assert!(
+        !RENDER_SRC.contains("for i in 0..count"),
+        "the quad spawn loop must be gone — enoki is the sole particle renderer (D043)"
+    );
+}
+
+#[test]
+fn enoki_lifecycle_layer_is_present() {
+    // M006/S01 T03 added the enoki-native lifecycle layer that replaced the quad
+    // system's per-frame work: persistent charge/ember emitters (cleared on launch)
+    // and a traveling projectile that chains the impact burst on arrival.
+    assert!(
+        RENDER_SRC.contains("ChargeEmberEnokiMarker"),
+        "the persistent charge/ember emitter marker must remain so launch can clear them"
+    );
+    assert!(
+        RENDER_SRC.contains("ProjectileFlight"),
+        "the traveling-projectile flight component must remain so the projectile can travel caster->target"
+    );
+    assert!(
+        RENDER_SRC.contains("fn advance_enoki_projectiles"),
+        "the enoki projectile advance system must remain — it lerps flight and chains the impact burst"
+    );
+}
+
+#[test]
+fn enoki_handle_map_is_keyed_by_all_six_agumon_ids() {
     // The map is built in load_agumon_enoki_vfx; slice that fn and assert each
-    // contact-burst id is inserted so all three Agumon skills route through enoki.
+    // Agumon effect id is inserted so the full Baby Flame sequence (charge, ember,
+    // projectile, impact) plus Sharp Claws and Baby Burner all route through enoki.
+    // M006/S01 made enoki the sole particle renderer, so the map must cover all six.
     let start = RENDER_SRC
         .find("fn load_agumon_enoki_vfx")
         .expect("render.rs must define load_agumon_enoki_vfx");
@@ -89,9 +133,12 @@ fn enoki_handle_map_is_keyed_by_all_three_contact_burst_ids() {
         "load_agumon_enoki_vfx must build the per-effect handle map via handles.insert(...)"
     );
     for id_const in [
-        "AGUMON_SHARP_CLAWS_EFFECT_ID",
+        "AGUMON_CHARGE_EFFECT_ID",
+        "AGUMON_EMBER_EFFECT_ID",
+        "AGUMON_PROJECTILE_EFFECT_ID",
         "AGUMON_IMPACT_EFFECT_ID",
         "AGUMON_DETONATE_EFFECT_ID",
+        "AGUMON_SHARP_CLAWS_EFFECT_ID",
     ] {
         assert!(
             block.contains(id_const),
