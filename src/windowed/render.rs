@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use bevy::{
     core_pipeline::tonemapping::{DebandDither, Tonemapping},
@@ -552,55 +552,88 @@ fn diagnose_agumon_vfx_load(
 /// asset from the owned `VfxAsset` schema: this drives the bevy_enoki GPU particle
 /// backend (M005/S04) for the `baby_flame.impact` contact flash.
 const AGUMON_ENOKI_IMPACT_PATH: &str = "digimon/agumon/baby_flame_impact.particle.ron";
+/// Path of Agumon's enoki Sharp Claws slash burst (M005/S05).
+const AGUMON_ENOKI_SHARP_CLAWS_PATH: &str = "digimon/agumon/sharp_claws_slash.particle.ron";
+/// Path of Agumon's enoki Baby Burner detonate burst (M005/S05).
+const AGUMON_ENOKI_DETONATE_PATH: &str = "digimon/agumon/baby_burner_detonate.particle.ron";
 
-/// Handle to Agumon's enoki `Particle2dEffect` (M005/S04). Held in a resource so a
-/// future spawn seam can attach it to a `ParticleSpawner` for the `baby_flame.impact`
-/// contact flash. Loading the handle does not move any particle lifetime into the
-/// kernel/FSM timeline (D031/D032 untouched).
+/// Per-effect-id map of Agumon's enoki `Particle2dEffect` handles (M005/S05,
+/// generalized from the single S04 handle). The spawn seam looks up an effect id
+/// here and, on a hit, routes it through bevy_enoki's GPU 2D backend as a
+/// self-despawning one-shot. A missing id falls through to the quad path. Loading
+/// these handles does not move any particle lifetime into the kernel/FSM timeline
+/// (D031/D032 untouched).
 #[derive(Resource, Debug, Clone)]
 struct AgumonEnokiVfx {
-    handle: Handle<Particle2dEffect>,
+    handles: HashMap<String, Handle<Particle2dEffect>>,
 }
 
 fn load_agumon_enoki_vfx(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.insert_resource(AgumonEnokiVfx {
-        handle: asset_server.load(AGUMON_ENOKI_IMPACT_PATH),
-    });
+    let mut handles = HashMap::new();
+    handles.insert(
+        AGUMON_SHARP_CLAWS_EFFECT_ID.to_string(),
+        asset_server.load(AGUMON_ENOKI_SHARP_CLAWS_PATH),
+    );
+    handles.insert(
+        AGUMON_IMPACT_EFFECT_ID.to_string(),
+        asset_server.load(AGUMON_ENOKI_IMPACT_PATH),
+    );
+    handles.insert(
+        AGUMON_DETONATE_EFFECT_ID.to_string(),
+        asset_server.load(AGUMON_ENOKI_DETONATE_PATH),
+    );
+    commands.insert_resource(AgumonEnokiVfx { handles });
     info!(
         target: "windowed.agumon_playback",
-        path = AGUMON_ENOKI_IMPACT_PATH,
-        "agumon enoki impact effect load requested"
+        sharp_claws_path = AGUMON_ENOKI_SHARP_CLAWS_PATH,
+        impact_path = AGUMON_ENOKI_IMPACT_PATH,
+        detonate_path = AGUMON_ENOKI_DETONATE_PATH,
+        "agumon enoki contact-burst effects load requested"
     );
 }
 
-/// Surface a load failure for Agumon's enoki impact `.particle.ron` once, mirroring
-/// `diagnose_agumon_vfx_load`. A failed/missing effect asset means the
-/// `baby_flame.impact` contact flash silently spawns nothing through the enoki
-/// backend; this makes the dead VFX visible rather than mysterious (slice
-/// failure-visibility).
+/// Surface a load failure for each enoki contact-burst `.particle.ron` once,
+/// mirroring `diagnose_agumon_vfx_load`. A failed/missing effect asset means that
+/// skill's contact flash silently spawns nothing through the enoki backend; this
+/// makes a dead per-skill burst visible by name rather than silently absent
+/// (slice failure-visibility). Each id is warned at most once via the warned-set.
 fn diagnose_agumon_enoki_vfx_load(
     agumon_enoki_vfx: Option<Res<AgumonEnokiVfx>>,
     asset_server: Res<AssetServer>,
-    mut warned: Local<bool>,
+    mut warned: Local<HashSet<String>>,
 ) {
-    if *warned {
-        return;
-    }
     let Some(agumon_enoki_vfx) = agumon_enoki_vfx else {
         return;
     };
-    if matches!(
-        asset_server.load_state(agumon_enoki_vfx.handle.id()),
-        bevy::asset::LoadState::Failed(_)
-    ) {
-        warn!(
-            target: "windowed.agumon_playback",
-            path = AGUMON_ENOKI_IMPACT_PATH,
-            effect = AGUMON_IMPACT_EFFECT_ID,
-            reason = "baby_flame_impact.particle.ron failed to load or parse",
-            "baby_flame.impact enoki VFX disabled; no enoki particles will spawn"
-        );
-        *warned = true;
+    for (effect_id, handle) in &agumon_enoki_vfx.handles {
+        if warned.contains(effect_id) {
+            continue;
+        }
+        if matches!(
+            asset_server.load_state(handle.id()),
+            bevy::asset::LoadState::Failed(_)
+        ) {
+            warn!(
+                target: "windowed.agumon_playback",
+                path = enoki_effect_path(effect_id),
+                effect = effect_id.as_str(),
+                reason = "enoki .particle.ron failed to load or parse",
+                "enoki contact-burst VFX disabled for this effect id; no enoki particles will spawn"
+            );
+            warned.insert(effect_id.clone());
+        }
+    }
+}
+
+/// Map an enoki effect id back to its source asset path for diagnostics. Mirrors
+/// the keys inserted in [`load_agumon_enoki_vfx`]; an unknown id reports
+/// `"<unknown>"` rather than panicking.
+fn enoki_effect_path(effect_id: &str) -> &'static str {
+    match effect_id {
+        AGUMON_SHARP_CLAWS_EFFECT_ID => AGUMON_ENOKI_SHARP_CLAWS_PATH,
+        AGUMON_IMPACT_EFFECT_ID => AGUMON_ENOKI_IMPACT_PATH,
+        AGUMON_DETONATE_EFFECT_ID => AGUMON_ENOKI_DETONATE_PATH,
+        _ => "<unknown>",
     }
 }
 
@@ -1437,18 +1470,19 @@ fn spawn_effect_by_id(
         source_flip_x,
         source_scale,
     );
-    // M005/S04: route the single `baby_flame.impact` id through bevy_enoki's GPU
-    // 2D backend as a self-despawning one-shot, reusing the quad path's placement
-    // math (`base`). Every other effect id stays on the quad loop below. This
-    // intercept changes only what gets spawned for one id — no kernel/FSM cue or
-    // barrier control flow is touched (D031/D032). The enoki effect is a fire-and-
-    // forget burst; `OneShot::Despawn` removes the spawner once it drains, so no
-    // particle lifetime enters the kernel timeline.
-    if effect_id == AGUMON_IMPACT_EFFECT_ID {
-        if let Some(enoki) = enoki {
+    // M005/S05: route any effect id present in the enoki handle map through
+    // bevy_enoki's GPU 2D backend as a self-despawning one-shot, reusing the quad
+    // path's placement math (`base`). An id absent from the map (or no loaded
+    // resource) falls through to the quad loop below. This intercept changes only
+    // what gets spawned for a matched id — no kernel/FSM cue or barrier control
+    // flow is touched (D031/D032). The enoki effect is a fire-and-forget burst;
+    // `OneShot::Despawn` removes the spawner once it drains, so no particle
+    // lifetime enters the kernel timeline.
+    if let Some(enoki) = enoki {
+        if let Some(handle) = enoki.handles.get(effect_id) {
             commands.spawn((
                 ParticleSpawner::default(),
-                ParticleEffectHandle(enoki.handle.clone()),
+                ParticleEffectHandle(handle.clone()),
                 OneShot::Despawn,
                 Transform::from_xyz(base[0], base[1], VFX_PARTICLE_Z),
             ));

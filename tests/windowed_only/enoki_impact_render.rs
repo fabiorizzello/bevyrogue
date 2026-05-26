@@ -5,11 +5,13 @@
 //! harness verifies the authored source without launching a window (K001 forbids
 //! running the windowed binary in auto-mode). It pins three preconditions:
 //!   1. `EnokiPlugin` is registered on the windowed app.
-//!   2. `spawn_effect_by_id` routes the single `baby_flame.impact` id through an
-//!      enoki one-shot bundle (`ParticleSpawner` + `ParticleEffectHandle` +
-//!      `OneShot`) while leaving the quad loop for every other id.
+//!   2. `spawn_effect_by_id` routes any effect id present in the enoki handle map
+//!      (`enoki.handles.get(effect_id)`) through an enoki one-shot bundle
+//!      (`ParticleSpawner` + `ParticleEffectHandle` + `OneShot`) while leaving the
+//!      quad loop for every unmatched id, and the map is keyed by all three
+//!      contact-burst ids (sharp_claws.slash, baby_flame.impact, baby_burner.detonate).
 //!   3. The kernel/FSM control flow (`fire_kernel_cue` + `request_release`) is
-//!      untouched (D031/D032) — only what gets spawned for one id changed.
+//!      untouched (D031/D032) — only what gets spawned for a matched id changed.
 #![cfg(feature = "windowed")]
 
 const RENDER_SRC: &str = include_str!("../../src/windowed/render.rs");
@@ -36,30 +38,59 @@ fn enoki_plugin_is_registered_on_the_windowed_app() {
 }
 
 #[test]
-fn spawn_effect_by_id_routes_baby_flame_impact_through_an_enoki_one_shot() {
+fn spawn_effect_by_id_routes_mapped_ids_through_an_enoki_one_shot() {
     let block = spawn_effect_by_id_block();
 
     assert!(
-        block.contains("effect_id == AGUMON_IMPACT_EFFECT_ID"),
-        "spawn_effect_by_id must branch on AGUMON_IMPACT_EFFECT_ID so only that one id is routed to enoki"
+        block.contains("enoki.handles.get(effect_id)"),
+        "spawn_effect_by_id must look the effect id up in the per-effect handle map so any mapped id is routed to enoki"
     );
     assert!(
         block.contains("ParticleSpawner"),
-        "the baby_flame.impact branch must spawn a ParticleSpawner (the enoki spawner component)"
+        "the enoki branch must spawn a ParticleSpawner (the enoki spawner component)"
     );
     assert!(
         block.contains("ParticleEffectHandle"),
-        "the baby_flame.impact branch must attach the loaded ParticleEffectHandle from AgumonEnokiVfx"
+        "the enoki branch must attach the mapped ParticleEffectHandle from AgumonEnokiVfx"
     );
     assert!(
         block.contains("OneShot"),
-        "the baby_flame.impact branch must mark the spawner OneShot so it self-despawns rather than entering the kernel timeline"
+        "the enoki branch must mark the spawner OneShot so it self-despawns rather than entering the kernel timeline"
     );
-    // The quad loop must still exist for every non-impact id.
+    // The quad loop must still exist for every unmatched id.
     assert!(
         block.contains("for i in 0..count"),
-        "the quad spawn loop must remain for all non-impact effect ids — only baby_flame.impact is intercepted"
+        "the quad spawn loop must remain for all unmatched effect ids — only ids in the enoki handle map are intercepted"
     );
+}
+
+#[test]
+fn enoki_handle_map_is_keyed_by_all_three_contact_burst_ids() {
+    // The map is built in load_agumon_enoki_vfx; slice that fn and assert each
+    // contact-burst id is inserted so all three Agumon skills route through enoki.
+    let start = RENDER_SRC
+        .find("fn load_agumon_enoki_vfx")
+        .expect("render.rs must define load_agumon_enoki_vfx");
+    let rest = &RENDER_SRC[start..];
+    let end = rest
+        .find("\nfn ")
+        .expect("load_agumon_enoki_vfx should be followed by another top-level fn");
+    let block = &rest[..end];
+
+    assert!(
+        block.contains("handles.insert("),
+        "load_agumon_enoki_vfx must build the per-effect handle map via handles.insert(...)"
+    );
+    for id_const in [
+        "AGUMON_SHARP_CLAWS_EFFECT_ID",
+        "AGUMON_IMPACT_EFFECT_ID",
+        "AGUMON_DETONATE_EFFECT_ID",
+    ] {
+        assert!(
+            block.contains(id_const),
+            "load_agumon_enoki_vfx must insert {id_const} into the enoki handle map"
+        );
+    }
 }
 
 #[test]
