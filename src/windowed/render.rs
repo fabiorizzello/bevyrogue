@@ -23,6 +23,10 @@ use bevyrogue::combat::turn_system::{continue_suspended_timeline_system, resolve
 use bevyrogue::combat::types::UnitId;
 use bevyrogue::combat::unit::Unit;
 use bevyrogue::ui::combat_panel::latest_baby_burner_flash_trigger;
+use bevyrogue::ui::hit_feedback::{
+    FLASH_TICKS, HitFlashState, HitShakeState, SHAKE_TICKS, flash_tint, observe_hit_feedback,
+    shake_offset,
+};
 
 use super::{
     AGUMON_SKILL_GRAPH_ID, AGUMON_STANCE_GRAPH_ID, AGUMON_ULT_SKILL_ID, BABY_BURNER_CHARGE_NODE,
@@ -96,6 +100,16 @@ struct FadeOut {
 /// ticks at the 12fps animation clock — long enough to read as a fade, short
 /// enough not to clutter the field.
 const DEATH_FADE_TICKS: u32 = 8;
+
+/// Binary-local rest position of an `AgumonSprite`, captured at spawn. The hit
+/// shake offset (S03/T02) is applied *relative to this* so the sprite always
+/// restores to its exact spawn `(x, 0.0)` without accumulating drift — research
+/// warns that hardcoding the ±200 layout value goes stale, so capture it once at
+/// spawn instead.
+#[derive(Component, Debug, Clone, Copy, PartialEq)]
+struct SpriteRest {
+    xy: Vec2,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum AgumonPlaybackMode {
@@ -323,6 +337,8 @@ impl Plugin for RenderPlugin {
         app.add_plugins(RonAssetPlugin::<VfxAsset>::new(&["ron"]))
             .insert_resource(AnimationClock::from_env())
             .insert_resource(PendingAnimationTicks::default())
+            .init_resource::<HitFlashState>()
+            .init_resource::<HitShakeState>()
             .add_systems(Startup, (setup_camera, load_vfx_visuals, load_agumon_vfx))
             .add_systems(Update, diagnose_agumon_vfx_load)
             .add_systems(Update, build_agumon_atlas.before(spawn_unit_sprites))
@@ -338,6 +354,17 @@ impl Plugin for RenderPlugin {
             .add_systems(
                 Update,
                 drive_hurt_reactions
+                    .after(spawn_unit_sprites)
+                    .after(resolve_action_system)
+                    .before(advance_agumon_presentation)
+                    .before(continue_suspended_timeline_system),
+            )
+            .add_systems(
+                Update,
+                // Arm the transient flash/shake windows off the CombatEvent bus.
+                // Mirrors drive_hurt_reactions' ordering so the windows are armed
+                // before advance_agumon_presentation decays + applies them.
+                observe_hit_feedback
                     .after(spawn_unit_sprites)
                     .after(resolve_action_system)
                     .before(advance_agumon_presentation)
@@ -594,6 +621,11 @@ fn spawn_unit_sprites(
                 ..default()
             },
             Transform::from_xyz(x, 0.0, 0.0).with_scale(Vec3::splat(SPRITE_DISPLAY_SCALE)),
+            // Capture the exact spawn xy so the hit shake can restore to rest
+            // without drift (never hardcode ±200; that layout value goes stale).
+            SpriteRest {
+                xy: Vec2::new(x, 0.0),
+            },
         ));
     }
 }
@@ -611,12 +643,15 @@ fn advance_agumon_presentation(
     agumon_vfx: Option<Res<AgumonVfx>>,
     vfx_assets: Option<Res<Assets<VfxAsset>>>,
     vfx_particles: Query<(Entity, &VfxParticle, &VfxParticleSource)>,
+    mut hit_flash: ResMut<HitFlashState>,
+    mut hit_shake: ResMut<HitShakeState>,
     mut sprites: ParamSet<(
         Query<(
             Entity,
             &mut AgumonSprite,
             &mut Sprite,
-            &Transform,
+            &mut Transform,
+            &SpriteRest,
             Option<&DeathExiting>,
             Option<&FadeOut>,
         )>,
@@ -656,6 +691,27 @@ fn advance_agumon_presentation(
         }
     }
 
+    // Decay the transient hit-feedback windows once per frame on the same
+    // PendingAnimationTicks clock (single decay source of truth, R010 — pure
+    // overlay, never touches CombatState). A unit still sitting at the full
+    // window was freshly armed by observe_hit_feedback this frame; trace it once
+    // (mirrors drive_hurt_reactions' trace seam) before the decay drains it.
+    if pending_ticks.0 > 0 {
+        for unit_id in hit_flash.remaining.keys().copied().collect::<Vec<_>>() {
+            if hit_flash.remaining(unit_id) == FLASH_TICKS {
+                trace!(
+                    target: "windowed.agumon_playback",
+                    unit_id = ?unit_id,
+                    flash_ticks = FLASH_TICKS,
+                    shake_ticks = SHAKE_TICKS,
+                    "flash+shake armed"
+                );
+            }
+        }
+        hit_flash.decay_by(pending_ticks.0);
+        hit_shake.decay_by(pending_ticks.0);
+    }
+
     // Advance the player at the fixed animation rate, not once per render frame.
     // Most 60fps frames yield 0 ticks; the kernel-barrier release still observes
     // the rendered impact frame — it just samples it on the animation tick.
@@ -671,8 +727,15 @@ fn advance_agumon_presentation(
                 )
             })
             .collect();
-        for (entity, mut sprite, mut render_sprite, transform, death_exiting, fade_out) in
-            &mut sprites.p0()
+        for (
+            entity,
+            mut sprite,
+            mut render_sprite,
+            mut transform,
+            rest,
+            death_exiting,
+            fade_out,
+        ) in &mut sprites.p0()
         {
             let prev_node = sprite.player.current_node.0.clone();
 
@@ -707,6 +770,24 @@ fn advance_agumon_presentation(
             {
                 texture_atlas.index = index as usize;
             }
+
+            // Transient hit feedback (S03/T02): flash tint + positional shake.
+            // Flash is the SOLE colour writer for AgumonSprite (flash_tint is
+            // WHITE at remaining 0, so steady state stays white) — but skip the
+            // write while the death fade owns the colour, so it never fights
+            // advance_death_fade's alpha lerp (D031/D032 barrier untouched).
+            if death_exiting.is_none() && fade_out.is_none() {
+                render_sprite.color = flash_tint(hit_flash.remaining(sprite.unit_id), FLASH_TICKS);
+            }
+            // Shake is an absolute offset from the captured rest position, never
+            // accumulated: at remaining 0 the translation is hard-set back to rest.
+            let z = transform.translation.z;
+            let shake_remaining = hit_shake.remaining(sprite.unit_id);
+            transform.translation = if shake_remaining > 0 {
+                (rest.xy + shake_offset(shake_remaining, SHAKE_TICKS)).extend(z)
+            } else {
+                rest.xy.extend(z)
+            };
 
             // Only the caster's sprite annotates the barrier with node/frame, so
             // an idle non-caster actor can't clobber the caster's impact state.
