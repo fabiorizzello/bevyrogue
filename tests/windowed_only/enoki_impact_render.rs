@@ -18,6 +18,9 @@
 #![cfg(feature = "windowed")]
 
 const RENDER_SRC: &str = include_str!("../../src/windowed/render.rs");
+/// M006/S04 moved Agumon's enoki handle map out of render.rs into the per-Digimon
+/// module; the handle-map contract now asserts against that source.
+const AGUMON_SRC: &str = include_str!("../../src/windowed/digimon/agumon/mod.rs");
 
 /// Slice `spawn_effect_by_id` from its `fn` keyword to the next top-level `fn`,
 /// so assertions about the enoki branch can't accidentally match unrelated code.
@@ -115,34 +118,26 @@ fn enoki_lifecycle_layer_is_present() {
 
 #[test]
 fn enoki_handle_map_is_keyed_by_all_six_agumon_ids() {
-    // The map is built in load_agumon_enoki_vfx; slice that fn and assert each
-    // Agumon effect id is inserted so the full Baby Flame sequence (charge, ember,
-    // projectile, impact) plus Sharp Claws and Baby Burner all route through enoki.
-    // M006/S01 made enoki the sole particle renderer, so the map must cover all six.
-    let start = RENDER_SRC
-        .find("fn load_agumon_enoki_vfx")
-        .expect("render.rs must define load_agumon_enoki_vfx");
-    let rest = &RENDER_SRC[start..];
-    let end = rest
-        .find("\nfn ")
-        .expect("load_agumon_enoki_vfx should be followed by another top-level fn");
-    let block = &rest[..end];
-
+    // M006/S04 moved the handle map into the agumon module's register systems; it
+    // populates the engine-generic EnokiVfxRegistry via registry.handles.insert(...)
+    // keyed by all six Agumon effect ids so the full Baby Flame sequence (charge,
+    // ember, projectile, impact) plus Sharp Claws and Baby Burner all route through
+    // enoki — enoki is the sole particle renderer (M006/S01).
     assert!(
-        block.contains("handles.insert("),
-        "load_agumon_enoki_vfx must build the per-effect handle map via handles.insert(...)"
+        AGUMON_SRC.contains("registry.handles.insert("),
+        "the agumon module must build the per-effect handle map via registry.handles.insert(...)"
     );
-    for id_const in [
-        "AGUMON_CHARGE_EFFECT_ID",
-        "AGUMON_EMBER_EFFECT_ID",
-        "AGUMON_PROJECTILE_EFFECT_ID",
-        "AGUMON_IMPACT_EFFECT_ID",
-        "AGUMON_DETONATE_EFFECT_ID",
-        "AGUMON_SHARP_CLAWS_EFFECT_ID",
+    for effect_id in [
+        "baby_flame.charge",
+        "baby_flame.ember",
+        "baby_flame.projectile",
+        "baby_flame.impact",
+        "baby_burner.detonate",
+        "sharp_claws.slash",
     ] {
         assert!(
-            block.contains(id_const),
-            "load_agumon_enoki_vfx must insert {id_const} into the enoki handle map"
+            AGUMON_SRC.contains(effect_id),
+            "the agumon module must register effect id `{effect_id}` into the enoki handle map"
         );
     }
 }

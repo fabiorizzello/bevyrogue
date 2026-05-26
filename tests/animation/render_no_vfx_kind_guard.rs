@@ -9,6 +9,9 @@
 //! noise. The guard targets the actual code construct, not the documentation.
 
 const SRC: &str = include_str!("../../src/windowed/render.rs");
+/// M006/S04 moved the authored-name->effect-id mapping out of render.rs into the
+/// per-Digimon module; the data-driven boundary now spans both files.
+const AGUMON_SRC: &str = include_str!("../../src/windowed/digimon/agumon/mod.rs");
 
 const FORBIDDEN: [&str; 3] = ["VfxParticleKind", "vfx_particle_kind", "kind_from_name"];
 
@@ -32,21 +35,22 @@ fn render_rs_has_no_vfx_kind_dispatch() {
 }
 
 /// Positive contract: the data-driven spawn boundary that REPLACED VFX-kind
-/// dispatch must still be present. `on_enter_effect_ids` maps an authored
-/// SpawnParticle name to owned effect id(s); after that the particle is driven
-/// entirely by its resolved `EffectDef`. If this name->effect-id seam ever
-/// disappears, a future agent can localize that the data path regressed before
-/// the forbidden-identifier guard above would even have a chance to fire.
+/// dispatch must still be present. M006/S04 generalized it into a registry: the
+/// engine reads `OnEnterEffectRegistry` (no closed match), and the per-Digimon
+/// module maps each authored SpawnParticle name to owned effect id(s). If this
+/// name->effect-id seam ever disappears, a future agent can localize that the data
+/// path regressed before the forbidden-identifier guard above would even fire.
 #[test]
 fn render_rs_keeps_the_data_driven_effect_id_boundary() {
     let code = strip_line_comments(SRC);
     assert!(
-        code.contains("on_enter_effect_ids"),
-        "src/windowed/render.rs must keep the `on_enter_effect_ids` name->effect-id boundary that replaced VFX-kind dispatch"
+        code.contains("OnEnterEffectRegistry"),
+        "src/windowed/render.rs must read the OnEnterEffectRegistry name->effect-id boundary that replaced VFX-kind dispatch"
     );
     // Sharp Claws must be wired through the owned effect id, not a hardcoded kind.
+    let agumon = strip_line_comments(AGUMON_SRC);
     assert!(
-        code.contains("AGUMON_SHARP_CLAWS_EFFECT_ID") || code.contains("sharp_claws.slash"),
+        agumon.contains("sharp_claws.slash"),
         "Sharp Claws must route through the owned effect id, not a hardcoded VFX-kind path"
     );
 }

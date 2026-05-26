@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use bevy::{
     core_pipeline::tonemapping::{DebandDither, Tonemapping},
+    ecs::system::SystemParam,
     post_process::bloom::Bloom,
     prelude::*,
     render::view::Hdr,
@@ -79,12 +80,16 @@ struct ChargeEmberEnokiMarker {
 /// spawner and spawns `baby_flame.impact` at `to_xy` — reproducing the old
 /// quad-path `on_expire` projectile->impact chain. Presentation-only, fire-and-
 /// forget; never feeds the kernel/FSM timeline (D031/D032).
-#[derive(Component, Debug, Clone, Copy, PartialEq)]
+#[derive(Component, Debug, Clone, PartialEq)]
 struct ProjectileFlight {
     from_xy: [f32; 2],
     to_xy: [f32; 2],
     ticks_total: u32,
     ticks_elapsed: u32,
+    /// Effect id spawned at `to_xy` on arrival (data, not a const) — the engine
+    /// chains whatever the registry entry named, so a different Digimon's
+    /// projectile can chain its own impact without editing this system.
+    on_arrival: String,
 }
 
 /// Terminal marker: this sprite has been seeded into its `death` stance node and
@@ -400,14 +405,14 @@ impl Plugin for RenderPlugin {
             .init_resource::<HitFlashState>()
             .init_resource::<HitShakeState>()
             .init_resource::<CameraShakeState>()
-            .add_systems(
-                Startup,
-                (
-                    setup_camera,
-                    load_agumon_enoki_vfx,
-                ),
-            )
-            .add_systems(Update, diagnose_agumon_enoki_vfx_load)
+            // Engine-generic effect registries; the per-Digimon module populates
+            // them via its `register` Startup systems (S04).
+            .init_resource::<EnokiVfxRegistry>()
+            .init_resource::<OnEnterEffectRegistry>()
+            .init_resource::<SkillReleaseEffectRegistry>()
+            .init_resource::<DetonateEffectRegistry>()
+            .add_systems(Startup, setup_camera)
+            .add_systems(Update, diagnose_enoki_vfx_load)
             .add_systems(Update, build_agumon_atlas.before(spawn_unit_sprites))
             .add_systems(Update, spawn_unit_sprites)
             .add_systems(Update, sample_animation_ticks.before(advance_enoki_projectiles))
@@ -574,142 +579,91 @@ fn apply_camera_shake(
     }
 }
 
-/// Namespaced effect ids of the five Baby Flame effects within the asset. The
-/// dispatcher resolves each through `resolve_effect` to drive placement +
-/// appearance; nothing is keyed off a hardcoded VFX kind any more (T03).
-const AGUMON_CHARGE_EFFECT_ID: &str = "baby_flame.charge";
-const AGUMON_EMBER_EFFECT_ID: &str = "baby_flame.ember";
-const AGUMON_PROJECTILE_EFFECT_ID: &str = "baby_flame.projectile";
-const AGUMON_IMPACT_EFFECT_ID: &str = "baby_flame.impact";
-#[allow(dead_code)] // reachable only via projectile `on_expire`; named for clarity.
-const AGUMON_IMPACT_FLASH_EFFECT_ID: &str = "baby_flame.impact_flash";
-/// Baby Burner detonate flash. Out of scope for S02's data-port (the full Baby
-/// Burner port is S03), but routed through the unified effect path with a minimal
-/// owned effect so it keeps rendering after VfxParticleKind was deleted.
-const AGUMON_DETONATE_EFFECT_ID: &str = "baby_burner.detonate";
-/// Sharp Claws slash. Owned, data-driven effect (M004/S05): a single
-/// target-anchored streak spawned on the `sharp_claws_strike` node enter,
-/// resolved through the same `resolve_effect` path as every other effect.
-const AGUMON_SHARP_CLAWS_EFFECT_ID: &str = "sharp_claws.slash";
-
-/// Animation ticks the Baby Flame projectile emitter takes to travel caster->target
-/// before chaining the impact burst (M006/S01 T03). Mirrors the deleted quad
-/// projectile's `ttl_ticks: 5` in `vfx.ron` so the flight feels identical.
-const AGUMON_PROJECTILE_FLIGHT_TICKS: u32 = 5;
-
-/// Path (relative to `assets/`) of Agumon's enoki impact-burst effect. A separate
-/// asset from the owned `VfxAsset` schema: this drives the bevy_enoki GPU particle
-/// backend (M005/S04) for the `baby_flame.impact` contact flash.
-const AGUMON_ENOKI_IMPACT_PATH: &str = "digimon/agumon/baby_flame_impact.particle.ron";
-/// Path of Agumon's enoki Sharp Claws slash burst (M005/S05).
-const AGUMON_ENOKI_SHARP_CLAWS_PATH: &str = "digimon/agumon/sharp_claws_slash.particle.ron";
-/// Path of Agumon's enoki Baby Burner detonate burst (M005/S05).
-const AGUMON_ENOKI_DETONATE_PATH: &str = "digimon/agumon/baby_burner_detonate.particle.ron";
-/// Path of Agumon's enoki Baby Flame charge orb (continuous emitter; M006/S01).
-const AGUMON_ENOKI_CHARGE_PATH: &str = "digimon/agumon/baby_flame_charge.particle.ron";
-/// Path of Agumon's enoki Baby Flame ember swirl (continuous emitter; M006/S01).
-const AGUMON_ENOKI_EMBER_PATH: &str = "digimon/agumon/baby_flame_ember.particle.ron";
-/// Path of Agumon's enoki Baby Flame traveling projectile (M006/S01).
-const AGUMON_ENOKI_PROJECTILE_PATH: &str = "digimon/agumon/baby_flame_projectile.particle.ron";
-
-/// Per-effect-id map of Agumon's enoki `Particle2dEffect` handles (M005/S05,
-/// generalized from the single S04 handle). The spawn seam looks up an effect id
-/// here and, on a hit, routes it through bevy_enoki's GPU 2D backend as a
-/// self-despawning one-shot. A missing id falls through to the quad path. Loading
-/// these handles does not move any particle lifetime into the kernel/FSM timeline
-/// (D031/D032 untouched).
-#[derive(Resource, Debug, Clone)]
-struct AgumonEnokiVfx {
-    handles: HashMap<String, EnokiEffect>,
+/// Per-effect-id registry of enoki `Particle2dEffect` handles. Engine-generic
+/// (S04): the per-Digimon module populates it via its `register` entry point with
+/// the effect id, asset path, placement anchor, and lifecycle for each effect; the
+/// spawn seam ([`spawn_effect_by_id`]) looks an id up here and routes it through
+/// bevy_enoki's GPU 2D backend, choosing the spawned lifecycle components from the
+/// entry's [`EnokiLifecycle`]. A missing id spawns nothing. Loading these handles
+/// does not move any particle lifetime into the kernel/FSM timeline (D031/D032).
+#[derive(Resource, Debug, Clone, Default)]
+pub(in crate::windowed) struct EnokiVfxRegistry {
+    pub(in crate::windowed) handles: HashMap<String, EnokiEffect>,
 }
 
-/// One entry in [`AgumonEnokiVfx`]: the loaded enoki effect handle plus the
-/// placement `anchor` migrated out of the windowed `VfxAsset` (M006/S01 T02).
-/// Carrying the anchor here lets the enoki spawn path resolve its world base
-/// point via [`anchor_base_xy`] without consulting `resolve_effect`, so the
-/// enoki renderer no longer depends on vfx.ron and T04 can delete that loader.
+/// One entry in [`EnokiVfxRegistry`]: the loaded enoki effect handle, the source
+/// asset `path` (carried for diagnostics so `diagnose_enoki_vfx_load` reports the
+/// failing path without a const match), the placement `anchor`, and the
+/// `lifecycle` that decides which lifecycle components the spawn seam attaches.
 #[derive(Debug, Clone)]
-struct EnokiEffect {
-    handle: Handle<Particle2dEffect>,
-    anchor: PlacementAnchor,
+pub(in crate::windowed) struct EnokiEffect {
+    pub(in crate::windowed) handle: Handle<Particle2dEffect>,
+    pub(in crate::windowed) anchor: PlacementAnchor,
+    pub(in crate::windowed) path: String,
+    pub(in crate::windowed) lifecycle: EnokiLifecycle,
 }
 
-fn load_agumon_enoki_vfx(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let mut handles = HashMap::new();
-    // Baby Flame sequence (charge orb + ember swirl at the mouth, projectile from
-    // the caster center). Anchors mirror vfx.ron so the enoki path reproduces the
-    // quad placement exactly. M006/S01: registered so enoki is the sole renderer.
-    handles.insert(
-        AGUMON_CHARGE_EFFECT_ID.to_string(),
-        EnokiEffect {
-            handle: asset_server.load(AGUMON_ENOKI_CHARGE_PATH),
-            anchor: PlacementAnchor::Mouth,
-        },
-    );
-    handles.insert(
-        AGUMON_EMBER_EFFECT_ID.to_string(),
-        EnokiEffect {
-            handle: asset_server.load(AGUMON_ENOKI_EMBER_PATH),
-            anchor: PlacementAnchor::Mouth,
-        },
-    );
-    handles.insert(
-        AGUMON_PROJECTILE_EFFECT_ID.to_string(),
-        EnokiEffect {
-            handle: asset_server.load(AGUMON_ENOKI_PROJECTILE_PATH),
-            anchor: PlacementAnchor::CasterCenter,
-        },
-    );
-    // Contact bursts (already enoki-routed since M005): impact + detonate fan out
-    // at the target, the slash streak lands on the target.
-    handles.insert(
-        AGUMON_SHARP_CLAWS_EFFECT_ID.to_string(),
-        EnokiEffect {
-            handle: asset_server.load(AGUMON_ENOKI_SHARP_CLAWS_PATH),
-            anchor: PlacementAnchor::TargetCenter,
-        },
-    );
-    handles.insert(
-        AGUMON_IMPACT_EFFECT_ID.to_string(),
-        EnokiEffect {
-            handle: asset_server.load(AGUMON_ENOKI_IMPACT_PATH),
-            anchor: PlacementAnchor::TargetCenter,
-        },
-    );
-    handles.insert(
-        AGUMON_DETONATE_EFFECT_ID.to_string(),
-        EnokiEffect {
-            handle: asset_server.load(AGUMON_ENOKI_DETONATE_PATH),
-            anchor: PlacementAnchor::TargetCenter,
-        },
-    );
-    commands.insert_resource(AgumonEnokiVfx { handles });
-    info!(
-        target: "windowed.agumon_playback",
-        charge_path = AGUMON_ENOKI_CHARGE_PATH,
-        ember_path = AGUMON_ENOKI_EMBER_PATH,
-        projectile_path = AGUMON_ENOKI_PROJECTILE_PATH,
-        sharp_claws_path = AGUMON_ENOKI_SHARP_CLAWS_PATH,
-        impact_path = AGUMON_ENOKI_IMPACT_PATH,
-        detonate_path = AGUMON_ENOKI_DETONATE_PATH,
-        "agumon enoki effects load requested"
-    );
+/// How a spawned enoki effect behaves over time. Replaces the closed effect-id
+/// match in [`spawn_effect_by_id`] with data carried per registry entry (S04):
+/// `PersistentEmitter` keeps emitting until cleared by marker at a launch
+/// boundary, `Projectile` travels caster->target then chains `on_arrival`, and
+/// `OneShot` is fire-and-forget and self-despawns once it drains.
+#[derive(Debug, Clone)]
+pub(in crate::windowed) enum EnokiLifecycle {
+    PersistentEmitter,
+    Projectile { flight_ticks: u32, on_arrival: String },
+    OneShot,
 }
 
-/// Surface a load failure for each enoki contact-burst `.particle.ron` once,
-/// mirroring `diagnose_agumon_vfx_load`. A failed/missing effect asset means that
-/// skill's contact flash silently spawns nothing through the enoki backend; this
-/// makes a dead per-skill burst visible by name rather than silently absent
-/// (slice failure-visibility). Each id is warned at most once via the warned-set.
-fn diagnose_agumon_enoki_vfx_load(
-    agumon_enoki_vfx: Option<Res<AgumonEnokiVfx>>,
+/// Engine-generic map of authored `SpawnParticle` name -> the owned effect id(s)
+/// it spawns on node enter (S04). The per-Digimon module populates it; the
+/// `on_enter` loop in [`advance_agumon_presentation`] reads it instead of a closed
+/// name match, so adding a Digimon's spawn vocabulary needs no engine edit.
+#[derive(Resource, Debug, Clone, Default)]
+pub(in crate::windowed) struct OnEnterEffectRegistry {
+    pub(in crate::windowed) map: HashMap<String, Vec<String>>,
+}
+
+/// Engine-generic map of skill id -> the effect id spawned at the skill's release
+/// boundary (S04). Replaces the `mode_skill_id == Some(BABY_FLAME_SKILL_ID)`
+/// special-case in [`advance_agumon_presentation`]: a skill present here spawns its
+/// mapped effect (the projectile) on release; a skill absent here spawns nothing.
+#[derive(Resource, Debug, Clone, Default)]
+pub(in crate::windowed) struct SkillReleaseEffectRegistry {
+    pub(in crate::windowed) map: HashMap<String, String>,
+}
+
+/// Engine-generic detonate effect id (S04). Replaces the per-Digimon detonate
+/// const read in [`spawn_detonate_particles`]: `None` spawns no detonate burst.
+#[derive(Resource, Debug, Clone, Default)]
+pub(in crate::windowed) struct DetonateEffectRegistry {
+    pub(in crate::windowed) effect_id: Option<String>,
+}
+
+/// Bundles the spawn-side effect registries into a single `SystemParam` so
+/// `advance_agumon_presentation` stays within Bevy's 16-parameter system limit.
+#[derive(SystemParam)]
+struct EffectRegistries<'w> {
+    enoki: Option<Res<'w, EnokiVfxRegistry>>,
+    on_enter: Res<'w, OnEnterEffectRegistry>,
+    skill_release: Res<'w, SkillReleaseEffectRegistry>,
+}
+
+/// Surface a load failure for each registered enoki `.particle.ron` once. A
+/// failed/missing effect asset means that effect silently spawns nothing through
+/// the enoki backend; this makes a dead burst visible by id+path rather than
+/// silently absent (slice failure-visibility). Reads the source path from the
+/// registry entry (S04) rather than a const match. Each id is warned at most once
+/// via the warned-set.
+fn diagnose_enoki_vfx_load(
+    enoki_vfx: Option<Res<EnokiVfxRegistry>>,
     asset_server: Res<AssetServer>,
     mut warned: Local<HashSet<String>>,
 ) {
-    let Some(agumon_enoki_vfx) = agumon_enoki_vfx else {
+    let Some(enoki_vfx) = enoki_vfx else {
         return;
     };
-    for (effect_id, entry) in &agumon_enoki_vfx.handles {
+    for (effect_id, entry) in &enoki_vfx.handles {
         if warned.contains(effect_id) {
             continue;
         }
@@ -719,28 +673,13 @@ fn diagnose_agumon_enoki_vfx_load(
         ) {
             warn!(
                 target: "windowed.agumon_playback",
-                path = enoki_effect_path(effect_id),
+                path = entry.path.as_str(),
                 effect = effect_id.as_str(),
                 reason = "enoki .particle.ron failed to load or parse",
                 "enoki contact-burst VFX disabled for this effect id; no enoki particles will spawn"
             );
             warned.insert(effect_id.clone());
         }
-    }
-}
-
-/// Map an enoki effect id back to its source asset path for diagnostics. Mirrors
-/// the keys inserted in [`load_agumon_enoki_vfx`]; an unknown id reports
-/// `"<unknown>"` rather than panicking.
-fn enoki_effect_path(effect_id: &str) -> &'static str {
-    match effect_id {
-        AGUMON_CHARGE_EFFECT_ID => AGUMON_ENOKI_CHARGE_PATH,
-        AGUMON_EMBER_EFFECT_ID => AGUMON_ENOKI_EMBER_PATH,
-        AGUMON_PROJECTILE_EFFECT_ID => AGUMON_ENOKI_PROJECTILE_PATH,
-        AGUMON_SHARP_CLAWS_EFFECT_ID => AGUMON_ENOKI_SHARP_CLAWS_PATH,
-        AGUMON_IMPACT_EFFECT_ID => AGUMON_ENOKI_IMPACT_PATH,
-        AGUMON_DETONATE_EFFECT_ID => AGUMON_ENOKI_DETONATE_PATH,
-        _ => "<unknown>",
     }
 }
 
@@ -900,7 +839,7 @@ fn advance_agumon_presentation(
     mut lookup_diagnostics: ResMut<AnimationGraphLookupDiagnostics>,
     mut barrier: ResMut<SuspendedTimelineState>,
     atlas: Option<Res<AgumonAtlas>>,
-    agumon_enoki_vfx: Option<Res<AgumonEnokiVfx>>,
+    effects: EffectRegistries,
     charge_ember_markers: Query<(Entity, &ChargeEmberEnokiMarker)>,
     mut hit_flash: ResMut<HitFlashState>,
     mut hit_shake: ResMut<HitShakeState>,
@@ -1142,11 +1081,18 @@ fn advance_agumon_presentation(
                             };
 
                             // Map the authored particle name to the owned effect
-                            // id(s) it spawns (the charge command also seeds the
-                            // inward ember swirl). This name->effect map at the
-                            // spawn boundary replaces VfxParticleKind dispatch; each
-                            // id is then rendered through enoki (D043).
-                            for effect_id in on_enter_effect_ids(descriptor.particle.0.as_str()) {
+                            // id(s) it spawns via the engine-generic registry (S04,
+                            // the charge command also seeds the inward ember swirl).
+                            // This name->effect map at the spawn boundary replaces
+                            // VfxParticleKind dispatch; each id is then rendered
+                            // through enoki (D043).
+                            let effect_ids = effects
+                                .on_enter
+                                .map
+                                .get(descriptor.particle.0.as_str())
+                                .map(Vec::as_slice)
+                                .unwrap_or(&[]);
+                            for effect_id in effect_ids {
                                 let spawned = spawn_effect_by_id(
                                     &mut commands,
                                     effect_id,
@@ -1155,11 +1101,11 @@ fn advance_agumon_presentation(
                                     sprite.unit_id,
                                     render_sprite.flip_x,
                                     transform.scale.x,
-                                    agumon_enoki_vfx.as_deref(),
+                                    effects.enoki.as_deref(),
                                 );
                                 trace!(
                                     target: "windowed.agumon_playback",
-                                    effect_id,
+                                    effect_id = effect_id.as_str(),
                                     spawned,
                                     caster_xy = ?caster_xy,
                                     source_unit = ?sprite.unit_id,
@@ -1186,12 +1132,14 @@ fn advance_agumon_presentation(
                     result,
                     CueReleaseResult::Released | CueReleaseResult::DuplicateRelease
                 ) {
-                    if mode_skill_id == Some(BABY_FLAME_SKILL_ID) {
+                    if let Some(release_effect_id) =
+                        mode_skill_id.and_then(|skill_id| effects.skill_release.map.get(skill_id))
+                    {
                         // Despawn the charge orb + ember swirl enoki emitters the
                         // instant the flame launches, so the mouth clears for the
                         // projectile. Membership is by ChargeEmberEnokiMarker (enoki-
-                        // native, T03) now that charge/ember are persistent emitters
-                        // rather than self-draining quads.
+                        // native) — cleared generically for every persistent emitter
+                        // owned by this caster, regardless of which skill released.
                         for (marker_entity, marker) in &charge_ember_markers {
                             if marker.unit_id == sprite.unit_id {
                                 commands.entity(marker_entity).despawn();
@@ -1211,27 +1159,27 @@ fn advance_agumon_presentation(
                         ) {
                             let spawned = spawn_effect_by_id(
                                 &mut commands,
-                                AGUMON_PROJECTILE_EFFECT_ID,
+                                release_effect_id,
                                 [transform.translation.x, transform.translation.y],
                                 target_xy,
                                 sprite.unit_id,
                                 render_sprite.flip_x,
                                 transform.scale.x,
-                                agumon_enoki_vfx.as_deref(),
+                                effects.enoki.as_deref(),
                             );
                             trace!(
                                 target: "windowed.agumon_playback",
-                                effect_id = AGUMON_PROJECTILE_EFFECT_ID,
+                                effect_id = release_effect_id.as_str(),
                                 spawned,
                                 source_unit = ?sprite.unit_id,
                                 target_xy = ?target_xy,
-                                "spawned Baby Flame projectile on release"
+                                "spawned skill-release projectile effect"
                             );
                         } else {
                             debug!(
                                 target: "windowed.agumon_playback",
                                 source_unit = ?sprite.unit_id,
-                                "Baby Flame projectile target could not be resolved on release"
+                                "skill-release projectile target could not be resolved on release"
                             );
                         }
                     }
@@ -1492,21 +1440,6 @@ fn mouth_anchor_xy(caster_xy: [f32; 2], flip_x: bool, sprite_scale: f32) -> [f32
     ]
 }
 
-/// Map an authored `SpawnParticle` name (from the anim graph `on_enter` command)
-/// to the owned effect id(s) it spawns. The charge command also seeds the inward
-/// ember swirl. This name->effect map at the spawn boundary is what replaced
-/// VfxParticleKind dispatch (T03): it is NOT kind resolution — every spawned
-/// particle is thereafter driven entirely by its resolved `EffectDef`.
-fn on_enter_effect_ids(particle_name: &str) -> &'static [&'static str] {
-    match particle_name {
-        "baby_flame_charge" => &[AGUMON_CHARGE_EFFECT_ID, AGUMON_EMBER_EFFECT_ID],
-        "baby_flame_projectile" => &[AGUMON_PROJECTILE_EFFECT_ID],
-        "baby_flame_impact" => &[AGUMON_IMPACT_EFFECT_ID],
-        "sharp_claws_slash" => &[AGUMON_SHARP_CLAWS_EFFECT_ID],
-        _ => &[],
-    }
-}
-
 /// World-space base point a resolved placement offset is applied relative to.
 /// `caster_xy` is the caster's live body center; the mouth anchor derives the
 /// muzzle from it using the sprite facing + scale.
@@ -1530,7 +1463,7 @@ fn anchor_base_xy(
 /// (migrated out of `VfxAsset` in T02), and spawns the enoki `ParticleSpawner`
 /// with its T03 lifecycle tag. Returns 1 on a spawn, 0 if the resource is absent
 /// or the id is unmapped (the caller logs; a load failure is surfaced once by
-/// `diagnose_agumon_enoki_vfx_load`). No kernel/FSM cue or barrier control flow is
+/// `diagnose_enoki_vfx_load`). No kernel/FSM cue or barrier control flow is
 /// touched (D031/D032).
 #[allow(clippy::too_many_arguments)]
 fn spawn_effect_by_id(
@@ -1541,7 +1474,7 @@ fn spawn_effect_by_id(
     source_unit: UnitId,
     source_flip_x: bool,
     source_scale: f32,
-    enoki: Option<&AgumonEnokiVfx>,
+    enoki: Option<&EnokiVfxRegistry>,
 ) -> u32 {
     let Some(enoki) = enoki else {
         return 0;
@@ -1561,28 +1494,33 @@ fn spawn_effect_by_id(
         ParticleEffectHandle(entry.handle.clone()),
         Transform::from_xyz(base[0], base[1], VFX_PARTICLE_Z),
     ));
-    // The Baby Flame buildup effects are STATEFUL persistent emitters, not
-    // self-draining one-shots (D046). charge/ember keep emitting at the mouth until
-    // `advance_agumon_presentation` clears them by marker at the launch boundary;
-    // the projectile travels caster->target under `advance_enoki_projectiles`, which
-    // chains the impact on arrival. Every other id (the impact/detonate/slash
-    // contact bursts) is fire-and-forget and carries `OneShot::Despawn` so its
-    // spawner is removed once it drains.
-    match effect_id {
-        AGUMON_CHARGE_EFFECT_ID | AGUMON_EMBER_EFFECT_ID => {
+    // The lifecycle is data carried per registry entry (S04), not a closed
+    // effect-id match. PersistentEmitter effects (the Baby Flame charge orb +
+    // ember swirl) keep emitting at the mouth until `advance_agumon_presentation`
+    // clears them by marker at the launch boundary; a Projectile travels
+    // caster->target under `advance_enoki_projectiles`, which chains `on_arrival`
+    // on arrival. OneShot effects (the impact/detonate/slash contact bursts) are
+    // fire-and-forget and carry `OneShot::Despawn` so the spawner is removed once
+    // it drains.
+    match &entry.lifecycle {
+        EnokiLifecycle::PersistentEmitter => {
             spawned.insert(ChargeEmberEnokiMarker {
                 unit_id: source_unit,
             });
         }
-        AGUMON_PROJECTILE_EFFECT_ID => {
+        EnokiLifecycle::Projectile {
+            flight_ticks,
+            on_arrival,
+        } => {
             spawned.insert(ProjectileFlight {
                 from_xy: base,
                 to_xy: target_xy,
-                ticks_total: AGUMON_PROJECTILE_FLIGHT_TICKS,
+                ticks_total: *flight_ticks,
                 ticks_elapsed: 0,
+                on_arrival: on_arrival.clone(),
             });
         }
-        _ => {
+        EnokiLifecycle::OneShot => {
             spawned.insert(OneShot::Despawn);
         }
     }
@@ -1711,10 +1649,17 @@ fn advance_canvas_damage_numbers(
 fn spawn_detonate_particles(
     mut commands: Commands,
     mut events: MessageReader<bevyrogue::combat::events::CombatEvent>,
-    agumon_enoki_vfx: Option<Res<AgumonEnokiVfx>>,
+    agumon_enoki_vfx: Option<Res<EnokiVfxRegistry>>,
+    detonate_reg: Res<DetonateEffectRegistry>,
     sprites: Query<(&DigimonSprite, &Transform)>,
 ) {
     let Some(trigger) = latest_baby_burner_flash_trigger(events.read()) else {
+        return;
+    };
+
+    // The detonate burst effect id is data (S04); no registered detonate effect
+    // means nothing to spawn.
+    let Some(detonate_effect_id) = detonate_reg.effect_id.as_deref() else {
         return;
     };
 
@@ -1742,7 +1687,7 @@ fn spawn_detonate_particles(
 
         let spawned = spawn_effect_by_id(
             &mut commands,
-            AGUMON_DETONATE_EFFECT_ID,
+            detonate_effect_id,
             caster_xy,
             target_xy,
             trigger.source,
@@ -1753,7 +1698,7 @@ fn spawn_detonate_particles(
         trace!(
             target: "windowed.agumon_playback",
             cast_id = ?trigger.cast_id,
-            effect_id = AGUMON_DETONATE_EFFECT_ID,
+            effect_id = detonate_effect_id,
             spawned,
             source_unit = ?trigger.source,
             target_unit = ?target,
@@ -1774,7 +1719,7 @@ fn spawn_detonate_particles(
 fn advance_enoki_projectiles(
     mut commands: Commands,
     pending_ticks: Res<PendingAnimationTicks>,
-    agumon_enoki_vfx: Option<Res<AgumonEnokiVfx>>,
+    agumon_enoki_vfx: Option<Res<EnokiVfxRegistry>>,
     mut projectiles: Query<(Entity, &mut Transform, &mut ProjectileFlight)>,
 ) {
     for _ in 0..pending_ticks.0 {
@@ -1790,16 +1735,19 @@ fn advance_enoki_projectiles(
             transform.translation.z = VFX_PARTICLE_Z;
 
             if flight.ticks_elapsed >= flight.ticks_total {
-                // Arrival: clear the traveling emitter and chain the impact burst at
-                // the target. The placeholder `UnitId` is unused on the enoki path
-                // (the impact burst is a fire-and-forget `OneShot::Despawn`). Mirrors
-                // the old `on_expire` chain's pos,pos.
+                // Arrival: clear the traveling emitter and chain the `on_arrival`
+                // burst at the target (data carried on the flight, S04). The
+                // placeholder `UnitId` is unused on the enoki path (the arrival burst
+                // is a fire-and-forget `OneShot::Despawn`). Mirrors the old `on_expire`
+                // chain's pos,pos.
+                let on_arrival = flight.on_arrival.clone();
+                let to_xy = flight.to_xy;
                 commands.entity(entity).despawn();
                 spawn_effect_by_id(
                     &mut commands,
-                    AGUMON_IMPACT_EFFECT_ID,
-                    flight.to_xy,
-                    flight.to_xy,
+                    &on_arrival,
+                    to_xy,
+                    to_xy,
                     UnitId(0),
                     false,
                     1.0,
@@ -1808,9 +1756,9 @@ fn advance_enoki_projectiles(
                 trace!(
                     target: "windowed.agumon_playback",
                     entity = ?entity,
-                    to_xy = ?flight.to_xy,
-                    effect_id = AGUMON_IMPACT_EFFECT_ID,
-                    "enoki projectile arrived; chained impact burst"
+                    to_xy = ?to_xy,
+                    effect_id = on_arrival.as_str(),
+                    "enoki projectile arrived; chained arrival burst"
                 );
             }
         }
@@ -2094,42 +2042,6 @@ mod tests {
         // total_ticks == 0 saturates to 1.0 without dividing by zero (Q5).
         assert_eq!(fade_alpha(0, 0), 0.0);
         assert_eq!(fade_alpha(5, 0), 1.0);
-    }
-
-    #[test]
-    fn on_enter_charge_seeds_both_the_orb_and_the_ember_swirl() {
-        // The single authored `baby_flame_charge` SpawnParticle fans out to the
-        // owned charge + ember effect ids; the projectile maps to its own id.
-        assert_eq!(
-            on_enter_effect_ids("baby_flame_charge"),
-            &[AGUMON_CHARGE_EFFECT_ID, AGUMON_EMBER_EFFECT_ID]
-        );
-        assert_eq!(
-            on_enter_effect_ids("baby_flame_projectile"),
-            &[AGUMON_PROJECTILE_EFFECT_ID]
-        );
-        // An unknown particle name maps to no effects (spawns nothing, no panic).
-        assert!(on_enter_effect_ids("unknown_particle").is_empty());
-    }
-
-    #[test]
-    fn on_enter_sharp_claws_maps_only_to_the_slash_effect() {
-        // The `sharp_claws_slash` SpawnParticle maps to exactly the owned slash
-        // effect id — proving the data-driven bridge, not a VFX-kind branch.
-        assert_eq!(
-            on_enter_effect_ids("sharp_claws_slash"),
-            &[AGUMON_SHARP_CLAWS_EFFECT_ID]
-        );
-        assert_eq!(AGUMON_SHARP_CLAWS_EFFECT_ID, "sharp_claws.slash");
-
-        // Unrelated / near-miss names must NOT resolve to the Sharp Claws effect:
-        // the bridge is an exact name map, not a substring/string-kind match.
-        for name in ["sharp_claws", "slash", "baby_flame_charge", "sharp_claws_strike", ""] {
-            assert!(
-                !on_enter_effect_ids(name).contains(&AGUMON_SHARP_CLAWS_EFFECT_ID),
-                "`{name}` must not map to the Sharp Claws effect id"
-            );
-        }
     }
 
     #[test]

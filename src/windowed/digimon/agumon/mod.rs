@@ -6,11 +6,68 @@
 //! registries this module populates.
 
 use bevy::prelude::*;
+use bevyrogue::animation::PlacementAnchor;
+
+use crate::windowed::BABY_FLAME_SKILL_ID;
+use crate::windowed::render::{
+    DetonateEffectRegistry, EnokiEffect, EnokiLifecycle, EnokiVfxRegistry, OnEnterEffectRegistry,
+    SkillReleaseEffectRegistry,
+};
+
+/// Namespaced effect ids of Agumon's effects. Owned by this module (S04); the
+/// engine keys its generic registries on these strings and never matches them.
+const CHARGE_EFFECT_ID: &str = "baby_flame.charge";
+const EMBER_EFFECT_ID: &str = "baby_flame.ember";
+const PROJECTILE_EFFECT_ID: &str = "baby_flame.projectile";
+const IMPACT_EFFECT_ID: &str = "baby_flame.impact";
+const SHARP_CLAWS_EFFECT_ID: &str = "sharp_claws.slash";
+const DETONATE_EFFECT_ID: &str = "baby_burner.detonate";
+
+/// Path (relative to `assets/`) of Agumon's enoki Baby Flame charge orb.
+const ENOKI_CHARGE_PATH: &str = "digimon/agumon/baby_flame_charge.particle.ron";
+/// Path of Agumon's enoki Baby Flame ember swirl (continuous emitter).
+const ENOKI_EMBER_PATH: &str = "digimon/agumon/baby_flame_ember.particle.ron";
+/// Path of Agumon's enoki Baby Flame traveling projectile.
+const ENOKI_PROJECTILE_PATH: &str = "digimon/agumon/baby_flame_projectile.particle.ron";
+/// Path of Agumon's enoki Baby Flame impact burst.
+const ENOKI_IMPACT_PATH: &str = "digimon/agumon/baby_flame_impact.particle.ron";
+/// Path of Agumon's enoki Sharp Claws slash burst.
+const ENOKI_SHARP_CLAWS_PATH: &str = "digimon/agumon/sharp_claws_slash.particle.ron";
+/// Path of Agumon's enoki Baby Burner detonate burst.
+const ENOKI_DETONATE_PATH: &str = "digimon/agumon/baby_burner_detonate.particle.ron";
+
+/// Animation ticks the Baby Flame projectile emitter takes to travel caster->target
+/// before chaining the impact burst. Mirrors the deleted quad projectile's
+/// `ttl_ticks: 5` in `vfx.ron` so the flight feels identical.
+const PROJECTILE_FLIGHT_TICKS: u32 = 5;
+
+/// Authored `SpawnParticle` name -> the owned effect id(s) it spawns on node
+/// enter. Pure data so it can be unit-tested without an `App`;
+/// `register_agumon_on_enter_effects` copies it into the engine's
+/// [`OnEnterEffectRegistry`]. The `baby_flame_charge` command fans out to the
+/// charge orb plus the inward ember swirl.
+fn on_enter_effect_specs() -> &'static [(&'static str, &'static [&'static str])] {
+    &[
+        ("baby_flame_charge", &[CHARGE_EFFECT_ID, EMBER_EFFECT_ID]),
+        ("baby_flame_projectile", &[PROJECTILE_EFFECT_ID]),
+        ("baby_flame_impact", &[IMPACT_EFFECT_ID]),
+        ("sharp_claws_slash", &[SHARP_CLAWS_EFFECT_ID]),
+    ]
+}
 
 /// Populate the engine registries with all Agumon-specific presentation data.
 /// Called once from `crate::windowed::digimon::register_all`.
 pub(in crate::windowed) fn register(app: &mut App) {
-    app.add_systems(Startup, register_agumon_cues);
+    app.add_systems(
+        Startup,
+        (
+            register_agumon_cues,
+            register_agumon_enoki_vfx,
+            register_agumon_on_enter_effects,
+            register_agumon_skill_release_effects,
+            register_agumon_detonate_effect,
+        ),
+    );
 }
 
 /// Register the three Agumon-specific cosmetic cues with the legacy
@@ -46,4 +103,160 @@ fn register_agumon_cues(mut registry: ResMut<bevyrogue::ui::cues::CueRegistry>) 
             ticks: 8,
         },
     );
+}
+
+/// Load Agumon's enoki `Particle2dEffect` handles and register each into the
+/// engine-generic [`EnokiVfxRegistry`] with its anchor + lifecycle. Anchors mirror
+/// the old `vfx.ron` placement so the enoki path reproduces the quad placement
+/// exactly; charge/ember are persistent emitters, the projectile travels then
+/// chains `baby_flame.impact`, and the contact bursts are fire-and-forget.
+fn register_agumon_enoki_vfx(asset_server: Res<AssetServer>, mut registry: ResMut<EnokiVfxRegistry>) {
+    let entries: [(&str, &str, PlacementAnchor, EnokiLifecycle); 6] = [
+        (
+            CHARGE_EFFECT_ID,
+            ENOKI_CHARGE_PATH,
+            PlacementAnchor::Mouth,
+            EnokiLifecycle::PersistentEmitter,
+        ),
+        (
+            EMBER_EFFECT_ID,
+            ENOKI_EMBER_PATH,
+            PlacementAnchor::Mouth,
+            EnokiLifecycle::PersistentEmitter,
+        ),
+        (
+            PROJECTILE_EFFECT_ID,
+            ENOKI_PROJECTILE_PATH,
+            PlacementAnchor::CasterCenter,
+            EnokiLifecycle::Projectile {
+                flight_ticks: PROJECTILE_FLIGHT_TICKS,
+                on_arrival: IMPACT_EFFECT_ID.to_string(),
+            },
+        ),
+        (
+            SHARP_CLAWS_EFFECT_ID,
+            ENOKI_SHARP_CLAWS_PATH,
+            PlacementAnchor::TargetCenter,
+            EnokiLifecycle::OneShot,
+        ),
+        (
+            IMPACT_EFFECT_ID,
+            ENOKI_IMPACT_PATH,
+            PlacementAnchor::TargetCenter,
+            EnokiLifecycle::OneShot,
+        ),
+        (
+            DETONATE_EFFECT_ID,
+            ENOKI_DETONATE_PATH,
+            PlacementAnchor::TargetCenter,
+            EnokiLifecycle::OneShot,
+        ),
+    ];
+    for (effect_id, path, anchor, lifecycle) in entries {
+        registry.handles.insert(
+            effect_id.to_string(),
+            EnokiEffect {
+                handle: asset_server.load(path),
+                anchor,
+                path: path.to_string(),
+                lifecycle,
+            },
+        );
+    }
+    info!(
+        target: "windowed.agumon_playback",
+        charge_path = ENOKI_CHARGE_PATH,
+        ember_path = ENOKI_EMBER_PATH,
+        projectile_path = ENOKI_PROJECTILE_PATH,
+        sharp_claws_path = ENOKI_SHARP_CLAWS_PATH,
+        impact_path = ENOKI_IMPACT_PATH,
+        detonate_path = ENOKI_DETONATE_PATH,
+        "agumon enoki effects load requested"
+    );
+}
+
+/// Copy [`on_enter_effect_specs`] into the engine-generic [`OnEnterEffectRegistry`].
+fn register_agumon_on_enter_effects(mut registry: ResMut<OnEnterEffectRegistry>) {
+    for (name, ids) in on_enter_effect_specs() {
+        registry.map.insert(
+            (*name).to_string(),
+            ids.iter().map(|id| (*id).to_string()).collect(),
+        );
+    }
+}
+
+/// Register Baby Flame's release effect: launching the flame spawns the traveling
+/// projectile (the engine clears the charge/ember emitters at the same boundary).
+fn register_agumon_skill_release_effects(mut registry: ResMut<SkillReleaseEffectRegistry>) {
+    registry
+        .map
+        .insert(BABY_FLAME_SKILL_ID.to_string(), PROJECTILE_EFFECT_ID.to_string());
+}
+
+/// Register Baby Burner's detonate burst as the engine's detonate effect.
+fn register_agumon_detonate_effect(mut registry: ResMut<DetonateEffectRegistry>) {
+    registry.effect_id = Some(DETONATE_EFFECT_ID.to_string());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn on_enter_ids(name: &str) -> &'static [&'static str] {
+        on_enter_effect_specs()
+            .iter()
+            .find(|(spec_name, _)| *spec_name == name)
+            .map(|(_, ids)| *ids)
+            .unwrap_or(&[])
+    }
+
+    #[test]
+    fn on_enter_charge_seeds_both_the_orb_and_the_ember_swirl() {
+        // The single authored `baby_flame_charge` SpawnParticle fans out to the
+        // owned charge + ember effect ids; the projectile maps to its own id.
+        assert_eq!(on_enter_ids("baby_flame_charge"), &[CHARGE_EFFECT_ID, EMBER_EFFECT_ID]);
+        assert_eq!(on_enter_ids("baby_flame_projectile"), &[PROJECTILE_EFFECT_ID]);
+        // An unknown particle name maps to no effects (spawns nothing, no panic).
+        assert!(on_enter_ids("unknown_particle").is_empty());
+    }
+
+    #[test]
+    fn on_enter_sharp_claws_maps_only_to_the_slash_effect() {
+        // The `sharp_claws_slash` SpawnParticle maps to exactly the owned slash
+        // effect id — proving the data-driven bridge, not a VFX-kind branch.
+        assert_eq!(on_enter_ids("sharp_claws_slash"), &[SHARP_CLAWS_EFFECT_ID]);
+        assert_eq!(SHARP_CLAWS_EFFECT_ID, "sharp_claws.slash");
+
+        // Unrelated / near-miss names must NOT resolve to the Sharp Claws effect:
+        // the bridge is an exact name map, not a substring/string-kind match.
+        for name in ["sharp_claws", "slash", "baby_flame_charge", "sharp_claws_strike", ""] {
+            assert!(
+                !on_enter_ids(name).contains(&SHARP_CLAWS_EFFECT_ID),
+                "`{name}` must not map to the Sharp Claws effect id"
+            );
+        }
+    }
+
+    #[test]
+    fn skill_release_maps_baby_flame_to_the_projectile_effect() {
+        // The release boundary is data-driven: baby_flame launches the projectile,
+        // and no other skill is registered to spawn a release effect.
+        let mut app = App::new();
+        app.init_resource::<SkillReleaseEffectRegistry>();
+        app.add_systems(Startup, register_agumon_skill_release_effects);
+        app.update();
+        let reg = app.world().resource::<SkillReleaseEffectRegistry>();
+        assert_eq!(reg.map.get(BABY_FLAME_SKILL_ID).map(String::as_str), Some(PROJECTILE_EFFECT_ID));
+        assert_eq!(reg.map.len(), 1);
+    }
+
+    #[test]
+    fn detonate_registry_holds_the_baby_burner_burst() {
+        let mut app = App::new();
+        app.init_resource::<DetonateEffectRegistry>();
+        app.add_systems(Startup, register_agumon_detonate_effect);
+        app.update();
+        let reg = app.world().resource::<DetonateEffectRegistry>();
+        assert_eq!(reg.effect_id.as_deref(), Some(DETONATE_EFFECT_ID));
+    }
 }
