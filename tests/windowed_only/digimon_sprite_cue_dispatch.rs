@@ -15,7 +15,9 @@
 //!      `flash_tint(` / `shake_offset(` lib calls are gone.
 //!   4. Camera-shake exists as a registered cue that writes the `Camera2d`
 //!      transform as an absolute offset from a captured `CameraRest`.
-//!   5. mod.rs registers the three Agumon cue ids in the `CueRegistry`.
+//!   5. The agumon module registers the three Agumon cue ids in the
+//!      `CueRegistry` (moved out of mod.rs by the S04 extraction); mod.rs still
+//!      owns the `CueRegistry` resource init.
 //!
 //! Token shape: assertions use code-shaped tokens (`struct DigimonSprite`,
 //! `enum DigimonPlaybackMode`, `flash_tint(`) so surviving comments mentioning the
@@ -25,6 +27,7 @@
 
 const RENDER_SRC: &str = include_str!("../../src/windowed/render.rs");
 const MOD_SRC: &str = include_str!("../../src/windowed/mod.rs");
+const AGUMON_SRC: &str = include_str!("../../src/windowed/digimon/agumon/mod.rs");
 
 #[test]
 fn sprite_is_generalized_digimon_not_agumon() {
@@ -108,15 +111,25 @@ fn camera_shake_exists_and_writes_the_camera_transform() {
 }
 
 #[test]
-fn mod_registers_the_three_agumon_cue_ids() {
+fn agumon_module_registers_the_three_agumon_cue_ids() {
+    // The engine (mod.rs) still owns the CueRegistry resource init; the S04
+    // extraction moves the per-Agumon cue registration into the agumon module.
     assert!(
         MOD_SRC.contains("CueRegistry"),
-        "mod.rs must init and populate the CueRegistry resource"
+        "mod.rs must init the CueRegistry resource"
+    );
+    assert!(
+        AGUMON_SRC.contains("CueRegistry"),
+        "the agumon module must populate the CueRegistry resource"
+    );
+    assert!(
+        !MOD_SRC.contains("fn register_agumon_cues"),
+        "register_agumon_cues must move out of mod.rs into the agumon module (S04)"
     );
     for cue_id in ["hit_flash", "hit_shake", "camera_impact"] {
         assert!(
-            MOD_SRC.contains(cue_id),
-            "mod.rs must register the {cue_id:?} cue id in the CueRegistry"
+            AGUMON_SRC.contains(cue_id),
+            "the agumon module must register the {cue_id:?} cue id in the CueRegistry"
         );
     }
 }
