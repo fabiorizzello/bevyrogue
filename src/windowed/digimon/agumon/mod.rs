@@ -8,11 +8,38 @@
 use bevy::prelude::*;
 use bevyrogue::animation::PlacementAnchor;
 
-use crate::windowed::BABY_FLAME_SKILL_ID;
 use crate::windowed::render::{
     DetonateEffectRegistry, EnokiEffect, EnokiLifecycle, EnokiVfxRegistry, OnEnterEffectRegistry,
-    SkillReleaseEffectRegistry,
+    SkillReleaseEffectRegistry, SkillStartNodeRegistry, SpritePresentationEntry,
+    SpritePresentationRegistry,
 };
+
+// Agumon's animation-graph ids and skill/node vocabulary (S04). Owned by this
+// module: the engine reads them from the registries below, never as consts.
+const AGUMON_STANCE_GRAPH_ID: &str = "agumon_stance";
+const AGUMON_SKILL_GRAPH_ID: &str = "agumon_skill";
+const SHARP_CLAWS_SKILL_ID: &str = "sharp_claws";
+const SHARP_CLAWS_WINDUP_NODE: &str = "sharp_claws_windup";
+const BABY_FLAME_SKILL_ID: &str = "baby_flame";
+const AGUMON_ULT_SKILL_ID: &str = "agumon_ult";
+const BABY_FLAME_CAST_NODE: &str = "baby_flame_cast";
+const BABY_BURNER_CHARGE_NODE: &str = "baby_burner_charge";
+// The skill FSM entry nodes above seed the player; the presentation nodes below
+// complete the bridged-node vocabulary (matching anim_graph.ron) and are
+// consumed when the Baby Flame / Baby Burner impact-release bridges go live.
+#[allow(dead_code)]
+const SHARP_CLAWS_STRIKE_NODE: &str = "sharp_claws_strike";
+#[allow(dead_code)]
+const BABY_FLAME_IMPACT_NODE: &str = "baby_flame_impact";
+#[allow(dead_code)]
+const BABY_BURNER_LAUNCH_NODE: &str = "baby_burner_launch";
+#[allow(dead_code)]
+const BABY_BURNER_RECOVERY_NODE: &str = "baby_burner_recovery";
+
+/// Path (relative to `assets/`) of Agumon's sprite atlas image.
+const AGUMON_ATLAS_IMAGE_PATH: &str = "digimon/agumon_atlas.png";
+/// Index into `AnimationClipHandles` of Agumon's clip (atlas geometry source).
+const AGUMON_CLIP_INDEX: usize = 0;
 
 /// Namespaced effect ids of Agumon's effects. Owned by this module (S04); the
 /// engine keys its generic registries on these strings and never matches them.
@@ -66,6 +93,8 @@ pub(in crate::windowed) fn register(app: &mut App) {
             register_agumon_on_enter_effects,
             register_agumon_skill_release_effects,
             register_agumon_detonate_effect,
+            register_agumon_skill_start_nodes,
+            register_agumon_sprite_presentation,
         ),
     );
 }
@@ -198,6 +227,42 @@ fn register_agumon_detonate_effect(mut registry: ResMut<DetonateEffectRegistry>)
     registry.effect_id = Some(DETONATE_EFFECT_ID.to_string());
 }
 
+/// Authored skill id -> its windowed FSM entry node for each of Agumon's bridged
+/// skills. Pure data so it can be unit-tested without an `App`;
+/// `register_agumon_skill_start_nodes` copies it into the engine's
+/// [`SkillStartNodeRegistry`]. A skill absent here is unbridged (auto-release
+/// fallback in the engine).
+fn skill_start_node_specs() -> &'static [(&'static str, &'static str)] {
+    &[
+        (SHARP_CLAWS_SKILL_ID, SHARP_CLAWS_WINDUP_NODE),
+        (BABY_FLAME_SKILL_ID, BABY_FLAME_CAST_NODE),
+        (AGUMON_ULT_SKILL_ID, BABY_BURNER_CHARGE_NODE),
+    ]
+}
+
+/// Populate the engine-generic [`SkillStartNodeRegistry`] with Agumon's bridged
+/// skill -> FSM entry node map, replacing the closed `skill_start_node` match.
+fn register_agumon_skill_start_nodes(mut registry: ResMut<SkillStartNodeRegistry>) {
+    for (skill_id, node) in skill_start_node_specs() {
+        registry
+            .map
+            .insert((*skill_id).to_string(), (*node).to_string());
+    }
+}
+
+/// Populate the engine-generic [`SpritePresentationRegistry`] with Agumon's
+/// stance/skill graph ids and atlas image path + clip index, replacing the engine
+/// `AGUMON_*` consts and the hardcoded atlas path in `build_digimon_atlas` /
+/// `spawn_unit_sprites`.
+fn register_agumon_sprite_presentation(mut registry: ResMut<SpritePresentationRegistry>) {
+    registry.entries.push(SpritePresentationEntry {
+        stance_graph_id: AGUMON_STANCE_GRAPH_ID.to_string(),
+        skill_graph_id: AGUMON_SKILL_GRAPH_ID.to_string(),
+        atlas_image_path: AGUMON_ATLAS_IMAGE_PATH.to_string(),
+        clip_index: AGUMON_CLIP_INDEX,
+    });
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -258,5 +323,68 @@ mod tests {
         app.update();
         let reg = app.world().resource::<DetonateEffectRegistry>();
         assert_eq!(reg.effect_id.as_deref(), Some(DETONATE_EFFECT_ID));
+    }
+
+    #[test]
+    fn skill_start_nodes_map_each_bridged_skill_to_its_fsm_entry() {
+        // The owned spec maps each bridged skill to its authored FSM entry node;
+        // unbridged skills are simply absent (engine auto-release fallback).
+        let specs = skill_start_node_specs();
+        let lookup = |skill: &str| {
+            specs
+                .iter()
+                .find(|(s, _)| *s == skill)
+                .map(|(_, node)| *node)
+        };
+        assert_eq!(lookup(SHARP_CLAWS_SKILL_ID), Some(SHARP_CLAWS_WINDUP_NODE));
+        assert_eq!(lookup(BABY_FLAME_SKILL_ID), Some(BABY_FLAME_CAST_NODE));
+        assert_eq!(lookup(AGUMON_ULT_SKILL_ID), Some(BABY_BURNER_CHARGE_NODE));
+        assert_eq!(lookup("greymon_basic"), None);
+    }
+
+    #[test]
+    fn register_populates_the_skill_start_node_registry() {
+        let mut app = App::new();
+        app.init_resource::<SkillStartNodeRegistry>();
+        app.add_systems(Startup, register_agumon_skill_start_nodes);
+        app.update();
+        let reg = app.world().resource::<SkillStartNodeRegistry>();
+        assert_eq!(
+            reg.map.get(AGUMON_ULT_SKILL_ID).map(String::as_str),
+            Some(BABY_BURNER_CHARGE_NODE)
+        );
+        assert_eq!(reg.map.len(), 3);
+    }
+
+    /// Baby Flame and Baby Burner are bridged, so the engine's fallback auto-release
+    /// branch must NOT fire for them — they release on their rendered `ReleaseKernel`
+    /// cue. Only skills with no windowed FSM entry take the auto-release fallback.
+    #[test]
+    fn auto_release_fallback_only_targets_unbridged_skills() {
+        use crate::windowed::render::should_auto_release_unbridged;
+        let mut app = App::new();
+        app.init_resource::<SkillStartNodeRegistry>();
+        app.add_systems(Startup, register_agumon_skill_start_nodes);
+        app.update();
+        let reg = app.world().resource::<SkillStartNodeRegistry>();
+        assert!(!should_auto_release_unbridged(reg, SHARP_CLAWS_SKILL_ID));
+        assert!(!should_auto_release_unbridged(reg, BABY_FLAME_SKILL_ID));
+        assert!(!should_auto_release_unbridged(reg, AGUMON_ULT_SKILL_ID));
+        // An unbridged skill (no windowed presentation graph) still auto-releases.
+        assert!(should_auto_release_unbridged(reg, "greymon_basic"));
+    }
+
+    #[test]
+    fn register_populates_the_sprite_presentation_registry() {
+        let mut app = App::new();
+        app.init_resource::<SpritePresentationRegistry>();
+        app.add_systems(Startup, register_agumon_sprite_presentation);
+        app.update();
+        let reg = app.world().resource::<SpritePresentationRegistry>();
+        let entry = reg.entries.first().expect("agumon presentation entry");
+        assert_eq!(entry.stance_graph_id, AGUMON_STANCE_GRAPH_ID);
+        assert_eq!(entry.skill_graph_id, AGUMON_SKILL_GRAPH_ID);
+        assert_eq!(entry.atlas_image_path, AGUMON_ATLAS_IMAGE_PATH);
+        assert_eq!(entry.clip_index, AGUMON_CLIP_INDEX);
     }
 }

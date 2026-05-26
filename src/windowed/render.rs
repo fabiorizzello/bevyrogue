@@ -31,11 +31,6 @@ use bevyrogue::ui::hit_feedback::{
     hit_damage_amount, observe_hit_feedback,
 };
 
-use super::{
-    AGUMON_SKILL_GRAPH_ID, AGUMON_STANCE_GRAPH_ID, AGUMON_ULT_SKILL_ID, BABY_BURNER_CHARGE_NODE,
-    BABY_FLAME_CAST_NODE, BABY_FLAME_SKILL_ID, SHARP_CLAWS_SKILL_ID, SHARP_CLAWS_WINDUP_NODE,
-};
-
 /// Marker + FSM state for an on-screen Digimon preview actor. Carries the
 /// stance/skill animation-graph ids as DATA (`stance_graph_id` / `skill_graph_id`)
 /// rather than reading module-level `AGUMON_*` consts, so adding a new Digimon
@@ -411,9 +406,11 @@ impl Plugin for RenderPlugin {
             .init_resource::<OnEnterEffectRegistry>()
             .init_resource::<SkillReleaseEffectRegistry>()
             .init_resource::<DetonateEffectRegistry>()
+            .init_resource::<SkillStartNodeRegistry>()
+            .init_resource::<SpritePresentationRegistry>()
             .add_systems(Startup, setup_camera)
             .add_systems(Update, diagnose_enoki_vfx_load)
-            .add_systems(Update, build_agumon_atlas.before(spawn_unit_sprites))
+            .add_systems(Update, build_digimon_atlas.before(spawn_unit_sprites))
             .add_systems(Update, spawn_unit_sprites)
             .add_systems(Update, sample_animation_ticks.before(advance_enoki_projectiles))
             .add_systems(
@@ -640,13 +637,46 @@ pub(in crate::windowed) struct DetonateEffectRegistry {
     pub(in crate::windowed) effect_id: Option<String>,
 }
 
-/// Bundles the spawn-side effect registries into a single `SystemParam` so
-/// `advance_agumon_presentation` stays within Bevy's 16-parameter system limit.
+/// Engine-generic map of skill id -> its windowed FSM entry node (S04). The
+/// per-Digimon module populates it; a skill present here is "bridged" (presents
+/// its rendered FSM and releases on its `ReleaseKernel` cue), a skill absent here
+/// is unbridged and takes the auto-release fallback. Replaces the closed
+/// `skill_start_node` match: the presentation systems read this registry directly.
+#[derive(Resource, Debug, Clone, Default)]
+pub(in crate::windowed) struct SkillStartNodeRegistry {
+    pub(in crate::windowed) map: HashMap<String, String>,
+}
+
+/// Engine-generic per-Digimon sprite presentation data (S04): the stance/skill
+/// animation-graph ids and the atlas image path + clip index used by
+/// [`build_digimon_atlas`] / [`spawn_unit_sprites`]. The per-Digimon module
+/// populates it instead of the engine reading `AGUMON_*` consts and a hardcoded
+/// atlas path. For S04 it holds the single Agumon entry; S05 adds more.
+#[derive(Resource, Debug, Clone, Default)]
+pub(in crate::windowed) struct SpritePresentationRegistry {
+    pub(in crate::windowed) entries: Vec<SpritePresentationEntry>,
+}
+
+/// One entry in [`SpritePresentationRegistry`]: the stance/skill graph ids that
+/// seed a spawned `DigimonSprite` plus the atlas image path and clip index the
+/// shared atlas is built from.
+#[derive(Debug, Clone)]
+pub(in crate::windowed) struct SpritePresentationEntry {
+    pub(in crate::windowed) stance_graph_id: String,
+    pub(in crate::windowed) skill_graph_id: String,
+    pub(in crate::windowed) atlas_image_path: String,
+    pub(in crate::windowed) clip_index: usize,
+}
+
+/// Bundles the spawn-side effect registries plus the skill start-node registry
+/// into a single `SystemParam` so `advance_agumon_presentation` stays within
+/// Bevy's 16-parameter system limit.
 #[derive(SystemParam)]
 struct EffectRegistries<'w> {
     enoki: Option<Res<'w, EnokiVfxRegistry>>,
     on_enter: Res<'w, OnEnterEffectRegistry>,
     skill_release: Res<'w, SkillReleaseEffectRegistry>,
+    skill_start_node: Res<'w, SkillStartNodeRegistry>,
 }
 
 /// Surface a load failure for each registered enoki `.particle.ron` once. A
@@ -697,13 +727,14 @@ fn sample_animation_ticks(
 /// `info!` describing the grid and a one-time `warn!` if the clip never becomes
 /// readable or the atlas image fails to load.
 #[allow(clippy::too_many_arguments)]
-fn build_agumon_atlas(
+fn build_digimon_atlas(
     mut commands: Commands,
     existing: Option<Res<AgumonAtlas>>,
     clip_load_state: Res<AnimationClipLoadState>,
     clip_handles: Option<Res<AnimationClipHandles>>,
     clips: Res<Assets<Clip>>,
     asset_server: Res<AssetServer>,
+    presentation: Res<SpritePresentationRegistry>,
     mut layouts: ResMut<Assets<TextureAtlasLayout>>,
     mut warned: Local<bool>,
 ) {
@@ -711,13 +742,22 @@ fn build_agumon_atlas(
         return;
     }
 
+    // The per-Digimon module supplies the atlas image path + clip index via the
+    // registry (S04); until it is populated there is nothing to build.
+    let Some(entry) = presentation.entries.first() else {
+        return;
+    };
+
     let Some(handles) = clip_handles else {
         return;
     };
 
-    // The agumon clip is index 0 (DEFAULT_ANIM_CLIP_PATHS) and is the geometry
-    // source for both on-screen actors.
-    let clip = handles.0.first().and_then(|handle| clips.get(handle));
+    // The clip index is registry data (was the hardcoded `first()`); it is the
+    // geometry source for both on-screen actors.
+    let clip = handles
+        .0
+        .get(entry.clip_index)
+        .and_then(|handle| clips.get(handle));
     let Some(clip) = clip else {
         // Only a real failure (load state reports ready but the asset is
         // missing) is worth surfacing; the transient loading state is silent.
@@ -740,7 +780,7 @@ fn build_agumon_atlas(
         None,
     );
     let layout = layouts.add(layout);
-    let image = asset_server.load("digimon/agumon_atlas.png");
+    let image = asset_server.load(entry.atlas_image_path.clone());
 
     if matches!(
         asset_server.load_state(image.id()),
@@ -749,7 +789,8 @@ fn build_agumon_atlas(
     {
         warn!(
             target: "windowed.agumon_playback",
-            "agumon atlas image load failed: digimon/agumon_atlas.png — sprites will render blank"
+            path = entry.atlas_image_path.as_str(),
+            "digimon atlas image load failed — sprites will render blank"
         );
         *warned = true;
     }
@@ -779,12 +820,19 @@ fn spawn_unit_sprites(
     stance_reg: Res<StanceGraphRegistry>,
     graphs: Res<Assets<AnimGraph>>,
     atlas: Option<Res<AgumonAtlas>>,
+    presentation: Res<SpritePresentationRegistry>,
     units: Query<(&Unit, &Team)>,
     sprites: Query<&DigimonSprite>,
 ) {
-    let Some(stance_graph) =
-        stance_reg.resolve_snapshot(&AnimGraphId(AGUMON_STANCE_GRAPH_ID.into()), &graphs)
-    else {
+    // The stance/skill graph ids are registry data (S04), not engine consts.
+    let Some(entry) = presentation.entries.first() else {
+        return;
+    };
+
+    let Some(stance_graph) = stance_reg.resolve_snapshot(
+        &AnimGraphId(entry.stance_graph_id.clone().into()),
+        &graphs,
+    ) else {
         return;
     };
 
@@ -803,13 +851,13 @@ fn spawn_unit_sprites(
         let flip_x = *team == Team::Enemy;
         let x = if flip_x { 200.0_f32 } else { -200.0_f32 };
         commands.spawn((
-            // S03: only Agumon exists, so the spawn site is the const data source
-            // for both graph ids. S04 replaces these consts with per-blueprint data.
+            // S04: the stance/skill graph ids are seeded from the per-Digimon
+            // presentation registry entry, not engine `AGUMON_*` consts.
             DigimonSprite::idle_for(
                 unit.id,
                 stance_graph.clone(),
-                AGUMON_STANCE_GRAPH_ID.into(),
-                AGUMON_SKILL_GRAPH_ID.into(),
+                entry.stance_graph_id.clone(),
+                entry.skill_graph_id.clone(),
             ),
             Sprite {
                 image: atlas.image.clone(),
@@ -865,7 +913,9 @@ fn advance_agumon_presentation(
             // (no windowed presentation graph). Bridged skills — sharp_claws,
             // baby_flame, agumon_ult — release on their rendered ReleaseKernel cue
             // in the per-tick block below instead of being auto-released here.
-            if status.awaiting_release && should_auto_release_unbridged(&status.skill_id.0) {
+            if status.awaiting_release
+                && should_auto_release_unbridged(&effects.skill_start_node, &status.skill_id.0)
+            {
                 debug!(
                     target: "windowed.agumon_playback",
                     skill_id = %status.skill_id.0,
@@ -941,6 +991,7 @@ fn advance_agumon_presentation(
                     &skill_reg,
                     &stance_reg,
                     &graphs,
+                    &effects.skill_start_node,
                     &mut lookup_diagnostics,
                 );
             }
@@ -1771,6 +1822,7 @@ fn sync_agumon_mode(
     skill_reg: &SkillGraphRegistry,
     stance_reg: &StanceGraphRegistry,
     graphs: &Assets<AnimGraph>,
+    start_node_reg: &SkillStartNodeRegistry,
     lookup_diagnostics: &mut AnimationGraphLookupDiagnostics,
 ) {
     let Some(status) = active_barrier else {
@@ -1785,7 +1837,10 @@ fn sync_agumon_mode(
 
     // Only skills with a known FSM entry node are bridged here. Unbridged skills
     // are handled by the auto-release fallback in `advance_agumon_presentation`.
-    let Some(start_node) = skill_start_node(&status.skill_id.0) else {
+    // The bridged-skill -> FSM entry node map is engine-generic registry data
+    // (S04) the per-Digimon module populates; absence means unbridged.
+    let Some(start_node) = start_node_reg.map.get(status.skill_id.0.as_str()).map(String::as_str)
+    else {
         return;
     };
 
@@ -1873,17 +1928,6 @@ fn sync_agumon_mode(
     }
 }
 
-/// FSM entry node for a bridged Agumon skill, or `None` when the skill has no
-/// windowed presentation graph (the auto-release fallback handles those).
-fn skill_start_node(skill_id: &str) -> Option<&'static str> {
-    match skill_id {
-        SHARP_CLAWS_SKILL_ID => Some(SHARP_CLAWS_WINDUP_NODE),
-        BABY_FLAME_SKILL_ID => Some(BABY_FLAME_CAST_NODE),
-        AGUMON_ULT_SKILL_ID => Some(BABY_BURNER_CHARGE_NODE),
-        _ => None,
-    }
-}
-
 /// How an active barrier reconciles against the current playback mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum SameSkillSync {
@@ -1968,11 +2012,14 @@ fn already_released_frame(
 }
 
 /// Whether an awaiting barrier for `skill_id` must be auto-released as the
-/// unbridged fallback. Bridged skills (those with a windowed FSM entry node via
-/// [`skill_start_node`]) release on their rendered `ReleaseKernel` cue instead,
-/// so they are NOT auto-released here.
-fn should_auto_release_unbridged(skill_id: &str) -> bool {
-    skill_start_node(skill_id).is_none()
+/// unbridged fallback. Bridged skills (those with a windowed FSM entry node in
+/// [`SkillStartNodeRegistry`]) release on their rendered `ReleaseKernel` cue
+/// instead, so they are NOT auto-released here.
+pub(in crate::windowed) fn should_auto_release_unbridged(
+    reg: &SkillStartNodeRegistry,
+    skill_id: &str,
+) -> bool {
+    !reg.map.contains_key(skill_id)
 }
 
 fn barrier_trace_tuple(status: &CueBarrierStatus) -> (&str, &str, &str, bool, bool) {
@@ -2085,49 +2132,34 @@ mod tests {
     }
 
     #[test]
-    fn skill_start_node_maps_each_bridged_skill_to_its_fsm_entry() {
-        assert_eq!(
-            skill_start_node(SHARP_CLAWS_SKILL_ID),
-            Some(SHARP_CLAWS_WINDUP_NODE)
-        );
-        assert_eq!(
-            skill_start_node(BABY_FLAME_SKILL_ID),
-            Some(BABY_FLAME_CAST_NODE)
-        );
-        assert_eq!(
-            skill_start_node(AGUMON_ULT_SKILL_ID),
-            Some(BABY_BURNER_CHARGE_NODE)
-        );
-        // Unbridged skills have no windowed presentation graph.
-        assert_eq!(skill_start_node("greymon_basic"), None);
-    }
-
-    #[test]
     fn same_skill_cue_hop_advances_without_resetting_player() {
+        // Generic FSM reconciliation: uses neutral skill-id / cue / node strings so
+        // the engine test carries no per-Digimon coupling (the Agumon start-node
+        // mapping is proven in the agumon module's own tests, S04).
         let mode = DigimonPlaybackMode::Skill {
-            skill_id: AGUMON_ULT_SKILL_ID.into(),
-            awaiting_cue_id: "agumon/baby_burner/windup".into(),
-            start_node: BABY_BURNER_CHARGE_NODE.into(),
+            skill_id: "skill_ult".into(),
+            awaiting_cue_id: "skill_ult/windup".into(),
+            start_node: "skill_ult_charge".into(),
         };
 
         // Same skill, same cue: nothing to do (player keeps advancing).
         assert_eq!(
-            classify_same_skill_sync(&mode, AGUMON_ULT_SKILL_ID, "agumon/baby_burner/windup"),
+            classify_same_skill_sync(&mode, "skill_ult", "skill_ult/windup"),
             SameSkillSync::Unchanged
         );
         // Same skill, the awaiting cue hopped to the next barrier within the cast:
         // refresh the cue + dedup guard, but the player is NOT restarted.
         assert_eq!(
-            classify_same_skill_sync(&mode, AGUMON_ULT_SKILL_ID, "agumon/baby_burner/impact"),
+            classify_same_skill_sync(&mode, "skill_ult", "skill_ult/impact"),
             SameSkillSync::CueChanged
         );
         // A different skill (or Idle) forces a fresh start.
         assert_eq!(
-            classify_same_skill_sync(&mode, SHARP_CLAWS_SKILL_ID, "agumon/sharp_claws/impact"),
+            classify_same_skill_sync(&mode, "skill_other", "skill_other/impact"),
             SameSkillSync::DifferentSkill
         );
         assert_eq!(
-            classify_same_skill_sync(&DigimonPlaybackMode::Idle, AGUMON_ULT_SKILL_ID, "x"),
+            classify_same_skill_sync(&DigimonPlaybackMode::Idle, "skill_ult", "x"),
             SameSkillSync::DifferentSkill
         );
     }
@@ -2194,19 +2226,6 @@ mod tests {
             "sharp_claws_strike",
             1,
         ));
-    }
-
-    /// Baby Flame and Baby Burner are bridged, so the fallback auto-release branch
-    /// in `advance_agumon_presentation` must NOT fire for them — they release on
-    /// their rendered `ReleaseKernel` cue. Only skills with no windowed FSM entry
-    /// (e.g. an unbridged Greymon skill) take the auto-release fallback.
-    #[test]
-    fn auto_release_fallback_only_targets_unbridged_skills() {
-        assert!(!should_auto_release_unbridged(SHARP_CLAWS_SKILL_ID));
-        assert!(!should_auto_release_unbridged(BABY_FLAME_SKILL_ID));
-        assert!(!should_auto_release_unbridged(AGUMON_ULT_SKILL_ID));
-        // An unbridged skill (no windowed presentation graph) still auto-releases.
-        assert!(should_auto_release_unbridged("greymon_basic"));
     }
 
     /// The release-frame detector fires exactly on each authored `ReleaseKernel`

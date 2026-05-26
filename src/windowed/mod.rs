@@ -36,26 +36,6 @@ use bevyrogue::combat::ultimate::{flush_ult_gain_system, ult_accumulation_system
 use bevyrogue::combat::unit::Unit;
 use bevyrogue::data::{self, DataPlugin};
 
-pub(super) const AGUMON_STANCE_GRAPH_ID: &str = "agumon_stance";
-pub(super) const AGUMON_SKILL_GRAPH_ID: &str = "agumon_skill";
-pub(super) const SHARP_CLAWS_SKILL_ID: &str = "sharp_claws";
-pub(super) const SHARP_CLAWS_WINDUP_NODE: &str = "sharp_claws_windup";
-pub(super) const BABY_FLAME_SKILL_ID: &str = "baby_flame";
-pub(super) const AGUMON_ULT_SKILL_ID: &str = "agumon_ult";
-pub(super) const BABY_FLAME_CAST_NODE: &str = "baby_flame_cast";
-pub(super) const BABY_BURNER_CHARGE_NODE: &str = "baby_burner_charge";
-// The skill FSM entry nodes above seed the player; the presentation nodes below
-// complete the bridged-node vocabulary (matching anim_graph.ron) and are
-// consumed when the Baby Flame / Baby Burner impact-release bridges go live.
-#[allow(dead_code)]
-pub(super) const SHARP_CLAWS_STRIKE_NODE: &str = "sharp_claws_strike";
-#[allow(dead_code)]
-pub(super) const BABY_FLAME_IMPACT_NODE: &str = "baby_flame_impact";
-#[allow(dead_code)]
-pub(super) const BABY_BURNER_LAUNCH_NODE: &str = "baby_burner_launch";
-#[allow(dead_code)]
-pub(super) const BABY_BURNER_RECOVERY_NODE: &str = "baby_burner_recovery";
-
 #[derive(Resource, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct WindowedValidationConfig {
     soak_secs: u64,
