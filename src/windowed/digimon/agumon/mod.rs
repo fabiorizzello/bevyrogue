@@ -7,7 +7,11 @@
 
 use bevy::prelude::*;
 use bevyrogue::animation::PlacementAnchor;
+use bevyrogue::combat::bootstrap::AGUMON_DUMMY_ID;
+use bevyrogue::combat::team::Team;
+use bevyrogue::combat::types::UnitId;
 
+use crate::windowed::demo::{WindowedDemoEntry, WindowedDemoRegistry};
 use crate::windowed::render::{
     DetonateEffectRegistry, EnokiEffect, EnokiLifecycle, EnokiVfxRegistry, OnEnterEffectRegistry,
     SkillReleaseEffectRegistry, SkillStartNodeRegistry, SpritePresentationEntry,
@@ -16,6 +20,7 @@ use crate::windowed::render::{
 
 // Agumon's animation-graph ids and skill/node vocabulary (S04). Owned by this
 // module: the engine reads them from the registries below, never as consts.
+const AGUMON_PRESENTATION_ID: &str = "agumon";
 const AGUMON_STANCE_GRAPH_ID: &str = "agumon_stance";
 const AGUMON_SKILL_GRAPH_ID: &str = "agumon_skill";
 const SHARP_CLAWS_SKILL_ID: &str = "sharp_claws";
@@ -95,6 +100,7 @@ pub(in crate::windowed) fn register(app: &mut App) {
             register_agumon_detonate_effect,
             register_agumon_skill_start_nodes,
             register_agumon_sprite_presentation,
+            register_agumon_windowed_demo,
         ),
     );
 }
@@ -256,11 +262,32 @@ fn register_agumon_skill_start_nodes(mut registry: ResMut<SkillStartNodeRegistry
 /// `spawn_unit_sprites`.
 fn register_agumon_sprite_presentation(mut registry: ResMut<SpritePresentationRegistry>) {
     registry.entries.push(SpritePresentationEntry {
+        presentation_id: AGUMON_PRESENTATION_ID.to_string(),
+        unit_ids: vec![UnitId(1), AGUMON_DUMMY_ID],
         stance_graph_id: AGUMON_STANCE_GRAPH_ID.to_string(),
         skill_graph_id: AGUMON_SKILL_GRAPH_ID.to_string(),
         atlas_image_path: AGUMON_ATLAS_IMAGE_PATH.to_string(),
         clip_index: AGUMON_CLIP_INDEX,
     });
+}
+
+fn register_agumon_windowed_demo(mut registry: ResMut<WindowedDemoRegistry>) {
+    registry.entries.extend([
+        WindowedDemoEntry {
+            demo_id: "agumon_ally".to_string(),
+            source_unit_id: UnitId(1),
+            spawned_unit_id: UnitId(1),
+            team: Team::Ally,
+            name_override: None,
+        },
+        WindowedDemoEntry {
+            demo_id: "agumon_dummy".to_string(),
+            source_unit_id: UnitId(1),
+            spawned_unit_id: AGUMON_DUMMY_ID,
+            team: Team::Enemy,
+            name_override: Some("Agumon (Dummy)".to_string()),
+        },
+    ]);
 }
 
 #[cfg(test)]
@@ -382,9 +409,28 @@ mod tests {
         app.update();
         let reg = app.world().resource::<SpritePresentationRegistry>();
         let entry = reg.entries.first().expect("agumon presentation entry");
+        assert_eq!(entry.presentation_id, AGUMON_PRESENTATION_ID);
+        assert_eq!(entry.unit_ids, vec![UnitId(1), AGUMON_DUMMY_ID]);
         assert_eq!(entry.stance_graph_id, AGUMON_STANCE_GRAPH_ID);
         assert_eq!(entry.skill_graph_id, AGUMON_SKILL_GRAPH_ID);
         assert_eq!(entry.atlas_image_path, AGUMON_ATLAS_IMAGE_PATH);
         assert_eq!(entry.clip_index, AGUMON_CLIP_INDEX);
+    }
+
+    #[test]
+    fn register_populates_the_windowed_demo_registry() {
+        let mut app = App::new();
+        app.init_resource::<WindowedDemoRegistry>();
+        app.add_systems(Startup, register_agumon_windowed_demo);
+        app.update();
+        let reg = app.world().resource::<WindowedDemoRegistry>();
+        assert_eq!(reg.entries.len(), 2);
+        assert_eq!(reg.entries[0].demo_id, "agumon_ally");
+        assert_eq!(reg.entries[0].spawned_unit_id, UnitId(1));
+        assert_eq!(reg.entries[0].team, Team::Ally);
+        assert_eq!(reg.entries[1].demo_id, "agumon_dummy");
+        assert_eq!(reg.entries[1].spawned_unit_id, AGUMON_DUMMY_ID);
+        assert_eq!(reg.entries[1].team, Team::Enemy);
+        assert_eq!(reg.entries[1].name_override.as_deref(), Some("Agumon (Dummy)"));
     }
 }

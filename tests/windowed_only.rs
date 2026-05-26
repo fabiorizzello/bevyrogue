@@ -14,8 +14,8 @@ mod enoki_impact_render;
 mod enoki_skill_effects_parse;
 #[path = "windowed_only/frame_time_soak.rs"]
 mod frame_time_soak;
-#[path = "windowed_only/phase_strip_readonly.rs"]
-mod phase_strip_readonly;
+#[path = "windowed_only/renamon_extension_contract.rs"]
+mod renamon_extension_contract;
 #[path = "windowed_only/vfx_asset_impact_render.rs"]
 mod vfx_asset_impact_render;
 #[path = "windowed_only/vfx_windowed_contracts.rs"]

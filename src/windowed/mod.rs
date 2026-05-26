@@ -3,6 +3,7 @@
 //! Provides the egui combat panel, roster/turn-order side panels, and an
 //! optional validation tick that exits cleanly after a soak window.
 
+mod demo;
 mod digimon;
 mod render;
 
@@ -11,9 +12,7 @@ use bevy_egui::{EguiContexts, EguiPlugin, EguiPrimaryContextPass, egui};
 
 use bevyrogue::animation::AnimationAssetPlugin;
 use bevyrogue::combat::av::ActionValue;
-use bevyrogue::combat::bootstrap::{
-    EncounterPreset, SelectionRequest, apply_composition, bootstrap_encounter,
-};
+use bevyrogue::combat::bootstrap::apply_composition;
 use bevyrogue::combat::events::{CombatEvent, CombatEventKind};
 use bevyrogue::combat::follow_up::{
     follow_up_listener_system, form_identity_listener_system, resolve_follow_up_action_system,
@@ -69,6 +68,7 @@ impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(EguiPlugin::default())
             .init_resource::<bevyrogue::ui::cues::CueRegistry>()
+            .init_resource::<crate::windowed::demo::WindowedDemoRegistry>()
             .init_resource::<bevyrogue::ui::combat_panel::PendingAction>()
             .init_resource::<bevyrogue::ui::combat_panel::PreviewDamageCache>()
             .init_resource::<bevyrogue::ui::combat_panel::BabyBurnerFlashState>()
@@ -199,6 +199,7 @@ fn windowed_bootstrap_system(
     data_ready: Option<Res<data::DataReady>>,
     roster_handle: Option<Res<data::UnitRosterHandle>>,
     rosters: Res<Assets<data::units_ron::UnitRoster>>,
+    demo_registry: Res<demo::WindowedDemoRegistry>,
     units: Query<&Unit>,
     mut combat_state: ResMut<CombatState>,
     mut combat_events: MessageWriter<CombatEvent>,
@@ -213,12 +214,8 @@ fn windowed_bootstrap_system(
         return;
     };
 
-    match bootstrap_encounter(
-        roster,
-        &SelectionRequest { rookie_ids: vec![] },
-        EncounterPreset::AgumonTrainingDummy,
-    ) {
-        Ok(composition) => {
+    match demo::build_demo_composition(roster, &demo_registry) {
+        Ok(Some(composition)) => {
             let ally_ids: Vec<UnitId> = composition.allies.iter().map(|d| d.id).collect();
             let seeded_ids = apply_composition(&mut commands, &composition);
             combat_state.phase = CombatPhase::WaitingForTurn;
@@ -244,6 +241,7 @@ fn windowed_bootstrap_system(
                 cast_id: CastId::ROOT,
             });
         }
+        Ok(None) => {}
         Err(err) => {
             error!("windowed bootstrap error: {err}");
         }

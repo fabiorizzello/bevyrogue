@@ -23,10 +23,10 @@
 - [x] **S03: S03** `risk:high` `depends:[]`
   > After this: In cargo winx, hits still flash/shake the struck sprite, camera-shake fires on impact, and stance/skill/hurt/death playback still works — now driven by the generic DigimonSprite + cue dispatch instead of Agumon-named components and hit_feedback consts. Windowed regression suite green.
 
-- [ ] **S04: S04** `risk:medium` `depends:[]`
+- [x] **S04: S04** `risk:medium` `depends:[]`
   > After this: In cargo winx, Agumon behaves exactly as before, but grep of the windowed engine files shows no AGUMON_* const, no closed on_enter_effect_ids match, and no load_agumon_enoki_vfx — all of it now lives in and is registered by src/windowed/digimon/agumon/. Windowed build/test green.
 
-- [ ] **S05: Second digimon (Renamon) with zero engine edits** `risk:high` `depends:[S04]`
+- [ ] **S05: S05** `risk:high` `depends:[]`
   > After this: In cargo winx, Renamon appears as a combatant with working idle/skill/hurt/death presentation and cue-driven flash/shake; git diff shows the only changes are the two new renamon module trees plus their registration call — zero edits to engine/core files. Full cargo test green.
 
 ## Boundary Map

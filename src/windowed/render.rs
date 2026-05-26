@@ -38,6 +38,7 @@ use bevyrogue::ui::hit_feedback::{
 #[derive(Component, Debug, Clone)]
 pub(super) struct DigimonSprite {
     pub(super) unit_id: UnitId,
+    presentation_id: String,
     pub(super) player: AnimGraphPlayer,
     graph: ResolvedAnimGraph,
     mode: DigimonPlaybackMode,
@@ -49,7 +50,7 @@ pub(super) struct DigimonSprite {
     /// correct graph without consulting a const.
     stance_graph_id: String,
     /// `AnimGraphId` of this Digimon's skill graph. The data source for the skill
-    /// `resolve_snapshot` in `sync_agumon_mode`.
+    /// `resolve_snapshot` in `sync_digimon_mode`.
     skill_graph_id: String,
 }
 
@@ -57,7 +58,7 @@ pub(super) struct DigimonSprite {
 /// swirl (M006/S01 T03, D046). Unlike the contact bursts (which carry
 /// `OneShot::Despawn` and drain on their own), these emitters must keep emitting at
 /// the caster's mouth through the entire charge buildup and then be cleared the
-/// instant the flame launches. `advance_agumon_presentation` despawns every marker
+/// instant the flame launches. `advance_digimon_presentation` despawns every marker
 /// whose `unit_id` matches the casting sprite at the `CueReleaseResult::Released`
 /// boundary, reproducing the old quad-path launch-clear without entering the
 /// kernel/FSM timeline (D031/D032). Carries the source `UnitId` so the launch-clear
@@ -89,16 +90,16 @@ struct ProjectileFlight {
 
 /// Terminal marker: this sprite has been seeded into its `death` stance node and
 /// is exiting the field. Kept as a *separate* component rather than a new
-/// `DigimonPlaybackMode` variant so the `mode` match arms in `sync_agumon_mode` /
+/// `DigimonPlaybackMode` variant so the `mode` match arms in `sync_digimon_mode` /
 /// `classify_same_skill_sync` stay closed (S02-RESEARCH). Its presence tells
-/// `advance_agumon_presentation` to (a) skip mode reconciliation so a still-active
+/// `advance_digimon_presentation` to (a) skip mode reconciliation so a still-active
 /// barrier cannot re-`start_skill` the dying sprite, and (b) leave the sprite on
 /// its final death frame instead of idle-restoring it on node exit. The fade-out
 /// driver (T02) consumes this marker to lerp the sprite out and despawn it.
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
 struct DeathExiting;
 
-/// Off-field exit fader. Seeded by `advance_agumon_presentation` on the frame the
+/// Off-field exit fader. Seeded by `advance_digimon_presentation` on the frame the
 /// `death` node finishes (a [`DeathExiting`] sprite exits its node). Driven by
 /// [`advance_death_fade`], which lerps `Sprite.color` alpha from 1.0 to 0.0 over
 /// `total_ticks` animation ticks and despawns the entity when it reaches 0 — the
@@ -196,6 +197,7 @@ pub(super) struct ReleaseFrameKey {
 impl DigimonSprite {
     pub(super) fn idle_for(
         unit_id: UnitId,
+        presentation_id: String,
         graph: ResolvedAnimGraph,
         stance_graph_id: String,
         skill_graph_id: String,
@@ -203,6 +205,7 @@ impl DigimonSprite {
         let entry = graph.graph().entry.clone();
         Self {
             unit_id,
+            presentation_id,
             player: AnimGraphPlayer::new(entry),
             graph,
             mode: DigimonPlaybackMode::Idle,
@@ -258,14 +261,21 @@ impl DigimonSprite {
     }
 }
 
-/// Bound atlas handles + geometry for the on-screen Agumon sprites. Built once
-/// the agumon `Clip` is readable; both actors share the same image/layout, and
-/// the geometry drives the player-frame -> tile-index map each tick.
-#[derive(Resource, Debug, Clone)]
-pub(super) struct AgumonAtlas {
+/// Bound atlas handles + geometry for one registered sprite presentation.
+/// Stored in [`PresentationAtlasRegistry`] under the presentation's owned id, so
+/// the engine can host multiple Digimon atlases without species branches.
+#[derive(Debug, Clone)]
+pub(super) struct PresentationAtlas {
     image: Handle<Image>,
     layout: Handle<TextureAtlasLayout>,
     geometry: AtlasGeometry,
+}
+
+/// In-memory atlas bindings keyed by presentation id. Built lazily the first
+/// time a registered presentation's clip metadata becomes readable.
+#[derive(Resource, Debug, Clone, Default)]
+pub(super) struct PresentationAtlasRegistry {
+    atlases: HashMap<String, PresentationAtlas>,
 }
 
 /// Default animation playback rate (frames of clip per second) when no
@@ -297,7 +307,7 @@ const VFX_MOUTH_OFFSET_Y_PX: f32 = 24.0;
 
 /// Fixed-rate animation clock for the windowed presentation layer.
 ///
-/// `advance_agumon_presentation` previously advanced the player once per render
+/// `advance_digimon_presentation` previously advanced the player once per render
 /// frame (~60fps), making every animation play far too fast. This accumulates
 /// real render-frame deltas and emits whole animation ticks at `fps`, so
 /// playback speed is decoupled from render rate.
@@ -330,7 +340,7 @@ impl AnimationClock {
             Ok(fps) => Self::new(fps),
             Err(err) => {
                 warn!(
-                    target: "windowed.agumon_playback",
+                    target: "windowed.digimon_playback",
                     "{err}; falling back to {DEFAULT_ANIM_FPS} fps"
                 );
                 Self::new(DEFAULT_ANIM_FPS)
@@ -408,9 +418,10 @@ impl Plugin for RenderPlugin {
             .init_resource::<DetonateEffectRegistry>()
             .init_resource::<SkillStartNodeRegistry>()
             .init_resource::<SpritePresentationRegistry>()
+            .init_resource::<PresentationAtlasRegistry>()
             .add_systems(Startup, setup_camera)
             .add_systems(Update, diagnose_enoki_vfx_load)
-            .add_systems(Update, build_digimon_atlas.before(spawn_unit_sprites))
+            .add_systems(Update, build_digimon_atlases.before(spawn_unit_sprites))
             .add_systems(Update, spawn_unit_sprites)
             .add_systems(Update, sample_animation_ticks.before(advance_enoki_projectiles))
             .add_systems(
@@ -425,30 +436,30 @@ impl Plugin for RenderPlugin {
                 drive_hurt_reactions
                     .after(spawn_unit_sprites)
                     .after(resolve_action_system)
-                    .before(advance_agumon_presentation)
+                    .before(advance_digimon_presentation)
                     .before(continue_suspended_timeline_system),
             )
             .add_systems(
                 Update,
                 // Arm the transient flash/shake windows off the CombatEvent bus.
                 // Mirrors drive_hurt_reactions' ordering so the windows are armed
-                // before advance_agumon_presentation decays + applies them.
+                // before advance_digimon_presentation decays + applies them.
                 observe_hit_feedback
                     .after(spawn_unit_sprites)
                     .after(resolve_action_system)
-                    .before(advance_agumon_presentation)
+                    .before(advance_digimon_presentation)
                     .before(continue_suspended_timeline_system),
             )
             .add_systems(
                 Update,
                 // Arm the camera-shake window off the SAME OnHitTaken signal that
                 // arms HitShakeState (camera-shake is just another registered cue).
-                // Ordered before advance_agumon_presentation, which owns the single
+                // Ordered before advance_digimon_presentation, which owns the single
                 // decay site.
                 observe_camera_shake
                     .after(spawn_unit_sprites)
                     .after(resolve_action_system)
-                    .before(advance_agumon_presentation)
+                    .before(advance_digimon_presentation)
                     .before(continue_suspended_timeline_system),
             )
             .add_systems(
@@ -459,7 +470,7 @@ impl Plugin for RenderPlugin {
                 spawn_canvas_damage_numbers
                     .after(spawn_unit_sprites)
                     .after(resolve_action_system)
-                    .before(advance_agumon_presentation)
+                    .before(advance_digimon_presentation)
                     .before(continue_suspended_timeline_system),
             )
             .add_systems(
@@ -476,14 +487,14 @@ impl Plugin for RenderPlugin {
                     .after(drive_hurt_reactions)
                     .after(spawn_unit_sprites)
                     .after(resolve_action_system)
-                    .before(advance_agumon_presentation)
+                    .before(advance_digimon_presentation)
                     .before(continue_suspended_timeline_system),
             )
             .add_systems(
                 Update,
                 (
                     advance_enoki_projectiles,
-                    advance_agumon_presentation,
+                    advance_digimon_presentation,
                     advance_death_fade,
                 )
                     .chain()
@@ -495,10 +506,10 @@ impl Plugin for RenderPlugin {
             .add_systems(
                 Update,
                 // Write the Camera2d transform from the decayed CameraShakeState.
-                // Ordered AFTER advance_agumon_presentation (the single decay site)
+                // Ordered AFTER advance_digimon_presentation (the single decay site)
                 // so it reads the freshly-drained remaining and applies an absolute
                 // offset from CameraRest — never additive (MEM094).
-                apply_camera_shake.after(advance_agumon_presentation),
+                apply_camera_shake.after(advance_digimon_presentation),
             );
     }
 }
@@ -525,7 +536,7 @@ fn setup_camera(mut commands: Commands) {
 /// `HitShakeState` — sizing it to the `camera_impact` cue's tick count from the
 /// `CueRegistry`. Owns its own message cursor (MEM065); same-window multi-hit
 /// collapses via the reset in `arm`. Emits a `trace!` on the
-/// `windowed.agumon_playback` target (mirroring the `flash+shake armed` seam) so
+/// `windowed.digimon_playback` target (mirroring the `flash+shake armed` seam) so
 /// a future agent can confirm the cue fired without running the binary (K001).
 fn observe_camera_shake(
     mut events: MessageReader<bevyrogue::combat::events::CombatEvent>,
@@ -537,7 +548,7 @@ fn observe_camera_shake(
             if let Some(CueDef::CameraShake { ticks, .. }) = cue_registry.get("camera_impact") {
                 camera_shake.arm(*ticks);
                 trace!(
-                    target: "windowed.agumon_playback",
+                    target: "windowed.digimon_playback",
                     target_unit = ?event.target,
                     camera_shake_ticks = *ticks,
                     "camera-shake armed"
@@ -614,7 +625,7 @@ pub(in crate::windowed) enum EnokiLifecycle {
 
 /// Engine-generic map of authored `SpawnParticle` name -> the owned effect id(s)
 /// it spawns on node enter (S04). The per-Digimon module populates it; the
-/// `on_enter` loop in [`advance_agumon_presentation`] reads it instead of a closed
+/// `on_enter` loop in [`advance_digimon_presentation`] reads it instead of a closed
 /// name match, so adding a Digimon's spawn vocabulary needs no engine edit.
 #[derive(Resource, Debug, Clone, Default)]
 pub(in crate::windowed) struct OnEnterEffectRegistry {
@@ -623,7 +634,7 @@ pub(in crate::windowed) struct OnEnterEffectRegistry {
 
 /// Engine-generic map of skill id -> the effect id spawned at the skill's release
 /// boundary (S04). Replaces the `mode_skill_id == Some(BABY_FLAME_SKILL_ID)`
-/// special-case in [`advance_agumon_presentation`]: a skill present here spawns its
+/// special-case in [`advance_digimon_presentation`]: a skill present here spawns its
 /// mapped effect (the projectile) on release; a skill absent here spawns nothing.
 #[derive(Resource, Debug, Clone, Default)]
 pub(in crate::windowed) struct SkillReleaseEffectRegistry {
@@ -657,19 +668,38 @@ pub(in crate::windowed) struct SpritePresentationRegistry {
     pub(in crate::windowed) entries: Vec<SpritePresentationEntry>,
 }
 
-/// One entry in [`SpritePresentationRegistry`]: the stance/skill graph ids that
-/// seed a spawned `DigimonSprite` plus the atlas image path and clip index the
-/// shared atlas is built from.
+/// One entry in [`SpritePresentationRegistry`]: the stable presentation id,
+/// owned `UnitId` selectors, stance/skill graph ids, and atlas source used to
+/// spawn/render a specific Digimon presentation without engine-side species
+/// matches.
 #[derive(Debug, Clone)]
 pub(in crate::windowed) struct SpritePresentationEntry {
+    pub(in crate::windowed) presentation_id: String,
+    pub(in crate::windowed) unit_ids: Vec<UnitId>,
     pub(in crate::windowed) stance_graph_id: String,
     pub(in crate::windowed) skill_graph_id: String,
     pub(in crate::windowed) atlas_image_path: String,
     pub(in crate::windowed) clip_index: usize,
 }
 
+impl SpritePresentationEntry {
+    fn matches_unit(&self, unit_id: UnitId) -> bool {
+        self.unit_ids.contains(&unit_id)
+    }
+}
+
+fn presentation_entry_for_unit(
+    presentation: &SpritePresentationRegistry,
+    unit_id: UnitId,
+) -> Option<&SpritePresentationEntry> {
+    presentation
+        .entries
+        .iter()
+        .find(|entry| entry.matches_unit(unit_id))
+}
+
 /// Bundles the spawn-side effect registries plus the skill start-node registry
-/// into a single `SystemParam` so `advance_agumon_presentation` stays within
+/// into a single `SystemParam` so `advance_digimon_presentation` stays within
 /// Bevy's 16-parameter system limit.
 #[derive(SystemParam)]
 struct EffectRegistries<'w> {
@@ -702,7 +732,7 @@ fn diagnose_enoki_vfx_load(
             bevy::asset::LoadState::Failed(_)
         ) {
             warn!(
-                target: "windowed.agumon_playback",
+                target: "windowed.digimon_playback",
                 path = entry.path.as_str(),
                 effect = effect_id.as_str(),
                 reason = "enoki .particle.ron failed to load or parse",
@@ -721,95 +751,107 @@ fn sample_animation_ticks(
     pending_ticks.0 = clock.tick(time.delta_secs());
 }
 
-/// Builds the shared `AgumonAtlas` (image + `TextureAtlasLayout` + geometry)
+/// Builds the shared `PresentationAtlas` (image + `TextureAtlasLayout` + geometry)
 /// once the agumon `Clip` is readable. Idempotent: returns early once the
 /// resource exists, so it runs at most one effective build. Emits a one-time
 /// `info!` describing the grid and a one-time `warn!` if the clip never becomes
 /// readable or the atlas image fails to load.
 #[allow(clippy::too_many_arguments)]
-fn build_digimon_atlas(
-    mut commands: Commands,
-    existing: Option<Res<AgumonAtlas>>,
+fn build_digimon_atlases(
+    mut atlases: ResMut<PresentationAtlasRegistry>,
     clip_load_state: Res<AnimationClipLoadState>,
     clip_handles: Option<Res<AnimationClipHandles>>,
     clips: Res<Assets<Clip>>,
     asset_server: Res<AssetServer>,
     presentation: Res<SpritePresentationRegistry>,
     mut layouts: ResMut<Assets<TextureAtlasLayout>>,
-    mut warned: Local<bool>,
+    mut warned: Local<HashSet<String>>,
 ) {
-    if existing.is_some() {
-        return;
-    }
-
-    // The per-Digimon module supplies the atlas image path + clip index via the
-    // registry (S04); until it is populated there is nothing to build.
-    let Some(entry) = presentation.entries.first() else {
-        return;
-    };
-
     let Some(handles) = clip_handles else {
         return;
     };
 
-    // The clip index is registry data (was the hardcoded `first()`); it is the
-    // geometry source for both on-screen actors.
-    let clip = handles
-        .0
-        .get(entry.clip_index)
-        .and_then(|handle| clips.get(handle));
-    let Some(clip) = clip else {
-        // Only a real failure (load state reports ready but the asset is
-        // missing) is worth surfacing; the transient loading state is silent.
-        if clip_load_state.ready && !*warned {
-            warn!(
-                target: "windowed.agumon_playback",
-                "agumon clip not readable after load state ready; atlas binding deferred — sprites stay blank"
-            );
-            *warned = true;
+    for entry in &presentation.entries {
+        let image_warn_key = format!("image:{}", entry.presentation_id);
+        if let Some(bound) = atlases.atlases.get(&entry.presentation_id) {
+            if matches!(
+                asset_server.load_state(bound.image.id()),
+                bevy::asset::LoadState::Failed(_)
+            ) && warned.insert(image_warn_key)
+            {
+                warn!(
+                    target: "windowed.digimon_playback",
+                    presentation_id = entry.presentation_id.as_str(),
+                    path = entry.atlas_image_path.as_str(),
+                    "digimon atlas image load failed — sprites will render blank"
+                );
+            }
+            continue;
         }
-        return;
-    };
 
-    let geometry = AtlasGeometry::from_clip_meta(&clip.meta);
-    let layout = TextureAtlasLayout::from_grid(
-        UVec2::new(geometry.frame_size.w, geometry.frame_size.h),
-        geometry.columns,
-        geometry.rows,
-        None,
-        None,
-    );
-    let layout = layouts.add(layout);
-    let image = asset_server.load(entry.atlas_image_path.clone());
+        let clip = handles
+            .0
+            .get(entry.clip_index)
+            .and_then(|handle| clips.get(handle));
+        let Some(clip) = clip else {
+            let clip_warn_key = format!("clip:{}", entry.presentation_id);
+            if clip_load_state.ready && warned.insert(clip_warn_key) {
+                warn!(
+                    target: "windowed.digimon_playback",
+                    presentation_id = entry.presentation_id.as_str(),
+                    path = entry.atlas_image_path.as_str(),
+                    clip_index = entry.clip_index,
+                    "presentation clip not readable after load state ready; atlas binding deferred — sprites stay blank"
+                );
+            }
+            continue;
+        };
 
-    if matches!(
-        asset_server.load_state(image.id()),
-        bevy::asset::LoadState::Failed(_)
-    ) && !*warned
-    {
-        warn!(
-            target: "windowed.agumon_playback",
-            path = entry.atlas_image_path.as_str(),
-            "digimon atlas image load failed — sprites will render blank"
+        let geometry = AtlasGeometry::from_clip_meta(&clip.meta);
+        let layout = TextureAtlasLayout::from_grid(
+            UVec2::new(geometry.frame_size.w, geometry.frame_size.h),
+            geometry.columns,
+            geometry.rows,
+            None,
+            None,
         );
-        *warned = true;
+        let layout = layouts.add(layout);
+        let image = asset_server.load(entry.atlas_image_path.clone());
+
+        if matches!(
+            asset_server.load_state(image.id()),
+            bevy::asset::LoadState::Failed(_)
+        ) && warned.insert(image_warn_key)
+        {
+            warn!(
+                target: "windowed.digimon_playback",
+                presentation_id = entry.presentation_id.as_str(),
+                path = entry.atlas_image_path.as_str(),
+                "digimon atlas image load failed — sprites will render blank"
+            );
+        }
+
+        info!(
+            target: "windowed.digimon_playback",
+            presentation_id = entry.presentation_id.as_str(),
+            path = entry.atlas_image_path.as_str(),
+            frame_w = geometry.frame_size.w,
+            frame_h = geometry.frame_size.h,
+            columns = geometry.columns,
+            rows = geometry.rows,
+            total_frames = geometry.total_frames,
+            "presentation atlas built (TextureAtlasLayout + image bound)"
+        );
+
+        atlases.atlases.insert(
+            entry.presentation_id.clone(),
+            PresentationAtlas {
+                image,
+                layout,
+                geometry,
+            },
+        );
     }
-
-    info!(
-        target: "windowed.agumon_playback",
-        frame_w = geometry.frame_size.w,
-        frame_h = geometry.frame_size.h,
-        columns = geometry.columns,
-        rows = geometry.rows,
-        total_frames = geometry.total_frames,
-        "agumon atlas built (TextureAtlasLayout + image bound)"
-    );
-
-    commands.insert_resource(AgumonAtlas {
-        image,
-        layout,
-        geometry,
-    });
 }
 
 /// Spawns one `DigimonSprite` entity per unit that does not yet have one.
@@ -819,42 +861,68 @@ fn spawn_unit_sprites(
     mut commands: Commands,
     stance_reg: Res<StanceGraphRegistry>,
     graphs: Res<Assets<AnimGraph>>,
-    atlas: Option<Res<AgumonAtlas>>,
+    atlases: Res<PresentationAtlasRegistry>,
     presentation: Res<SpritePresentationRegistry>,
     units: Query<(&Unit, &Team)>,
     sprites: Query<&DigimonSprite>,
+    mut warned: Local<HashSet<String>>,
 ) {
-    // The stance/skill graph ids are registry data (S04), not engine consts.
-    let Some(entry) = presentation.entries.first() else {
-        return;
-    };
-
-    let Some(stance_graph) = stance_reg.resolve_snapshot(
-        &AnimGraphId(entry.stance_graph_id.clone().into()),
-        &graphs,
-    ) else {
-        return;
-    };
-
-    // Both the stance graph and the bound atlas must be ready before we can
-    // spawn a sprite that renders real pixels.
-    let Some(atlas) = atlas else {
-        return;
-    };
-
     let spawned: HashSet<UnitId> = sprites.iter().map(|s| s.unit_id).collect();
 
     for (unit, team) in &units {
         if spawned.contains(&unit.id) {
             continue;
         }
+
+        let Some(entry) = presentation_entry_for_unit(&presentation, unit.id) else {
+            let warn_key = format!("missing-presentation:{}", unit.id.0);
+            if warned.insert(warn_key) {
+                warn!(
+                    target: "windowed.digimon_playback",
+                    unit_id = ?unit.id,
+                    "no sprite presentation registered for unit; sprite spawn deferred"
+                );
+            }
+            continue;
+        };
+
+        let Some(stance_graph) = stance_reg.resolve_snapshot(
+            &AnimGraphId(entry.stance_graph_id.clone().into()),
+            &graphs,
+        ) else {
+            let warn_key = format!("missing-stance:{}", unit.id.0);
+            if warned.insert(warn_key) {
+                warn!(
+                    target: "windowed.digimon_playback",
+                    unit_id = ?unit.id,
+                    presentation_id = entry.presentation_id.as_str(),
+                    graph_id = entry.stance_graph_id.as_str(),
+                    "stance graph not yet readable; sprite spawn deferred"
+                );
+            }
+            continue;
+        };
+
+        let Some(atlas) = atlases.atlases.get(&entry.presentation_id) else {
+            let warn_key = format!("missing-atlas:{}", unit.id.0);
+            if warned.insert(warn_key) {
+                warn!(
+                    target: "windowed.digimon_playback",
+                    unit_id = ?unit.id,
+                    presentation_id = entry.presentation_id.as_str(),
+                    path = entry.atlas_image_path.as_str(),
+                    "presentation atlas binding unavailable; sprite spawn deferred"
+                );
+            }
+            continue;
+        };
+
         let flip_x = *team == Team::Enemy;
         let x = if flip_x { 200.0_f32 } else { -200.0_f32 };
         commands.spawn((
-            // S04: the stance/skill graph ids are seeded from the per-Digimon
-            // presentation registry entry, not engine species-specific consts.
             DigimonSprite::idle_for(
                 unit.id,
+                entry.presentation_id.clone(),
                 stance_graph.clone(),
                 entry.stance_graph_id.clone(),
                 entry.skill_graph_id.clone(),
@@ -869,8 +937,6 @@ fn spawn_unit_sprites(
                 ..default()
             },
             Transform::from_xyz(x, 0.0, 0.0).with_scale(Vec3::splat(SPRITE_DISPLAY_SCALE)),
-            // Capture the exact spawn xy so the hit shake can restore to rest
-            // without drift (never hardcode ±200; that layout value goes stale).
             SpriteRest {
                 xy: Vec2::new(x, 0.0),
             },
@@ -878,7 +944,7 @@ fn spawn_unit_sprites(
     }
 }
 
-fn advance_agumon_presentation(
+fn advance_digimon_presentation(
     pending_ticks: Res<PendingAnimationTicks>,
     mut commands: Commands,
     stance_reg: Res<StanceGraphRegistry>,
@@ -886,7 +952,7 @@ fn advance_agumon_presentation(
     graphs: Res<Assets<AnimGraph>>,
     mut lookup_diagnostics: ResMut<AnimationGraphLookupDiagnostics>,
     mut barrier: ResMut<SuspendedTimelineState>,
-    atlas: Option<Res<AgumonAtlas>>,
+    atlases: Res<PresentationAtlasRegistry>,
     effects: EffectRegistries,
     charge_ember_markers: Query<(Entity, &ChargeEmberEnokiMarker)>,
     mut hit_flash: ResMut<HitFlashState>,
@@ -917,7 +983,7 @@ fn advance_agumon_presentation(
                 && should_auto_release_unbridged(&effects.skill_start_node, &status.skill_id.0)
             {
                 debug!(
-                    target: "windowed.agumon_playback",
+                    target: "windowed.digimon_playback",
                     skill_id = %status.skill_id.0,
                     beat_id = status.beat_id,
                     cue_id = status.cue_id,
@@ -939,7 +1005,7 @@ fn advance_agumon_presentation(
         for unit_id in hit_flash.remaining.keys().copied().collect::<Vec<_>>() {
             if hit_flash.remaining(unit_id) == FLASH_TICKS {
                 trace!(
-                    target: "windowed.agumon_playback",
+                    target: "windowed.digimon_playback",
                     unit_id = ?unit_id,
                     flash_ticks = FLASH_TICKS,
                     shake_ticks = SHAKE_TICKS,
@@ -985,7 +1051,7 @@ fn advance_agumon_presentation(
             // mode reconciliation entirely: a still-active kernel barrier must not
             // re-`start_skill` the dying caster back into its interrupted skill.
             if death_exiting.is_none() {
-                sync_agumon_mode(
+                sync_digimon_mode(
                     &mut sprite,
                     active_barrier.as_ref(),
                     &skill_reg,
@@ -1005,8 +1071,9 @@ fn advance_agumon_presentation(
             // Drive the rendered tile from the player frame via the identity
             // frame -> atlas-index map. Leave the index unchanged on an
             // out-of-range frame (atlas_index == None).
-            let atlas_index = atlas
-                .as_ref()
+            let atlas_index = atlases
+                .atlases
+                .get(&sprite.presentation_id)
                 .and_then(|atlas| atlas.geometry.atlas_index(advance.frame));
             if let (Some(index), Some(texture_atlas)) =
                 (atlas_index, render_sprite.texture_atlas.as_mut())
@@ -1064,7 +1131,8 @@ fn advance_agumon_presentation(
                 .is_some_and(|status| status.released);
             let (mode_skill_id, mode_awaiting_cue_id) = mode_trace_fields(&sprite.mode);
             trace!(
-                target: "windowed.agumon_playback",
+                target: "windowed.digimon_playback",
+                presentation_id = sprite.presentation_id.as_str(),
                 mode = ?sprite.mode,
                 skill_id = mode_skill_id,
                 awaiting_cue_id = mode_awaiting_cue_id,
@@ -1076,7 +1144,7 @@ fn advance_agumon_presentation(
                 awaiting,
                 released,
                 barrier = ?active_barrier.as_ref().map(barrier_trace_tuple),
-                "agumon windowed playback tick"
+                "digimon windowed playback tick"
             );
 
             let pending_release = if let DigimonPlaybackMode::Skill {
@@ -1122,7 +1190,7 @@ fn advance_agumon_presentation(
 
                             let Some(target_xy) = target_xy else {
                                 debug!(
-                                    target: "windowed.agumon_playback",
+                                    target: "windowed.digimon_playback",
                                     source_unit = ?sprite.unit_id,
                                     node = node_id,
                                     particle = %descriptor.particle.0,
@@ -1155,7 +1223,7 @@ fn advance_agumon_presentation(
                                     effects.enoki.as_deref(),
                                 );
                                 trace!(
-                                    target: "windowed.agumon_playback",
+                                    target: "windowed.digimon_playback",
                                     effect_id = effect_id.as_str(),
                                     spawned,
                                     caster_xy = ?caster_xy,
@@ -1171,7 +1239,7 @@ fn advance_agumon_presentation(
             if let Some((cue_id, lf)) = pending_release {
                 let result = barrier.request_release(&cue_id);
                 trace!(
-                    target: "windowed.agumon_playback",
+                    target: "windowed.digimon_playback",
                     cue_id = cue_id.as_str(),
                     node = current_node.as_str(),
                     clip_frame = advance.frame,
@@ -1195,7 +1263,7 @@ fn advance_agumon_presentation(
                             if marker.unit_id == sprite.unit_id {
                                 commands.entity(marker_entity).despawn();
                                 trace!(
-                                    target: "windowed.agumon_playback",
+                                    target: "windowed.digimon_playback",
                                     source_unit = ?sprite.unit_id,
                                     entity = ?marker_entity,
                                     "despawned charge/ember enoki emitter on flame launch"
@@ -1219,7 +1287,7 @@ fn advance_agumon_presentation(
                                 effects.enoki.as_deref(),
                             );
                             trace!(
-                                target: "windowed.agumon_playback",
+                                target: "windowed.digimon_playback",
                                 effect_id = release_effect_id.as_str(),
                                 spawned,
                                 source_unit = ?sprite.unit_id,
@@ -1228,7 +1296,7 @@ fn advance_agumon_presentation(
                             );
                         } else {
                             debug!(
-                                target: "windowed.agumon_playback",
+                                target: "windowed.digimon_playback",
                                 source_unit = ?sprite.unit_id,
                                 "skill-release projectile target could not be resolved on release"
                             );
@@ -1244,7 +1312,7 @@ fn advance_agumon_presentation(
                     // a no-op there and impact->recover proceeds via TimeInNode.
                     sprite.player.fire_kernel_cue();
                     trace!(
-                        target: "windowed.agumon_playback",
+                        target: "windowed.digimon_playback",
                         cue_id = cue_id.as_str(),
                         node = current_node.as_str(),
                         "multi-barrier FSM advance fired (kernel cue armed)"
@@ -1271,7 +1339,7 @@ fn advance_agumon_presentation(
                         });
                     }
                     trace!(
-                        target: "windowed.agumon_playback",
+                        target: "windowed.digimon_playback",
                         unit_id = ?sprite.unit_id,
                         node = sprite.player.current_node.0.as_str(),
                         fade_ticks = DEATH_FADE_TICKS,
@@ -1289,8 +1357,8 @@ fn advance_agumon_presentation(
                     });
                     sprite.return_to_idle(stance_graph, preserve_missing);
                     trace!(
-                        target: "windowed.agumon_playback",
-                        "agumon playback returned to idle"
+                        target: "windowed.digimon_playback",
+                        "digimon playback returned to idle"
                     );
                 }
             }
@@ -1350,7 +1418,7 @@ fn drive_hurt_reactions(
         // Do not interrupt an in-flight skill cast on the struck unit (S01).
         if !matches!(sprite.mode, DigimonPlaybackMode::Idle) {
             trace!(
-                target: "windowed.agumon_playback",
+                target: "windowed.digimon_playback",
                 unit_id = ?sprite.unit_id,
                 reaction = ?StanceReaction::Hurt,
                 node = hurt_node.0.as_str(),
@@ -1361,7 +1429,7 @@ fn drive_hurt_reactions(
         }
         sprite.drive_stance_reaction(hurt_node.clone(), stance_graph.clone());
         trace!(
-            target: "windowed.agumon_playback",
+            target: "windowed.digimon_playback",
             unit_id = ?sprite.unit_id,
             reaction = ?StanceReaction::Hurt,
             node = hurt_node.0.as_str(),
@@ -1383,7 +1451,7 @@ fn is_death_reaction(kind: &bevyrogue::combat::events::CombatEventKind) -> bool 
 /// classifies as [`StanceReaction::Death`], drive the *target* unit's sprite
 /// into its `death` node — the visible half of S02. Unlike [`drive_hurt_reactions`]
 /// this is *un-gated by mode*: death interrupts an in-flight skill cast. The
-/// dying sprite is also tagged [`DeathExiting`] so `advance_agumon_presentation`
+/// dying sprite is also tagged [`DeathExiting`] so `advance_digimon_presentation`
 /// skips mode reconciliation (a still-active barrier cannot re-`start_skill` it)
 /// and leaves it resting on its final death frame instead of idle-restoring.
 ///
@@ -1430,7 +1498,7 @@ fn drive_death_reactions(
         sprite.drive_stance_reaction(death_node.clone(), stance_graph.clone());
         commands.entity(entity).insert(DeathExiting);
         trace!(
-            target: "windowed.agumon_playback",
+            target: "windowed.digimon_playback",
             unit_id = ?sprite.unit_id,
             reaction = ?StanceReaction::Death,
             node = death_node.0.as_str(),
@@ -1454,7 +1522,7 @@ fn fade_alpha(remaining_ticks: u32, total_ticks: u32) -> f32 {
 /// Lerp a [`FadeOut`] sprite's alpha to 0 over its `total_ticks`, then despawn it.
 ///
 /// Runs on the same `PendingAnimationTicks` clock as the presentation chain and is
-/// ordered strictly after `advance_agumon_presentation`, so a sprite seeded with
+/// ordered strictly after `advance_digimon_presentation`, so a sprite seeded with
 /// `FadeOut` in this frame's death-exit branch begins fading on the next tick.
 /// Writes only `Sprite.color` and despawn — strictly downstream of presentation,
 /// never feeding the kernel (R004). An entity despawned by another path mid-fade
@@ -1472,7 +1540,7 @@ fn advance_death_fade(
             sprite.color = Color::linear_rgba(rgba.red, rgba.green, rgba.blue, alpha);
             if fade.remaining_ticks == 0 {
                 trace!(
-                    target: "windowed.agumon_playback",
+                    target: "windowed.digimon_playback",
                     ?entity,
                     total_ticks = fade.total_ticks,
                     "death fade complete; despawning sprite off field"
@@ -1547,7 +1615,7 @@ fn spawn_effect_by_id(
     ));
     // The lifecycle is data carried per registry entry (S04), not a closed
     // effect-id match. PersistentEmitter effects (the Baby Flame charge orb +
-    // ember swirl) keep emitting at the mouth until `advance_agumon_presentation`
+    // ember swirl) keep emitting at the mouth until `advance_digimon_presentation`
     // clears them by marker at the launch boundary; a Projectile travels
     // caster->target under `advance_enoki_projectiles`, which chains `on_arrival`
     // on arrival. OneShot effects (the impact/detonate/slash contact bursts) are
@@ -1641,7 +1709,7 @@ fn spawn_canvas_damage_numbers(
         };
         let Some(xy) = find_sprite_xy(&sprites, event.target) else {
             debug!(
-                target: "windowed.agumon_playback",
+                target: "windowed.digimon_playback",
                 unit_id = ?event.target,
                 amount,
                 "canvas damage number target sprite could not be resolved; skipped"
@@ -1664,7 +1732,7 @@ fn spawn_canvas_damage_numbers(
             },
         ));
         trace!(
-            target: "windowed.agumon_playback",
+            target: "windowed.digimon_playback",
             unit_id = ?event.target,
             amount,
             "spawned canvas damage number"
@@ -1716,7 +1784,7 @@ fn spawn_detonate_particles(
 
     let Some(caster_xy) = find_sprite_xy(&sprites, trigger.source) else {
         debug!(
-            target: "windowed.agumon_playback",
+            target: "windowed.digimon_playback",
             source_unit = ?trigger.source,
             cast_id = ?trigger.cast_id,
             "Baby Burner detonate particle source sprite could not be resolved"
@@ -1727,7 +1795,7 @@ fn spawn_detonate_particles(
     for target in trigger.targets {
         let Some(target_xy) = find_sprite_xy(&sprites, target) else {
             debug!(
-                target: "windowed.agumon_playback",
+                target: "windowed.digimon_playback",
                 source_unit = ?trigger.source,
                 target_unit = ?target,
                 cast_id = ?trigger.cast_id,
@@ -1747,7 +1815,7 @@ fn spawn_detonate_particles(
             agumon_enoki_vfx.as_deref(),
         );
         trace!(
-            target: "windowed.agumon_playback",
+            target: "windowed.digimon_playback",
             cast_id = ?trigger.cast_id,
             effect_id = detonate_effect_id,
             spawned,
@@ -1765,7 +1833,7 @@ fn spawn_detonate_particles(
 /// spawner is despawned and `baby_flame.impact` is spawned at `to_xy`, reproducing
 /// the deleted quad path's `on_expire` projectile->impact chain through the enoki
 /// backend. Runs in the presentation chain slot the quad `advance_vfx_particles`
-/// occupies, strictly before `advance_agumon_presentation`. Presentation-only and
+/// occupies, strictly before `advance_digimon_presentation`. Presentation-only and
 /// fire-and-forget: it never reads or mutates combat/kernel state (R010, D031/D032).
 fn advance_enoki_projectiles(
     mut commands: Commands,
@@ -1805,7 +1873,7 @@ fn advance_enoki_projectiles(
                     agumon_enoki_vfx.as_deref(),
                 );
                 trace!(
-                    target: "windowed.agumon_playback",
+                    target: "windowed.digimon_playback",
                     entity = ?entity,
                     to_xy = ?to_xy,
                     effect_id = on_arrival.as_str(),
@@ -1816,7 +1884,7 @@ fn advance_enoki_projectiles(
     }
 }
 
-fn sync_agumon_mode(
+fn sync_digimon_mode(
     sprite: &mut DigimonSprite,
     active_barrier: Option<&CueBarrierStatus>,
     skill_reg: &SkillGraphRegistry,
@@ -1836,7 +1904,7 @@ fn sync_agumon_mode(
     }
 
     // Only skills with a known FSM entry node are bridged here. Unbridged skills
-    // are handled by the auto-release fallback in `advance_agumon_presentation`.
+    // are handled by the auto-release fallback in `advance_digimon_presentation`.
     // The bridged-skill -> FSM entry node map is engine-generic registry data
     // (S04) the per-Digimon module populates; absence means unbridged.
     let Some(start_node) = start_node_reg.map.get(status.skill_id.0.as_str()).map(String::as_str)
@@ -1861,12 +1929,12 @@ fn sync_agumon_mode(
             }
             sprite.last_release_frame = None;
             trace!(
-                target: "windowed.agumon_playback",
+                target: "windowed.digimon_playback",
                 skill_id = %status.skill_id.0,
                 awaiting_cue_id = status.cue_id,
                 hop_index = ?status.hop_index,
                 node = %sprite.player.current_node.0,
-                "agumon multi-barrier cue advanced (player not reset)"
+                "digimon multi-barrier cue advanced (player not reset)"
             );
             sprite.last_missing_skill_graph_cue = None;
             return;
@@ -1888,7 +1956,7 @@ fn sync_agumon_mode(
 
     if resolved_graph.source == ResolvedAnimGraphSource::InstantFallback {
         warn!(
-            target: "windowed.agumon_playback",
+            target: "windowed.digimon_playback",
             cue_id = status.cue_id,
             skill_id = %status.skill_id.0,
             graph_id = %skill_graph_id,
@@ -1905,7 +1973,7 @@ fn sync_agumon_mode(
         resolved_graph,
     );
     trace!(
-        target: "windowed.agumon_playback",
+        target: "windowed.digimon_playback",
         cue_id = status.cue_id,
         skill_id = %status.skill_id.0,
         start_node = %sprite.player.current_node.0,
@@ -1919,7 +1987,7 @@ fn sync_agumon_mode(
             stance_reg.resolve_snapshot(&AnimGraphId(stance_graph_id.clone().into()), graphs)
         {
             trace!(
-                target: "windowed.agumon_playback",
+                target: "windowed.digimon_playback",
                 graph_id = %stance_graph_id,
                 stance_entry = %stance_graph.graph().entry.0,
                 "stance snapshot remains available for post-fallback idle restore"
