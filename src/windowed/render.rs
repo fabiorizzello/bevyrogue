@@ -12,8 +12,8 @@ use bevyrogue::animation::{
     AnimGraph, AnimGraphId, AnimGraphPlayer, AnimationClipHandles, AnimationClipLoadState,
     AnimationGraphLookupDiagnostics, AtlasGeometry, Clip, EffectId, FrameCueCommand,
     NodeId, PlacementAnchor, PlacementCtx, PlacementParams, ResolvedAnimGraph, ResolvedAnimGraphSource,
-    SkillGraphRegistry, StanceGraphRegistry, VfxAsset, VfxMotion, VfxSpawnDescriptor, eval_color,
-    eval_rotation, eval_scale, resolve_effect,
+    SkillGraphRegistry, StanceGraphRegistry, StanceReaction, VfxAsset, VfxMotion, VfxSpawnDescriptor,
+    eval_color, eval_rotation, eval_scale, resolve_effect, stance_reaction_for,
 };
 use bevyrogue::combat::runtime::{
     CueBarrierStatus, CueReleaseResult, ExtRegistries, SuspendedTimelineState,
@@ -132,6 +132,19 @@ impl AgumonSprite {
         self.mode = AgumonPlaybackMode::Idle;
         self.last_release_frame = None;
         self.last_missing_skill_graph_cue = preserve_missing_skill_graph_cue;
+    }
+
+    /// Seed the player at a stance-reaction node (S01: `hurt`) within the stance
+    /// graph. Mirrors the `start_skill` / `return_to_idle` seeding pattern, but
+    /// keeps `mode` at `Idle`: a stance reaction is a transient detour inside the
+    /// stance graph, not a skill cast. The authored `hurt -> idle` TimeInNode
+    /// transition returns the player to idle once the hurt frames complete, so a
+    /// dropped/duplicated event degrades to "stays idle" rather than a stuck frame.
+    fn drive_stance_reaction(&mut self, node: NodeId, stance_graph: ResolvedAnimGraph) {
+        self.player = AnimGraphPlayer::new(node);
+        self.graph = stance_graph;
+        self.last_release_frame = None;
+        self.last_missing_skill_graph_cue = None;
     }
 }
 
@@ -292,6 +305,14 @@ impl Plugin for RenderPlugin {
                 spawn_detonate_particles
                     .after(resolve_action_system)
                     .after(spawn_unit_sprites)
+                    .before(continue_suspended_timeline_system),
+            )
+            .add_systems(
+                Update,
+                drive_hurt_reactions
+                    .after(spawn_unit_sprites)
+                    .after(resolve_action_system)
+                    .before(advance_agumon_presentation)
                     .before(continue_suspended_timeline_system),
             )
             .add_systems(
@@ -862,6 +883,76 @@ fn advance_agumon_presentation(
                 }
             }
         }
+    }
+}
+
+/// Bridge the combat event bus to the struck sprite's `hurt` stance reaction.
+///
+/// For each `CombatEvent` that the pure lib mapping ([`stance_reaction_for`])
+/// classifies as [`StanceReaction::Hurt`], drive the *target* unit's sprite into
+/// its `hurt` stance node. This is the visible half of S01: in `cargo winx`,
+/// hitting either combatant makes that sprite flinch (frames 46–52) then return
+/// to idle via the authored `hurt -> idle` transition.
+///
+/// S01 scope guards:
+/// - Only `Hurt` is handled here. `Death` (also classified by the lib mapping)
+///   is deliberately left for S02 — it is never driven from this system.
+/// - Only an idle sprite reacts. An in-flight skill cast on the struck unit is
+///   never interrupted (S01 assumption: mid-cast hurt is out of scope).
+///
+/// Reads events and writes presentation components only; it never mutates
+/// combat or kernel state (R010). A dropped or duplicated event degrades to
+/// "stays idle" via the existing `hurt -> idle` transition rather than a stuck
+/// frame.
+fn drive_hurt_reactions(
+    mut events: MessageReader<bevyrogue::combat::events::CombatEvent>,
+    stance_reg: Res<StanceGraphRegistry>,
+    graphs: Res<Assets<AnimGraph>>,
+    mut sprites: Query<&mut AgumonSprite>,
+) {
+    // Dedup by target: a unit struck twice within the same window still plays
+    // `hurt` once. `Death` and every non-reaction event resolve to `None` here
+    // and are filtered out — only `Hurt` survives.
+    let struck: HashSet<UnitId> = events
+        .read()
+        .filter(|event| stance_reaction_for(&event.kind) == Some(StanceReaction::Hurt))
+        .map(|event| event.target)
+        .collect();
+    if struck.is_empty() {
+        return;
+    }
+
+    let Some(stance_graph) =
+        stance_reg.resolve_snapshot(&AnimGraphId(AGUMON_STANCE_GRAPH_ID.into()), &graphs)
+    else {
+        return;
+    };
+    let hurt_node = StanceReaction::Hurt.stance_node();
+
+    for mut sprite in &mut sprites {
+        if !struck.contains(&sprite.unit_id) {
+            continue;
+        }
+        // Do not interrupt an in-flight skill cast on the struck unit (S01).
+        if !matches!(sprite.mode, AgumonPlaybackMode::Idle) {
+            trace!(
+                target: "windowed.agumon_playback",
+                unit_id = ?sprite.unit_id,
+                reaction = ?StanceReaction::Hurt,
+                node = hurt_node.0.as_str(),
+                mode = ?sprite.mode,
+                "hurt reaction skipped; struck sprite mid-cast (in-flight skill left uninterrupted)"
+            );
+            continue;
+        }
+        sprite.drive_stance_reaction(hurt_node.clone(), stance_graph.clone());
+        trace!(
+            target: "windowed.agumon_playback",
+            unit_id = ?sprite.unit_id,
+            reaction = ?StanceReaction::Hurt,
+            node = hurt_node.0.as_str(),
+            "drove struck sprite into hurt stance node"
+        );
     }
 }
 
