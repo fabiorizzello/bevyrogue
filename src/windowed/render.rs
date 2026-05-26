@@ -24,9 +24,10 @@ use bevyrogue::combat::turn_system::{continue_suspended_timeline_system, resolve
 use bevyrogue::combat::types::UnitId;
 use bevyrogue::combat::unit::Unit;
 use bevyrogue::ui::combat_panel::latest_baby_burner_flash_trigger;
+use bevyrogue::ui::cues::{CueDef, CueRegistry, flash_tint_parametric, shake_offset_parametric};
 use bevyrogue::ui::hit_feedback::{
-    FLASH_TICKS, HitFlashState, HitShakeState, SHAKE_TICKS, damage_number_kinematics, flash_tint,
-    hit_damage_amount, observe_hit_feedback, shake_offset,
+    FLASH_TICKS, HitFlashState, HitShakeState, SHAKE_TICKS, damage_number_kinematics,
+    hit_damage_amount, observe_hit_feedback,
 };
 
 use super::{
@@ -786,6 +787,7 @@ fn advance_agumon_presentation(
     charge_ember_markers: Query<(Entity, &ChargeEmberEnokiMarker)>,
     mut hit_flash: ResMut<HitFlashState>,
     mut hit_shake: ResMut<HitShakeState>,
+    cue_registry: Res<CueRegistry>,
     mut sprites: ParamSet<(
         Query<(
             Entity,
@@ -901,20 +903,35 @@ fn advance_agumon_presentation(
                 texture_atlas.index = index as usize;
             }
 
-            // Transient hit feedback (S03/T02): flash tint + positional shake.
-            // Flash is the SOLE colour writer for DigimonSprite (flash_tint is
+            // Transient hit feedback (S03/T02): flash tint + positional shake,
+            // now sourced from the CueRegistry parametric math instead of the
+            // hit_feedback consts (D048 model a — behaviour-preserving). Flash is
+            // the SOLE colour writer for DigimonSprite (the parametric tint is
             // WHITE at remaining 0, so steady state stays white) — but skip the
             // write while the death fade owns the colour, so it never fights
             // advance_death_fade's alpha lerp (D031/D032 barrier untouched).
             if death_exiting.is_none() && fade_out.is_none() {
-                render_sprite.color = flash_tint(hit_flash.remaining(sprite.unit_id), FLASH_TICKS);
+                if let Some(CueDef::Flash { peak, ticks }) = cue_registry.get("hit_flash") {
+                    let (r, g, b) =
+                        flash_tint_parametric(hit_flash.remaining(sprite.unit_id), *ticks, *peak);
+                    render_sprite.color = Color::srgb(r, g, b);
+                }
             }
             // Shake is an absolute offset from the captured rest position, never
             // accumulated: at remaining 0 the translation is hard-set back to rest.
             let z = transform.translation.z;
             let shake_remaining = hit_shake.remaining(sprite.unit_id);
             transform.translation = if shake_remaining > 0 {
-                (rest.xy + shake_offset(shake_remaining, SHAKE_TICKS)).extend(z)
+                let offset = match cue_registry.get("hit_shake") {
+                    Some(CueDef::SpriteShake {
+                        amp,
+                        freq_x,
+                        freq_y,
+                        ticks,
+                    }) => shake_offset_parametric(shake_remaining, *ticks, *amp, *freq_x, *freq_y),
+                    _ => Vec2::ZERO,
+                };
+                (rest.xy + offset).extend(z)
             } else {
                 rest.xy.extend(z)
             };
