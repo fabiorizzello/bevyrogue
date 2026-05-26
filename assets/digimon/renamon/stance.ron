@@ -1,0 +1,26 @@
+(
+    id: "renamon_stance",
+    clip: "all",
+    entry: "idle",
+    nodes: {
+        "idle": (
+            frames: (35, 42),
+            modifier: Some(Loop(count: 0)),
+        ),
+        "hurt": (
+            frames: (28, 34),
+        ),
+        "death": (
+            frames: (15, 18),
+        ),
+        "victory": (
+            frames: (55, 67),
+        ),
+    },
+    transitions: [
+        (from: "idle", to: Node("idle"), when: TimeInNode),
+        (from: "hurt", to: Node("idle"), when: TimeInNode),
+        (from: "death", to: Exit, when: TimeInNode),
+        (from: "victory", to: Exit, when: TimeInNode),
+    ],
+)

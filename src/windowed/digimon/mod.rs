@@ -9,9 +9,11 @@
 use bevy::prelude::*;
 
 pub(in crate::windowed) mod agumon;
+pub(in crate::windowed) mod renamon;
 
 /// Register every Digimon's presentation into the engine registries. Called
 /// once from `UiPlugin::build` after the engine inits the shared resources.
 pub(super) fn register_all(app: &mut App) {
     agumon::register(app);
+    renamon::register(app);
 }

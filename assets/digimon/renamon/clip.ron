@@ -6,6 +6,7 @@
         total_frames: 68,
     ),
     ranges: {
+        "all": (start: 0, end: 67),
         "attack": (start: 0, end: 8),
         "block": (start: 9, end: 14),
         "death": (start: 15, end: 18),

@@ -15,6 +15,9 @@
         ),
         "diamond_storm_impact": (
             frames: (50, 53),
+            cues: [
+                (at: 1, command: ReleaseKernel(())),
+            ],
         ),
         "diamond_storm_recover": (
             frames: (54, 54),
