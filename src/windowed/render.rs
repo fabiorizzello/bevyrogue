@@ -556,6 +556,12 @@ const AGUMON_ENOKI_IMPACT_PATH: &str = "digimon/agumon/baby_flame_impact.particl
 const AGUMON_ENOKI_SHARP_CLAWS_PATH: &str = "digimon/agumon/sharp_claws_slash.particle.ron";
 /// Path of Agumon's enoki Baby Burner detonate burst (M005/S05).
 const AGUMON_ENOKI_DETONATE_PATH: &str = "digimon/agumon/baby_burner_detonate.particle.ron";
+/// Path of Agumon's enoki Baby Flame charge orb (continuous emitter; M006/S01).
+const AGUMON_ENOKI_CHARGE_PATH: &str = "digimon/agumon/baby_flame_charge.particle.ron";
+/// Path of Agumon's enoki Baby Flame ember swirl (continuous emitter; M006/S01).
+const AGUMON_ENOKI_EMBER_PATH: &str = "digimon/agumon/baby_flame_ember.particle.ron";
+/// Path of Agumon's enoki Baby Flame traveling projectile (M006/S01).
+const AGUMON_ENOKI_PROJECTILE_PATH: &str = "digimon/agumon/baby_flame_projectile.particle.ron";
 
 /// Per-effect-id map of Agumon's enoki `Particle2dEffect` handles (M005/S05,
 /// generalized from the single S04 handle). The spawn seam looks up an effect id
@@ -565,30 +571,79 @@ const AGUMON_ENOKI_DETONATE_PATH: &str = "digimon/agumon/baby_burner_detonate.pa
 /// (D031/D032 untouched).
 #[derive(Resource, Debug, Clone)]
 struct AgumonEnokiVfx {
-    handles: HashMap<String, Handle<Particle2dEffect>>,
+    handles: HashMap<String, EnokiEffect>,
+}
+
+/// One entry in [`AgumonEnokiVfx`]: the loaded enoki effect handle plus the
+/// placement `anchor` migrated out of the windowed `VfxAsset` (M006/S01 T02).
+/// Carrying the anchor here lets the enoki spawn path resolve its world base
+/// point via [`anchor_base_xy`] without consulting `resolve_effect`, so the
+/// enoki renderer no longer depends on vfx.ron and T04 can delete that loader.
+#[derive(Debug, Clone)]
+struct EnokiEffect {
+    handle: Handle<Particle2dEffect>,
+    anchor: PlacementAnchor,
 }
 
 fn load_agumon_enoki_vfx(mut commands: Commands, asset_server: Res<AssetServer>) {
     let mut handles = HashMap::new();
+    // Baby Flame sequence (charge orb + ember swirl at the mouth, projectile from
+    // the caster center). Anchors mirror vfx.ron so the enoki path reproduces the
+    // quad placement exactly. M006/S01: registered so enoki is the sole renderer.
+    handles.insert(
+        AGUMON_CHARGE_EFFECT_ID.to_string(),
+        EnokiEffect {
+            handle: asset_server.load(AGUMON_ENOKI_CHARGE_PATH),
+            anchor: PlacementAnchor::Mouth,
+        },
+    );
+    handles.insert(
+        AGUMON_EMBER_EFFECT_ID.to_string(),
+        EnokiEffect {
+            handle: asset_server.load(AGUMON_ENOKI_EMBER_PATH),
+            anchor: PlacementAnchor::Mouth,
+        },
+    );
+    handles.insert(
+        AGUMON_PROJECTILE_EFFECT_ID.to_string(),
+        EnokiEffect {
+            handle: asset_server.load(AGUMON_ENOKI_PROJECTILE_PATH),
+            anchor: PlacementAnchor::CasterCenter,
+        },
+    );
+    // Contact bursts (already enoki-routed since M005): impact + detonate fan out
+    // at the target, the slash streak lands on the target.
     handles.insert(
         AGUMON_SHARP_CLAWS_EFFECT_ID.to_string(),
-        asset_server.load(AGUMON_ENOKI_SHARP_CLAWS_PATH),
+        EnokiEffect {
+            handle: asset_server.load(AGUMON_ENOKI_SHARP_CLAWS_PATH),
+            anchor: PlacementAnchor::TargetCenter,
+        },
     );
     handles.insert(
         AGUMON_IMPACT_EFFECT_ID.to_string(),
-        asset_server.load(AGUMON_ENOKI_IMPACT_PATH),
+        EnokiEffect {
+            handle: asset_server.load(AGUMON_ENOKI_IMPACT_PATH),
+            anchor: PlacementAnchor::TargetCenter,
+        },
     );
     handles.insert(
         AGUMON_DETONATE_EFFECT_ID.to_string(),
-        asset_server.load(AGUMON_ENOKI_DETONATE_PATH),
+        EnokiEffect {
+            handle: asset_server.load(AGUMON_ENOKI_DETONATE_PATH),
+            anchor: PlacementAnchor::TargetCenter,
+        },
     );
     commands.insert_resource(AgumonEnokiVfx { handles });
     info!(
         target: "windowed.agumon_playback",
+        charge_path = AGUMON_ENOKI_CHARGE_PATH,
+        ember_path = AGUMON_ENOKI_EMBER_PATH,
+        projectile_path = AGUMON_ENOKI_PROJECTILE_PATH,
         sharp_claws_path = AGUMON_ENOKI_SHARP_CLAWS_PATH,
         impact_path = AGUMON_ENOKI_IMPACT_PATH,
         detonate_path = AGUMON_ENOKI_DETONATE_PATH,
-        "agumon enoki contact-burst effects load requested"
+        "agumon enoki effects load requested"
     );
 }
 
@@ -605,12 +660,12 @@ fn diagnose_agumon_enoki_vfx_load(
     let Some(agumon_enoki_vfx) = agumon_enoki_vfx else {
         return;
     };
-    for (effect_id, handle) in &agumon_enoki_vfx.handles {
+    for (effect_id, entry) in &agumon_enoki_vfx.handles {
         if warned.contains(effect_id) {
             continue;
         }
         if matches!(
-            asset_server.load_state(handle.id()),
+            asset_server.load_state(entry.handle.id()),
             bevy::asset::LoadState::Failed(_)
         ) {
             warn!(
@@ -630,6 +685,9 @@ fn diagnose_agumon_enoki_vfx_load(
 /// `"<unknown>"` rather than panicking.
 fn enoki_effect_path(effect_id: &str) -> &'static str {
     match effect_id {
+        AGUMON_CHARGE_EFFECT_ID => AGUMON_ENOKI_CHARGE_PATH,
+        AGUMON_EMBER_EFFECT_ID => AGUMON_ENOKI_EMBER_PATH,
+        AGUMON_PROJECTILE_EFFECT_ID => AGUMON_ENOKI_PROJECTILE_PATH,
         AGUMON_SHARP_CLAWS_EFFECT_ID => AGUMON_ENOKI_SHARP_CLAWS_PATH,
         AGUMON_IMPACT_EFFECT_ID => AGUMON_ENOKI_IMPACT_PATH,
         AGUMON_DETONATE_EFFECT_ID => AGUMON_ENOKI_DETONATE_PATH,
@@ -1459,6 +1517,35 @@ fn spawn_effect_by_id(
     source_scale: f32,
     enoki: Option<&AgumonEnokiVfx>,
 ) -> u32 {
+    // M005/S05 + M006/S01: route any effect id present in the enoki handle map
+    // through bevy_enoki's GPU 2D backend as a self-despawning one-shot. The
+    // placement `base` is computed from the anchor carried in the map entry
+    // (migrated out of the `VfxAsset` in T02), so this branch runs BEFORE
+    // `resolve_effect` and no longer depends on vfx.ron — that lets T04 delete the
+    // windowed VfxAsset loader cleanly. An id absent from the map (or no loaded
+    // resource) falls through to the quad loop below, which stays resolve_effect-
+    // driven. This intercept changes only what gets spawned for a matched id — no
+    // kernel/FSM cue or barrier control flow is touched (D031/D032). The enoki
+    // effect is fire-and-forget; `OneShot::Despawn` removes the spawner once it
+    // drains, so no particle lifetime enters the kernel timeline.
+    if let Some(enoki) = enoki {
+        if let Some(entry) = enoki.handles.get(effect_id) {
+            let base = anchor_base_xy(
+                entry.anchor,
+                caster_xy,
+                target_xy,
+                source_flip_x,
+                source_scale,
+            );
+            commands.spawn((
+                ParticleSpawner::default(),
+                ParticleEffectHandle(entry.handle.clone()),
+                OneShot::Despawn,
+                Transform::from_xyz(base[0], base[1], VFX_PARTICLE_Z),
+            ));
+            return 1;
+        }
+    }
     let Some(effect) = resolve_effect(asset, effect_id) else {
         return 0;
     };
@@ -1470,25 +1557,6 @@ fn spawn_effect_by_id(
         source_flip_x,
         source_scale,
     );
-    // M005/S05: route any effect id present in the enoki handle map through
-    // bevy_enoki's GPU 2D backend as a self-despawning one-shot, reusing the quad
-    // path's placement math (`base`). An id absent from the map (or no loaded
-    // resource) falls through to the quad loop below. This intercept changes only
-    // what gets spawned for a matched id — no kernel/FSM cue or barrier control
-    // flow is touched (D031/D032). The enoki effect is a fire-and-forget burst;
-    // `OneShot::Despawn` removes the spawner once it drains, so no particle
-    // lifetime enters the kernel timeline.
-    if let Some(enoki) = enoki {
-        if let Some(handle) = enoki.handles.get(effect_id) {
-            commands.spawn((
-                ParticleSpawner::default(),
-                ParticleEffectHandle(handle.clone()),
-                OneShot::Despawn,
-                Transform::from_xyz(base[0], base[1], VFX_PARTICLE_Z),
-            ));
-            return 1;
-        }
-    }
     let rgba = eval_color(&effect.appearance.color, 0.0);
     let color = Color::linear_rgba(rgba[0], rgba[1], rgba[2], rgba[3]);
     let size = Vec2::splat(effect.appearance.size_px);
