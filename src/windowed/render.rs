@@ -7,7 +7,8 @@ use bevy::{
     render::view::Hdr,
 };
 use bevy_common_assets::ron::RonAssetPlugin;
-use bevy_enoki::{EnokiPlugin, Particle2dEffect};
+use bevy_enoki::prelude::OneShot;
+use bevy_enoki::{EnokiPlugin, Particle2dEffect, ParticleEffectHandle, ParticleSpawner};
 
 use bevyrogue::animation::{
     AnimGraph, AnimGraphId, AnimGraphPlayer, AnimationClipHandles, AnimationClipLoadState,
@@ -754,6 +755,7 @@ fn advance_agumon_presentation(
     atlas: Option<Res<AgumonAtlas>>,
     vfx_visuals: Option<Res<VfxVisuals>>,
     agumon_vfx: Option<Res<AgumonVfx>>,
+    agumon_enoki_vfx: Option<Res<AgumonEnokiVfx>>,
     vfx_assets: Option<Res<Assets<VfxAsset>>>,
     vfx_particles: Query<(Entity, &VfxParticle, &VfxParticleSource)>,
     mut hit_flash: ResMut<HitFlashState>,
@@ -1010,6 +1012,7 @@ fn advance_agumon_presentation(
                                     sprite.unit_id,
                                     render_sprite.flip_x,
                                     transform.scale.x,
+                                    agumon_enoki_vfx.as_deref(),
                                 );
                                 trace!(
                                     target: "windowed.agumon_playback",
@@ -1071,6 +1074,7 @@ fn advance_agumon_presentation(
                                     sprite.unit_id,
                                     render_sprite.flip_x,
                                     transform.scale.x,
+                                    agumon_enoki_vfx.as_deref(),
                                 );
                                 trace!(
                                     target: "windowed.agumon_playback",
@@ -1420,6 +1424,7 @@ fn spawn_effect_by_id(
     source_unit: UnitId,
     source_flip_x: bool,
     source_scale: f32,
+    enoki: Option<&AgumonEnokiVfx>,
 ) -> u32 {
     let Some(effect) = resolve_effect(asset, effect_id) else {
         return 0;
@@ -1432,6 +1437,24 @@ fn spawn_effect_by_id(
         source_flip_x,
         source_scale,
     );
+    // M005/S04: route the single `baby_flame.impact` id through bevy_enoki's GPU
+    // 2D backend as a self-despawning one-shot, reusing the quad path's placement
+    // math (`base`). Every other effect id stays on the quad loop below. This
+    // intercept changes only what gets spawned for one id — no kernel/FSM cue or
+    // barrier control flow is touched (D031/D032). The enoki effect is a fire-and-
+    // forget burst; `OneShot::Despawn` removes the spawner once it drains, so no
+    // particle lifetime enters the kernel timeline.
+    if effect_id == AGUMON_IMPACT_EFFECT_ID {
+        if let Some(enoki) = enoki {
+            commands.spawn((
+                ParticleSpawner::default(),
+                ParticleEffectHandle(enoki.handle.clone()),
+                OneShot::Despawn,
+                Transform::from_xyz(base[0], base[1], VFX_PARTICLE_Z),
+            ));
+            return 1;
+        }
+    }
     let rgba = eval_color(&effect.appearance.color, 0.0);
     let color = Color::linear_rgba(rgba[0], rgba[1], rgba[2], rgba[3]);
     let size = Vec2::splat(effect.appearance.size_px);
@@ -1605,6 +1628,7 @@ fn spawn_detonate_particles(
     mut events: MessageReader<bevyrogue::combat::events::CombatEvent>,
     vfx_visuals: Option<Res<VfxVisuals>>,
     agumon_vfx: Option<Res<AgumonVfx>>,
+    agumon_enoki_vfx: Option<Res<AgumonEnokiVfx>>,
     vfx_assets: Option<Res<Assets<VfxAsset>>>,
     sprites: Query<(&AgumonSprite, &Transform)>,
 ) {
@@ -1657,6 +1681,7 @@ fn spawn_detonate_particles(
             trigger.source,
             false,
             1.0,
+            agumon_enoki_vfx.as_deref(),
         );
         trace!(
             target: "windowed.agumon_playback",
@@ -1676,6 +1701,7 @@ fn advance_vfx_particles(
     pending_ticks: Res<PendingAnimationTicks>,
     vfx_visuals: Option<Res<VfxVisuals>>,
     agumon_vfx: Option<Res<AgumonVfx>>,
+    agumon_enoki_vfx: Option<Res<AgumonEnokiVfx>>,
     vfx_assets: Option<Res<Assets<VfxAsset>>>,
     regs: Option<Res<ExtRegistries>>,
     mut warned_effects: Local<HashSet<String>>,
@@ -1826,6 +1852,7 @@ fn advance_vfx_particles(
                         source.unit_id,
                         flip_x,
                         scale,
+                        agumon_enoki_vfx.as_deref(),
                     );
                 }
                 trace!(
