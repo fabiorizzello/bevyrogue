@@ -24,8 +24,8 @@ use bevyrogue::combat::types::UnitId;
 use bevyrogue::combat::unit::Unit;
 use bevyrogue::ui::combat_panel::latest_baby_burner_flash_trigger;
 use bevyrogue::ui::hit_feedback::{
-    FLASH_TICKS, HitFlashState, HitShakeState, SHAKE_TICKS, flash_tint, observe_hit_feedback,
-    shake_offset,
+    FLASH_TICKS, HitFlashState, HitShakeState, SHAKE_TICKS, damage_number_kinematics, flash_tint,
+    hit_damage_amount, observe_hit_feedback, shake_offset,
 };
 
 use super::{
@@ -109,6 +109,20 @@ const DEATH_FADE_TICKS: u32 = 8;
 #[derive(Component, Debug, Clone, Copy, PartialEq)]
 struct SpriteRest {
     xy: Vec2,
+}
+
+/// Binary-local floating damage number (S03/T03). A short-lived world-space
+/// `Text2d` spawned over a struck target on each `OnHitTaken`, driven by the pure
+/// [`damage_number_kinematics`] projection: it rises and fades over `total_ticks`
+/// then despawns. `base_y` is the spawn Y captured once so each tick can hard-set
+/// `translation.y = base_y + rise_px` absolutely (no drift accumulation, mirroring
+/// the hit-shake offset discipline). One number is spawned per hit — multi-hit
+/// shows multiple, never deduped. Pure overlay; never touches `CombatState` (R010).
+#[derive(Component, Debug, Clone, Copy, PartialEq)]
+struct CanvasDamageNumber {
+    age_ticks: u32,
+    total_ticks: u32,
+    base_y: f32,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -231,6 +245,16 @@ const MAX_CATCHUP_TICKS: u32 = 4;
 /// value pending multi-slot positioning.
 const SPRITE_DISPLAY_SCALE: f32 = 0.4;
 const VFX_PARTICLE_Z: f32 = 1.0;
+/// Z of a floating damage number. Above `VFX_PARTICLE_Z` so the number reads on
+/// top of any impact particles spawned at the same target.
+const DAMAGE_NUMBER_Z: f32 = 2.0;
+/// Pixels above the target's body center a damage number spawns, so it floats
+/// over (not through) the struck sprite.
+const DAMAGE_NUMBER_SPAWN_OFFSET_Y_PX: f32 = 40.0;
+/// Lifetime of a floating damage number in animation ticks (~1s at 12fps).
+const DAMAGE_NUMBER_TICKS: u32 = 12;
+/// On-canvas font size of a damage number.
+const DAMAGE_NUMBER_FONT_SIZE: f32 = 32.0;
 const VFX_MOUTH_OFFSET_X_PX: f32 = 92.0;
 const VFX_MOUTH_OFFSET_Y_PX: f32 = 24.0;
 // All per-effect appearance values (count, ttl, size, spread, scale/color curves,
@@ -369,6 +393,23 @@ impl Plugin for RenderPlugin {
                     .after(resolve_action_system)
                     .before(advance_agumon_presentation)
                     .before(continue_suspended_timeline_system),
+            )
+            .add_systems(
+                Update,
+                // Spawn a world-space Text2d damage number over each struck
+                // target. Ordered like drive_hurt_reactions so it reads the same
+                // CombatEvent window before the presentation chain advances.
+                spawn_canvas_damage_numbers
+                    .after(spawn_unit_sprites)
+                    .after(resolve_action_system)
+                    .before(advance_agumon_presentation)
+                    .before(continue_suspended_timeline_system),
+            )
+            .add_systems(
+                Update,
+                // Float/fade/despawn the damage numbers on the same animation
+                // clock as advance_vfx_particles (disjoint component set).
+                advance_canvas_damage_numbers.after(sample_animation_ticks),
             )
             .add_systems(
                 Update,
@@ -1404,6 +1445,87 @@ fn find_sprite_xy(
     sprites.iter().find_map(|(sprite, transform)| {
         (sprite.unit_id == unit_id).then_some([transform.translation.x, transform.translation.y])
     })
+}
+
+/// Bridge the combat event bus to a world-space `Text2d` damage number on the
+/// pixel canvas over each struck target (S03/T03, the slice headline).
+///
+/// For every `CombatEvent` whose pure lib mapping ([`hit_damage_amount`]) yields
+/// `Some(amount)` (i.e. `OnHitTaken`), resolve the target's live sprite XY via
+/// [`find_sprite_xy`] and, if resolved, spawn one `Text2d` showing the integer
+/// amount at `(x, y + offset)` with [`DAMAGE_NUMBER_Z`] above the VFX layer.
+///
+/// One number is spawned PER hit (never deduped): a multi-hit window shows
+/// multiple numbers. A hit for a target with no live sprite resolves to `None`
+/// and is skipped — no orphan number (Q5). Owns its own message cursor (MEM065);
+/// reads events and spawns presentation entities only, never mutating combat or
+/// kernel state (R010). The white number is sourced from `OnHitTaken.amount`;
+/// kind-coloring is explicitly out of scope (S03-RESEARCH).
+fn spawn_canvas_damage_numbers(
+    mut commands: Commands,
+    mut events: MessageReader<bevyrogue::combat::events::CombatEvent>,
+    sprites: Query<(&AgumonSprite, &Transform)>,
+) {
+    for event in events.read() {
+        let Some(amount) = hit_damage_amount(&event.kind) else {
+            continue;
+        };
+        let Some(xy) = find_sprite_xy(&sprites, event.target) else {
+            debug!(
+                target: "windowed.agumon_playback",
+                unit_id = ?event.target,
+                amount,
+                "canvas damage number target sprite could not be resolved; skipped"
+            );
+            continue;
+        };
+        let base_y = xy[1] + DAMAGE_NUMBER_SPAWN_OFFSET_Y_PX;
+        commands.spawn((
+            Text2d::new(amount.to_string()),
+            TextFont {
+                font_size: DAMAGE_NUMBER_FONT_SIZE,
+                ..default()
+            },
+            TextColor(Color::WHITE),
+            Transform::from_xyz(xy[0], base_y, DAMAGE_NUMBER_Z),
+            CanvasDamageNumber {
+                age_ticks: 0,
+                total_ticks: DAMAGE_NUMBER_TICKS,
+                base_y,
+            },
+        ));
+        trace!(
+            target: "windowed.agumon_playback",
+            unit_id = ?event.target,
+            amount,
+            "spawned canvas damage number"
+        );
+    }
+}
+
+/// Advance every floating damage number on the shared `PendingAnimationTicks`
+/// clock: per tick, age the number, apply [`damage_number_kinematics`] to rise
+/// its Y absolutely from the captured `base_y` and fade its text alpha, then
+/// despawn it once its lifetime is spent so numbers cannot accumulate unbounded
+/// (Q6). Writes only `Transform`/`TextColor` and despawn — strictly downstream
+/// presentation, never feeding the kernel (R004). An entity despawned by another
+/// path mid-life simply stops being yielded by the query (no panic, Q5).
+fn advance_canvas_damage_numbers(
+    mut commands: Commands,
+    pending_ticks: Res<PendingAnimationTicks>,
+    mut numbers: Query<(Entity, &mut CanvasDamageNumber, &mut Transform, &mut TextColor)>,
+) {
+    for _ in 0..pending_ticks.0 {
+        for (entity, mut number, mut transform, mut color) in &mut numbers {
+            number.age_ticks += 1;
+            let (rise_px, alpha) = damage_number_kinematics(number.age_ticks, number.total_ticks);
+            transform.translation.y = number.base_y + rise_px;
+            color.0 = color.0.with_alpha(alpha);
+            if number.age_ticks >= number.total_ticks {
+                commands.entity(entity).despawn();
+            }
+        }
+    }
 }
 
 fn spawn_detonate_particles(
