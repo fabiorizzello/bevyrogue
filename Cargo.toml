@@ -15,6 +15,10 @@ bevy = { version = "=0.18.1", default-features = false, features = [
     "file_watcher",
 ] }
 bevy_egui = { version = "=0.39.1", optional = true }
+# Windowed-only GPU 2D particle backend (S04 spike). Hard-depends on the full
+# bevy render stack, so it MUST stay behind `windowed` (R005). The
+# `tests/dependency_gating.rs` binary proves it never leaks into the headless graph.
+bevy_enoki = { version = "0.6", optional = true }
 bevy_common_assets = { version = "0.16", features = ["ron"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -40,7 +44,7 @@ default = ["dev"]
 # requires the bevy .so from target/.
 # `tonemapping_luts` ships the KTX2 LUT the camera's `Tonemapping::TonyMcMapface`
 # samples; without it the whole scene renders magenta (missing-LUT fallback).
-windowed = ["dep:bevy_egui", "bevy/2d", "bevy/tonemapping_luts", "bevy/dynamic_linking"]
+windowed = ["dep:bevy_egui", "dep:bevy_enoki", "bevy/2d", "bevy/tonemapping_luts", "bevy/dynamic_linking"]
 dev = ["bevy/dynamic_linking"]
 
 [dev-dependencies]
