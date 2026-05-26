@@ -125,6 +125,39 @@ struct SpriteRest {
     xy: Vec2,
 }
 
+/// Binary-local rest translation of the `Camera2d`, captured at spawn. Camera
+/// shake (S03/T03) is applied *relative to this* — the apply system hard-sets
+/// `translation = rest.translation + offset` every tick and snaps back to
+/// `rest.translation` at remaining 0, so the camera never accumulates drift
+/// (MEM094 — absolute offset from rest, never additive). Same discipline as
+/// [`SpriteRest`].
+#[derive(Component, Debug, Clone, Copy, PartialEq)]
+struct CameraRest {
+    translation: Vec3,
+}
+
+/// Binary-local camera-shake countdown, armed by `OnHitTaken` to the
+/// `camera_impact` cue's tick window. Single `remaining` (mirrors the shape of
+/// [`HitShakeState`] but global — there is one camera). Pure presentation
+/// overlay; never touches `CombatState` (R010).
+#[derive(Resource, Default, Debug, Clone, Copy, PartialEq, Eq)]
+struct CameraShakeState {
+    remaining: u32,
+}
+
+impl CameraShakeState {
+    /// Arm (or re-arm) the camera shake to a full `ticks` window. Idempotent:
+    /// multiple hits in the same window collapse to a single full countdown.
+    fn arm(&mut self, ticks: u32) {
+        self.remaining = ticks;
+    }
+
+    /// Drain by `n` ticks (saturating, never underflows).
+    fn decay_by(&mut self, n: u32) {
+        self.remaining = self.remaining.saturating_sub(n);
+    }
+}
+
 /// Binary-local floating damage number (S03/T03). A short-lived world-space
 /// `Text2d` spawned over a struck target on each `OnHitTaken`, driven by the pure
 /// [`damage_number_kinematics`] projection: it rises and fades over `total_ticks`
@@ -366,6 +399,7 @@ impl Plugin for RenderPlugin {
             .insert_resource(PendingAnimationTicks::default())
             .init_resource::<HitFlashState>()
             .init_resource::<HitShakeState>()
+            .init_resource::<CameraShakeState>()
             .add_systems(
                 Startup,
                 (
@@ -398,6 +432,18 @@ impl Plugin for RenderPlugin {
                 // Mirrors drive_hurt_reactions' ordering so the windows are armed
                 // before advance_agumon_presentation decays + applies them.
                 observe_hit_feedback
+                    .after(spawn_unit_sprites)
+                    .after(resolve_action_system)
+                    .before(advance_agumon_presentation)
+                    .before(continue_suspended_timeline_system),
+            )
+            .add_systems(
+                Update,
+                // Arm the camera-shake window off the SAME OnHitTaken signal that
+                // arms HitShakeState (camera-shake is just another registered cue).
+                // Ordered before advance_agumon_presentation, which owns the single
+                // decay site.
+                observe_camera_shake
                     .after(spawn_unit_sprites)
                     .after(resolve_action_system)
                     .before(advance_agumon_presentation)
@@ -443,18 +489,89 @@ impl Plugin for RenderPlugin {
                     .after(spawn_unit_sprites)
                     .after(resolve_action_system)
                     .before(continue_suspended_timeline_system),
+            )
+            .add_systems(
+                Update,
+                // Write the Camera2d transform from the decayed CameraShakeState.
+                // Ordered AFTER advance_agumon_presentation (the single decay site)
+                // so it reads the freshly-drained remaining and applies an absolute
+                // offset from CameraRest — never additive (MEM094).
+                apply_camera_shake.after(advance_agumon_presentation),
             );
     }
 }
 
 fn setup_camera(mut commands: Commands) {
+    let transform = Transform::default();
     commands.spawn((
         Camera2d,
         Hdr,
         Bloom::NATURAL,
         Tonemapping::TonyMcMapface,
         DebandDither::Enabled,
+        transform,
+        // Capture the camera's spawn translation so camera-shake restores to the
+        // exact rest without drift (never accumulate — MEM094). Same anti-drift
+        // pattern as SpriteRest.
+        CameraRest {
+            translation: transform.translation,
+        },
     ));
+}
+
+/// Arm the camera-shake window on every `OnHitTaken` — the SAME signal that arms
+/// `HitShakeState` — sizing it to the `camera_impact` cue's tick count from the
+/// `CueRegistry`. Owns its own message cursor (MEM065); same-window multi-hit
+/// collapses via the reset in `arm`. Emits a `trace!` on the
+/// `windowed.agumon_playback` target (mirroring the `flash+shake armed` seam) so
+/// a future agent can confirm the cue fired without running the binary (K001).
+fn observe_camera_shake(
+    mut events: MessageReader<bevyrogue::combat::events::CombatEvent>,
+    mut camera_shake: ResMut<CameraShakeState>,
+    cue_registry: Res<CueRegistry>,
+) {
+    for event in events.read() {
+        if hit_damage_amount(&event.kind).is_some() {
+            if let Some(CueDef::CameraShake { ticks, .. }) = cue_registry.get("camera_impact") {
+                camera_shake.arm(*ticks);
+                trace!(
+                    target: "windowed.agumon_playback",
+                    target_unit = ?event.target,
+                    camera_shake_ticks = *ticks,
+                    "camera-shake armed"
+                );
+            }
+        }
+    }
+}
+
+/// Write the `Camera2d` transform from the decayed [`CameraShakeState`]. While
+/// `remaining > 0` the translation is the ABSOLUTE offset from the captured
+/// [`CameraRest`] — `rest.translation + shake_offset_parametric(..)` — and at
+/// remaining 0 it is hard-set back to `rest.translation`, so the camera never
+/// accumulates drift (MEM094). Reads the `camera_impact` `CameraShake` params
+/// from the registry; falls through to no offset on a missing/wrong def.
+fn apply_camera_shake(
+    camera_shake: Res<CameraShakeState>,
+    cue_registry: Res<CueRegistry>,
+    mut cameras: Query<(&mut Transform, &CameraRest)>,
+) {
+    for (mut transform, rest) in &mut cameras {
+        if camera_shake.remaining > 0 {
+            let offset = match cue_registry.get("camera_impact") {
+                Some(CueDef::CameraShake {
+                    amp,
+                    freq_x,
+                    freq_y,
+                    ticks,
+                }) => shake_offset_parametric(camera_shake.remaining, *ticks, *amp, *freq_x, *freq_y),
+                _ => Vec2::ZERO,
+            };
+            transform.translation = rest.translation + offset.extend(0.0);
+        } else {
+            transform.translation = rest.translation;
+        }
+    }
 }
 
 /// Namespaced effect ids of the five Baby Flame effects within the asset. The
@@ -787,6 +904,7 @@ fn advance_agumon_presentation(
     charge_ember_markers: Query<(Entity, &ChargeEmberEnokiMarker)>,
     mut hit_flash: ResMut<HitFlashState>,
     mut hit_shake: ResMut<HitShakeState>,
+    mut camera_shake: ResMut<CameraShakeState>,
     cue_registry: Res<CueRegistry>,
     mut sprites: ParamSet<(
         Query<(
@@ -842,6 +960,9 @@ fn advance_agumon_presentation(
         }
         hit_flash.decay_by(pending_ticks.0);
         hit_shake.decay_by(pending_ticks.0);
+        // Camera shake decays on the SAME single source-of-truth clock (MEM094 —
+        // no second decay site); apply_camera_shake reads the drained remaining.
+        camera_shake.decay_by(pending_ticks.0);
     }
 
     // Advance the player at the fixed animation rate, not once per render frame.
