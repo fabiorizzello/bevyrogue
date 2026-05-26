@@ -105,7 +105,11 @@ fn repeated_hits_same_update_dedup_to_full() {
 #[test]
 fn non_hit_event_does_not_arm_and_amount_is_none() {
     let mut app = build_app();
-    write_event(&mut app, DEFENDER, CombatEventKind::OnRevive { hp_after: 30 });
+    write_event(
+        &mut app,
+        DEFENDER,
+        CombatEventKind::OnRevive { hp_after: 30 },
+    );
     app.update();
 
     let flash = app.world().resource::<HitFlashState>();
@@ -139,7 +143,10 @@ fn non_hit_event_does_not_arm_and_amount_is_none() {
 fn damage_number_kinematics_endpoints_and_monotonic() {
     const TOTAL: u32 = 12;
     let (rise0, alpha0) = damage_number_kinematics(0, TOTAL);
-    assert!(rise0.abs() < 1e-6, "rise at age 0 should be ~0, got {rise0}");
+    assert!(
+        rise0.abs() < 1e-6,
+        "rise at age 0 should be ~0, got {rise0}"
+    );
     assert!(
         (alpha0 - 1.0).abs() < 1e-6,
         "alpha at age 0 should be ~1.0, got {alpha0}"
@@ -157,7 +164,10 @@ fn damage_number_kinematics_endpoints_and_monotonic() {
     for age in 0..=TOTAL {
         let (rise, alpha) = damage_number_kinematics(age, TOTAL);
         assert!(rise >= prev_rise, "rise must be monotonic non-decreasing");
-        assert!(alpha <= prev_alpha, "alpha must be monotonic non-increasing");
+        assert!(
+            alpha <= prev_alpha,
+            "alpha must be monotonic non-increasing"
+        );
         prev_rise = rise;
         prev_alpha = alpha;
     }

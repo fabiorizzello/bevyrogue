@@ -12,14 +12,11 @@ use bevy_enoki::{EnokiPlugin, Particle2dEffect, ParticleEffectHandle, ParticleSp
 
 use bevyrogue::animation::{
     AnimGraph, AnimGraphId, AnimGraphPlayer, AnimationClipHandles, AnimationClipLoadState,
-    AnimationGraphLookupDiagnostics, AtlasGeometry, Clip, FrameCueCommand,
-    NodeId, PlacementAnchor, ResolvedAnimGraph, ResolvedAnimGraphSource,
-    SkillGraphRegistry, StanceGraphRegistry, StanceReaction, VfxSpawnDescriptor,
-    stance_reaction_for,
+    AnimationGraphLookupDiagnostics, AtlasGeometry, Clip, FrameCueCommand, NodeId, PlacementAnchor,
+    ResolvedAnimGraph, ResolvedAnimGraphSource, SkillGraphRegistry, StanceGraphRegistry,
+    StanceReaction, VfxSpawnDescriptor, stance_reaction_for,
 };
-use bevyrogue::combat::runtime::{
-    CueBarrierStatus, CueReleaseResult, SuspendedTimelineState,
-};
+use bevyrogue::combat::runtime::{CueBarrierStatus, CueReleaseResult, SuspendedTimelineState};
 use bevyrogue::combat::team::Team;
 use bevyrogue::combat::turn_system::{continue_suspended_timeline_system, resolve_action_system};
 use bevyrogue::combat::types::UnitId;
@@ -423,7 +420,10 @@ impl Plugin for RenderPlugin {
             .add_systems(Update, diagnose_enoki_vfx_load)
             .add_systems(Update, build_digimon_atlases.before(spawn_unit_sprites))
             .add_systems(Update, spawn_unit_sprites)
-            .add_systems(Update, sample_animation_ticks.before(advance_enoki_projectiles))
+            .add_systems(
+                Update,
+                sample_animation_ticks.before(advance_enoki_projectiles),
+            )
             .add_systems(
                 Update,
                 spawn_detonate_particles
@@ -577,7 +577,9 @@ fn apply_camera_shake(
                     freq_x,
                     freq_y,
                     ticks,
-                }) => shake_offset_parametric(camera_shake.remaining, *ticks, *amp, *freq_x, *freq_y),
+                }) => {
+                    shake_offset_parametric(camera_shake.remaining, *ticks, *amp, *freq_x, *freq_y)
+                }
                 _ => Vec2::ZERO,
             };
             transform.translation = rest.translation + offset.extend(0.0);
@@ -619,7 +621,10 @@ pub(in crate::windowed) struct EnokiEffect {
 #[derive(Debug, Clone)]
 pub(in crate::windowed) enum EnokiLifecycle {
     PersistentEmitter,
-    Projectile { flight_ticks: u32, on_arrival: String },
+    Projectile {
+        flight_ticks: u32,
+        on_arrival: String,
+    },
     OneShot,
 }
 
@@ -886,10 +891,9 @@ fn spawn_unit_sprites(
             continue;
         };
 
-        let Some(stance_graph) = stance_reg.resolve_snapshot(
-            &AnimGraphId(entry.stance_graph_id.clone().into()),
-            &graphs,
-        ) else {
+        let Some(stance_graph) = stance_reg
+            .resolve_snapshot(&AnimGraphId(entry.stance_graph_id.clone().into()), &graphs)
+        else {
             let warn_key = format!("missing-stance:{}", unit.id.0);
             if warned.insert(warn_key) {
                 warn!(
@@ -1035,15 +1039,8 @@ fn advance_digimon_presentation(
                 )
             })
             .collect();
-        for (
-            entity,
-            mut sprite,
-            mut render_sprite,
-            mut transform,
-            rest,
-            death_exiting,
-            fade_out,
-        ) in &mut sprites.p0()
+        for (entity, mut sprite, mut render_sprite, mut transform, rest, death_exiting, fade_out) in
+            &mut sprites.p0()
         {
             let prev_node = sprite.player.current_node.0.clone();
 
@@ -1345,10 +1342,9 @@ fn advance_digimon_presentation(
                         fade_ticks = DEATH_FADE_TICKS,
                         "death node exited; seeding fade-out off field (idle restore suppressed)"
                     );
-                } else if let Some(stance_graph) = stance_reg.resolve_snapshot(
-                    &AnimGraphId(sprite.stance_graph_id.clone().into()),
-                    &graphs,
-                ) {
+                } else if let Some(stance_graph) = stance_reg
+                    .resolve_snapshot(&AnimGraphId(sprite.stance_graph_id.clone().into()), &graphs)
+                {
                     let preserve_missing = active_barrier.as_ref().and_then(|status| {
                         (sprite.graph.source == ResolvedAnimGraphSource::InstantFallback
                             && sprite.last_missing_skill_graph_cue.as_deref()
@@ -1750,7 +1746,12 @@ fn spawn_canvas_damage_numbers(
 fn advance_canvas_damage_numbers(
     mut commands: Commands,
     pending_ticks: Res<PendingAnimationTicks>,
-    mut numbers: Query<(Entity, &mut CanvasDamageNumber, &mut Transform, &mut TextColor)>,
+    mut numbers: Query<(
+        Entity,
+        &mut CanvasDamageNumber,
+        &mut Transform,
+        &mut TextColor,
+    )>,
 ) {
     for _ in 0..pending_ticks.0 {
         for (entity, mut number, mut transform, mut color) in &mut numbers {
@@ -1907,7 +1908,10 @@ fn sync_digimon_mode(
     // are handled by the auto-release fallback in `advance_digimon_presentation`.
     // The bridged-skill -> FSM entry node map is engine-generic registry data
     // (S04) the per-Digimon module populates; absence means unbridged.
-    let Some(start_node) = start_node_reg.map.get(status.skill_id.0.as_str()).map(String::as_str)
+    let Some(start_node) = start_node_reg
+        .map
+        .get(status.skill_id.0.as_str())
+        .map(String::as_str)
     else {
         return;
     };
@@ -2143,7 +2147,9 @@ mod tests {
             heated_remaining: 0,
         }));
         // ...while a non-lethal hit (the hurt path) never does (Q7 negative test).
-        assert!(!is_death_reaction(&CombatEventKind::OnHitTaken { amount: 5 }));
+        assert!(!is_death_reaction(&CombatEventKind::OnHitTaken {
+            amount: 5
+        }));
     }
 
     #[test]

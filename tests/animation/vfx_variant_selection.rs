@@ -10,7 +10,7 @@
 //! `vfx_asset_load.rs`) — never reads a gitignored `.gsd/`/`.planning/` path.
 
 use bevyrogue::animation::{
-    resolve_effect, select_variant, validate_effects, VfxAsset, VfxContext, VfxValidationError,
+    VfxAsset, VfxContext, VfxValidationError, resolve_effect, select_variant, validate_effects,
 };
 
 /// The placement verb ids the windowed `PlacementExt` Registry registers (S02).
@@ -27,7 +27,10 @@ fn agumon_vfx() -> VfxAsset {
 }
 
 fn ctx(skill_id: &str, variant_key: &str) -> VfxContext {
-    VfxContext { skill_id: skill_id.to_owned(), variant_key: variant_key.to_owned() }
+    VfxContext {
+        skill_id: skill_id.to_owned(),
+        variant_key: variant_key.to_owned(),
+    }
 }
 
 #[test]
@@ -38,7 +41,10 @@ fn select_variant_maps_context_to_expected_effect() {
     let base = select_variant(&asset, &ctx("baby_burner", "base"))
         .expect("base variant must select an effect");
     assert!(
-        std::ptr::eq(base, resolve_effect(&asset, "baby_burner.detonate").unwrap()),
+        std::ptr::eq(
+            base,
+            resolve_effect(&asset, "baby_burner.detonate").unwrap()
+        ),
         "base variant must select the baby_burner.detonate EffectDef"
     );
 
@@ -46,7 +52,10 @@ fn select_variant_maps_context_to_expected_effect() {
     let empowered = select_variant(&asset, &ctx("baby_burner", "empowered"))
         .expect("empowered variant must select an effect");
     assert!(
-        std::ptr::eq(empowered, resolve_effect(&asset, "baby_flame.impact").unwrap()),
+        std::ptr::eq(
+            empowered,
+            resolve_effect(&asset, "baby_flame.impact").unwrap()
+        ),
         "empowered variant must select the baby_flame.impact EffectDef"
     );
 }

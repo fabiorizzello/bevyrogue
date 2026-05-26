@@ -16,9 +16,9 @@ fn setup_camera_block() -> &'static str {
     let rest = &RENDER_SRC[start..];
     // M006/S04 moved the enoki loader into the agumon module; setup_camera is now
     // followed by observe_camera_shake. Slice to that boundary.
-    let end = rest
-        .find("\nfn observe_camera_shake")
-        .expect("setup_camera should remain adjacent to observe_camera_shake for this contract test");
+    let end = rest.find("\nfn observe_camera_shake").expect(
+        "setup_camera should remain adjacent to observe_camera_shake for this contract test",
+    );
     &rest[..end]
 }
 

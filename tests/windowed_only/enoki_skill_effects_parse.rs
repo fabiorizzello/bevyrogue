@@ -19,9 +19,8 @@ use bevy_enoki::Particle2dEffect;
 /// Parse an authored enoki effect asset, panicking with a path-named message on
 /// failure so a malformed asset surfaces by name.
 fn parse_effect(label: &str, ron: &str) -> Particle2dEffect {
-    ron::from_str::<Particle2dEffect>(ron).unwrap_or_else(|e| {
-        panic!("{label} should parse into bevy_enoki::Particle2dEffect: {e}")
-    })
+    ron::from_str::<Particle2dEffect>(ron)
+        .unwrap_or_else(|e| panic!("{label} should parse into bevy_enoki::Particle2dEffect: {e}"))
 }
 
 /// Assert the one-shot burst invariants shared by every Agumon contact burst.

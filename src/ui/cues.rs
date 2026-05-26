@@ -140,13 +140,22 @@ mod tests {
 
     #[test]
     fn flash_white_when_not_flashing() {
-        assert_eq!(flash_tint_parametric(0, 8, LEGACY_FLASH_PEAK), (1.0, 1.0, 1.0));
-        assert_eq!(flash_tint_parametric(8, 0, LEGACY_FLASH_PEAK), (1.0, 1.0, 1.0));
+        assert_eq!(
+            flash_tint_parametric(0, 8, LEGACY_FLASH_PEAK),
+            (1.0, 1.0, 1.0)
+        );
+        assert_eq!(
+            flash_tint_parametric(8, 0, LEGACY_FLASH_PEAK),
+            (1.0, 1.0, 1.0)
+        );
     }
 
     #[test]
     fn flash_peak_tint_at_full_remaining() {
-        assert_eq!(flash_tint_parametric(8, 8, LEGACY_FLASH_PEAK), (1.0, 0.45, 0.45));
+        assert_eq!(
+            flash_tint_parametric(8, 8, LEGACY_FLASH_PEAK),
+            (1.0, 0.45, 0.45)
+        );
     }
 
     #[test]
@@ -188,7 +197,10 @@ mod tests {
             let decay = (remaining as f32 / total as f32).clamp(0.0, 1.0);
             let amplitude = 4.0 * decay;
             let phase = remaining as f32;
-            Vec2::new(amplitude * (phase * 1.7).sin(), amplitude * (phase * 2.3).cos())
+            Vec2::new(
+                amplitude * (phase * 1.7).sin(),
+                amplitude * (phase * 2.3).cos(),
+            )
         };
         for remaining in 0..=8 {
             assert_eq!(

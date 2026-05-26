@@ -4,7 +4,7 @@
 
 use bevyrogue::animation::anim_graph::NodeId;
 use bevyrogue::animation::reaction::{
-    resolve_stance_reaction, stance_reaction_for, StanceReaction,
+    StanceReaction, resolve_stance_reaction, stance_reaction_for,
 };
 use bevyrogue::combat::observability::events::CombatEventKind;
 

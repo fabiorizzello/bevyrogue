@@ -33,17 +33,17 @@ Consumes S04's per-Digimon register(app) seam, S03's generic DigimonSprite/cue d
   - Files: `src/windowed/render.rs`, `src/windowed/mod.rs`, `src/windowed/demo.rs`, `src/windowed/digimon/agumon/mod.rs`, `tests/windowed_only.rs`, `tests/windowed_only/renamon_extension_contract.rs`
   - Verify: cargo test --features windowed --test windowed_only renamon_extension_contract -- --nocapture
 
-- [ ] **T02: Add Renamon presentation module and animation assets** `est:2h`
+- [x] **T02: Add Renamon presentation module and animation assets** `est:2h`
   Expected executor skills/frontmatter: rust-development, rust-skills, bevy, tdd, write-docs, verify-before-complete.
   - Files: `src/windowed/digimon/renamon/mod.rs`, `src/windowed/digimon/mod.rs`, `assets/digimon/renamon/stance.ron`, `assets/digimon/renamon/clip.ron`, `assets/digimon/renamon/anim_graph.ron`, `tests/windowed_only/renamon_extension_contract.rs`
   - Verify: cargo test --features windowed --test windowed_only renamon_extension_contract -- --nocapture
 
-- [ ] **T03: Harden Renamon zero-engine-edit source contracts** `est:1h`
+- [x] **T03: Harden Renamon zero-engine-edit source contracts** `est:1h`
   Expected executor skills/frontmatter: rust-development, rust-testing, bevy, tdd, write-docs, verify-before-complete.
   - Files: `tests/windowed_only/renamon_extension_contract.rs`, `tests/windowed_only/agumon_module_extraction.rs`, `tests/windowed_only.rs`
   - Verify: cargo test --features windowed --test windowed_only -- --nocapture
 
-- [ ] **T04: Run full slice verification gates** `est:1h`
+- [x] **T04: Run full slice verification gates** `est:1h`
   Expected executor skills/frontmatter: rust-development, cargo-nextest if desired, bevy, verify-before-complete.
   - Verify: cargo test
 cargo test --features windowed --test windowed_only

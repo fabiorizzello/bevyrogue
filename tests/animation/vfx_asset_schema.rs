@@ -127,7 +127,16 @@ fn appearance_is_reflectable_with_expected_fields() {
         .collect();
     assert_eq!(
         field_names,
-        vec!["count", "spread_px", "ttl_ticks", "scale", "color", "size_px", "texture", "rotation"],
+        vec![
+            "count",
+            "spread_px",
+            "ttl_ticks",
+            "scale",
+            "color",
+            "size_px",
+            "texture",
+            "rotation"
+        ],
         "Reflect must expose Appearance's typed fields (incl. size_px/texture + the S06 rotation) for the GUI editor"
     );
 }
@@ -169,16 +178,26 @@ fn rotation_and_turbulence_round_trip() {
     let parsed: VfxAsset = ron::from_str(sample).expect("rotation + turbulence sample parses");
     let serialized = ron::to_string(&parsed).expect("serializes");
     let reparsed: VfxAsset = ron::from_str(&serialized).expect("re-deserializes");
-    assert_eq!(parsed, reparsed, "rotation + turbulence must round-trip losslessly");
+    assert_eq!(
+        parsed, reparsed,
+        "rotation + turbulence must round-trip losslessly"
+    );
 
     let effect = parsed.effects.values().next().expect("one effect");
     assert_eq!(
         effect.appearance.rotation,
-        RotationParams::Radial { offset_rad: 0.0, omega: 0.25 }
+        RotationParams::Radial {
+            offset_rad: 0.0,
+            omega: 0.25
+        }
     );
     assert_eq!(
         effect.placement.params,
-        PlacementParams::Turbulence { amp_px: 6.0, freq: 0.4, rise_px: 18.0 }
+        PlacementParams::Turbulence {
+            amp_px: 6.0,
+            freq: 0.4,
+            rise_px: 18.0
+        }
     );
 }
 

@@ -145,7 +145,10 @@ fn register_agumon_cues(mut registry: ResMut<bevyrogue::ui::cues::CueRegistry>) 
 /// the old `vfx.ron` placement so the enoki path reproduces the quad placement
 /// exactly; charge/ember are persistent emitters, the projectile travels then
 /// chains `baby_flame.impact`, and the contact bursts are fire-and-forget.
-fn register_agumon_enoki_vfx(asset_server: Res<AssetServer>, mut registry: ResMut<EnokiVfxRegistry>) {
+fn register_agumon_enoki_vfx(
+    asset_server: Res<AssetServer>,
+    mut registry: ResMut<EnokiVfxRegistry>,
+) {
     let entries: [(&str, &str, PlacementAnchor, EnokiLifecycle); 6] = [
         (
             CHARGE_EFFECT_ID,
@@ -223,9 +226,10 @@ fn register_agumon_on_enter_effects(mut registry: ResMut<OnEnterEffectRegistry>)
 /// Register Baby Flame's release effect: launching the flame spawns the traveling
 /// projectile (the engine clears the charge/ember emitters at the same boundary).
 fn register_agumon_skill_release_effects(mut registry: ResMut<SkillReleaseEffectRegistry>) {
-    registry
-        .map
-        .insert(BABY_FLAME_SKILL_ID.to_string(), PROJECTILE_EFFECT_ID.to_string());
+    registry.map.insert(
+        BABY_FLAME_SKILL_ID.to_string(),
+        PROJECTILE_EFFECT_ID.to_string(),
+    );
 }
 
 /// Register Baby Burner's detonate burst as the engine's detonate effect.
@@ -306,8 +310,14 @@ mod tests {
     fn on_enter_charge_seeds_both_the_orb_and_the_ember_swirl() {
         // The single authored `baby_flame_charge` SpawnParticle fans out to the
         // owned charge + ember effect ids; the projectile maps to its own id.
-        assert_eq!(on_enter_ids("baby_flame_charge"), &[CHARGE_EFFECT_ID, EMBER_EFFECT_ID]);
-        assert_eq!(on_enter_ids("baby_flame_projectile"), &[PROJECTILE_EFFECT_ID]);
+        assert_eq!(
+            on_enter_ids("baby_flame_charge"),
+            &[CHARGE_EFFECT_ID, EMBER_EFFECT_ID]
+        );
+        assert_eq!(
+            on_enter_ids("baby_flame_projectile"),
+            &[PROJECTILE_EFFECT_ID]
+        );
         // An unknown particle name maps to no effects (spawns nothing, no panic).
         assert!(on_enter_ids("unknown_particle").is_empty());
     }
@@ -321,7 +331,13 @@ mod tests {
 
         // Unrelated / near-miss names must NOT resolve to the Sharp Claws effect:
         // the bridge is an exact name map, not a substring/string-kind match.
-        for name in ["sharp_claws", "slash", "baby_flame_charge", "sharp_claws_strike", ""] {
+        for name in [
+            "sharp_claws",
+            "slash",
+            "baby_flame_charge",
+            "sharp_claws_strike",
+            "",
+        ] {
             assert!(
                 !on_enter_ids(name).contains(&SHARP_CLAWS_EFFECT_ID),
                 "`{name}` must not map to the Sharp Claws effect id"
@@ -338,7 +354,10 @@ mod tests {
         app.add_systems(Startup, register_agumon_skill_release_effects);
         app.update();
         let reg = app.world().resource::<SkillReleaseEffectRegistry>();
-        assert_eq!(reg.map.get(BABY_FLAME_SKILL_ID).map(String::as_str), Some(PROJECTILE_EFFECT_ID));
+        assert_eq!(
+            reg.map.get(BABY_FLAME_SKILL_ID).map(String::as_str),
+            Some(PROJECTILE_EFFECT_ID)
+        );
         assert_eq!(reg.map.len(), 1);
     }
 
@@ -431,6 +450,9 @@ mod tests {
         assert_eq!(reg.entries[1].demo_id, "agumon_dummy");
         assert_eq!(reg.entries[1].spawned_unit_id, AGUMON_DUMMY_ID);
         assert_eq!(reg.entries[1].team, Team::Enemy);
-        assert_eq!(reg.entries[1].name_override.as_deref(), Some("Agumon (Dummy)"));
+        assert_eq!(
+            reg.entries[1].name_override.as_deref(),
+            Some("Agumon (Dummy)")
+        );
     }
 }

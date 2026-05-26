@@ -29,9 +29,9 @@ fn spawn_effect_by_id_block() -> &'static str {
         .find("fn spawn_effect_by_id")
         .expect("render.rs must define spawn_effect_by_id");
     let rest = &RENDER_SRC[start..];
-    let end = rest
-        .find("\nfn should_spawn_node_vfx")
-        .expect("spawn_effect_by_id should remain adjacent to should_spawn_node_vfx for this contract test");
+    let end = rest.find("\nfn should_spawn_node_vfx").expect(
+        "spawn_effect_by_id should remain adjacent to should_spawn_node_vfx for this contract test",
+    );
     &rest[..end]
 }
 

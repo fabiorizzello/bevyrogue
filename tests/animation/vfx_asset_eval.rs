@@ -6,9 +6,9 @@
 //! and bit-identical determinism across repeated calls (Q7 boundary/negative).
 
 use bevyrogue::animation::{
-    eval_color, eval_scale, resolve_effect, spawn_plan, Appearance, ColorCurve, ColorKeyframe,
-    EffectDef, ImpactSpawnPlan, Placement, PlacementAnchor, PlacementParams, ScaleCurve,
-    ScaleKeyframe, VfxAsset,
+    Appearance, ColorCurve, ColorKeyframe, EffectDef, ImpactSpawnPlan, Placement, PlacementAnchor,
+    PlacementParams, ScaleCurve, ScaleKeyframe, VfxAsset, eval_color, eval_scale, resolve_effect,
+    spawn_plan,
 };
 
 fn scale_curve() -> ScaleCurve {
@@ -20,16 +20,30 @@ fn scale_curve() -> ScaleCurve {
 
 fn color_curve() -> ColorCurve {
     ColorCurve(vec![
-        ColorKeyframe { t: 0.0, rgba: [1.0, 0.8, 0.2, 1.0] },
-        ColorKeyframe { t: 1.0, rgba: [1.0, 0.2, 0.0, 0.0] },
+        ColorKeyframe {
+            t: 0.0,
+            rgba: [1.0, 0.8, 0.2, 1.0],
+        },
+        ColorKeyframe {
+            t: 1.0,
+            rgba: [1.0, 0.2, 0.0, 0.0],
+        },
     ])
 }
 
 #[test]
 fn eval_scale_returns_endpoint_keyframes_at_0_and_1() {
     let curve = scale_curve();
-    assert_eq!(eval_scale(&curve, 0.0), 0.2, "progress 0.0 -> first keyframe");
-    assert_eq!(eval_scale(&curve, 1.0), 1.0, "progress 1.0 -> last keyframe");
+    assert_eq!(
+        eval_scale(&curve, 0.0),
+        0.2,
+        "progress 0.0 -> first keyframe"
+    );
+    assert_eq!(
+        eval_scale(&curve, 1.0),
+        1.0,
+        "progress 1.0 -> last keyframe"
+    );
 }
 
 #[test]
@@ -56,9 +70,16 @@ fn eval_scale_empty_curve_returns_default() {
 
 #[test]
 fn eval_scale_single_keyframe_is_constant() {
-    let curve = ScaleCurve(vec![ScaleKeyframe { t: 0.4, value: 0.75 }]);
+    let curve = ScaleCurve(vec![ScaleKeyframe {
+        t: 0.4,
+        value: 0.75,
+    }]);
     for p in [-1.0, 0.0, 0.4, 0.7, 1.0, 2.0] {
-        assert_eq!(eval_scale(&curve, p), 0.75, "single keyframe holds at progress {p}");
+        assert_eq!(
+            eval_scale(&curve, p),
+            0.75,
+            "single keyframe holds at progress {p}"
+        );
     }
 }
 
@@ -67,7 +88,11 @@ fn eval_scale_is_deterministic_across_repeated_calls() {
     let curve = scale_curve();
     let baseline = eval_scale(&curve, 0.37);
     for _ in 0..1000 {
-        assert_eq!(eval_scale(&curve, 0.37), baseline, "same input -> identical output");
+        assert_eq!(
+            eval_scale(&curve, 0.37),
+            baseline,
+            "same input -> identical output"
+        );
     }
 }
 
@@ -87,8 +112,16 @@ fn eval_color_midpoint_is_per_channel_linear_interpolant() {
 #[test]
 fn eval_color_clamps_and_defaults() {
     let curve = color_curve();
-    assert_eq!(eval_color(&curve, -2.0), [1.0, 0.8, 0.2, 1.0], "below 0 clamps to first");
-    assert_eq!(eval_color(&curve, 3.0), [1.0, 0.2, 0.0, 0.0], "above 1 clamps to last");
+    assert_eq!(
+        eval_color(&curve, -2.0),
+        [1.0, 0.8, 0.2, 1.0],
+        "below 0 clamps to first"
+    );
+    assert_eq!(
+        eval_color(&curve, 3.0),
+        [1.0, 0.2, 0.0, 0.0],
+        "above 1 clamps to last"
+    );
     assert_eq!(
         eval_color(&ColorCurve(vec![]), 0.5),
         [1.0, 1.0, 1.0, 1.0],
@@ -126,19 +159,34 @@ fn sharp_claws_slash_curves_evaluate_deterministically() {
     // Color: authored pale yellow-white core, alpha fades 0.95 -> 0.0.
     let color = &slash.appearance.color;
     let spawn = eval_color(color, 0.0);
-    assert_eq!(spawn, [3.0, 3.0, 2.2, 0.95], "spawn rgba should match authored data");
-    assert_eq!(eval_color(color, 1.0), [3.0, 3.0, 2.2, 0.0], "death: fully transparent");
+    assert_eq!(
+        spawn,
+        [3.0, 3.0, 2.2, 0.95],
+        "spawn rgba should match authored data"
+    );
+    assert_eq!(
+        eval_color(color, 1.0),
+        [3.0, 3.0, 2.2, 0.0],
+        "death: fully transparent"
+    );
 
     // Midpoint: hue held constant, alpha linearly halved.
     let mid = eval_color(color, 0.5);
     for (i, (m, e)) in mid.iter().zip([3.0, 3.0, 2.2, 0.475]).enumerate() {
-        assert!((m - e).abs() < EPS, "midpoint channel {i}: expected ~{e}, got {m}");
+        assert!(
+            (m - e).abs() < EPS,
+            "midpoint channel {i}: expected ~{e}, got {m}"
+        );
     }
 
     // Determinism (R004): repeated evaluation is bit-identical.
     let baseline = eval_color(color, 0.42);
     for _ in 0..1000 {
-        assert_eq!(eval_color(color, 0.42), baseline, "same input -> identical output");
+        assert_eq!(
+            eval_color(color, 0.42),
+            baseline,
+            "same input -> identical output"
+        );
     }
 }
 
@@ -197,6 +245,10 @@ fn resolve_effect_and_spawn_plan_read_appearance() {
     assert_eq!(spawn_plan(resolved), spawn_plan(&effect));
     assert_eq!(
         spawn_plan(resolved),
-        ImpactSpawnPlan { count: 8, spread_px: 24.0, ttl_ticks: 30 }
+        ImpactSpawnPlan {
+            count: 8,
+            spread_px: 24.0,
+            ttl_ticks: 30
+        }
     );
 }

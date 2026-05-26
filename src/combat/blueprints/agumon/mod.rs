@@ -50,8 +50,10 @@ pub fn register_agumon_ext(regs: &mut crate::combat::runtime::ExtRegistries) {
     );
 
     use crate::animation::placement;
-    regs.placements
-        .register("agumon/baby_flame/converge_inward", placement::converge_inward);
+    regs.placements.register(
+        "agumon/baby_flame/converge_inward",
+        placement::converge_inward,
+    );
     regs.placements
         .register("agumon/baby_flame/fan_out", placement::fan_out);
     regs.placements

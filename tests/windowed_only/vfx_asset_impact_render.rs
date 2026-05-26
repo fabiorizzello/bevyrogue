@@ -14,8 +14,8 @@
 #![cfg(feature = "windowed")]
 
 use bevyrogue::animation::{
-    eval_color, eval_scale, resolve_effect, spawn_plan, ImpactSpawnPlan, PlacementCtx,
-    PlacementParams, VfxAsset,
+    ImpactSpawnPlan, PlacementCtx, PlacementParams, VfxAsset, eval_color, eval_scale,
+    resolve_effect, spawn_plan,
 };
 use bevyrogue::combat::blueprints::agumon::register_agumon_ext;
 use bevyrogue::combat::runtime::ExtRegistries;
@@ -64,7 +64,8 @@ fn impact_effect_resolves_to_the_central_burst_the_dispatcher_consumes() {
 #[test]
 fn impact_flash_shard_offset_curve_matches_what_the_per_tick_branch_writes() {
     let asset = agumon_vfx();
-    let impact_flash = resolve_effect(&asset, IMPACT_FLASH_EFFECT_ID).expect("impact_flash present");
+    let impact_flash =
+        resolve_effect(&asset, IMPACT_FLASH_EFFECT_ID).expect("impact_flash present");
     let plan = spawn_plan(impact_flash);
     let scale = &impact_flash.appearance.scale;
 
@@ -72,20 +73,29 @@ fn impact_flash_shard_offset_curve_matches_what_the_per_tick_branch_writes() {
     let frac0 = eval_scale(scale, 0.0);
     assert_eq!(frac0, 0.0);
     let off0 = data_shard_offset(&plan, frac0, 0.0);
-    assert!(off0[0].abs() < EPS && off0[1].abs() < EPS, "spawn sits on the impact origin");
+    assert!(
+        off0[0].abs() < EPS && off0[1].abs() < EPS,
+        "spawn sits on the impact origin"
+    );
 
     // Eased midpoint fraction 0.75 along the +x fan direction (phase 0).
     let frac_mid = eval_scale(scale, 0.5);
     assert_eq!(frac_mid, 0.75);
     let off_mid = data_shard_offset(&plan, frac_mid, 0.0);
-    assert!((off_mid[0] - 54.0).abs() < EPS, "0.75 * 72.0 spread = 54px outward");
+    assert!(
+        (off_mid[0] - 54.0).abs() < EPS,
+        "0.75 * 72.0 spread = 54px outward"
+    );
     assert!(off_mid[1].abs() < EPS);
 
     // End of life -> full spread along a quarter-turn fan direction (+y).
     let frac_end = eval_scale(scale, 1.0);
     assert_eq!(frac_end, 1.0);
     let off_end = data_shard_offset(&plan, frac_end, std::f32::consts::FRAC_PI_2);
-    assert!(off_end[0].abs() < 1e-4, "quarter-turn shard has ~0 x travel");
+    assert!(
+        off_end[0].abs() < 1e-4,
+        "quarter-turn shard has ~0 x travel"
+    );
     assert!(
         (off_end[1] - plan.spread_px).abs() < 1e-4,
         "quarter-turn shard reaches full spread on +y"
@@ -95,14 +105,18 @@ fn impact_flash_shard_offset_curve_matches_what_the_per_tick_branch_writes() {
 #[test]
 fn impact_flash_shard_color_curve_matches_what_the_per_tick_branch_writes() {
     let asset = agumon_vfx();
-    let impact_flash = resolve_effect(&asset, IMPACT_FLASH_EFFECT_ID).expect("impact_flash present");
+    let impact_flash =
+        resolve_effect(&asset, IMPACT_FLASH_EFFECT_ID).expect("impact_flash present");
     let color = &impact_flash.appearance.color;
 
     // Constant overbright ember hue (>1.0 RGB for HDR bloom), alpha linear-fades to transparent.
     assert_eq!(eval_color(color, 0.0), [2.0, 1.4, 0.9, 0.95], "spawn rgba");
     let mid = eval_color(color, 0.5);
     for (i, (a, e)) in mid.iter().zip([2.0, 1.4, 0.9, 0.475].iter()).enumerate() {
-        assert!((a - e).abs() < EPS, "midpoint channel {i}: expected ~{e}, got {a}");
+        assert!(
+            (a - e).abs() < EPS,
+            "midpoint channel {i}: expected ~{e}, got {a}"
+        );
     }
     assert_eq!(eval_color(color, 1.0), [2.0, 1.4, 0.9, 0.0], "death rgba");
 }
@@ -180,11 +194,20 @@ fn resolved_verbs_yield_the_expected_anchored_offsets() {
         target_xy: [0.0, 0.0],
     };
     let off0 = converge(&ctx0, &ember.placement.params);
-    assert!((off0[0] - 58.0).abs() < 1e-4 && off0[1].abs() < 1e-4, "ember starts on the rim");
+    assert!(
+        (off0[0] - 58.0).abs() < 1e-4 && off0[1].abs() < 1e-4,
+        "ember starts on the rim"
+    );
     // At end of life it has collapsed onto the anchor.
-    let ctx1 = PlacementCtx { progress: 1.0, ..ctx0 };
+    let ctx1 = PlacementCtx {
+        progress: 1.0,
+        ..ctx0
+    };
     let off1 = converge(&ctx1, &ember.placement.params);
-    assert!(off1[0].abs() < 1e-4 && off1[1].abs() < 1e-4, "ember merges into the mouth");
+    assert!(
+        off1[0].abs() < 1e-4 && off1[1].abs() < 1e-4,
+        "ember merges into the mouth"
+    );
 
     let projectile = resolve_effect(&asset, "baby_flame.projectile").expect("projectile present");
     let arc = regs
@@ -220,8 +243,12 @@ fn projectile_on_expire_chains_the_impact_then_flash_fan() {
     let impact = resolve_effect(&asset, &chained.0).expect("chained impact present");
     assert!(matches!(impact.placement.params, PlacementParams::Static));
 
-    let impact_flash = resolve_effect(&asset, IMPACT_FLASH_EFFECT_ID).expect("impact_flash present");
-    assert!(matches!(impact_flash.placement.params, PlacementParams::FanOut { .. }));
+    let impact_flash =
+        resolve_effect(&asset, IMPACT_FLASH_EFFECT_ID).expect("impact_flash present");
+    assert!(matches!(
+        impact_flash.placement.params,
+        PlacementParams::FanOut { .. }
+    ));
     assert_eq!(
         impact.on_expire.as_ref().map(|next| next.0.as_str()),
         Some(IMPACT_FLASH_EFFECT_ID),

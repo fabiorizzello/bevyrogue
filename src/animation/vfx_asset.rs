@@ -23,9 +23,7 @@ use serde::{Deserialize, Serialize};
 /// Opaque, namespaced effect identifier used as a `VfxAsset` map key and as the
 /// `on_expire` chain reference. Stays a transparent string newtype so RON keeps
 /// authoring effects by name.
-#[derive(
-    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Reflect,
-)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Reflect)]
 #[serde(transparent)]
 pub struct EffectId(pub String);
 
@@ -346,12 +344,22 @@ impl std::fmt::Display for VfxValidationError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::UnknownVerb { effect_id, verb } => {
-                write!(f, "effect `{effect_id}` references unregistered placement verb `{verb}`")
+                write!(
+                    f,
+                    "effect `{effect_id}` references unregistered placement verb `{verb}`"
+                )
             }
             Self::DanglingOnExpire { effect_id, missing } => {
-                write!(f, "effect `{effect_id}` on_expire references absent effect `{missing}`")
+                write!(
+                    f,
+                    "effect `{effect_id}` on_expire references absent effect `{missing}`"
+                )
             }
-            Self::DanglingVariant { skill_id, variant_key, missing } => write!(
+            Self::DanglingVariant {
+                skill_id,
+                variant_key,
+                missing,
+            } => write!(
                 f,
                 "variant `{skill_id}`/`{variant_key}` references absent effect `{missing}`"
             ),
@@ -366,10 +374,7 @@ impl std::error::Error for VfxValidationError {}
 /// present effect. Returns the first offending pair (deterministic `BTreeMap`
 /// order, R004) as data so the caller warns + skips rather than panics. Pure: no
 /// I/O, no Bevy world/render types.
-pub fn validate_effects(
-    asset: &VfxAsset,
-    known_verbs: &[&str],
-) -> Result<(), VfxValidationError> {
+pub fn validate_effects(asset: &VfxAsset, known_verbs: &[&str]) -> Result<(), VfxValidationError> {
     for (id, effect) in &asset.effects {
         if !known_verbs.contains(&effect.placement.verb.as_str()) {
             return Err(VfxValidationError::UnknownVerb {
@@ -539,7 +544,10 @@ mod rotation_tests {
 
     #[test]
     fn radial_orients_by_phase_then_spins_with_age() {
-        let rot = RotationParams::Radial { offset_rad: 0.5, omega: 0.1 };
+        let rot = RotationParams::Radial {
+            offset_rad: 0.5,
+            omega: 0.1,
+        };
         // age 0: phase + offset only.
         let a0 = eval_rotation(&rot, &ctx(0, 1.0, [0.0, 0.0], [0.0, 0.0]));
         assert!((a0 - 1.5).abs() < 1e-6);
@@ -550,18 +558,27 @@ mod rotation_tests {
 
     #[test]
     fn toward_target_points_along_caster_to_target_heading() {
-        let rot = RotationParams::TowardTarget { offset_rad: 0.0, omega: 0.0 };
+        let rot = RotationParams::TowardTarget {
+            offset_rad: 0.0,
+            omega: 0.0,
+        };
         // Target straight right -> heading 0.
         let right = eval_rotation(&rot, &ctx(0, 9.9, [10.0, 10.0], [110.0, 10.0]));
         assert!(right.abs() < 1e-6, "heading right is 0 rad, got {right}");
         // Target straight up -> heading +pi/2.
         let up = eval_rotation(&rot, &ctx(0, 9.9, [10.0, 10.0], [10.0, 110.0]));
-        assert!((up - std::f32::consts::FRAC_PI_2).abs() < 1e-6, "heading up is pi/2, got {up}");
+        assert!(
+            (up - std::f32::consts::FRAC_PI_2).abs() < 1e-6,
+            "heading up is pi/2, got {up}"
+        );
     }
 
     #[test]
     fn eval_rotation_is_deterministic() {
-        let rot = RotationParams::Fixed { angle_rad: 0.2, omega: 0.05 };
+        let rot = RotationParams::Fixed {
+            angle_rad: 0.2,
+            omega: 0.05,
+        };
         let c = ctx(7, 2.0, [1.0, 2.0], [3.0, 4.0]);
         assert_eq!(eval_rotation(&rot, &c), eval_rotation(&rot, &c));
     }

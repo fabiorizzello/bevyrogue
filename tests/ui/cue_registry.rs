@@ -10,7 +10,7 @@
 use bevy::math::Vec2;
 
 use bevyrogue::ui::cues::{
-    flash_tint_parametric, shake_offset_parametric, CueDef, CueRegistry, SrgbTriple,
+    CueDef, CueRegistry, SrgbTriple, flash_tint_parametric, shake_offset_parametric,
 };
 
 // Legacy constants from `crate::ui::hit_feedback` that the parametric forms
@@ -113,9 +113,21 @@ fn flash_tint_parametric_matches_legacy_at_peak() {
         lerp(1.0, LEGACY_FLASH_PEAK.1),
         lerp(1.0, LEGACY_FLASH_PEAK.2),
     );
-    assert!((r - expected.0).abs() < f32::EPSILON, "r {r} != {}", expected.0);
-    assert!((g - expected.1).abs() < f32::EPSILON, "g {g} != {}", expected.1);
-    assert!((b - expected.2).abs() < f32::EPSILON, "b {b} != {}", expected.2);
+    assert!(
+        (r - expected.0).abs() < f32::EPSILON,
+        "r {r} != {}",
+        expected.0
+    );
+    assert!(
+        (g - expected.1).abs() < f32::EPSILON,
+        "g {g} != {}",
+        expected.1
+    );
+    assert!(
+        (b - expected.2).abs() < f32::EPSILON,
+        "b {b} != {}",
+        expected.2
+    );
 }
 
 // --- Shake parametric math (R004) ---
@@ -123,11 +135,23 @@ fn flash_tint_parametric_matches_legacy_at_peak() {
 #[test]
 fn shake_offset_parametric_zero_remaining_is_zero() {
     assert_eq!(
-        shake_offset_parametric(0, 8, LEGACY_SHAKE_AMP, LEGACY_SHAKE_FREQ_X, LEGACY_SHAKE_FREQ_Y),
+        shake_offset_parametric(
+            0,
+            8,
+            LEGACY_SHAKE_AMP,
+            LEGACY_SHAKE_FREQ_X,
+            LEGACY_SHAKE_FREQ_Y
+        ),
         Vec2::ZERO
     );
     assert_eq!(
-        shake_offset_parametric(8, 0, LEGACY_SHAKE_AMP, LEGACY_SHAKE_FREQ_X, LEGACY_SHAKE_FREQ_Y),
+        shake_offset_parametric(
+            8,
+            0,
+            LEGACY_SHAKE_AMP,
+            LEGACY_SHAKE_FREQ_X,
+            LEGACY_SHAKE_FREQ_Y
+        ),
         Vec2::ZERO
     );
 }
@@ -151,8 +175,20 @@ fn shake_offset_parametric_nonzero_at_peak() {
 #[test]
 fn shake_offset_parametric_determinism() {
     // Same inputs twice → bit-identical output (no wall-clock, no RNG — R004).
-    let a = shake_offset_parametric(5, 8, LEGACY_SHAKE_AMP, LEGACY_SHAKE_FREQ_X, LEGACY_SHAKE_FREQ_Y);
-    let b = shake_offset_parametric(5, 8, LEGACY_SHAKE_AMP, LEGACY_SHAKE_FREQ_X, LEGACY_SHAKE_FREQ_Y);
+    let a = shake_offset_parametric(
+        5,
+        8,
+        LEGACY_SHAKE_AMP,
+        LEGACY_SHAKE_FREQ_X,
+        LEGACY_SHAKE_FREQ_Y,
+    );
+    let b = shake_offset_parametric(
+        5,
+        8,
+        LEGACY_SHAKE_AMP,
+        LEGACY_SHAKE_FREQ_X,
+        LEGACY_SHAKE_FREQ_Y,
+    );
     assert_eq!(a, b);
 }
 

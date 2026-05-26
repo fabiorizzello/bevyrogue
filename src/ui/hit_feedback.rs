@@ -139,7 +139,10 @@ pub fn shake_offset(remaining: u32, total: u32) -> Vec2 {
     let decay = (remaining as f32 / total as f32).clamp(0.0, 1.0);
     let amplitude = SHAKE_MAX_PX * decay;
     let phase = remaining as f32;
-    Vec2::new(amplitude * (phase * 1.7).sin(), amplitude * (phase * 2.3).cos())
+    Vec2::new(
+        amplitude * (phase * 1.7).sin(),
+        amplitude * (phase * 2.3).cos(),
+    )
 }
 
 /// Kinematics for a floating damage number: returns `(rise_px, alpha)` for a

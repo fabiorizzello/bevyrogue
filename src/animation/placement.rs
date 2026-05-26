@@ -71,14 +71,22 @@ pub fn static_placement(_ctx: &PlacementCtx, params: &PlacementParams) -> [f32; 
 /// particle scale without a noise field, satisfying the "fire needs turbulence"
 /// rule the VFX validations flag.
 pub fn turbulence(ctx: &PlacementCtx, params: &PlacementParams) -> [f32; 2] {
-    let PlacementParams::Turbulence { amp_px, freq, rise_px } = params else {
+    let PlacementParams::Turbulence {
+        amp_px,
+        freq,
+        rise_px,
+    } = params
+    else {
         return [0.0, 0.0];
     };
     let t = ctx.age_ticks as f32 * freq;
     let seed = ctx.phase;
     let wander_x = (t + seed).sin() + 0.5 * (2.3 * t + 1.7 * seed).sin();
     let wander_y = (1.3 * t + 2.1 * seed).cos() + 0.5 * (1.9 * t + seed).cos();
-    [amp_px * wander_x, amp_px * wander_y + rise_px * ctx.progress]
+    [
+        amp_px * wander_x,
+        amp_px * wander_y + rise_px * ctx.progress,
+    ]
 }
 
 #[cfg(test)]
@@ -99,12 +107,19 @@ mod tests {
     #[test]
     fn turbulence_returns_zero_for_mismatched_params() {
         // A verb handed the wrong params variant degrades to no offset (no panic).
-        assert_eq!(turbulence(&ctx(3, 1.0, 0.3), &PlacementParams::Static), [0.0, 0.0]);
+        assert_eq!(
+            turbulence(&ctx(3, 1.0, 0.3), &PlacementParams::Static),
+            [0.0, 0.0]
+        );
     }
 
     #[test]
     fn turbulence_is_deterministic() {
-        let p = PlacementParams::Turbulence { amp_px: 6.0, freq: 0.4, rise_px: 18.0 };
+        let p = PlacementParams::Turbulence {
+            amp_px: 6.0,
+            freq: 0.4,
+            rise_px: 18.0,
+        };
         let c = ctx(5, 2.1, 0.5);
         assert_eq!(turbulence(&c, &p), turbulence(&c, &p));
     }
@@ -113,13 +128,23 @@ mod tests {
     fn turbulence_amplitude_bounds_wander_and_rise_adds_drift() {
         let amp = 6.0;
         let rise = 18.0;
-        let p = PlacementParams::Turbulence { amp_px: amp, freq: 0.4, rise_px: rise };
+        let p = PlacementParams::Turbulence {
+            amp_px: amp,
+            freq: 0.4,
+            rise_px: rise,
+        };
         // Wander is two octaves of unit sines scaled by amp: |component| <= 1.5*amp.
         // The rise term adds rise_px*progress to y on top of that bound.
         let c = ctx(7, 1.3, 0.5);
         let [x, y] = turbulence(&c, &p);
-        assert!(x.abs() <= 1.5 * amp + 1e-4, "wander x within amplitude bound");
-        assert!(y.abs() <= 1.5 * amp + rise * 0.5 + 1e-4, "y within wander+rise bound");
+        assert!(
+            x.abs() <= 1.5 * amp + 1e-4,
+            "wander x within amplitude bound"
+        );
+        assert!(
+            y.abs() <= 1.5 * amp + rise * 0.5 + 1e-4,
+            "y within wander+rise bound"
+        );
     }
 
     #[test]
@@ -127,7 +152,11 @@ mod tests {
         // With zero frequency the wander term is constant across ticks, so the
         // y delta between two progress values is exactly the rise contribution.
         let rise = 20.0;
-        let p = PlacementParams::Turbulence { amp_px: 0.0, freq: 0.0, rise_px: rise };
+        let p = PlacementParams::Turbulence {
+            amp_px: 0.0,
+            freq: 0.0,
+            rise_px: rise,
+        };
         let y_quarter = turbulence(&ctx(0, 0.7, 0.25), &p)[1];
         let y_full = turbulence(&ctx(0, 0.7, 1.0), &p)[1];
         assert!((y_full - y_quarter - rise * 0.75).abs() < 1e-5);

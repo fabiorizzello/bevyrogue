@@ -5,9 +5,7 @@
 //! is bit-identical across 1000 calls (determinism), and the closed-form
 //! endpoints match the ported render.rs math.
 
-use bevyrogue::animation::placement::{
-    arc_launch, converge_inward, fan_out, static_placement,
-};
+use bevyrogue::animation::placement::{arc_launch, converge_inward, fan_out, static_placement};
 use bevyrogue::animation::vfx_asset::{PlacementCtx, PlacementParams};
 use bevyrogue::combat::blueprints::agumon::register_agumon_ext;
 use bevyrogue::combat::runtime::ExtRegistries;
@@ -54,7 +52,10 @@ fn verbs_are_bit_identical_across_1000_calls() {
     let cases: [(PlacementVerb, PlacementParams); 4] = [
         (
             converge_inward,
-            PlacementParams::ConvergeInward { radius_px: 58.0, omega: 0.9 },
+            PlacementParams::ConvergeInward {
+                radius_px: 58.0,
+                omega: 0.9,
+            },
         ),
         (fan_out, PlacementParams::FanOut { spread_px: 64.0 }),
         (arc_launch, PlacementParams::ArcLaunch {}),
@@ -70,15 +71,25 @@ fn verbs_are_bit_identical_across_1000_calls() {
 
 #[test]
 fn converge_inward_radius_collapses_from_radius_px_to_origin() {
-    let params = PlacementParams::ConvergeInward { radius_px: 58.0, omega: 0.9 };
+    let params = PlacementParams::ConvergeInward {
+        radius_px: 58.0,
+        omega: 0.9,
+    };
 
     // progress 0 with phase 0 and age 0 -> full radius along +x.
     let start = converge_inward(
-        &PlacementCtx { age_ticks: 0, progress: 0.0, ..ctx(0.0) },
+        &PlacementCtx {
+            age_ticks: 0,
+            progress: 0.0,
+            ..ctx(0.0)
+        },
         &params,
     );
     let start_radius = (start[0] * start[0] + start[1] * start[1]).sqrt();
-    assert!((start_radius - 58.0).abs() < 1e-4, "radius at progress 0 == radius_px");
+    assert!(
+        (start_radius - 58.0).abs() < 1e-4,
+        "radius at progress 0 == radius_px"
+    );
 
     // progress 1 -> collapsed to the anchor.
     let end = converge_inward(&ctx(1.0), &params);
@@ -100,7 +111,13 @@ fn arc_launch_endpoints_match_target_minus_caster() {
 fn fan_out_reaches_spread_px_along_phase_at_progress_1() {
     let params = PlacementParams::FanOut { spread_px: 64.0 };
     // phase 0 -> full spread along +x.
-    let end = fan_out(&PlacementCtx { phase: 0.0, ..ctx(1.0) }, &params);
+    let end = fan_out(
+        &PlacementCtx {
+            phase: 0.0,
+            ..ctx(1.0)
+        },
+        &params,
+    );
     assert!((end[0] - 64.0).abs() < 1e-4, "x reaches spread_px");
     assert!(end[1].abs() < 1e-6, "y stays zero along phase 0");
 }
