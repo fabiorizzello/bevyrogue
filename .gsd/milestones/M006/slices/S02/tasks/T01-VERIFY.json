@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T01",
+  "unitId": "M006/S02/T01",
+  "timestamp": 1779793703471,
+  "passed": true,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "cargo check --no-default-features --features dev",
+      "exitCode": 0,
+      "durationMs": 1737,
+      "verdict": "pass"
+    },
+    {
+      "command": "cargo test --no-default-features --features dev dependency_gating",
+      "exitCode": 0,
+      "durationMs": 605,
+      "verdict": "pass"
+    },
+    {
+      "command": "cargo build --features windowed",
+      "exitCode": 0,
+      "durationMs": 291,
+      "verdict": "pass"
+    }
+  ]
+}

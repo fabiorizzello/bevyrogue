@@ -14,16 +14,16 @@
 
 ## Slices
 
-- [ ] **S01: S01** `risk:high` `depends:[]`
+- [x] **S01: S01** `risk:high` `depends:[]`
   > After this: In cargo winx, the full Baby Flame sequence (charge, ember, projectile, impact) plus Sharp Claws and Baby Burner all render through enoki; the quad system code is gone; cargo build --features windowed is green and the dep-gating test still passes. (VFX quality is K001 manual.)
 
-- [ ] **S02: Cue primitive math + CueRegistry seam in lib** `risk:medium` `depends:[]`
+- [x] **S02: S02** `risk:medium` `depends:[]`
   > After this: cargo test (headless) covers flash/blink/shake/camera-shake param+decay math and CueRegistry lookup; all green. No windowed wiring yet — this is the generic seam downstream slices consume.
 
-- [ ] **S03: Generalize windowed sprite + wire cue dispatch** `risk:high` `depends:[S01,S02]`
+- [x] **S03: S03** `risk:high` `depends:[]`
   > After this: In cargo winx, hits still flash/shake the struck sprite, camera-shake fires on impact, and stance/skill/hurt/death playback still works — now driven by the generic DigimonSprite + cue dispatch instead of Agumon-named components and hit_feedback consts. Windowed regression suite green.
 
-- [ ] **S04: Extract Agumon presentation into its own module** `risk:medium` `depends:[S03]`
+- [ ] **S04: S04** `risk:medium` `depends:[]`
   > After this: In cargo winx, Agumon behaves exactly as before, but grep of the windowed engine files shows no AGUMON_* const, no closed on_enter_effect_ids match, and no load_agumon_enoki_vfx — all of it now lives in and is registered by src/windowed/digimon/agumon/. Windowed build/test green.
 
 - [ ] **S05: Second digimon (Renamon) with zero engine edits** `risk:high` `depends:[S04]`
