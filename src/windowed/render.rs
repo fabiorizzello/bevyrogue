@@ -80,6 +80,23 @@ struct VfxParticleSource {
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
 struct DeathExiting;
 
+/// Off-field exit fader. Seeded by `advance_agumon_presentation` on the frame the
+/// `death` node finishes (a [`DeathExiting`] sprite exits its node). Driven by
+/// [`advance_death_fade`], which lerps `Sprite.color` alpha from 1.0 to 0.0 over
+/// `total_ticks` animation ticks and despawns the entity when it reaches 0 — the
+/// KO'd unit fades off the field only AFTER its authored death frames play out,
+/// preserving the M002 post-KO overshoot observability rather than instant-despawning.
+#[derive(Component, Debug, Clone, Copy, PartialEq)]
+struct FadeOut {
+    remaining_ticks: u32,
+    total_ticks: u32,
+}
+
+/// Animation ticks the off-field fade takes once the death node completes. A few
+/// ticks at the 12fps animation clock — long enough to read as a fade, short
+/// enough not to clutter the field.
+const DEATH_FADE_TICKS: u32 = 8;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum AgumonPlaybackMode {
     Idle,
@@ -339,7 +356,11 @@ impl Plugin for RenderPlugin {
             )
             .add_systems(
                 Update,
-                (advance_vfx_particles, advance_agumon_presentation)
+                (
+                    advance_vfx_particles,
+                    advance_agumon_presentation,
+                    advance_death_fade,
+                )
                     .chain()
                     .after(sample_animation_ticks)
                     .after(spawn_unit_sprites)
@@ -591,7 +612,14 @@ fn advance_agumon_presentation(
     vfx_assets: Option<Res<Assets<VfxAsset>>>,
     vfx_particles: Query<(Entity, &VfxParticle, &VfxParticleSource)>,
     mut sprites: ParamSet<(
-        Query<(&mut AgumonSprite, &mut Sprite, &Transform, Option<&DeathExiting>)>,
+        Query<(
+            Entity,
+            &mut AgumonSprite,
+            &mut Sprite,
+            &Transform,
+            Option<&DeathExiting>,
+            Option<&FadeOut>,
+        )>,
         Query<(&AgumonSprite, &Transform)>,
     )>,
 ) {
@@ -643,7 +671,9 @@ fn advance_agumon_presentation(
                 )
             })
             .collect();
-        for (mut sprite, mut render_sprite, transform, death_exiting) in &mut sprites.p0() {
+        for (entity, mut sprite, mut render_sprite, transform, death_exiting, fade_out) in
+            &mut sprites.p0()
+        {
             let prev_node = sprite.player.current_node.0.clone();
 
             // A dying sprite is resting on (or playing out) its death node. Skip
@@ -896,14 +926,23 @@ fn advance_agumon_presentation(
 
             if advance.exited {
                 if death_exiting.is_some() {
-                    // The death node has played out. Leave the sprite resting on
-                    // its final death frame — the fade-out + despawn is wired in
-                    // T02. Never idle-restore a dying sprite.
+                    // The death node has played out. Never idle-restore a dying
+                    // sprite — instead seed the fade-out so it lerps off the field
+                    // and despawns (advance_death_fade). Insert FadeOut once: the
+                    // death node exits a single time, but guard defensively against
+                    // re-entry while the marker is still present.
+                    if fade_out.is_none() {
+                        commands.entity(entity).insert(FadeOut {
+                            remaining_ticks: DEATH_FADE_TICKS,
+                            total_ticks: DEATH_FADE_TICKS,
+                        });
+                    }
                     trace!(
                         target: "windowed.agumon_playback",
                         unit_id = ?sprite.unit_id,
                         node = sprite.player.current_node.0.as_str(),
-                        "death node exited; holding final death frame (idle restore suppressed)"
+                        fade_ticks = DEATH_FADE_TICKS,
+                        "death node exited; seeding fade-out off field (idle restore suppressed)"
                     );
                 } else if let Some(stance_graph) = stance_graph.clone() {
                     let preserve_missing = active_barrier.as_ref().and_then(|status| {
@@ -1068,6 +1107,45 @@ fn entered_node<'a>(prev_node: &'a str, current_node: &'a str) -> Option<&'a str
 
 fn decrement_vfx_ttl(ttl_ticks: u32) -> u32 {
     ttl_ticks.saturating_sub(1)
+}
+
+/// Linear fade alpha for the off-field death exit: `1.0` at full `remaining_ticks`,
+/// `0.0` once spent. `total_ticks == 0` saturates to `1.0` (the `.max(1)` guards
+/// the divide), so a zero-length fade never divides by zero (Q5).
+fn fade_alpha(remaining_ticks: u32, total_ticks: u32) -> f32 {
+    (remaining_ticks as f32 / total_ticks.max(1) as f32).clamp(0.0, 1.0)
+}
+
+/// Lerp a [`FadeOut`] sprite's alpha to 0 over its `total_ticks`, then despawn it.
+///
+/// Runs on the same `PendingAnimationTicks` clock as the presentation chain and is
+/// ordered strictly after `advance_agumon_presentation`, so a sprite seeded with
+/// `FadeOut` in this frame's death-exit branch begins fading on the next tick.
+/// Writes only `Sprite.color` and despawn — strictly downstream of presentation,
+/// never feeding the kernel (R004). An entity despawned by another path mid-fade
+/// simply stops being yielded by the query (no panic, Q5).
+fn advance_death_fade(
+    mut commands: Commands,
+    pending_ticks: Res<PendingAnimationTicks>,
+    mut faders: Query<(Entity, &mut FadeOut, &mut Sprite)>,
+) {
+    for _ in 0..pending_ticks.0 {
+        for (entity, mut fade, mut sprite) in &mut faders {
+            fade.remaining_ticks = fade.remaining_ticks.saturating_sub(1);
+            let alpha = fade_alpha(fade.remaining_ticks, fade.total_ticks);
+            let rgba = sprite.color.to_linear();
+            sprite.color = Color::linear_rgba(rgba.red, rgba.green, rgba.blue, alpha);
+            if fade.remaining_ticks == 0 {
+                trace!(
+                    target: "windowed.agumon_playback",
+                    ?entity,
+                    total_ticks = fade.total_ticks,
+                    "death fade complete; despawning sprite off field"
+                );
+                commands.entity(entity).despawn();
+            }
+        }
+    }
 }
 
 fn mouth_anchor_xy(caster_xy: [f32; 2], flip_x: bool, sprite_scale: f32) -> [f32; 2] {
@@ -1760,6 +1838,19 @@ mod tests {
         }
         assert_eq!(ttl, 0);
         assert_eq!(decrement_vfx_ttl(ttl), 0);
+    }
+
+    #[test]
+    fn fade_alpha_lerps_full_to_zero() {
+        // Full remaining ticks = fully opaque.
+        assert_eq!(fade_alpha(8, 8), 1.0);
+        // Half spent = ~half alpha.
+        assert!((fade_alpha(4, 8) - 0.5).abs() < f32::EPSILON);
+        // Spent = fully transparent.
+        assert_eq!(fade_alpha(0, 8), 0.0);
+        // total_ticks == 0 saturates to 1.0 without dividing by zero (Q5).
+        assert_eq!(fade_alpha(0, 0), 0.0);
+        assert_eq!(fade_alpha(5, 0), 1.0);
     }
 
     #[test]
