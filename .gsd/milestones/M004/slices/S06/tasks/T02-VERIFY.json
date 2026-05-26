@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T02",
+  "unitId": "M004/S06/T02",
+  "timestamp": 1779741325947,
+  "passed": true,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "test -x scripts/capture-windowed-m004-vfx.sh",
+      "exitCode": 0,
+      "durationMs": 2,
+      "verdict": "pass"
+    },
+    {
+      "command": "bash -n scripts/capture-windowed-m004-vfx.sh",
+      "exitCode": 0,
+      "durationMs": 2,
+      "verdict": "pass"
+    },
+    {
+      "command": "grep -qi 'K001' scripts/capture-windowed-m004-vfx.sh",
+      "exitCode": 0,
+      "durationMs": 2,
+      "verdict": "pass"
+    },
+    {
+      "command": "grep -q 'auto-mode must NOT invoke' scripts/capture-windowed-m004-vfx.sh",
+      "exitCode": 0,
+      "durationMs": 2,
+      "verdict": "pass"
+    },
+    {
+      "command": "grep -q 'M004/slices/S06/uat-evidence' scripts/capture-windowed-m004-vfx.sh",
+      "exitCode": 0,
+      "durationMs": 2,
+      "verdict": "pass"
+    },
+    {
+      "command": "grep -q 'winx' scripts/capture-windowed-m004-vfx.sh",
+      "exitCode": 0,
+      "durationMs": 2,
+      "verdict": "pass"
+    }
+  ]
+}

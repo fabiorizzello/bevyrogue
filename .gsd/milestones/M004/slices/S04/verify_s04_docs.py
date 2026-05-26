@@ -51,7 +51,7 @@ REQUIRED_TOKENS = {
         "## Explicit limits for validators",
         "## Reader test",
         "Sharp Claws",
-        "HDR bloom/additive rendering",
+        "HDR + Bloom + overbright authored channels",
         "K001",
         "S05/S06",
         "| 7 | K001 manual visual boundary |",
