@@ -75,6 +75,36 @@ struct VfxParticleSource {
     unit_id: UnitId,
 }
 
+/// Tags a persistent enoki emitter spawned for the Baby Flame charge orb / ember
+/// swirl (M006/S01 T03, D046). Unlike the contact bursts (which carry
+/// `OneShot::Despawn` and drain on their own), these emitters must keep emitting at
+/// the caster's mouth through the entire charge buildup and then be cleared the
+/// instant the flame launches. `advance_agumon_presentation` despawns every marker
+/// whose `unit_id` matches the casting sprite at the `CueReleaseResult::Released`
+/// boundary, reproducing the old quad-path launch-clear without entering the
+/// kernel/FSM timeline (D031/D032). Carries the source `UnitId` so the launch-clear
+/// can target only the caster's emitters.
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
+struct ChargeEmberEnokiMarker {
+    unit_id: UnitId,
+}
+
+/// Drives a persistent enoki projectile emitter caster->target then chains the
+/// impact burst on arrival (M006/S01 T03, D046). The Baby Flame projectile is a
+/// traveling emitter, not a self-despawning one-shot: `advance_enoki_projectiles`
+/// lerps the entity's `Transform` from `from_xy` to `to_xy` over `ticks_total`
+/// animation ticks and, on arrival (`ticks_elapsed >= ticks_total`), despawns the
+/// spawner and spawns `baby_flame.impact` at `to_xy` — reproducing the old
+/// quad-path `on_expire` projectile->impact chain. Presentation-only, fire-and-
+/// forget; never feeds the kernel/FSM timeline (D031/D032).
+#[derive(Component, Debug, Clone, Copy, PartialEq)]
+struct ProjectileFlight {
+    from_xy: [f32; 2],
+    to_xy: [f32; 2],
+    ticks_total: u32,
+    ticks_elapsed: u32,
+}
+
 /// Terminal marker: this sprite has been seeded into its `death` stance node and
 /// is exiting the field. Kept as a *separate* component rather than a new
 /// `AgumonPlaybackMode` variant so the `mode` match arms in `sync_agumon_mode` /
@@ -443,6 +473,7 @@ impl Plugin for RenderPlugin {
                 Update,
                 (
                     advance_vfx_particles,
+                    advance_enoki_projectiles,
                     advance_agumon_presentation,
                     advance_death_fade,
                 )
@@ -499,6 +530,11 @@ const AGUMON_DETONATE_EFFECT_ID: &str = "baby_burner.detonate";
 /// target-anchored streak spawned on the `sharp_claws_strike` node enter,
 /// resolved through the same `resolve_effect` path as every other effect.
 const AGUMON_SHARP_CLAWS_EFFECT_ID: &str = "sharp_claws.slash";
+
+/// Animation ticks the Baby Flame projectile emitter takes to travel caster->target
+/// before chaining the impact burst (M006/S01 T03). Mirrors the deleted quad
+/// projectile's `ttl_ticks: 5` in `vfx.ron` so the flight feels identical.
+const AGUMON_PROJECTILE_FLIGHT_TICKS: u32 = 5;
 
 /// Handle to Agumon's owned `VfxAsset` (M004/S01). Held in a resource so every
 /// Baby Flame effect can source its placement verb + appearance curves from data.
@@ -848,7 +884,7 @@ fn advance_agumon_presentation(
     agumon_vfx: Option<Res<AgumonVfx>>,
     agumon_enoki_vfx: Option<Res<AgumonEnokiVfx>>,
     vfx_assets: Option<Res<Assets<VfxAsset>>>,
-    vfx_particles: Query<(Entity, &VfxParticle, &VfxParticleSource)>,
+    charge_ember_markers: Query<(Entity, &ChargeEmberEnokiMarker)>,
     mut hit_flash: ResMut<HitFlashState>,
     mut hit_shake: ResMut<HitShakeState>,
     mut sprites: ParamSet<(
@@ -1095,7 +1131,7 @@ fn advance_agumon_presentation(
                             for effect_id in on_enter_effect_ids(descriptor.particle.0.as_str()) {
                                 let spawned = spawn_effect_by_id(
                                     &mut commands,
-                                    asset,
+                                    Some(asset),
                                     effect_id,
                                     vfx_visuals.as_deref(),
                                     caster_xy,
@@ -1135,17 +1171,20 @@ fn advance_agumon_presentation(
                     CueReleaseResult::Released | CueReleaseResult::DuplicateRelease
                 ) {
                     if mode_skill_id == Some(BABY_FLAME_SKILL_ID) {
-                        // Despawn the charge orb + ember swirl by effect-id
-                        // membership (not VfxParticleKind) the instant the flame
-                        // launches, so the mouth clears for the projectile.
-                        for (entity, particle, source) in &vfx_particles {
-                            if source.unit_id == sprite.unit_id
-                                && matches!(
-                                    particle.effect_id.0.as_str(),
-                                    AGUMON_CHARGE_EFFECT_ID | AGUMON_EMBER_EFFECT_ID
-                                )
-                            {
-                                commands.entity(entity).despawn();
+                        // Despawn the charge orb + ember swirl enoki emitters the
+                        // instant the flame launches, so the mouth clears for the
+                        // projectile. Membership is by ChargeEmberEnokiMarker (enoki-
+                        // native, T03) now that charge/ember are persistent emitters
+                        // rather than self-draining quads.
+                        for (marker_entity, marker) in &charge_ember_markers {
+                            if marker.unit_id == sprite.unit_id {
+                                commands.entity(marker_entity).despawn();
+                                trace!(
+                                    target: "windowed.agumon_playback",
+                                    source_unit = ?sprite.unit_id,
+                                    entity = ?marker_entity,
+                                    "despawned charge/ember enoki emitter on flame launch"
+                                );
                             }
                         }
 
@@ -1157,7 +1196,7 @@ fn advance_agumon_presentation(
                             if let Some(asset) = vfx_asset {
                                 let spawned = spawn_effect_by_id(
                                     &mut commands,
-                                    asset,
+                                    Some(asset),
                                     AGUMON_PROJECTILE_EFFECT_ID,
                                     vfx_visuals.as_deref(),
                                     [transform.translation.x, transform.translation.y],
@@ -1507,7 +1546,7 @@ fn anchor_base_xy(
 #[allow(clippy::too_many_arguments)]
 fn spawn_effect_by_id(
     commands: &mut Commands,
-    asset: &VfxAsset,
+    asset: Option<&VfxAsset>,
     effect_id: &str,
     visuals: Option<&VfxVisuals>,
     caster_xy: [f32; 2],
@@ -1537,15 +1576,45 @@ fn spawn_effect_by_id(
                 source_flip_x,
                 source_scale,
             );
-            commands.spawn((
+            let mut spawned = commands.spawn((
                 ParticleSpawner::default(),
                 ParticleEffectHandle(entry.handle.clone()),
-                OneShot::Despawn,
                 Transform::from_xyz(base[0], base[1], VFX_PARTICLE_Z),
             ));
+            // The Baby Flame buildup effects are STATEFUL persistent emitters, not
+            // self-draining one-shots (D046). charge/ember keep emitting at the
+            // mouth until `advance_agumon_presentation` clears them by marker at the
+            // launch boundary; the projectile travels caster->target under
+            // `advance_enoki_projectiles`, which chains the impact on arrival. Every
+            // other id (the impact/detonate/slash contact bursts) is fire-and-forget
+            // and carries `OneShot::Despawn` so its spawner is removed once it drains.
+            match effect_id {
+                AGUMON_CHARGE_EFFECT_ID | AGUMON_EMBER_EFFECT_ID => {
+                    spawned.insert(ChargeEmberEnokiMarker {
+                        unit_id: source_unit,
+                    });
+                }
+                AGUMON_PROJECTILE_EFFECT_ID => {
+                    spawned.insert(ProjectileFlight {
+                        from_xy: base,
+                        to_xy: target_xy,
+                        ticks_total: AGUMON_PROJECTILE_FLIGHT_TICKS,
+                        ticks_elapsed: 0,
+                    });
+                }
+                _ => {
+                    spawned.insert(OneShot::Despawn);
+                }
+            }
             return 1;
         }
     }
+    // The enoki branch above returned for every enoki-routed id; only the legacy
+    // quad path remains here, and it needs the loaded `VfxAsset`. An enoki-only
+    // caller (e.g. `advance_enoki_projectiles` chaining the impact) can pass `None`.
+    let Some(asset) = asset else {
+        return 0;
+    };
     let Some(effect) = resolve_effect(asset, effect_id) else {
         return 0;
     };
@@ -1775,7 +1844,7 @@ fn spawn_detonate_particles(
 
         let spawned = spawn_effect_by_id(
             &mut commands,
-            asset,
+            Some(asset),
             AGUMON_DETONATE_EFFECT_ID,
             vfx_visuals.as_deref(),
             caster_xy,
@@ -1946,7 +2015,7 @@ fn advance_vfx_particles(
                     let pos = [transform.translation.x, transform.translation.y];
                     spawn_effect_by_id(
                         &mut commands,
-                        asset,
+                        Some(asset),
                         &next.0,
                         vfx_visuals.as_deref(),
                         pos,
@@ -1966,6 +2035,64 @@ fn advance_vfx_particles(
                     "despawned windowed vfx particle"
                 );
                 commands.entity(entity).despawn();
+            }
+        }
+    }
+}
+
+/// Advance every in-flight Baby Flame projectile emitter on the shared
+/// `PendingAnimationTicks` clock (M006/S01 T03, D046). Each tick the entity's
+/// `Transform` is lerped linearly from `ProjectileFlight::from_xy` to `to_xy` over
+/// `ticks_total` ticks; on arrival (`ticks_elapsed >= ticks_total`) the projectile
+/// spawner is despawned and `baby_flame.impact` is spawned at `to_xy`, reproducing
+/// the deleted quad path's `on_expire` projectile->impact chain through the enoki
+/// backend. Runs in the presentation chain slot the quad `advance_vfx_particles`
+/// occupies, strictly before `advance_agumon_presentation`. Presentation-only and
+/// fire-and-forget: it never reads or mutates combat/kernel state (R010, D031/D032).
+fn advance_enoki_projectiles(
+    mut commands: Commands,
+    pending_ticks: Res<PendingAnimationTicks>,
+    agumon_enoki_vfx: Option<Res<AgumonEnokiVfx>>,
+    mut projectiles: Query<(Entity, &mut Transform, &mut ProjectileFlight)>,
+) {
+    for _ in 0..pending_ticks.0 {
+        for (entity, mut transform, mut flight) in &mut projectiles {
+            flight.ticks_elapsed += 1;
+            let t = if flight.ticks_total == 0 {
+                1.0
+            } else {
+                (flight.ticks_elapsed as f32 / flight.ticks_total as f32).clamp(0.0, 1.0)
+            };
+            transform.translation.x = flight.from_xy[0] + (flight.to_xy[0] - flight.from_xy[0]) * t;
+            transform.translation.y = flight.from_xy[1] + (flight.to_xy[1] - flight.from_xy[1]) * t;
+            transform.translation.z = VFX_PARTICLE_Z;
+
+            if flight.ticks_elapsed >= flight.ticks_total {
+                // Arrival: clear the traveling emitter and chain the impact burst at
+                // the target. `asset` is `None` because impact is enoki-routed (the
+                // quad fallback in `spawn_effect_by_id` is never reached); the placebo
+                // `UnitId` is unused on the enoki path (impact carries no
+                // `VfxParticleSource`). Mirrors the old `on_expire` chain's pos,pos.
+                commands.entity(entity).despawn();
+                spawn_effect_by_id(
+                    &mut commands,
+                    None,
+                    AGUMON_IMPACT_EFFECT_ID,
+                    None,
+                    flight.to_xy,
+                    flight.to_xy,
+                    UnitId(0),
+                    false,
+                    1.0,
+                    agumon_enoki_vfx.as_deref(),
+                );
+                trace!(
+                    target: "windowed.agumon_playback",
+                    entity = ?entity,
+                    to_xy = ?flight.to_xy,
+                    effect_id = AGUMON_IMPACT_EFFECT_ID,
+                    "enoki projectile arrived; chained impact burst"
+                );
             }
         }
     }
