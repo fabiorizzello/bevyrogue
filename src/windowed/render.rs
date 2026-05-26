@@ -6,19 +6,18 @@ use bevy::{
     prelude::*,
     render::view::Hdr,
 };
-use bevy_common_assets::ron::RonAssetPlugin;
 use bevy_enoki::prelude::OneShot;
 use bevy_enoki::{EnokiPlugin, Particle2dEffect, ParticleEffectHandle, ParticleSpawner};
 
 use bevyrogue::animation::{
     AnimGraph, AnimGraphId, AnimGraphPlayer, AnimationClipHandles, AnimationClipLoadState,
-    AnimationGraphLookupDiagnostics, AtlasGeometry, Clip, EffectId, FrameCueCommand,
-    NodeId, PlacementAnchor, PlacementCtx, PlacementParams, ResolvedAnimGraph, ResolvedAnimGraphSource,
-    SkillGraphRegistry, StanceGraphRegistry, StanceReaction, VfxAsset, VfxMotion, VfxSpawnDescriptor,
-    eval_color, eval_rotation, eval_scale, resolve_effect, stance_reaction_for,
+    AnimationGraphLookupDiagnostics, AtlasGeometry, Clip, FrameCueCommand,
+    NodeId, PlacementAnchor, ResolvedAnimGraph, ResolvedAnimGraphSource,
+    SkillGraphRegistry, StanceGraphRegistry, StanceReaction, VfxSpawnDescriptor,
+    stance_reaction_for,
 };
 use bevyrogue::combat::runtime::{
-    CueBarrierStatus, CueReleaseResult, ExtRegistries, SuspendedTimelineState,
+    CueBarrierStatus, CueReleaseResult, SuspendedTimelineState,
 };
 use bevyrogue::combat::team::Team;
 use bevyrogue::combat::turn_system::{continue_suspended_timeline_system, resolve_action_system};
@@ -44,35 +43,6 @@ pub(super) struct AgumonSprite {
     mode: AgumonPlaybackMode,
     last_release_frame: Option<ReleaseFrameKey>,
     last_missing_skill_graph_cue: Option<String>,
-}
-
-#[derive(Component, Debug, Clone, PartialEq)]
-struct VfxParticle {
-    ttl_ticks: u32,
-    age_ticks: u32,
-    /// Retained per the T03 contract; position is now driven by the resolved
-    /// placement verb, so every data-driven spawn carries `Static` here.
-    motion: VfxMotion,
-    /// Owned effect id (resolved at spawn). The per-tick dispatcher resolves it
-    /// against the loaded `VfxAsset` to drive placement + appearance.
-    effect_id: EffectId,
-    /// World-space anchor the resolved placement offset is applied relative to,
-    /// copied from the resolved effect's `placement.anchor` at spawn.
-    anchor: PlacementAnchor,
-    /// Per-particle seed angle (radians). Swirls use it as the starting orbit
-    /// angle; fan-out bursts use it as the radial direction. 0.0 for single-quad
-    /// effects, which derive everything from `age_ticks`.
-    phase: f32,
-}
-
-#[derive(Component, Debug, Clone, Copy, PartialEq)]
-struct VfxParticleTarget {
-    world_xy: [f32; 2],
-}
-
-#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
-struct VfxParticleSource {
-    unit_id: UnitId,
 }
 
 /// Tags a persistent enoki emitter spawned for the Baby Flame charge orb / ember
@@ -246,23 +216,6 @@ pub(super) struct AgumonAtlas {
     geometry: AtlasGeometry,
 }
 
-#[derive(Resource, Debug, Clone)]
-struct VfxVisuals {
-    // Composable "atom" set (S06): single-element glow primitives the particle
-    // engine layers + rotates into the full effect. `baby_flame_impact` and
-    // `sharp_claws_slash` are retained for the baby_burner.* + sharp_claws paths.
-    flame_core: Handle<Image>,
-    flame_spark: Handle<Image>,
-    flame_streak: Handle<Image>,
-    flame_orb: Handle<Image>,
-    flame_tall: Handle<Image>,
-    flame_comet: Handle<Image>,
-    flame_burst: Handle<Image>,
-    flame_ring: Handle<Image>,
-    baby_flame_impact: Handle<Image>,
-    sharp_claws_slash: Handle<Image>,
-}
-
 /// Default animation playback rate (frames of clip per second) when no
 /// `BEVYROGUE_ANIM_FPS` override is set. 12 fps is a classic "snappy" pixel-art
 /// step: the 6-frame idle loop cycles in ~0.5s rather than ~0.1s at 60fps.
@@ -289,10 +242,6 @@ const DAMAGE_NUMBER_TICKS: u32 = 12;
 const DAMAGE_NUMBER_FONT_SIZE: f32 = 32.0;
 const VFX_MOUTH_OFFSET_X_PX: f32 = 92.0;
 const VFX_MOUTH_OFFSET_Y_PX: f32 = 24.0;
-// All per-effect appearance values (count, ttl, size, spread, scale/color curves,
-// texture) now live in `assets/digimon/agumon/vfx.ron` and are read through the
-// `VfxAsset` schema; the hardcoded Baby Flame polish constants the per-kind
-// dispatcher used were deleted in T03.
 
 /// Fixed-rate animation clock for the windowed presentation layer.
 ///
@@ -387,16 +336,13 @@ pub struct RenderPlugin;
 
 impl Plugin for RenderPlugin {
     fn build(&self, app: &mut App) {
-        // Owned per-Digimon VFX schema (M004/S01, D033/D034). Mirrors the
-        // AnimGraph loader: a `.ron` -> typed `VfxAsset` loader, windowed-gated so
-        // no rendering/asset dependency leaks into the headless build (R016).
-        app.add_plugins(RonAssetPlugin::<VfxAsset>::new(&["ron"]))
-            // bevy_enoki's GPU 2D particle backend (M005/S04). EnokiPlugin brings
-            // its own `Particle2dEffect` asset loader, so the `.particle.ron` needs
-            // no RonAssetPlugin registration; the loader is selected by asset type.
-            // Windowed-gated like everything in this module so no render-stack dep
-            // leaks into the headless build (R005/R016).
-            .add_plugins(EnokiPlugin)
+        // bevy_enoki's GPU 2D particle backend (M005/S04) is now the sole particle
+        // VFX renderer (M006/S01, D043). EnokiPlugin brings its own
+        // `Particle2dEffect` asset loader, so the `.particle.ron` needs no
+        // RonAssetPlugin registration; the loader is selected by asset type.
+        // Windowed-gated like everything in this module so no render-stack dep
+        // leaks into the headless build (R005/R016).
+        app.add_plugins(EnokiPlugin)
             .insert_resource(AnimationClock::from_env())
             .insert_resource(PendingAnimationTicks::default())
             .init_resource::<HitFlashState>()
@@ -405,16 +351,13 @@ impl Plugin for RenderPlugin {
                 Startup,
                 (
                     setup_camera,
-                    load_vfx_visuals,
-                    load_agumon_vfx,
                     load_agumon_enoki_vfx,
                 ),
             )
-            .add_systems(Update, diagnose_agumon_vfx_load)
             .add_systems(Update, diagnose_agumon_enoki_vfx_load)
             .add_systems(Update, build_agumon_atlas.before(spawn_unit_sprites))
             .add_systems(Update, spawn_unit_sprites)
-            .add_systems(Update, sample_animation_ticks.before(advance_vfx_particles))
+            .add_systems(Update, sample_animation_ticks.before(advance_enoki_projectiles))
             .add_systems(
                 Update,
                 spawn_detonate_particles
@@ -472,7 +415,6 @@ impl Plugin for RenderPlugin {
             .add_systems(
                 Update,
                 (
-                    advance_vfx_particles,
                     advance_enoki_projectiles,
                     advance_agumon_presentation,
                     advance_death_fade,
@@ -496,23 +438,6 @@ fn setup_camera(mut commands: Commands) {
     ));
 }
 
-fn load_vfx_visuals(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.insert_resource(VfxVisuals {
-        flame_core: asset_server.load("vfx/flame_core.png"),
-        flame_spark: asset_server.load("vfx/flame_spark.png"),
-        flame_streak: asset_server.load("vfx/flame_streak.png"),
-        flame_orb: asset_server.load("vfx/flame_orb.png"),
-        flame_tall: asset_server.load("vfx/flame_tall.png"),
-        flame_comet: asset_server.load("vfx/flame_comet.png"),
-        flame_burst: asset_server.load("vfx/flame_burst.png"),
-        flame_ring: asset_server.load("vfx/flame_ring.png"),
-        baby_flame_impact: asset_server.load("vfx/baby_flame_impact.png"),
-        sharp_claws_slash: asset_server.load("vfx/sharp_claws_slash.png"),
-    });
-}
-
-/// Path (relative to `assets/`) of Agumon's owned VFX asset.
-const AGUMON_VFX_PATH: &str = "digimon/agumon/vfx.ron";
 /// Namespaced effect ids of the five Baby Flame effects within the asset. The
 /// dispatcher resolves each through `resolve_effect` to drive placement +
 /// appearance; nothing is keyed off a hardcoded VFX kind any more (T03).
@@ -535,54 +460,6 @@ const AGUMON_SHARP_CLAWS_EFFECT_ID: &str = "sharp_claws.slash";
 /// before chaining the impact burst (M006/S01 T03). Mirrors the deleted quad
 /// projectile's `ttl_ticks: 5` in `vfx.ron` so the flight feels identical.
 const AGUMON_PROJECTILE_FLIGHT_TICKS: u32 = 5;
-
-/// Handle to Agumon's owned `VfxAsset` (M004/S01). Held in a resource so every
-/// Baby Flame effect can source its placement verb + appearance curves from data.
-#[derive(Resource, Debug, Clone)]
-struct AgumonVfx {
-    handle: Handle<VfxAsset>,
-}
-
-fn load_agumon_vfx(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.insert_resource(AgumonVfx {
-        handle: asset_server.load(AGUMON_VFX_PATH),
-    });
-    info!(
-        target: "windowed.agumon_playback",
-        path = AGUMON_VFX_PATH,
-        "agumon vfx asset load requested"
-    );
-}
-
-/// Surface a load failure for Agumon's `vfx.ron` once, mirroring the missing
-/// anim-graph diagnostic. A failed/missing asset never enters `Assets<VfxAsset>`,
-/// so no effect ever resolves and every Baby Flame particle is skipped; there is
-/// no hardcoded fallback path any more (T03). This makes the dead VFX visible
-/// rather than mysterious (slice failure-visibility).
-fn diagnose_agumon_vfx_load(
-    agumon_vfx: Option<Res<AgumonVfx>>,
-    asset_server: Res<AssetServer>,
-    mut warned: Local<bool>,
-) {
-    if *warned {
-        return;
-    }
-    let Some(agumon_vfx) = agumon_vfx else {
-        return;
-    };
-    if matches!(
-        asset_server.load_state(agumon_vfx.handle.id()),
-        bevy::asset::LoadState::Failed(_)
-    ) {
-        warn!(
-            target: "windowed.agumon_playback",
-            path = AGUMON_VFX_PATH,
-            reason = "vfx.ron failed to load or parse",
-            "Baby Flame VFX disabled; no owned effects could resolve"
-        );
-        *warned = true;
-    }
-}
 
 /// Path (relative to `assets/`) of Agumon's enoki impact-burst effect. A separate
 /// asset from the owned `VfxAsset` schema: this drives the bevy_enoki GPU particle
@@ -880,10 +757,7 @@ fn advance_agumon_presentation(
     mut lookup_diagnostics: ResMut<AnimationGraphLookupDiagnostics>,
     mut barrier: ResMut<SuspendedTimelineState>,
     atlas: Option<Res<AgumonAtlas>>,
-    vfx_visuals: Option<Res<VfxVisuals>>,
-    agumon_vfx: Option<Res<AgumonVfx>>,
     agumon_enoki_vfx: Option<Res<AgumonEnokiVfx>>,
-    vfx_assets: Option<Res<Assets<VfxAsset>>>,
     charge_ember_markers: Query<(Entity, &ChargeEmberEnokiMarker)>,
     mut hit_flash: ResMut<HitFlashState>,
     mut hit_shake: ResMut<HitShakeState>,
@@ -902,14 +776,6 @@ fn advance_agumon_presentation(
 ) {
     let stance_graph =
         stance_reg.resolve_snapshot(&AnimGraphId(AGUMON_STANCE_GRAPH_ID.into()), &graphs);
-
-    // The loaded owned asset: every Baby Flame spawn site reads its effects from
-    // here. `None` (not yet loaded / load failed) means no effect resolves, so
-    // nothing spawns — surfaced once by `diagnose_agumon_vfx_load`.
-    let vfx_asset = agumon_vfx
-        .as_ref()
-        .zip(vfx_assets.as_ref())
-        .and_then(|(vfx, assets)| assets.get(&vfx.handle));
 
     {
         let active_barrier = barrier.active_status().cloned();
@@ -1118,22 +984,12 @@ fn advance_agumon_presentation(
                             // Map the authored particle name to the owned effect
                             // id(s) it spawns (the charge command also seeds the
                             // inward ember swirl). This name->effect map at the
-                            // spawn boundary replaces VfxParticleKind dispatch.
-                            let Some(asset) = vfx_asset else {
-                                debug!(
-                                    target: "windowed.agumon_playback",
-                                    source_unit = ?sprite.unit_id,
-                                    particle = %descriptor.particle.0,
-                                    "vfx.ron not loaded; on_enter VFX skipped"
-                                );
-                                continue;
-                            };
+                            // spawn boundary replaces VfxParticleKind dispatch; each
+                            // id is then rendered through enoki (D043).
                             for effect_id in on_enter_effect_ids(descriptor.particle.0.as_str()) {
                                 let spawned = spawn_effect_by_id(
                                     &mut commands,
-                                    Some(asset),
                                     effect_id,
-                                    vfx_visuals.as_deref(),
                                     caster_xy,
                                     target_xy,
                                     sprite.unit_id,
@@ -1193,34 +1049,24 @@ fn advance_agumon_presentation(
                             sprite.unit_id,
                             [transform.translation.x, transform.translation.y],
                         ) {
-                            if let Some(asset) = vfx_asset {
-                                let spawned = spawn_effect_by_id(
-                                    &mut commands,
-                                    Some(asset),
-                                    AGUMON_PROJECTILE_EFFECT_ID,
-                                    vfx_visuals.as_deref(),
-                                    [transform.translation.x, transform.translation.y],
-                                    target_xy,
-                                    sprite.unit_id,
-                                    render_sprite.flip_x,
-                                    transform.scale.x,
-                                    agumon_enoki_vfx.as_deref(),
-                                );
-                                trace!(
-                                    target: "windowed.agumon_playback",
-                                    effect_id = AGUMON_PROJECTILE_EFFECT_ID,
-                                    spawned,
-                                    source_unit = ?sprite.unit_id,
-                                    target_xy = ?target_xy,
-                                    "spawned Baby Flame projectile on release"
-                                );
-                            } else {
-                                debug!(
-                                    target: "windowed.agumon_playback",
-                                    source_unit = ?sprite.unit_id,
-                                    "vfx.ron not loaded; Baby Flame projectile skipped on release"
-                                );
-                            }
+                            let spawned = spawn_effect_by_id(
+                                &mut commands,
+                                AGUMON_PROJECTILE_EFFECT_ID,
+                                [transform.translation.x, transform.translation.y],
+                                target_xy,
+                                sprite.unit_id,
+                                render_sprite.flip_x,
+                                transform.scale.x,
+                                agumon_enoki_vfx.as_deref(),
+                            );
+                            trace!(
+                                target: "windowed.agumon_playback",
+                                effect_id = AGUMON_PROJECTILE_EFFECT_ID,
+                                spawned,
+                                source_unit = ?sprite.unit_id,
+                                target_xy = ?target_xy,
+                                "spawned Baby Flame projectile on release"
+                            );
                         } else {
                             debug!(
                                 target: "windowed.agumon_playback",
@@ -1433,10 +1279,6 @@ fn entered_node<'a>(prev_node: &'a str, current_node: &'a str) -> Option<&'a str
     (prev_node != current_node).then_some(current_node)
 }
 
-fn decrement_vfx_ttl(ttl_ticks: u32) -> u32 {
-    ttl_ticks.saturating_sub(1)
-}
-
 /// Linear fade alpha for the off-field death exit: `1.0` at full `remaining_ticks`,
 /// `0.0` once spent. `total_ticks == 0` saturates to `1.0` (the `.max(1)` guards
 /// the divide), so a zero-length fade never divides by zero (Q5).
@@ -1499,27 +1341,6 @@ fn on_enter_effect_ids(particle_name: &str) -> &'static [&'static str] {
     }
 }
 
-/// Resolve an `Appearance.texture` key to a windowed image handle. A small
-/// string->handle map (NOT VfxParticleKind dispatch): an unknown/empty key
-/// resolves to `None` so the particle renders as a flat-color quad. Headless
-/// code never calls this (R016).
-fn vfx_texture_handle(key: &str, visuals: Option<&VfxVisuals>) -> Option<Handle<Image>> {
-    let visuals = visuals?;
-    match key {
-        "flame_core" => Some(visuals.flame_core.clone()),
-        "flame_spark" => Some(visuals.flame_spark.clone()),
-        "flame_streak" => Some(visuals.flame_streak.clone()),
-        "flame_orb" => Some(visuals.flame_orb.clone()),
-        "flame_tall" => Some(visuals.flame_tall.clone()),
-        "flame_comet" => Some(visuals.flame_comet.clone()),
-        "flame_burst" => Some(visuals.flame_burst.clone()),
-        "flame_ring" => Some(visuals.flame_ring.clone()),
-        "baby_flame_impact" => Some(visuals.baby_flame_impact.clone()),
-        "sharp_claws_slash" => Some(visuals.sharp_claws_slash.clone()),
-        _ => None,
-    }
-}
-
 /// World-space base point a resolved placement offset is applied relative to.
 /// `caster_xy` is the caster's live body center; the mouth anchor derives the
 /// muzzle from it using the sprite facing + scale.
@@ -1537,18 +1358,18 @@ fn anchor_base_xy(
     }
 }
 
-/// Spawn every particle of effect `effect_id` from the owned `VfxAsset`. Reads
-/// `count`, `ttl_ticks`, `size_px`, `texture`, and the spawn-time color from the
-/// resolved `EffectDef`; per-tick position/scale/color are then driven by
-/// [`advance_vfx_particles`] through the Registry-resolved placement verb.
-/// Returns the number of particles spawned (0 if the effect id is absent — the
-/// caller logs; a load failure is surfaced once by `diagnose_agumon_vfx_load`).
+/// Spawn effect `effect_id` through bevy_enoki's GPU 2D backend — the sole
+/// particle VFX renderer (M006/S01, D043). Looks the id up in the enoki handle
+/// map, computes the placement `base` from the anchor carried in the map entry
+/// (migrated out of `VfxAsset` in T02), and spawns the enoki `ParticleSpawner`
+/// with its T03 lifecycle tag. Returns 1 on a spawn, 0 if the resource is absent
+/// or the id is unmapped (the caller logs; a load failure is surfaced once by
+/// `diagnose_agumon_enoki_vfx_load`). No kernel/FSM cue or barrier control flow is
+/// touched (D031/D032).
 #[allow(clippy::too_many_arguments)]
 fn spawn_effect_by_id(
     commands: &mut Commands,
-    asset: Option<&VfxAsset>,
     effect_id: &str,
-    visuals: Option<&VfxVisuals>,
     caster_xy: [f32; 2],
     target_xy: [f32; 2],
     source_unit: UnitId,
@@ -1556,123 +1377,50 @@ fn spawn_effect_by_id(
     source_scale: f32,
     enoki: Option<&AgumonEnokiVfx>,
 ) -> u32 {
-    // M005/S05 + M006/S01: route any effect id present in the enoki handle map
-    // through bevy_enoki's GPU 2D backend as a self-despawning one-shot. The
-    // placement `base` is computed from the anchor carried in the map entry
-    // (migrated out of the `VfxAsset` in T02), so this branch runs BEFORE
-    // `resolve_effect` and no longer depends on vfx.ron — that lets T04 delete the
-    // windowed VfxAsset loader cleanly. An id absent from the map (or no loaded
-    // resource) falls through to the quad loop below, which stays resolve_effect-
-    // driven. This intercept changes only what gets spawned for a matched id — no
-    // kernel/FSM cue or barrier control flow is touched (D031/D032). The enoki
-    // effect is fire-and-forget; `OneShot::Despawn` removes the spawner once it
-    // drains, so no particle lifetime enters the kernel timeline.
-    if let Some(enoki) = enoki {
-        if let Some(entry) = enoki.handles.get(effect_id) {
-            let base = anchor_base_xy(
-                entry.anchor,
-                caster_xy,
-                target_xy,
-                source_flip_x,
-                source_scale,
-            );
-            let mut spawned = commands.spawn((
-                ParticleSpawner::default(),
-                ParticleEffectHandle(entry.handle.clone()),
-                Transform::from_xyz(base[0], base[1], VFX_PARTICLE_Z),
-            ));
-            // The Baby Flame buildup effects are STATEFUL persistent emitters, not
-            // self-draining one-shots (D046). charge/ember keep emitting at the
-            // mouth until `advance_agumon_presentation` clears them by marker at the
-            // launch boundary; the projectile travels caster->target under
-            // `advance_enoki_projectiles`, which chains the impact on arrival. Every
-            // other id (the impact/detonate/slash contact bursts) is fire-and-forget
-            // and carries `OneShot::Despawn` so its spawner is removed once it drains.
-            match effect_id {
-                AGUMON_CHARGE_EFFECT_ID | AGUMON_EMBER_EFFECT_ID => {
-                    spawned.insert(ChargeEmberEnokiMarker {
-                        unit_id: source_unit,
-                    });
-                }
-                AGUMON_PROJECTILE_EFFECT_ID => {
-                    spawned.insert(ProjectileFlight {
-                        from_xy: base,
-                        to_xy: target_xy,
-                        ticks_total: AGUMON_PROJECTILE_FLIGHT_TICKS,
-                        ticks_elapsed: 0,
-                    });
-                }
-                _ => {
-                    spawned.insert(OneShot::Despawn);
-                }
-            }
-            return 1;
-        }
-    }
-    // The enoki branch above returned for every enoki-routed id; only the legacy
-    // quad path remains here, and it needs the loaded `VfxAsset`. An enoki-only
-    // caller (e.g. `advance_enoki_projectiles` chaining the impact) can pass `None`.
-    let Some(asset) = asset else {
+    let Some(enoki) = enoki else {
         return 0;
     };
-    let Some(effect) = resolve_effect(asset, effect_id) else {
+    let Some(entry) = enoki.handles.get(effect_id) else {
         return 0;
     };
-    let count = effect.appearance.count.max(1);
     let base = anchor_base_xy(
-        effect.placement.anchor,
+        entry.anchor,
         caster_xy,
         target_xy,
         source_flip_x,
         source_scale,
     );
-    let rgba = eval_color(&effect.appearance.color, 0.0);
-    let color = Color::linear_rgba(rgba[0], rgba[1], rgba[2], rgba[3]);
-    let size = Vec2::splat(effect.appearance.size_px);
-    for i in 0..count {
-        let phase = (i as f32 / count as f32) * std::f32::consts::TAU;
-        let sprite = match vfx_texture_handle(&effect.appearance.texture, visuals) {
-            Some(image) => Sprite {
-                image,
-                custom_size: Some(size),
-                color,
-                ..default()
-            },
-            None => Sprite::from_color(color, size),
-        };
-        // Seed the spawn-frame rotation (age 0) so rotated effects don't pop from
-        // axis-aligned on their first tick; per-tick rotation is then driven by
-        // `advance_vfx_particles`. Static rotation yields 0.0 (no change).
-        let spawn_ctx = PlacementCtx {
-            age_ticks: 0,
-            ttl_ticks: effect.appearance.ttl_ticks,
-            progress: 0.0,
-            phase,
-            caster_xy,
-            target_xy,
-        };
-        let spawn_angle = eval_rotation(&effect.appearance.rotation, &spawn_ctx);
-        commands.spawn((
-            sprite,
-            Transform::from_xyz(base[0], base[1], VFX_PARTICLE_Z)
-                .with_rotation(Quat::from_rotation_z(spawn_angle)),
-            VfxParticle {
-                ttl_ticks: effect.appearance.ttl_ticks,
-                age_ticks: 0,
-                motion: VfxMotion::Static,
-                effect_id: EffectId(effect_id.to_owned()),
-                anchor: effect.placement.anchor,
-                phase,
-            },
-            VfxParticleTarget {
-                world_xy: target_xy,
-            },
-            VfxParticleSource {
+    let mut spawned = commands.spawn((
+        ParticleSpawner::default(),
+        ParticleEffectHandle(entry.handle.clone()),
+        Transform::from_xyz(base[0], base[1], VFX_PARTICLE_Z),
+    ));
+    // The Baby Flame buildup effects are STATEFUL persistent emitters, not
+    // self-draining one-shots (D046). charge/ember keep emitting at the mouth until
+    // `advance_agumon_presentation` clears them by marker at the launch boundary;
+    // the projectile travels caster->target under `advance_enoki_projectiles`, which
+    // chains the impact on arrival. Every other id (the impact/detonate/slash
+    // contact bursts) is fire-and-forget and carries `OneShot::Despawn` so its
+    // spawner is removed once it drains.
+    match effect_id {
+        AGUMON_CHARGE_EFFECT_ID | AGUMON_EMBER_EFFECT_ID => {
+            spawned.insert(ChargeEmberEnokiMarker {
                 unit_id: source_unit,
-            },
-        ));
+            });
+        }
+        AGUMON_PROJECTILE_EFFECT_ID => {
+            spawned.insert(ProjectileFlight {
+                from_xy: base,
+                to_xy: target_xy,
+                ticks_total: AGUMON_PROJECTILE_FLIGHT_TICKS,
+                ticks_elapsed: 0,
+            });
+        }
+        _ => {
+            spawned.insert(OneShot::Despawn);
+        }
     }
-    count
+    1
 }
 
 fn should_spawn_node_vfx(
@@ -1797,26 +1545,10 @@ fn advance_canvas_damage_numbers(
 fn spawn_detonate_particles(
     mut commands: Commands,
     mut events: MessageReader<bevyrogue::combat::events::CombatEvent>,
-    vfx_visuals: Option<Res<VfxVisuals>>,
-    agumon_vfx: Option<Res<AgumonVfx>>,
     agumon_enoki_vfx: Option<Res<AgumonEnokiVfx>>,
-    vfx_assets: Option<Res<Assets<VfxAsset>>>,
     sprites: Query<(&AgumonSprite, &Transform)>,
 ) {
     let Some(trigger) = latest_baby_burner_flash_trigger(events.read()) else {
-        return;
-    };
-
-    let Some(asset) = agumon_vfx
-        .as_ref()
-        .zip(vfx_assets.as_ref())
-        .and_then(|(vfx, assets)| assets.get(&vfx.handle))
-    else {
-        debug!(
-            target: "windowed.agumon_playback",
-            cast_id = ?trigger.cast_id,
-            "vfx.ron not loaded; Baby Burner detonate effect skipped"
-        );
         return;
     };
 
@@ -1844,9 +1576,7 @@ fn spawn_detonate_particles(
 
         let spawned = spawn_effect_by_id(
             &mut commands,
-            Some(asset),
             AGUMON_DETONATE_EFFECT_ID,
-            vfx_visuals.as_deref(),
             caster_xy,
             target_xy,
             trigger.source,
@@ -1863,180 +1593,6 @@ fn spawn_detonate_particles(
             target_unit = ?target,
             "spawned Baby Burner detonate effect"
         );
-    }
-}
-
-#[allow(clippy::too_many_arguments)]
-fn advance_vfx_particles(
-    mut commands: Commands,
-    pending_ticks: Res<PendingAnimationTicks>,
-    vfx_visuals: Option<Res<VfxVisuals>>,
-    agumon_vfx: Option<Res<AgumonVfx>>,
-    agumon_enoki_vfx: Option<Res<AgumonEnokiVfx>>,
-    vfx_assets: Option<Res<Assets<VfxAsset>>>,
-    regs: Option<Res<ExtRegistries>>,
-    mut warned_effects: Local<HashSet<String>>,
-    mut warned_verbs: Local<HashSet<String>>,
-    source_sprites: Query<(&AgumonSprite, &Sprite, &Transform), Without<VfxParticle>>,
-    mut particles: Query<
-        (
-            Entity,
-            &mut VfxParticle,
-            &mut Sprite,
-            &mut Transform,
-            &VfxParticleTarget,
-            &VfxParticleSource,
-        ),
-        Without<AgumonSprite>,
-    >,
-) {
-    let asset = agumon_vfx
-        .as_ref()
-        .zip(vfx_assets.as_ref())
-        .and_then(|(vfx, assets)| assets.get(&vfx.handle));
-
-    // Without the owned data path (asset not yet loaded / load failed) or the
-    // placement Registry, no particle can be driven — there is no hardcoded
-    // fallback path any more (T03). Age + despawn so none linger; the load
-    // failure itself is surfaced once by `diagnose_agumon_vfx_load`.
-    let (Some(asset), Some(regs)) = (asset, regs.as_deref()) else {
-        for _ in 0..pending_ticks.0 {
-            for (entity, mut particle, _, _, _, _) in &mut particles {
-                particle.age_ticks += 1;
-                particle.ttl_ticks = decrement_vfx_ttl(particle.ttl_ticks);
-                if particle.ttl_ticks == 0 {
-                    commands.entity(entity).despawn();
-                }
-            }
-        }
-        return;
-    };
-
-    for _ in 0..pending_ticks.0 {
-        for (entity, mut particle, mut sprite, mut transform, target, source) in &mut particles {
-            // Resolve the owned effect. A particle carrying an id absent from the
-            // asset is warned once (naming the id) then despawned — no panic (Q7).
-            let Some(effect) = resolve_effect(asset, &particle.effect_id.0) else {
-                if warned_effects.insert(particle.effect_id.0.clone()) {
-                    warn!(
-                        target: "windowed.agumon_playback",
-                        effect_id = %particle.effect_id.0,
-                        reason = "effect id absent from loaded vfx.ron",
-                        "skipping VFX particle; owned effect unresolved"
-                    );
-                }
-                commands.entity(entity).despawn();
-                continue;
-            };
-
-            // Resolve the placement verb from the Registry. An unregistered verb
-            // id is warned once (naming effect + verb) then the particle is
-            // despawned — no panic.
-            let Some(verb) = regs.placements.get(&effect.placement.verb) else {
-                if warned_verbs.insert(effect.placement.verb.clone()) {
-                    warn!(
-                        target: "windowed.agumon_playback",
-                        effect_id = %particle.effect_id.0,
-                        verb = %effect.placement.verb,
-                        reason = "placement verb id not registered",
-                        "skipping VFX particle; placement verb unresolved"
-                    );
-                }
-                commands.entity(entity).despawn();
-                continue;
-            };
-
-            let full_ttl = effect.appearance.ttl_ticks;
-            let progress = if full_ttl == 0 {
-                1.0
-            } else {
-                (particle.age_ticks as f32 / full_ttl as f32).clamp(0.0, 1.0)
-            };
-
-            // Anchor base resolves against the caster's *live* transform so
-            // mouth/caster-anchored effects track the sprite as it moves.
-            let live_source = source_sprites
-                .iter()
-                .find(|(agumon, _, _)| agumon.unit_id == source.unit_id)
-                .map(|(_, sp, tf)| ([tf.translation.x, tf.translation.y], sp.flip_x, tf.scale.x));
-            let (caster_xy, flip_x, scale) = live_source.unwrap_or((
-                [transform.translation.x, transform.translation.y],
-                false,
-                1.0,
-            ));
-            let base = anchor_base_xy(particle.anchor, caster_xy, target.world_xy, flip_x, scale);
-
-            let ctx = PlacementCtx {
-                age_ticks: particle.age_ticks,
-                ttl_ticks: full_ttl,
-                progress,
-                phase: particle.phase,
-                caster_xy,
-                target_xy: target.world_xy,
-            };
-
-            // FanOut shards drive their outward distance from the asset's scale
-            // curve (S01 behavior) rather than the verb's own easing; the verb is
-            // still resolved above so an unregistered id is caught. Every other
-            // verb contributes its closed-form offset directly.
-            let offset = if let PlacementParams::FanOut { spread_px } = effect.placement.params {
-                let dist = spread_px * eval_scale(&effect.appearance.scale, progress);
-                [dist * particle.phase.cos(), dist * particle.phase.sin()]
-            } else {
-                verb(&ctx, &effect.placement.params)
-            };
-            transform.translation.x = base[0] + offset[0];
-            transform.translation.y = base[1] + offset[1];
-            transform.translation.z = VFX_PARTICLE_Z;
-
-            // FanOut keeps unit scale (sprite size from size_px, travel from the
-            // curve); every other effect drives sprite scale from the curve.
-            transform.scale = if matches!(effect.placement.params, PlacementParams::FanOut { .. }) {
-                Vec3::ONE
-            } else {
-                Vec3::splat(eval_scale(&effect.appearance.scale, progress))
-            };
-            // Per-particle quad rotation (S06): a single asymmetric sprite (flame
-            // tongue) fans into fire via decorrelated `phase`-driven angles. Static
-            // rotation evaluates to 0.0, preserving the prior axis-aligned billboard.
-            transform.rotation =
-                Quat::from_rotation_z(eval_rotation(&effect.appearance.rotation, &ctx));
-            let rgba = eval_color(&effect.appearance.color, progress);
-            sprite.color = Color::linear_rgba(rgba[0], rgba[1], rgba[2], rgba[3]);
-
-            let on_expire = effect.on_expire.clone();
-
-            particle.age_ticks += 1;
-            particle.ttl_ticks = decrement_vfx_ttl(particle.ttl_ticks);
-            if particle.ttl_ticks == 0 {
-                // Data-driven chain: spawn the on_expire effect at the current
-                // position (replaces the hardcoded projectile->impact burst).
-                if let Some(next) = on_expire {
-                    let pos = [transform.translation.x, transform.translation.y];
-                    spawn_effect_by_id(
-                        &mut commands,
-                        Some(asset),
-                        &next.0,
-                        vfx_visuals.as_deref(),
-                        pos,
-                        pos,
-                        source.unit_id,
-                        flip_x,
-                        scale,
-                        agumon_enoki_vfx.as_deref(),
-                    );
-                }
-                trace!(
-                    target: "windowed.agumon_playback",
-                    entity = ?entity,
-                    motion = ?particle.motion,
-                    effect_id = %particle.effect_id.0,
-                    source_unit = ?source.unit_id,
-                    "despawned windowed vfx particle"
-                );
-                commands.entity(entity).despawn();
-            }
-        }
     }
 }
 
@@ -2069,16 +1625,13 @@ fn advance_enoki_projectiles(
 
             if flight.ticks_elapsed >= flight.ticks_total {
                 // Arrival: clear the traveling emitter and chain the impact burst at
-                // the target. `asset` is `None` because impact is enoki-routed (the
-                // quad fallback in `spawn_effect_by_id` is never reached); the placebo
-                // `UnitId` is unused on the enoki path (impact carries no
-                // `VfxParticleSource`). Mirrors the old `on_expire` chain's pos,pos.
+                // the target. The placeholder `UnitId` is unused on the enoki path
+                // (the impact burst is a fire-and-forget `OneShot::Despawn`). Mirrors
+                // the old `on_expire` chain's pos,pos.
                 commands.entity(entity).despawn();
                 spawn_effect_by_id(
                     &mut commands,
-                    None,
                     AGUMON_IMPACT_EFFECT_ID,
-                    None,
                     flight.to_xy,
                     flight.to_xy,
                     UnitId(0),
@@ -2359,16 +1912,6 @@ mod tests {
         }));
         // ...while a non-lethal hit (the hurt path) never does (Q7 negative test).
         assert!(!is_death_reaction(&CombatEventKind::OnHitTaken { amount: 5 }));
-    }
-
-    #[test]
-    fn decrement_vfx_ttl_saturates_at_zero() {
-        let mut ttl = 6u32;
-        for _ in 0..6 {
-            ttl = decrement_vfx_ttl(ttl);
-        }
-        assert_eq!(ttl, 0);
-        assert_eq!(decrement_vfx_ttl(ttl), 0);
     }
 
     #[test]

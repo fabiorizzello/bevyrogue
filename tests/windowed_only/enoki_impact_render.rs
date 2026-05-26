@@ -7,9 +7,10 @@
 //!   1. `EnokiPlugin` is registered on the windowed app.
 //!   2. `spawn_effect_by_id` routes any effect id present in the enoki handle map
 //!      (`enoki.handles.get(effect_id)`) through an enoki one-shot bundle
-//!      (`ParticleSpawner` + `ParticleEffectHandle` + `OneShot`) while leaving the
-//!      quad loop for every unmatched id, and the map is keyed by all three
-//!      contact-burst ids (sharp_claws.slash, baby_flame.impact, baby_burner.detonate).
+//!      (`ParticleSpawner` + `ParticleEffectHandle` + `OneShot`); enoki is the sole
+//!      particle renderer (M006/S01 T04 deleted the quad fallback), and the map is
+//!      keyed by all three contact-burst ids (sharp_claws.slash, baby_flame.impact,
+//!      baby_burner.detonate).
 //!   3. The kernel/FSM control flow (`fire_kernel_cue` + `request_release`) is
 //!      untouched (D031/D032) — only what gets spawned for a matched id changed.
 #![cfg(feature = "windowed")]
@@ -57,10 +58,16 @@ fn spawn_effect_by_id_routes_mapped_ids_through_an_enoki_one_shot() {
         block.contains("OneShot"),
         "the enoki branch must mark the spawner OneShot so it self-despawns rather than entering the kernel timeline"
     );
-    // The quad loop must still exist for every unmatched id.
+    // M006/S01 T04 (D043): enoki is now the sole particle renderer — an unmapped
+    // id returns 0 (no quad fallback). Pin that the function early-returns instead
+    // of carrying the deleted quad spawn loop.
     assert!(
-        block.contains("for i in 0..count"),
-        "the quad spawn loop must remain for all unmatched effect ids — only ids in the enoki handle map are intercepted"
+        !block.contains("for i in 0..count"),
+        "the quad spawn loop must be gone — enoki is the sole particle renderer (D043)"
+    );
+    assert!(
+        block.contains("return 0"),
+        "spawn_effect_by_id must early-return 0 for an unmapped id now that the quad fallback is deleted"
     );
 }
 

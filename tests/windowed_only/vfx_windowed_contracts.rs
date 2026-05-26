@@ -14,9 +14,11 @@ fn setup_camera_block() -> &'static str {
         .find("fn setup_camera")
         .expect("render.rs must define setup_camera");
     let rest = &RENDER_SRC[start..];
+    // M006/S01 T04 deleted load_vfx_visuals (the quad VFX loader); setup_camera is
+    // now followed by load_agumon_enoki_vfx. Slice to that boundary.
     let end = rest
-        .find("fn load_vfx_visuals")
-        .expect("setup_camera should remain adjacent to load_vfx_visuals for this contract test");
+        .find("fn load_agumon_enoki_vfx")
+        .expect("setup_camera should remain adjacent to load_agumon_enoki_vfx for this contract test");
     &rest[..end]
 }
 
