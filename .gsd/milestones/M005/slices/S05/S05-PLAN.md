@@ -1,0 +1,48 @@
+# S05: Full Agumon VFX migration to enoki
+
+**Goal:** Generalize the S04 single-effect enoki seam into a per-effect-id handle map and route all three Agumon skills' contact-burst VFX (sharp_claws.slash, baby_flame.impact enriched, baby_burner.detonate) through bevy_enoki one-shots, keeping the quad path behind the seam as the reversible fallback, so the user can sign off (K001) that each skill's impact looks better than the placeholder.
+**Demo:** In cargo winx, Sharp Claws, Baby Flame, and Baby Burner all render through enoki and the user signs off on the look.
+
+## Must-Haves
+
+- All three Agumon contact bursts (sharp_claws.slash, baby_flame.impact, baby_burner.detonate) route through enoki one-shot Particle2dEffect assets via the generalized handle-map seam; each new .particle.ron parses into bevy_enoki::Particle2dEffect (windowed parse tests green); source-contract test proves the map-lookup branch routes the three ids and the quad loop survives for every other id; dep-gating test stays green (no enoki leak into headless); cargo test (headless), cargo build --features windowed, and cargo test --features windowed --test windowed_only all green; K001 manual sign-off via cargo winx that all three skills' impacts look better than the flat-quad placeholder.
+
+## Proof Level
+
+- This slice proves: Integration-level for the structural/contract surface (handle-map seam wiring, asset parse, dep isolation, both builds green) provable headless in auto-mode. Final visual quality is human/UAT: K001 manual sign-off required via cargo winx — auto-mode cannot launch the windowed binary (K001), so the rendered look is deferred to the user.
+
+## Integration Closure
+
+Upstream consumed: the S04 spawn_effect_by_id enoki branch + AgumonEnokiVfx resource (src/windowed/render.rs), the on_enter_effect_ids map and detonate spawn system that already call the seam, and EnokiPlugin (already registered). New wiring: AgumonEnokiVfx grows from one handle to a HashMap of effect-id to Handle<Particle2dEffect>; load_agumon_enoki_vfx loads three assets; the branch becomes a map lookup covering sharp_claws.slash, baby_flame.impact, baby_burner.detonate uniformly across all call sites (node-enter, projectile on_expire chain, detonate). Remaining before milestone is usable end-to-end: only the K001 visual sign-off (manual); deletion of the now-dormant Agumon quad path is a deferred follow-up (D041), and migrating charge/ember buildup + traveling projectile to enoki emitters is a deferred follow-up (D040).
+
+## Verification
+
+- diagnose_agumon_enoki_vfx_load generalizes from one handle to iterating the handle map, emitting a one-shot WARN on target windowed.agumon_playback naming each effect id whose .particle.ron reports LoadState::Failed — so a dead per-skill burst is visible by name rather than silently absent. load_agumon_enoki_vfx logs the set of requested asset paths at INFO at Startup.
+
+## Tasks
+
+- [x] **T01: Generalize the enoki spawn seam to a per-effect handle map** `est:1h`
+  Why: S04 wired enoki for exactly one hardcoded id (baby_flame.impact); S05 must route three contact bursts uniformly without duplicating the branch per id. Do: In src/windowed/render.rs (1) add const path strings for the two new assets next to AGUMON_ENOKI_IMPACT_PATH: AGUMON_ENOKI_SHARP_CLAWS_PATH = "digimon/agumon/sharp_claws_slash.particle.ron" and AGUMON_ENOKI_DETONATE_PATH = "digimon/agumon/baby_burner_detonate.particle.ron"; (2) change AgumonEnokiVfx to hold `handles: std::collections::HashMap<String, Handle<Particle2dEffect>>` (add `use std::collections::HashMap;` or fully-qualify); (3) in load_agumon_enoki_vfx build the map keyed by effect id — AGUMON_SHARP_CLAWS_EFFECT_ID->slash asset, AGUMON_IMPACT_EFFECT_ID->impact asset, AGUMON_DETONATE_EFFECT_ID->detonate asset — and keep the Startup INFO log (log the three paths); (4) replace the `if effect_id == AGUMON_IMPACT_EFFECT_ID { if let Some(enoki) = enoki { ... } }` block in spawn_effect_by_id with `if let Some(enoki) = enoki { if let Some(handle) = enoki.handles.get(effect_id) { commands.spawn((ParticleSpawner::default(), ParticleEffectHandle(handle.clone()), OneShot::Despawn, Transform::from_xyz(base[0], base[1], VFX_PARTICLE_Z))); return 1; } }`, leaving the quad loop untouched for every other id; (5) generalize diagnose_agumon_enoki_vfx_load to iterate the handle map with a `Local<HashSet<String>>` warned-set, emitting the existing per-id WARN (path + effect id) once per failed handle. Then update tests/windowed_only/enoki_impact_render.rs: the existing assertions key on `effect_id == AGUMON_IMPACT_EFFECT_ID` and `enoki.handle` — rewrite them to assert the map-lookup branch (`enoki.handles.get(effect_id)`, `ParticleSpawner`, `ParticleEffectHandle`, `OneShot`) routes the three ids and that `for i in 0..count` (the quad loop) still exists for non-enoki ids; keep the EnokiPlugin-registered and fire_kernel_cue/request_release control-flow assertions. Done when: the windowed_only contract test passes against the generalized seam. Constraint: do not touch any kernel cue / barrier / FSM control flow (D031/D032); only what spawns for a matched id changes.
+  - Files: `src/windowed/render.rs`, `tests/windowed_only/enoki_impact_render.rs`
+  - Verify: cargo test --features windowed --test windowed_only
+
+- [x] **T02: Author Sharp Claws + Baby Burner enoki one-shots, enrich Baby Flame impact, with parse tests** `est:1h30m`
+  Why: the generalized seam needs a parseable Particle2dEffect asset per routed id, and the demo requires all three skills' contact bursts to render through enoki. Do: author two new .particle.ron files mirroring the structure of baby_flame_impact.particle.ron, with ALL 19 Particle2dEffect fields explicit (MEM102 — enoki's loader has no serde defaults; Option fields as Some(..)/None): (a) assets/digimon/agumon/sharp_claws_slash.particle.ron — a quick pale yellow-white slash burst (one-shot spawn_rate 0, modest spawn_amount, short ~0.25s lifetime, small Circle emission, outward scatter, color_curve from overbright pale yellow-white to transparent, scale_curve popping in then shrinking), echoing the vfx.ron sharp_claws.slash intent (overbright (3.0,3.0,2.2) tint, target-anchored); (b) assets/digimon/agumon/baby_burner_detonate.particle.ron — an orange radial shard burst folding the central baby_burner.flash pop (one-shot, larger spawn_amount + wider linear_speed than impact, hot orange color_curve (2.2,1.0,0.3)->transparent with a brighter initial core, scale_curve shrinking). Also enrich assets/digimon/agumon/baby_flame_impact.particle.ron to fold the radiating impact_flash shards (raise spawn_amount and/or outward linear_speed/spread so the single enoki burst reads as the central flash PLUS the radiating shards) while preserving the one-shot/burst/curve invariants the existing parse test asserts. Then author tests/windowed_only/enoki_skill_effects_parse.rs (mirroring enoki_impact_effect_parses.rs): ron::from_str::<Particle2dEffect>(include_str!(..)) each of the two new assets and assert one-shot invariants (spawn_rate 0.0, spawn_amount > 0, positive lifetime.0, color_curve.is_some(), scale_curve.is_some()). Register the new module in tests/windowed_only.rs (add `#[path = "windowed_only/enoki_skill_effects_parse.rs"] mod enoki_skill_effects_parse;`). Done when: all three assets parse into Particle2dEffect under the windowed_only harness. Constraint: do not add numeric gameplay payload anywhere on the SpawnParticle command surface — these are presentation-only render assets (R012).
+  - Files: `assets/digimon/agumon/sharp_claws_slash.particle.ron`, `assets/digimon/agumon/baby_burner_detonate.particle.ron`, `assets/digimon/agumon/baby_flame_impact.particle.ron`, `tests/windowed_only/enoki_skill_effects_parse.rs`, `tests/windowed_only.rs`
+  - Verify: cargo test --features windowed --test windowed_only
+
+- [x] **T03: Full-migration regression sweep + dep-isolation guard** `est:30m`
+  Why: the migration touches the windowed render path and adds an optional-dep-backed handle map; the slice is only done when the headless dep-isolation invariant (R005/R016) still holds and both build flavors stay green. Do: run the four-command regression sweep and confirm each is green — (1) cargo test (full headless suite, which includes the standalone dependency_gating binary asserting bevy_enoki is absent from the dev graph and present in the windowed graph), (2) cargo build --features windowed (the full enoki render stack compiles windowed-gated), (3) cargo test --features windowed --test windowed_only (parse tests for all three assets + the generalized-seam source-contract test, all green), (4) cargo test --test dependency_gating (explicit dep-isolation guard). No new source files. Then perform the K001 manual sign-off step: this is a human/UAT gate — auto-mode cannot launch the windowed binary, so record in the slice summary that the user must run cargo winx and confirm Sharp Claws, Baby Flame, and Baby Burner contact bursts render through enoki and look better than the flat-quad placeholder. Done when: all four commands exit 0 and the K001 sign-off requirement is documented for the user.
+  - Files: `src/windowed/render.rs`, `tests/dependency_gating.rs`, `tests/windowed_only.rs`
+  - Verify: cargo test
+
+## Files Likely Touched
+
+- src/windowed/render.rs
+- tests/windowed_only/enoki_impact_render.rs
+- assets/digimon/agumon/sharp_claws_slash.particle.ron
+- assets/digimon/agumon/baby_burner_detonate.particle.ron
+- assets/digimon/agumon/baby_flame_impact.particle.ron
+- tests/windowed_only/enoki_skill_effects_parse.rs
+- tests/windowed_only.rs
+- tests/dependency_gating.rs

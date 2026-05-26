@@ -26,12 +26,12 @@ Upstream consumed: CombatEventKind::OnHitTaken/UnitDied from src/combat/observab
   - Files: `src/animation/reaction.rs`, `src/animation/mod.rs`, `tests/animation/stance_reaction_mapping.rs`, `tests/animation.rs`
   - Verify: cargo test --test animation stance_reaction_mapping
 
-- [ ] **T02: Wire windowed EventReader<CombatEvent> consumer to drive the struck sprite into the hurt stance node** `est:2h`
+- [x] **T02: Wire windowed EventReader<CombatEvent> consumer to drive the struck sprite into the hurt stance node** `est:2h`
   Why: This is the visible half of the slice — in `cargo winx`, the struck sprite must flinch (play hurt frames 46–52) then return to idle. Auto-mode cannot run the windowed binary (K001), so this task is proven only by green builds; the visible flinch is the user's manual sign-off.
   - Files: `src/windowed/render.rs`
   - Verify: cargo build --features windowed
 
-- [ ] **T03: Regression sweep: headless and windowed test suites green, no windowed dep leak** `est:30m`
+- [x] **T03: Regression sweep: headless and windowed test suites green, no windowed dep leak** `est:30m`
   Why: The milestone contract requires the full headless suite, the windowed test suite, and the windowed build to stay green after the reaction wiring, and that the new lib mapping introduces no windowed/render dependency into the headless build (R002/R005).
   - Verify: cargo test --features windowed
 

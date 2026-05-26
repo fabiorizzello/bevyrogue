@@ -1,0 +1,48 @@
+// Agumon `baby_flame.charge` charge orb — a tight, glowing orb that builds at the
+// caster's mouth before launch, for the bevy_enoki GPU 2D particle backend (M006/S01).
+// Unlike the contact bursts (baby_flame.impact, sharp_claws.slash) this is a
+// CONTINUOUS emitter (spawn_rate > 0): it keeps feeding a dense cluster of small
+// warm particles into a tight disc so the cluster reads as one coherent orb. The
+// charge window's start/clear is driven by the T03 lifecycle systems despawning
+// the spawner, not by the asset. relative_positioning true so the orb tracks the
+// caster's mouth anchor as a body rather than leaving a world-space trail.
+// This is enoki's `Particle2dEffect` schema (distinct from the owned `VfxAsset`
+// schema); all 19 fields are listed because the loader's RON deserialize has no
+// field defaults (MEM098).
+(
+    // Continuous feed: a dense stream so the orb stays a solid glowing body.
+    spawn_rate: 60.0,
+    spawn_amount: 1,
+    // Tight disc at the mouth — the orb is small and coherent, not a spray.
+    emission_shape: Circle(6.0),
+    // Short per-particle life with variance; the cluster persists via the rate.
+    lifetime: (0.5, 0.3),
+    // Slight outward shimmer that decelerates, kept near the core by strong damping.
+    linear_speed: Some((18.0, 0.6)),
+    linear_acceleration: Some((-30.0, 0.1)),
+    direction: None,
+    angular_speed: None,
+    angular_acceleration: None,
+    scale: Some((9.0, 0.4)),
+    // Base tint; the color_curve drives the warm HDR build over each particle's life.
+    color: Some((red: 1.0, green: 0.6, blue: 0.2, alpha: 1.0)),
+    gravity_direction: None,
+    gravity_speed: None,
+    // Strong damping pulls the shimmer back so the orb stays tight.
+    linear_damp: Some((6.0, 0.0)),
+    angular_damp: None,
+    // Pop in to full size, then shrink as each particle is reabsorbed into the orb.
+    scale_curve: Some((points: [
+        (0.3, 0.0, None),
+        (1.0, 0.3, Some(SineOut)),
+        (0.0, 1.0, Some(SineInOut)),
+    ])),
+    // Overbright warm orange core -> dimmer orange, fading to transparent (HDR bloom).
+    color_curve: Some((points: [
+        ((red: 2.2, green: 1.6, blue: 0.9, alpha: 0.9), 0.0, None),
+        ((red: 2.0, green: 1.2, blue: 0.5, alpha: 0.0), 1.0, Some(SineInOut)),
+    ])),
+    attractors: None,
+    // Orb tracks the moving mouth anchor as a body, not a world-space trail.
+    relative_positioning: Some(true),
+)

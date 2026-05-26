@@ -13,19 +13,19 @@
 
 ## Slices
 
-- [ ] **S01: S01** `risk:low` `depends:[]`
+- [x] **S01: S01** `risk:low` `depends:[]`
   > After this: In cargo winx, hitting either combatant makes that sprite play the hurt frames then return to idle.
 
-- [ ] **S02: Death reaction and field exit** `risk:low` `depends:[S01]`
+- [x] **S02: S02** `risk:low` `depends:[]`
   > After this: In cargo winx, a unit reaching 0 HP plays the death frames and fades off the field.
 
-- [ ] **S03: Hit feedback flash shake and canvas damage numbers** `risk:low` `depends:[S01]`
+- [x] **S03: S03** `risk:low` `depends:[]`
   > After this: In cargo winx, each hit flashes and shakes the struck sprite and shows a floating damage number on the canvas over the target.
 
-- [ ] **S04: bevy_enoki integration spike (one effect)** `risk:high` `depends:[]`
+- [x] **S04: S04** `risk:high` `depends:[]`
   > After this: In cargo winx, one Agumon skill's impact VFX renders through bevy_enoki from a .particle.ron asset; cargo test stays green and the dep-gating test passes.
 
-- [ ] **S05: Full Agumon VFX migration to enoki** `[sketch]` `risk:medium` `depends:[S04]`
+- [x] **S05: S05** `risk:medium` `depends:[]`
   > After this: In cargo winx, Sharp Claws, Baby Flame, and Baby Burner all render through enoki and the user signs off on the look.
 
 ## Boundary Map

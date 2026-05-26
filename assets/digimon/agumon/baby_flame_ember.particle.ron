@@ -1,0 +1,47 @@
+// Agumon `baby_flame.ember` ember swirl — a small ring of warm sparks that spiral
+// inward toward the charge orb at the mouth, for the bevy_enoki GPU 2D particle
+// backend (M006/S01). CONTINUOUS emitter tuned so ~7 sparks are alive at once
+// (spawn_rate * lifetime ~= 7), echoing the quad path's BABY_FLAME_EMBER_COUNT.
+// The converge-inward feel comes from a single Attractor at the emitter origin
+// pulling the radially-seeded sparks back toward the center; angular_speed gives
+// each spark a slow spin so the ring reads as a swirl. relative_positioning true
+// so the swirl follows the caster's mouth anchor.
+// This is enoki's `Particle2dEffect` schema (distinct from the owned `VfxAsset`
+// schema); all 19 fields are listed because the loader's RON deserialize has no
+// field defaults (MEM098).
+(
+    // ~7 alive: spawn_rate 10 * lifetime ~0.7 ~= 7 sparks at a time.
+    spawn_rate: 10.0,
+    spawn_amount: 1,
+    // Seed from a ring at the ember radius (mirrors quad BABY_FLAME_EMBER_RADIUS_PX).
+    emission_shape: Circle(58.0),
+    lifetime: (0.7, 0.25),
+    // Gentle initial drift; the attractor below overrides it into an inward spiral.
+    linear_speed: Some((20.0, 0.5)),
+    linear_acceleration: None,
+    direction: None,
+    // Slow per-spark spin so the ring reads as a swirl, not static dots.
+    angular_speed: Some((2.5, 0.4)),
+    angular_acceleration: None,
+    scale: Some((6.0, 0.4)),
+    color: Some((red: 1.0, green: 0.6, blue: 0.25, alpha: 1.0)),
+    gravity_direction: None,
+    gravity_speed: None,
+    linear_damp: Some((1.5, 0.0)),
+    angular_damp: None,
+    // Shrink as each spark merges into the orb at the center.
+    scale_curve: Some((points: [
+        (1.0, 0.0, None),
+        (0.4, 1.0, Some(SineInOut)),
+    ])),
+    // Overbright warm spark -> transparent (HDR bloom, S05 policy).
+    color_curve: Some((points: [
+        ((red: 2.0, green: 1.6, blue: 1.0, alpha: 0.95), 0.0, None),
+        ((red: 2.0, green: 1.4, blue: 0.8, alpha: 0.0), 1.0, Some(SineInOut)),
+    ])),
+    // Pull the ring inward toward the mouth so the sparks converge (swirl-in).
+    attractors: Some([
+        (position: (0.0, 0.0), strength: 220.0, min_distance: 8.0),
+    ]),
+    relative_positioning: Some(true),
+)
