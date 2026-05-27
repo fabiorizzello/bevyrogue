@@ -1,42 +1,24 @@
----
-sliceId: S05
-uatType: artifact-driven
-verdict: PASS
-date: 2026-05-26T19:50:00.000Z
----
+# S05 Assessment
 
-# UAT Result — S05
+**Milestone:** M006
+**Slice:** S05
+**Completed Slice:** S05
+**Verdict:** pass
+**Created:** 2026-05-27T07:53:58.765Z
 
-## Checks
+## Assessment
 
-| Check | Mode | Result | Notes |
-|-------|------|--------|-------|
-| `cargo test` passes (headless suite green) | runtime | PASS | S05 closeout verification run `6760fea3`: exit=0. All headless test targets green — 31+44+119+46+18+16+52+14+10+9+7+16+52+50+30+58+53+51+10 lib/integration tests passed, 1 ignored (spawns subprocess). |
-| `cargo test --features windowed --test windowed_only` passes (67 tests incl. renamon_extension_contract) | runtime | PASS | S05 closeout run `6760fea3` + standalone `70207989`: exit=0. **67 passed / 0 failed / 0 ignored**. All 8 `renamon_extension_contract::*` subtests passed: `digimon_aggregator_only_declares_and_registers_renamon`, `renamon_module_owns_the_extension_data_and_registration`, `renamon_stance_asset_defines_the_expected_stance_contract`, `renamon_clip_asset_exposes_the_all_range`, `renamon_skill_graph_releases_the_kernel_on_impact`, `renamon_module_does_not_invent_fake_particle_or_engine_branches`, `render_keeps_the_multi_presentation_lookup_seam`, `engine_files_stay_species_agnostic`. |
-| `cargo test --test dependency_gating` passes (enoki present in windowed, absent from headless) | runtime | PASS | S05 closeout run `6760fea3`: exit=0. `bevy_enoki_present_in_windowed_graph ... ok`, `bevy_enoki_absent_from_headless_graph ... ok`. 2 passed / 0 failed. |
-| `RUSTFLAGS=-D warnings cargo build --features windowed` builds clean | runtime | PASS | S05 closeout run `6760fea3`: exit=0. Zero warnings-as-errors. (Pre-existing unrelated unused-import warning in `tests/timeline/timeline_loop_hop_cue_parity.rs::BeatEdge` was present but does not affect the windowed build target.) |
-| Source contracts: engine/core files (render.rs, mod.rs) carry no Renamon identifiers; Renamon lives only under src/windowed/digimon/renamon/ plus assets | artifact | PASS | Fresh grep `92c265f4` (UAT run): `src/windowed/render.rs` — no Renamon tokens; `src/windowed/mod.rs` — no Renamon tokens. `src/windowed/digimon/renamon/mod.rs` exists. `assets/digimon/renamon/` contains `anim_graph.ron`, `clip.ron`, `stance.ron`. Corroborated by `renamon_extension_contract::engine_files_stay_species_agnostic` test passing in the 67-test windowed suite. |
-| Run `cargo winx`. Renamon appears as a combatant. | human-follow-up | NEEDS-HUMAN | K001 — cannot invoke windowed binary in auto mode. User must run `cargo winx` and confirm Renamon is present in the combatant list. |
-| Renamon plays idle / skill / hurt / death presentation correctly. | human-follow-up | NEEDS-HUMAN | K001 — requires display for visual sign-off. User must observe idle cycling, skill animation (diamond_storm), hurt blink, and death presentation render correctly in the window. |
-| Cue-driven flash/shake fires on the diamond_storm skill (ReleaseKernel cue). | human-follow-up | NEEDS-HUMAN | K001 — requires display. The `renamon_skill_graph_releases_the_kernel_on_impact` test confirms the anim_graph.ron wires a `ReleaseKernelCue` on the diamond_storm skill graph. User must confirm flash/shake visually fires on impact in the windowed binary. |
-| git diff shows changes limited to the renamon module tree plus assets plus its registration call — zero edits to engine/core files. | artifact | PASS | Source contract tests `engine_files_stay_species_agnostic` (windowed suite) + fresh grep `92c265f4` confirm zero Renamon tokens in `render.rs` / `mod.rs`. The `renamon_module_owns_the_extension_data_and_registration` test confirms Renamon registration lives in its own module. Engine and core files are confirmed clean. |
+Cross-slice dependency/scope audit of the remaining slices (S06–S15) found ordering contradictions where content-mutating slices were not ordered after the structural render.rs split, plus shared-helper and anti-churn gaps. Adjustments applied:
 
-## Overall Verdict
+DEPENDENCY FIXES (this reassessment)
+- S12 depends -> [S10, S11]: S12 mutates effect-registry content and references "the registries module". That module is created by S09 and render.rs is decomposed by S10. Previously S12 depended only on S11, so it could land while render.rs was still a monolith (stale file-list) or race the split. Ordering S12 after S10 means all content mutation happens on the settled submodule layout.
+- S14 depends -> [S10, S12]: S14's T01 edits render.rs for the VfxAsset->enoki adapter. Same reason as S12 — must run after the split (S10) and after the keyed-registry conversion (S12).
+- S13 depends -> [S08, S11, S12]: S13's "added purely by new data + a register(), zero path-constant edits" claim REQUIRES S11 (data-driven catalog discovery that removes DEFAULT_ANIM_GRAPH/CLIP/STANCE_PATHS). S11 was only transitively present via S12; now explicit so the zero-edit thesis is guaranteed.
+- S15 depends -> [S10, S13]: S15 thins/removes the contract tests (renamon_extension_contract.rs, agumon_module_extraction.rs) and writes the anti-churn DECISIONS rule. S13 T03 ADDS assertions to renamon_extension_contract.rs and catalog_discovery.rs. With no ordering, S13 after S15 would re-introduce exactly the brittleness S15 removed. S15 must run last (after S13).
 
-**PASS** — all automatable artifact-driven checks passed. Three K001 visual sign-off items (`cargo winx` Renamon appearance, idle/skill/hurt/death presentation quality, cue-driven flash/shake on diamond_storm) remain as NEEDS-HUMAN and require a display session.
+SCOPE DIRECTIVES FOR EXECUTING AGENTS (no separate replan; fold in at execution)
+- S09 (extract): in addition to moving registries/types, EXTRACT A SHARED warn-once helper. Today S06's warn-once is an inline `Local<HashSet<AssetId<AnimGraph>>>` in src/animation/registry.rs, specific to AssetId<AnimGraph> and not reusable as-is. S12 (keyed-registry miss), S14 (unmapped VfxAsset verb), and S13 (exercises spawn/cue-miss diagnostics) all assume a reusable warn-once. S09 must promote it to a generic dedup util keyed by an arbitrary id type so downstream slices reuse rather than re-implement. Fix the "reuse the S06 warn helper" wording in S08/S11/S12/S14 to point at this shared util.
+- S12 / S14 file-lists: their "Files Likely Touched" still name src/windowed/render.rs as a monolith. After S10 the split is render/{playback,spawn,effects,feedback,clock,registries}.rs. Retarget edits to the relevant submodule(s) instead of render.rs.
+- S13 T03 contract-test additions must already comply with the S15 anti-churn rule: assert only the durable invariant (engine render core contains no per-species id) as an absence-guard, NOT exact file shape. This prevents S15 from having to undo S13's additions.
 
-## Notes
-
-**Evidence sources:**
-- Primary: S05 closeout verification run `6760fea3` — ran `cargo test`, `cargo test --features windowed --test windowed_only`, `cargo test --test dependency_gating`, and `RUSTFLAGS=-D warnings cargo build --features windowed` in a single batch; all exited 0.
-- Supporting: standalone windowed-only run `70207989` (exit=0, 67 passed).
-- UAT-fresh: source contract grep `92c265f4` — confirms current tree state with no Renamon tokens in engine files.
-
-**Test count confirmation:** The 67-test windowed suite count is stable across the two runs (closeout run and standalone windowed run), matching the UAT expectation of ≥67 tests including `renamon_extension_contract`.
-
-**K001 manual follow-up instructions for user:**
-1. Run `cargo winx` (the `.cargo` alias for the windowed binary with output tee).
-2. Confirm Renamon is visible as a combatant in the encounter.
-3. Observe idle, skill (diamond_storm), hurt, and death animations render correctly.
-4. Trigger diamond_storm and confirm flash + camera shake fire on the impact frame.
-5. Sign off in the S05-UAT.md manual checklist once confirmed.
+Slices S01–S05 are complete and unchanged. Slice titles, risks, and demos are otherwise preserved.

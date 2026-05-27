@@ -1,6 +1,7 @@
 // Test/preview VFX — a continuous water fountain/splash, for exercising the
-// `vfx_editor` bin and the bevy-enoki-vfx skill. NOT tied to any Digimon kit;
-// lives in `assets/vfx/` as a generic procedural atom.
+// bevy-enoki-vfx skill and as a sample to tweak in the bevy_enoki web editor /
+// `enoki2d_editor`. NOT tied to any Digimon kit; lives in `assets/vfx/` as a
+// generic procedural atom.
 //
 // Visual verb: persistent "spray"/droplet fountain (L1, procedural-first, no
 // asset). Droplets launch upward fast (`direction` up + high `linear_speed`),

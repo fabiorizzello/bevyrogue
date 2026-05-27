@@ -17,12 +17,12 @@
 
 ## Tasks
 
-- [ ] **T01: Reproduce false MissingSkill in a headless test** `est:S`
+- [x] **T01: Reproduce false MissingSkill in a headless test** `est:S`
   Add a headless test that loads the full roster and asserts Renamon's skills resolve through the combat panel path without MissingSkill. Confirm it fails today because render.rs picks an arbitrary SkillBook.
   - Files: `tests/action_query/case.rs`, `src/ui/combat_panel/render.rs`
   - Verify: cargo test --test action_query (new case red, reproducing false MissingSkill)
 
-- [ ] **T02: Repoint combat panel to canonical SkillBookHandle** `est:M`
+- [x] **T02: Repoint combat panel to canonical SkillBookHandle** `est:M`
   Replace skill_books.iter().next() with a lookup against the canonical aggregated SkillBookHandle resource (the same one preview_cache.rs and combat_cli use). Preserve current rendering for the legitimately-missing case.
   - Files: `src/ui/combat_panel/render.rs`, `src/ui/combat_panel/preview_cache.rs`
   - Verify: cargo test --test action_query (T01 green); cargo test (headless suite green)

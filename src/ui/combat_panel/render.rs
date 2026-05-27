@@ -28,7 +28,7 @@ use crate::combat::{
     types::UnitId,
     unit::Unit,
 };
-use crate::data::skills_ron::SkillBook;
+use crate::data::{SkillBookHandle, skills_ron::SkillBook};
 
 #[cfg(feature = "windowed")]
 use super::display::{FdDisplay, SkillDisplay, UnitDisplay};
@@ -56,7 +56,8 @@ pub fn combat_panel(
     mut sp: ResMut<SpPool>,
     mut log: ResMut<ActionLog>,
     panel_state: (Res<PreviewDamageCache>, Res<BabyBurnerFlashState>),
-    skill_books: Res<Assets<SkillBook>>,
+    // Grouped into one tuple param to stay within Bevy's 16-argument system limit.
+    skill_book_params: (Res<Assets<SkillBook>>, Option<Res<SkillBookHandle>>),
     barrier: Res<SuspendedTimelineState>,
     // Grouped into one tuple param to stay within Bevy's 16-argument system
     // limit (adding the burst writer would otherwise be the 17th argument).
@@ -67,10 +68,10 @@ pub fn combat_panel(
 ) -> Result {
     let fallback_skill_book = SkillBook(Vec::new());
     let (preview_cache, flash_state) = panel_state;
-    let skill_book = skill_books
-        .iter()
-        .next()
-        .map(|(_, book)| book)
+    let (skill_books, skill_book_handle) = skill_book_params;
+    let skill_book = skill_book_handle
+        .as_ref()
+        .and_then(|handle| skill_books.get(&handle.0))
         .unwrap_or(&fallback_skill_book);
 
     let mut unit_displays: Vec<UnitDisplay> = Vec::new();

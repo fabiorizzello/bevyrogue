@@ -27,6 +27,11 @@
   - Files: `src/windowed/digimon/agumon/mod.rs`, `src/windowed/digimon/renamon/mod.rs`, `src/windowed/mod.rs`
   - Verify: RUSTFLAGS='-D warnings' cargo build --features windowed (clean); cargo test --features windowed --test windowed_only (green)
 
+- [ ] **T03: Extract a generic reusable warn-once dedup util** `est:S`
+  Promote S06's inline warn-once dedup (currently a Local<HashSet<AssetId<AnimGraph>>> in src/animation/registry.rs, specific to AssetId<AnimGraph>) into a generic dedup util keyed by an arbitrary id type, exported from the lib so both the animation and windowed consumers reuse it instead of re-implementing. Identical dedup behavior; repoint the existing registry.rs call site to the new util. This is the shared helper S08/S11/S12/S13/S14 refer to.
+  - Files: `src/animation/warn_once.rs`, `src/animation/mod.rs`, `src/animation/registry.rs`
+  - Verify: cargo test (headless green); cargo test --features windowed --test windowed_only (green)
+
 ## Files Likely Touched
 
 - src/windowed/render.rs
@@ -34,3 +39,6 @@
 - src/windowed/digimon/agumon/mod.rs
 - src/windowed/digimon/renamon/mod.rs
 - src/windowed/mod.rs
+- src/animation/warn_once.rs
+- src/animation/mod.rs
+- src/animation/registry.rs

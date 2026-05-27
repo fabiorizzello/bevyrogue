@@ -28,7 +28,7 @@
   - Verify: cargo test (headless green); manual cargo winx shows the aura/AoE Digimon render and cast
 
 - [ ] **T03: Scale-proof tests and zero-edit assertion** `est:M`
-  Add headless tests for the two new species' catalog discovery and skill legality, and extend the source-contract test to assert the render core control flow was not edited to accommodate them.
+  Add headless tests for the two new species' catalog discovery and skill legality, and extend the source-contract test to assert the render core control flow was not edited to accommodate them. Per the S15 anti-churn rule, the contract-test additions must assert ONLY the durable invariant — the engine render core contains no per-species id — as an absence-guard, NOT exact file shape, so S15 does not have to undo them.
   - Files: `tests/assets_data/catalog_discovery.rs`, `tests/windowed_only/renamon_extension_contract.rs`
   - Verify: cargo test (headless green); cargo test --features windowed --test windowed_only (green)
 

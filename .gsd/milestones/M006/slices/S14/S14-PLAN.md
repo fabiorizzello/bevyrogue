@@ -18,8 +18,8 @@
 ## Tasks
 
 - [ ] **T01: Define the VfxAsset to enoki adapter** `est:L`
-  Implement an adapter that maps VfxAsset verbs/parameters (introspectable per D033) into the enoki effect representation the windowed renderer consumes. Cover the verbs Agumon/Renamon currently use. Warn-once on an unmapped verb.
-  - Files: `src/animation/vfx_asset.rs`, `src/windowed/render.rs`
+  Implement an adapter that maps VfxAsset verbs/parameters (introspectable per D033) into the enoki effect representation the windowed renderer consumes; the render-side consumption lives in render/spawn.rs after the S10 split. Cover the verbs Agumon/Renamon currently use. Warn-once on an unmapped verb using the shared warn-once util from S09.
+  - Files: `src/animation/vfx_asset.rs`, `src/animation/vfx.rs`, `src/windowed/render/spawn.rs`
   - Verify: RUSTFLAGS='-D warnings' cargo build --features windowed (clean); cargo test (headless adapter test green)
 
 - [ ] **T02: Drive Agumon and Renamon effects through VfxAsset** `est:M`
@@ -35,7 +35,8 @@
 ## Files Likely Touched
 
 - src/animation/vfx_asset.rs
-- src/windowed/render.rs
+- src/animation/vfx.rs
+- src/windowed/render/spawn.rs
 - src/windowed/digimon/agumon/mod.rs
 - src/windowed/digimon/renamon/mod.rs
 - tests/windowed_only/vfx_asset_adapter.rs

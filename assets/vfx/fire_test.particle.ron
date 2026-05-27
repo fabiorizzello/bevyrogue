@@ -1,6 +1,7 @@
-// Test/preview VFX — a continuous rising flame, for exercising the `vfx_editor`
-// bin and the bevy-enoki-vfx skill. NOT tied to any Digimon kit; lives in
-// `assets/vfx/` as a generic procedural atom (skill: reusable atoms go here).
+// Test/preview VFX — a continuous rising flame, for exercising the
+// bevy-enoki-vfx skill and as a sample to tweak in the bevy_enoki web editor /
+// `enoki2d_editor`. NOT tied to any Digimon kit; lives in `assets/vfx/` as a
+// generic procedural atom (skill: reusable atoms go here).
 //
 // Visual verb: persistent "fire" aura/ember (L1, procedural-first, no asset).
 // The rising look comes from a fixed upward `direction` plus upward

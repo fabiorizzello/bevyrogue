@@ -73,8 +73,10 @@ These are this project's wrappers, mapped onto enoki spawns — not raw `.partic
 - Generic procedural atoms (directional motion): `assets/vfx/{fire_test, water_test}.particle.ron`.
   These are the canonical examples of the `Rval<Vec2>` `direction`/`gravity_*` verbs the kit
   effects don't exercise — `fire_test` rises (up `direction` + positive `linear_acceleration`),
-  `water_test` arcs (up launch + downward `gravity`). They also feed the `vfx_editor` bin
-  (`cargo run --features windowed --bin vfx_editor`), the human-in-the-loop live-preview/hot-reload
-  authoring loop (K001: windowed, manual-only — there is no headless VFX preview).
+  `water_test` arcs (up launch + downward `gravity`). Author/tune `.particle.ron` in the
+  bevy_enoki web editor (https://lommix.github.io/bevy_enoki) or the upstream `enoki2d_editor`
+  crate — there is no in-repo headless VFX preview (K001: the look only renders in the windowed
+  combat stack). The editor saves with `ron 0.12`; the game reads with `ron 0.8`, so round-trip a
+  changed file through the game once.
 
 Read these for shape, then author the new verb fresh.

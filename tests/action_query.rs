@@ -14,3 +14,5 @@ mod commander_flow;
 mod engine_legality_integration;
 #[path = "action_query/out_of_turn_burst_seam.rs"]
 mod out_of_turn_burst_seam;
+#[path = "action_query/combat_panel_skill_book_seam.rs"]
+mod combat_panel_skill_book_seam;

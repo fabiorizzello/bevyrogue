@@ -18,13 +18,13 @@
 ## Tasks
 
 - [ ] **T01: Convert DetonateEffectRegistry to a keyed registry** `est:M`
-  Change DetonateEffectRegistry from a singleton slot to a keyed map (per species/effect id) in the registries module, updating Agumon's registration and the render consumer accordingly.
-  - Files: `src/windowed/render.rs`, `src/windowed/digimon/agumon/mod.rs`
+  Change DetonateEffectRegistry from a singleton slot to a keyed map (per species/effect id) in render/registries.rs, updating Agumon's registration and the render/effects.rs consumer accordingly. On a keyed miss, warn once using the shared warn-once util from S09 (do not re-implement a dedup).
+  - Files: `src/windowed/render/registries.rs`, `src/windowed/render/effects.rs`, `src/windowed/digimon/agumon/mod.rs`
   - Verify: RUSTFLAGS='-D warnings' cargo build --features windowed (clean); cargo test --features windowed --test windowed_only (green)
 
 - [ ] **T02: Sweep residual singletons and unify roster registration** `est:M`
-  Audit render.rs for any remaining single-slot registries and convert them to keyed maps; make every species register through the same uniform register() shape so the roster is symmetric.
-  - Files: `src/windowed/render.rs`, `src/windowed/digimon/mod.rs`, `src/windowed/digimon/renamon/mod.rs`
+  Audit render/registries.rs and the render submodules for any remaining single-slot registries and convert them to keyed maps; make every species register through the same uniform register() shape so the roster is symmetric.
+  - Files: `src/windowed/render/registries.rs`, `src/windowed/render/effects.rs`, `src/windowed/digimon/mod.rs`, `src/windowed/digimon/renamon/mod.rs`
   - Verify: cargo test --features windowed --test windowed_only (green); cargo test (headless green)
 
 - [ ] **T03: Cross-species no-collision test** `est:S`
@@ -34,7 +34,8 @@
 
 ## Files Likely Touched
 
-- src/windowed/render.rs
+- src/windowed/render/registries.rs
+- src/windowed/render/effects.rs
 - src/windowed/digimon/agumon/mod.rs
 - src/windowed/digimon/mod.rs
 - src/windowed/digimon/renamon/mod.rs

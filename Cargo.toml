@@ -65,18 +65,6 @@ bevy_mod_debugdump = "0.15"
 name = "dump_schedule"
 path = "examples/dump_schedule.rs"
 
-# Windowed-only standalone live preview for bevy_enoki `.particle.ron` effects.
-# `required-features` keeps it OUT of the default headless `cargo check`/`test`
-# graph (it hard-depends on bevy_enoki + the render stack). Run manually with:
-#   cargo run --features windowed --bin vfx_editor
-[[bin]]
-name = "vfx_editor"
-path = "src/bin/vfx_editor.rs"
-required-features = ["windowed"]
-
-
-
-
 
 [profile.dev]
 opt-level = 1
