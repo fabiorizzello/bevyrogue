@@ -27,7 +27,7 @@
   - Files: `src/animation/registry.rs`
   - Verify: cargo test --test animation (T01 case now green); cargo test (full headless suite green)
 
-- [ ] **T03: Warn-once on unbuildable graph event** `est:S`
+- [x] **T03: Warn-once on unbuildable graph event** `est:S`
   Emit a single warn log (deduplicated per graph handle) when a graph asset event cannot produce a registry entry, giving the handle/path for diagnosis. No secrets, no per-frame spam.
   - Files: `src/animation/registry.rs`
   - Verify: cargo test (headless green); manual: cargo winx shows no warn for Renamon/Agumon happy path

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use bevy::prelude::*;
 
@@ -243,6 +243,9 @@ pub fn populate_graph_registries(
     asset_server: Res<AssetServer>,
     mut skill_reg: ResMut<SkillGraphRegistry>,
     mut stance_reg: ResMut<StanceGraphRegistry>,
+    // Asset ids we have already warned about, so an unbuildable graph logs once
+    // rather than every frame it re-emits a Modified event.
+    mut warned: Local<HashSet<AssetId<AnimGraph>>>,
 ) {
     let Some(handles) = handles else {
         return;
@@ -264,20 +267,34 @@ pub fn populate_graph_registries(
             .as_ref()
             .map(|p| p.path().to_string_lossy().into_owned());
 
+        // Only graphs we configured are our responsibility; events for other
+        // `AnimGraph` assets are silently ignored (not a spawn-miss).
         let handle = handles.0.iter().find(|h| h.id() == asset_id).cloned();
         let Some(handle) = handle else {
             continue;
         };
 
+        let mut built = false;
         if let Some(p) = &path_str {
             if skill_paths.0.iter().any(|sp| sp == p) {
                 skill_reg.0.insert(graph.id.clone(), handle);
-                continue;
-            }
-            if stance_paths.0.iter().any(|sp| sp == p) {
+                built = true;
+            } else if stance_paths.0.iter().any(|sp| sp == p) {
                 stance_reg.0.insert(graph.id.clone(), handle);
-                continue;
+                built = true;
             }
+        }
+
+        // A configured graph loaded but matched neither path list, so no
+        // registry entry can be built and its sprite will never resolve a
+        // graph. Warn once per asset id to make this regression visible.
+        if !built && warned.insert(asset_id) {
+            warn!(
+                "animation graph loaded but no registry entry could be built: \
+                 graph_id={:?} path={:?} — matched neither SkillGraphPaths nor \
+                 StanceGraphPaths; this sprite will not animate",
+                graph.id, path_str
+            );
         }
     }
 }
