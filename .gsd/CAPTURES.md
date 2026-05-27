@@ -1,36 +1,5 @@
 # Captures
 
-### CAP-7c065a44 (pt.2 — Visual architecture)
-**Text:** 1. Architettura Visiva (M003)
-   * Niente Fisica/Collider per i VFX: In un RPG a turni deterministico, usare motori fisici (Rapier/Avian)
-     per gestire impatti o VFX è un anti-pattern che rompe il determinismo e introduce overhead inutile.
-   * VFX tramite Cue e Reactive Bus: Usa il sistema di CueExt (già previsto nella tua CompiledTimeline) per
-     inviare segnali visivi.
-   * Action Queue Feedback: La UI di M003 dovrebbe mostrare graficamente gli Intent che "esplodono" in sync
-     con l'animazione.
-**Captured:** 2026-05-17T13:26:46.110Z
-**Status:** resolved
-**Classification:** defer
-**Resolution:** Defer the M003 visual architecture guidance to its future milestone.
-**Rationale:** The VFX/Cue/UI feedback ideas target M003 rendering work.
-**Resolved:** 2026-05-17T13:28:58Z
-**Milestone:** M001
-
-### CAP-159d33b5
-**Text:** 3. La "Sfida" di M003: Il Sync
-  Il punto più critico del tuo piano è la Slice 2 di M003: Basic attack windup → strike → recovery.
-   * In un sistema turn-based, il danno non deve apparire quando premi il tasto, ma quando il pugno "tocca" il
-     nemico nell'animazione.
-   * Nota positiva: Grazie al lavoro fatto in M021 col Two-clock model, hai già la base tecnica per mettere in
-     "pausa" il kernel finché lo sprite non raggiunge il frame di impatto.
-**Captured:** 2026-05-17T13:27:42.535Z
-**Status:** resolved
-**Classification:** defer
-**Resolution:** Defer this as an M003 animation-sync planning note tied to the future visual stack and combat presentation slices.
-**Rationale:** It is a milestone-ahead design constraint about animation-impact timing that depends on later M003 presentation work, not on the current S13 proof slice.
-**Resolved:** 2026-05-17T13:28:58Z
-**Milestone:** M001
-
 ### CAP-b892da3a
 **Text:** 4. La Fluent DSL in Rust (Query Builder Custom)
   Proposta Architetturale: Non usare librerie generiche esterne per creare builder di query (peggiorano i
@@ -103,27 +72,3 @@
 **Resolved:** 2026-05-20T20:31:31Z
 **Milestone:** M002
 
-### CAP-3a1dfcbc
-**Text:** Ult out-of-turn (HSR-style burst) — DA FARE, magari dopo M003.
-
-Modello desiderato: l'ult è lanciabile in qualsiasi momento, nel gap tra il turno di un PG e quello del successivo — non consuma il turno (burst fuori-turno).
-
-Stato attuale (verificato 2026-05-22): NON supportato. Le ult passano per lo stesso path di basic/skill e richiedono che sia il turno dell'unità.
-- Gate bloccante: `action_query/legality/action.rs:46-54` → ogni azione (Basic/Skill/Ultimate) rifiutata con `NotActiveUnit` se non è l'`active_unit`. Nessuna eccezione per l'ult.
-- `is_active` = `id == turn_order.active_unit` (`action_query/types.rs:135-139`); la validazione risorse dell'ult gira dopo, non bypassa.
-- Vincolo fase: `action.rs:57-66` richiede `CombatPhase::WaitingAction`, esiste solo con unità attiva.
-- Scheduler: `turn_system/advance.rs:326` è l'unico punto che imposta `active_unit` (sistema AV). Nessuna coda/interrupt/burst.
-
-3 opzioni di design quando lo affronteremo:
-1. Path parallelo `InstantAction`/burst che salta il gate di turno e si risolve fuori dall'AV scheduler (il più pulito, modella davvero l'HSR).
-2. Esenzione dell'Ultimate dal check `is_active` in `action.rs:46` + finestra di iniezione tra i turni.
-3. Coda ult drenata dallo scheduler prima di passare il turno al prossimo attore.
-
-Cross-cutting (scheduler + legality + input + pipeline) → milestone/slice GSD dedicato, non un fix da fine sessione. Eco in memory store MEM051.
-**Captured:** 2026-05-22T09:36:00Z
-**Status:** resolved
-**Classification:** defer
-**Resolution:** Defer out-of-turn ultimate (HSR-style burst) to a dedicated future milestone/slice after M003; cross-cutting work spanning the AV scheduler (`turn_system/advance.rs`), legality gate (`action_query/legality/action.rs`), input, and the resolution pipeline, with three design options to weigh when opened.
-**Rationale:** The user explicitly tagged it "DA FARE, magari dopo M003" and flagged it as cross-cutting requiring a dedicated GSD milestone/slice, not an end-of-session fix; it has no bearing on the current M003 rendering scope.
-**Resolved:** 2026-05-22T09:38:00Z
-**Milestone:** M003

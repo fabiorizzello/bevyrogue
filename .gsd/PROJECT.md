@@ -8,18 +8,14 @@ Core value: una run giocabile end-to-end dove combat, party build, e futuri laye
 
 ## Current State
 
-**M002 is complete.** First on-screen combat is delivered: AnimGraph runtime player + wgpu sprite render + §9 UI core + two-clock impact sync, Agumon-only. `cargo run --features windowed` runs Agumon vs an Agumon dummy at full kit — Sharp Claws, Baby Flame, Baby Burner, Twin Core — with damage landing on the visible impact frame, HP bars, damage numbers, hurt blink, and the dummy dying at 0 HP. M002 was gated at closeout by a repomix architectural review (S06-ARCHITECTURAL-REVIEW.md, 7 findings F1–F7, none critical, all deferred to M003+).
+**M006 is active.** M002–M005 are complete: first on-screen combat, two-clock impact sync, §9 UI read-model surfaces, data-driven per-Digimon VFX, HDR/bloom rendering closeout, hurt/death reactions, and enoki-backed Agumon contact bursts are all in place. The current open milestone is **M006: Extension-first presentation refactor + enoki-only VFX**. Its first four slices are complete (single enoki VFX path, generic CueRegistry cosmetic feedback, DigimonSprite/camera-shake wiring, and Agumon extraction out of engine files). The remaining open slice is **S05: Second digimon (Renamon) with zero engine edits**. Automated proof is green (`cargo test`, `cargo test --features windowed`, `cargo build --features windowed`); live `cargo winx` visual sign-off remains K001 human-only.
 
-All M002 success criteria verified:
-- S01: Agumon idle cycling via stance graph (not hardcoded); M001 headless suite green; clip↔atlas parity present.
-- S02: Sharp Claws windup→strike→recovery on screen; damage on impact frame via ReleaseKernelCue; I3 intent parity headless/windowed.
-- S03: §9 phase strip from EventReader<CombatEvent>; structural test proves UI never mutates combat state.
-- S04: Baby Burner reactive detonate + flash VFX (Rust code, no RON/editor); zero non-determinism.
-- S05: Full Agumon kit vs dummy; multi-hit loop = kernel hop count; CombatEvent-driven blink; HUD HP/damage; dummy dies at 0 HP.
-- S06: Windowed soak runbook + capture script; repomix architectural review report (pass-with-followups); R016 invariants green.
-- S07: Energy-backed Agumon ult gauge; readiness flips at full energy; cast drains to zero; legacy path preserved for non-opted-in Digimon.
-- S08: Typed pure AnimGraph input seam (R009) + hardened failure visibility (R013: cue timeout, missing graph fallback, hot reload, dead target).
-- S09: Explicit producer→consumer boundary map (5 test-cited rows), VFX/skill-graph extensibility proofs, frame-time aggregator with D027 threshold math + soak wiring.
+Delivered capabilities (M001–M005, all validated):
+- **Animation pipeline (M001):** typed AnimGraph RON loading, validation, hot-reload, clip↔atlas parity.
+- **On-screen combat (M002):** AnimGraph runtime player + two-clock impact sync + §9 UI core; full Agumon kit vs dummy with energy-backed ult gauge, typed pure AnimGraph input seam (R009), and hardened failure visibility (R013).
+- **Atlas rendering (M003):** atlas-bound sprites with frame→index mapping and rendered impact-frame damage bridge.
+- **Data-driven VFX (M004):** owned per-Digimon `VfxAsset` schema (placement/appearance/variation verbs), HDR/bloom overbright rendering proxy.
+- **Visual feedback (M005):** hurt/death reactions, flash/shake, floating damage numbers, and enoki-backed Agumon contact bursts.
 
 Current headless baseline: all integration and lib test targets green (cargo test + cargo test --features windowed).
 
@@ -73,36 +69,33 @@ Digimon with `ult_gauge=energy` metadata read/write `Energy` for ult readiness a
 
 ## Capability Contract
 
-See `.gsd/REQUIREMENTS.md`. Active requirements: **0** (all M002 requirements are now validated). Current validated baseline: M002 first on-screen combat, M001 animation asset pipeline. All requirements R003–R016 and R021–R028 validated.
+See `.gsd/REQUIREMENTS.md`. Active requirements: **0** (the current baseline has no open capability requirements tracked there). Current validated baseline: **M001–M005 complete; M006 in progress**.
 
 ## Milestone Sequence
 
 - [x] M001: Animation asset pipeline — Typed AnimGraph RON asset loading, validation, hot-reload, and clip↔atlas parity contract established headless-first.
 - [x] M002: First on-screen combat (Agumon-only) — AnimGraph runtime player + two-clock impact sync + §9 UI core + full Agumon kit vs dummy on screen, gated by repomix architectural review.
-- [ ] M003: Roster extension — Add next Digimon(s) using the M002 animation/skill seam as a pure data-only extension.
+- [x] M003: Make Agumon render on-screen — atlas-bound sprites, impact-frame bridge, and manual windowed sign-off for the five presentation surfaces.
+- [x] M004: Per-Digimon data-driven VFX (owned, extension-first).
+- [x] M005: Combat visual feedback completion (reactions + enoki VFX).
+- [ ] M006: Extension-first presentation refactor + enoki-only VFX — active; S05 (Renamon zero-engine-edit closeout) remains open.
 
-## Recommended Next Milestone
+## Current Execution Focus
 
-**M003: Roster extension** — add the next Digimon(s) using the M002 animation/skill seam as a pure data-only extension. The per-skill graph + stance schema is designed for this: a new Digimon is a new set of RON assets + a Rust blueprint module, with zero changes to the kernel.
+**M006 / S05: Second digimon (Renamon) with zero engine edits** — finish slice closeout around the active extension-first presentation seam. The automated contracts are already in place; the remaining boundary is honest milestone closure plus the human-only K001 visual surface.
 
-Alternative next options:
-- **RON VFX pipeline** (bevy_enoki / Omagari evaluation) — the opaque `ParticleId` handle seam is already open.
-- **M021 trait Skill + SkillCtx abstraction** — the generalization layer for ATK-based Heal scaling, selective cleanse, mixed Heal+Cleanse, custom immunity hooks, and the full blueprint seam.
-- **CLI / encounter loop** — extend the windowed runtime with a playable encounter chain.
-
-Deferred items from M002 (carry-forward to M003+):
-- Live windowed soak frame-time numbers (K001: must be captured manually; `frame-time-comparison.md` has pending results table)
+Deferred / still-open items carried forward from earlier milestones:
+- Live windowed soak frame-time numbers (K001: still requires manual capture; `frame-time-comparison.md` remains the historical method/proof artifact)
 - S06 architectural review findings F1–F7 (all low/medium/info; triaged roadmap in S06-ARCHITECTURAL-REVIEW.md)
-- Roster extension beyond Agumon (out-of-scope for M002; per-skill graph seam designed for data-only extension)
-- RON VFX format / editor (bevy_enoki / Omagari) — seam is open, implementation excluded from M002
+- Editor tooling for combined AnimGraph + VFX authoring (the data-driven VFX path exists; authoring/editor UX is still open)
 - Full playable CLI UX and encounter chain
 
 ## Operational Notes
 
 - `cargo test` for headless baseline; `cargo test --features windowed` for full suite including windowed_only.
-- `cargo run --features windowed` for visual verification (requires display; K001 blocks in auto-mode).
+- `cargo winx` for human visual verification (requires display; K001 blocks in auto-mode).
 - `M002-BOUNDARY-MAP.md`: 5 producer→consumer contracts with machine-checkable test citations.
-- `S06-ARCHITECTURAL-REVIEW.md`: repomix architectural review findings; check for M003+ follow-up items.
+- `S06-ARCHITECTURAL-REVIEW.md`: repomix architectural review findings F1–F7 (low/medium/info; triage status tracked in the Deferred items list above).
 - `src/animation/anim_graph.rs`: AnimGraphRole, AnimGraphInput, AnimGraph schema.
 - `src/animation/player.rs`: typed input threading, legacy default-input wrappers.
 - `src/animation/registry.rs`: SkillGraphRegistry, StanceGraphRegistry, resolved-graph snapshots.

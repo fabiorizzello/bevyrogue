@@ -26,8 +26,38 @@
 - [x] **S04: S04** `risk:medium` `depends:[]`
   > After this: In cargo winx, Agumon behaves exactly as before, but grep of the windowed engine files shows no AGUMON_* const, no closed on_enter_effect_ids match, and no load_agumon_enoki_vfx — all of it now lives in and is registered by src/windowed/digimon/agumon/. Windowed build/test green.
 
-- [ ] **S05: S05** `risk:high` `depends:[]`
+- [x] **S05: S05** `risk:high` `depends:[]`
   > After this: In cargo winx, Renamon appears as a combatant with working idle/skill/hurt/death presentation and cue-driven flash/shake; git diff shows the only changes are the two new renamon module trees plus their registration call — zero edits to engine/core files. Full cargo test green.
+
+- [ ] **S06: S06** `risk:high` `depends:[]`
+  > After this: Headless registry test proves every queued graph asset populates; windowed run shows Renamon idle sprite present
+
+- [ ] **S07: Combat panel reads canonical SkillBookHandle so Renamon skills are legal** `risk:medium` `depends:[]`
+  > After this: Headless test: Renamon action query returns its real skills, no false MissingSkill
+
+- [ ] **S08: Register Renamon diamond_storm_leaf cue, Agumon cast proof, spawn-miss diagnostics** `risk:medium` `depends:[S06,S07]`
+  > After this: Renamon cast emits its enoki effect; Agumon cast-driven proof; warn-once on spawn miss
+
+- [ ] **S09: Extract shared registries and types out of render.rs into render/registries.rs** `risk:medium` `depends:[S08]`
+  > After this: render.rs imports from registries module; species imports repointed; tests green
+
+- [ ] **S10: Split render into playback/spawn/effects/feedback/clock submodules** `risk:high` `depends:[S09]`
+  > After this: render decomposed; advance_digimon_presentation broken up; source-contract tests adjusted; windowed tests green
+
+- [ ] **S11: Data-driven catalog discovery replacing DEFAULT_ANIM_GRAPH/CLIP/STANCE_PATHS** `risk:medium` `depends:[]`
+  > After this: New Digimon discovered from data without editing path constants; headless catalog test
+
+- [ ] **S12: Replace singleton effect registries with keyed-per-effect registries** `risk:medium` `depends:[S11]`
+  > After this: DetonateEffectRegistry and residual singletons become keyed; uniform roster presentation data
+
+- [ ] **S13: Port one ranged and one aura/AoE Digimon end-to-end through the windowed seam** `risk:high` `depends:[S08,S12]`
+  > After this: Two more Digimon render and act with no engine control-flow edits — real scale proof
+
+- [ ] **S14: VfxAsset to enoki compile/adapt layer making VfxAsset the runtime source of truth** `risk:medium` `depends:[S12]`
+  > After this: VfxAsset drives enoki spawn via adapter; decision VfxAsset-canonical recorded first
+
+- [ ] **S15: Prune windowed VFX test churn per spike 4 recommendation** `risk:low` `depends:[S10]`
+  > After this: Tier-1 cut vfx_windowed_contracts.rs; Tier-2 thin source-token tests to absence-guards; anti-churn rule appended to DECISIONS.md; windowed tests green before and after
 
 ## Boundary Map
 

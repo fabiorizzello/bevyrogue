@@ -1,6 +1,15 @@
 # Milestone Portfolio — M002 → M009
 
-**Status:** foundation kernel chiuso. **M002 attivo** (first on-screen combat, closeout in corso). Prossimo da pianificare: **M003**.
+> **⚠️ Documento storico (pianificazione 2026-05-18).** Lo stato corrente e la
+> sequenza milestone reale vivono in `.gsd/PROJECT.md` e nei `M0xx-ROADMAP.md`.
+> Questo portfolio NON è più la fonte di verità: la numerazione milestone qui
+> sotto (M004=Gabumon, M005=Dorumon, M006=Tentomon, M007=Renamon, M008=Patamon)
+> è **divergente** dall'esecuzione reale (M003=render Agumon, M004=VFX
+> data-driven, M005=visual feedback, M006=refactor extension-first + Renamon).
+> Tienilo come traccia dell'intento roster originale, non come roadmap attiva.
+
+**Status (storico):** scritto quando M002 era attivo e M003 era il prossimo da
+pianificare. **Stato reale oggi: M002–M005 chiusi, M006 attivo** — vedi `PROJECT.md`.
 **Ultimo update:** 2026-05-18.
 **Nota canon:** lo scope M002 sotto usa il label "animation_fsm.ron" — il nome normativo è `clipmontage.ron` (§2.2b), vedi `M002-CONTEXT` decisione di naming.
 **Scopo:** allineare il codice (`src/combat/`, `src/data/`, `src/ui/`) al canon design `docs/future_design_draft/` (round-3). Visual tracer end-to-end Agumon entro M003 — niente "headless first, visual last".

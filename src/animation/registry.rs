@@ -272,11 +272,11 @@ pub fn populate_graph_registries(
         if let Some(p) = &path_str {
             if skill_paths.0.iter().any(|sp| sp == p) {
                 skill_reg.0.insert(graph.id.clone(), handle);
-                return;
+                continue;
             }
             if stance_paths.0.iter().any(|sp| sp == p) {
                 stance_reg.0.insert(graph.id.clone(), handle);
-                return;
+                continue;
             }
         }
     }

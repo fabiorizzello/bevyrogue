@@ -8,7 +8,7 @@ key_decisions:
   - Kept the Renamon extension contract semantic rather than numeric/format-sensitive by asserting ownership tokens, forbidden engine tokens, and the multi-presentation lookup seam instead of exact frame values.
 duration: 
 verification_result: passed
-completed_at: 2026-05-26T18:02:29.861Z
+completed_at: 2026-05-26T18:27:54.926Z
 blocker_discovered: false
 ---
 

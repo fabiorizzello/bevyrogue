@@ -1,0 +1,27 @@
+{
+  "template": "spike",
+  "templateName": "Research Spike",
+  "description": "valuta se bevi_enoki è sufficentemente potente per esprimere vfx tipo hsr o digimon survive/time stranger. valuta se il motore che abbiamo creato tra anim graph, vfx, stance ecc è abbastanza flessibile per scandire le specifiche di ogni digimon come extension piuttosto che cablare nel motore logica e presentazione del singolo digimon. vorrei in futuro creare un editor",
+  "branch": "master",
+  "phases": [
+    {
+      "name": "scope",
+      "index": 0,
+      "status": "active"
+    },
+    {
+      "name": "research",
+      "index": 1,
+      "status": "pending"
+    },
+    {
+      "name": "synthesize",
+      "index": 2,
+      "status": "pending"
+    }
+  ],
+  "currentPhase": 0,
+  "startedAt": "2026-05-26T18:37:18.042Z",
+  "updatedAt": "2026-05-26T18:37:18.042Z",
+  "artifactDir": "/home/fabio/dev/bevyrogue/.gsd/workflows/spikes/260526-3-valuta-se-bevi-enoki-sufficentemente-pot"
+}

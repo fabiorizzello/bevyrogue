@@ -1,0 +1,27 @@
+{
+  "template": "spike",
+  "templateName": "Research Spike",
+  "description": "ricerca l'ultilità dei test presenti nel progetto. cancelliamo quelli puramente visivi e quelli che cambiano troppo spesso perchè testano impl. essenzialmente test inutili",
+  "branch": "master",
+  "phases": [
+    {
+      "name": "scope",
+      "index": 0,
+      "status": "active"
+    },
+    {
+      "name": "research",
+      "index": 1,
+      "status": "pending"
+    },
+    {
+      "name": "synthesize",
+      "index": 2,
+      "status": "pending"
+    }
+  ],
+  "currentPhase": 0,
+  "startedAt": "2026-05-26T18:53:19.959Z",
+  "updatedAt": "2026-05-26T18:53:19.959Z",
+  "artifactDir": "/home/fabio/dev/bevyrogue/.gsd/workflows/spikes/260526-4-ricerca-l-ultilit-dei-test-presenti-nel"
+}

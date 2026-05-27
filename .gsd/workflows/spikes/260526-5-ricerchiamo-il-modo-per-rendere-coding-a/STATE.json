@@ -1,0 +1,27 @@
+{
+  "template": "spike",
+  "templateName": "Research Spike",
+  "description": "ricerchiamo il modo per rendere coding agent PI/claude/codex esperto in vfx. vfx per anime celshading tipo digimon survive e HSR. cerchiamo altre skills online magari da cui attingere per creare skill/agent che conosca bene la grafica vfx e la sappia applicare a bevy_enoki. e sappia quando è necessario assets oppure può semplicemente usare primitive bevy_enoki",
+  "branch": "master",
+  "phases": [
+    {
+      "name": "scope",
+      "index": 0,
+      "status": "complete"
+    },
+    {
+      "name": "research",
+      "index": 1,
+      "status": "complete"
+    },
+    {
+      "name": "synthesize",
+      "index": 2,
+      "status": "complete"
+    }
+  ],
+  "currentPhase": 2,
+  "startedAt": "2026-05-26T19:30:03.066Z",
+  "updatedAt": "2026-05-26T19:55:00.000Z",
+  "artifactDir": "/home/fabio/dev/bevyrogue/.gsd/workflows/spikes/260526-5-ricerchiamo-il-modo-per-rendere-coding-a"
+}

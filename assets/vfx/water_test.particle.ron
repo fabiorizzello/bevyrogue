@@ -1,0 +1,55 @@
+// Test/preview VFX — a continuous water fountain/splash, for exercising the
+// `vfx_editor` bin and the bevy-enoki-vfx skill. NOT tied to any Digimon kit;
+// lives in `assets/vfx/` as a generic procedural atom.
+//
+// Visual verb: persistent "spray"/droplet fountain (L1, procedural-first, no
+// asset). Droplets launch upward fast (`direction` up + high `linear_speed`),
+// then `gravity_direction`/`gravity_speed` arc them back down — the parabola is
+// what reads as water under gravity, the inverse of fire's accelerating rise.
+// Water is far less emissive than fire: only the crest is mildly overbright
+// (a wet specular highlight via bloom), the body stays below 1.0.
+//
+// enoki `Particle2dEffect` schema — all 19 fields listed (no loader defaults,
+// MEM098). Rval = (value, randomness); Vec2 = (x, y), +Y is up. Continuous.
+(
+    // Steady feed so the fountain is a continuous sheet of droplets.
+    spawn_rate: 50.0,
+    spawn_amount: 2,
+    // Narrow base disc — a fountain mouth, not a wide field.
+    emission_shape: Circle(7.0),
+    // Longer life so droplets complete the up-then-down arc before dying.
+    lifetime: (0.9, 0.3),
+    // Fast launch so droplets shoot well above the mouth before gravity wins.
+    linear_speed: Some((150.0, 0.4)),
+    linear_acceleration: None,
+    // Upward fan with wide scatter — a spreading jet, not a single stream.
+    direction: Some(((0.0, 1.0), 0.5)),
+    angular_speed: None,
+    angular_acceleration: None,
+    // Small tight droplets, moderate size variance.
+    scale: Some((9.0, 0.5)),
+    // Base cool-blue tint; color_curve drives the crest->body->fade gradient.
+    color: Some((red: 0.4, green: 0.7, blue: 1.0, alpha: 1.0)),
+    // Constant downward gravity pulls the jet back into a parabola.
+    gravity_direction: Some(((0.0, -1.0), 0.0)),
+    gravity_speed: Some((320.0, 0.1)),
+    // Almost no damping — gravity, not drag, shapes the arc.
+    linear_damp: Some((0.2, 0.0)),
+    angular_damp: None,
+    // Stay round most of life, then shrink as the droplet breaks up.
+    scale_curve: Some((points: [
+        (0.7, 0.0, None),
+        (1.0, 0.2, Some(SineOut)),
+        (0.3, 1.0, Some(SineInOut)),
+    ])),
+    // Bright cyan-white crest (slightly > 1.0 -> a wet bloom highlight) -> solid
+    // blue body (< 1.0, water is not emissive) -> deep blue, fading out.
+    color_curve: Some((points: [
+        ((red: 1.3, green: 1.6, blue: 1.8, alpha: 1.0), 0.0, None),
+        ((red: 0.45, green: 0.7, blue: 1.0, alpha: 0.95), 0.4, Some(SineOut)),
+        ((red: 0.1, green: 0.25, blue: 0.6, alpha: 0.0), 1.0, Some(SineInOut)),
+    ])),
+    attractors: None,
+    // World-space so the arc is traced in the scene, not carried with the spawner.
+    relative_positioning: Some(false),
+)
