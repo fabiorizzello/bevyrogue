@@ -64,6 +64,39 @@ pub struct UnitRosterHandle(pub Handle<UnitRoster>);
 #[derive(Resource)]
 pub struct SkillBookHandle(pub Handle<SkillBook>);
 
+/// Build a deduplicated diagnostic line for a *genuinely* missing skill.
+///
+/// S07 history: the combat panel used to grab an arbitrary partial `SkillBook`
+/// via `Assets::iter().next()`, so a skill that existed in the canonical book
+/// could surface as a false `MissingSkill`. Now that the panel consults the
+/// canonical [`SkillBookHandle`], a `MissingSkill` is a *real* miss — but only
+/// debuggable if the log names both the skill id and the book handle consulted.
+///
+/// `seen` is the caller's dedup set (a system `Local`); the panel runs every
+/// frame, so logging unconditionally would spam. Returns `Some(message)` the
+/// first time a given `(skill_id, handle)` pair is seen and `None` thereafter.
+/// A `None` handle means the canonical book was not yet loaded and the empty
+/// fallback book was consulted.
+pub fn missing_skill_log_once(
+    seen: &mut std::collections::HashSet<String>,
+    skill_id: &str,
+    book_handle: Option<&Handle<SkillBook>>,
+) -> Option<String> {
+    let handle_repr = match book_handle {
+        Some(handle) => format!("{:?}", handle.id()),
+        None => "fallback-empty-book (SkillBookHandle not yet loaded)".to_string(),
+    };
+    let key = format!("{skill_id}@{handle_repr}");
+    if seen.insert(key) {
+        Some(format!(
+            "combat panel MissingSkill: skill '{skill_id}' not found in consulted skill book \
+             (handle {handle_repr})"
+        ))
+    } else {
+        None
+    }
+}
+
 #[derive(Resource)]
 pub struct PartyConfigHandle(pub Handle<PartyConfig>);
 

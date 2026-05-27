@@ -11,6 +11,13 @@ defaults** — every field below must be present in every `.particle.ron` (MEM09
 `scale`, `color`, `gravity_direction`, `gravity_speed`, `linear_damp`, `angular_damp`,
 `scale_curve`, `color_curve`, `attractors`, `relative_positioning`.
 
+- **GOTCHA — `spawn_rate` is an interval, not a rate.** It is the *seconds between emissions*,
+  fed straight into a timer (`bevy_enoki-0.6.0/src/update.rs:137`
+  `timer.set_duration(from_secs_f32(spawn_rate))`). So a **small** value = dense feed; a large
+  value = nearly empty. For `R` particles/sec, author `spawn_rate: 1/R` (e.g. 55/sec → `0.018`).
+  The name reads like "rate" and invites the inverse mistake — verified in the web editor: an
+  emitter with `spawn_rate: 55.0` showed `Particles: 0`. `OneShot` effects use `spawn_rate: 0.0`
+  and burst once via the `OneShot` component, so the gotcha doesn't bite them.
 - Numeric fields are `Rval` = `(value, randomness)` — e.g. `lifetime: (0.32, 0.25)` is 0.32s ±0.25.
 - `direction` and `gravity_direction` are `Rval<Vec2>`; a `Vec2` is a 2-float tuple `(x, y)`, so
   the whole field is `Some(((x, y), randomness))` — e.g. `direction: Some(((0.0, 1.0), 0.35))` is
@@ -23,7 +30,18 @@ defaults** — every field below must be present in every `.particle.ron` (MEM09
   normalized lifetime 0→1. Easing e.g. `SineOut`, `SineInOut`, or `None`.
 - `relative_positioning: Some(true)` makes particles track the moving anchor as a body
   (no world-space trail) — use for a charge orb that follows the mouth.
-- Sprite-sheet animation over lifetime → `SpriteParticle2dMaterial` (H×V frames). Hot-reload works.
+
+## Material reality — the `.ron` does NOT pick the particle look
+
+Critical and easy to miss: a `.particle.ron` (`Particle2dEffect`) carries **no texture and no
+material**. The material is chosen by the *spawn code*. The repo spawns with
+`ParticleSpawner::default()` (`src/windowed/render.rs:1608`) = `ParticleSpawner<ColorParticle2dMaterial>`,
+whose shader paints each quad a **flat solid square** (`particle_color_frag.wgsl`). That is why
+procedural effects read as scattered confetti rather than a glowing mass — see
+`soft-particle-and-layering.md` for the root cause and the soft-sprite fix (it is a windowed
+code change to spawn `ParticleSpawner::<SpriteParticle2dMaterial>(soft_texture)`, not an asset
+edit). Sprite-sheet flipbook animation over lifetime also rides `SpriteParticle2dMaterial`
+(`new(tex, hframes, vframes)`, H×V frames; hot-reload works).
 
 ## Repo layer above enoki (the verbs that make the look)
 

@@ -12,9 +12,14 @@
 //
 // enoki `Particle2dEffect` schema — all 19 fields listed (no loader defaults,
 // MEM098). Rval = (value, randomness); Vec2 = (x, y), +Y is up. Continuous.
+//
+// GOTCHA: `spawn_rate` is the *interval in seconds between emissions*, NOT
+// particles/sec (bevy_enoki-0.6.0/src/update.rs:137 feeds it straight into
+// timer.set_duration). Small value = dense feed. Here 0.02 s = 50 emissions/sec
+// of `spawn_amount` droplets each, so the fountain is a continuous sheet.
 (
     // Steady feed so the fountain is a continuous sheet of droplets.
-    spawn_rate: 50.0,
+    spawn_rate: 0.02,
     spawn_amount: 2,
     // Narrow base disc — a fountain mouth, not a wide field.
     emission_shape: Circle(7.0),

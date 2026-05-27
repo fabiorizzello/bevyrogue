@@ -3,15 +3,22 @@
 //!
 //! Like Agumon, this module owns only Renamon-specific data and registry writes.
 //! The engine stays species-agnostic and consumes the generic registries.
+//!
+//! S08 adds the `diamond_storm_leaf` on-enter cue: `register_renamon_on_enter_effects`
+//! maps the authored `SpawnParticle(name: "diamond_storm_leaf")` to the owned
+//! `diamond_storm.leaf` effect id, and `register_renamon_enoki_vfx` loads the
+//! `.particle.ron` handle into `EnokiVfxRegistry` with `PlacementAnchor::CasterCenter`
+//! and `EnokiLifecycle::Projectile`.
 
 use bevy::prelude::*;
-use bevyrogue::animation::AnimationStancePaths;
+use bevyrogue::animation::{AnimationStancePaths, PlacementAnchor};
 use bevyrogue::combat::team::Team;
 use bevyrogue::combat::types::UnitId;
 
 use crate::windowed::demo::{WindowedDemoEntry, WindowedDemoRegistry};
 use crate::windowed::render::{
-    SkillStartNodeRegistry, SpritePresentationEntry, SpritePresentationRegistry,
+    EnokiEffect, EnokiLifecycle, EnokiVfxRegistry, OnEnterEffectRegistry, SkillStartNodeRegistry,
+    SpritePresentationEntry, SpritePresentationRegistry,
 };
 
 const RENAMON_UNIT_ID: UnitId = UnitId(7);
@@ -25,6 +32,29 @@ const RENAMON_CLIP_INDEX: usize = 1;
 const DIAMOND_STORM_SKILL_ID: &str = "diamond_storm";
 const DIAMOND_STORM_CAST_NODE: &str = "diamond_storm_cast";
 
+/// Namespaced owned effect id for Renamon's diamond storm leaf projectile.
+/// Keyed by `register_renamon_enoki_vfx` into `EnokiVfxRegistry`; consumed by
+/// `register_renamon_on_enter_effects` as the target of the authored
+/// `SpawnParticle(name: "diamond_storm_leaf")` cue. Namespaced under
+/// `diamond_storm.*` to avoid collision with other species' effect ids.
+const DIAMOND_STORM_LEAF_EFFECT_ID: &str = "diamond_storm.leaf";
+
+/// Path (relative to `assets/`) of Renamon's enoki diamond storm leaf projectile.
+const ENOKI_DIAMOND_STORM_LEAF_PATH: &str =
+    "digimon/renamon/diamond_storm_leaf.particle.ron";
+
+/// Animation ticks the diamond storm leaf projectile takes to travel
+/// caster→target before chaining the impact. Mirrors Baby Flame's `ttl_ticks`
+/// feel (5 ticks at 12fps ≈ 0.4s) so cross-screen travel feels consistent.
+const DIAMOND_STORM_FLIGHT_TICKS: u32 = 5;
+
+/// Effect id chained on arrival of the diamond storm projectile. There is no
+/// separate impact effect registered in S08; this id is intentionally absent
+/// from `EnokiVfxRegistry`, so `spawn_effect_by_id` gracefully spawns nothing
+/// on arrival. A future slice can register `"diamond_storm.impact"` without
+/// touching this module's control flow.
+const DIAMOND_STORM_IMPACT_EFFECT_ID: &str = "diamond_storm.impact";
+
 /// Populate the engine registries with all Renamon-specific presentation data.
 /// Called once from `crate::windowed::digimon::register_all`.
 pub(in crate::windowed) fn register(app: &mut App) {
@@ -35,6 +65,8 @@ pub(in crate::windowed) fn register(app: &mut App) {
             register_renamon_skill_start_nodes,
             register_renamon_sprite_presentation,
             register_renamon_windowed_demo,
+            register_renamon_on_enter_effects,
+            register_renamon_enoki_vfx,
         ),
     );
 }
@@ -78,6 +110,51 @@ fn register_renamon_windowed_demo(mut registry: ResMut<WindowedDemoRegistry>) {
         team: Team::Ally,
         name_override: None,
     });
+}
+
+/// Map Renamon's authored `SpawnParticle` particle name(s) to the owned effect
+/// id(s) that the engine spawns on node enter. The single authored cue
+/// `SpawnParticle(name: "diamond_storm_leaf")` in `diamond_storm_cast` maps to
+/// `DIAMOND_STORM_LEAF_EFFECT_ID` — a 1:1 mapping for this skill. The engine's
+/// `on_enter` loop in `advance_digimon_presentation` reads
+/// `OnEnterEffectRegistry` by name; a name absent here spawns nothing.
+fn register_renamon_on_enter_effects(mut registry: ResMut<OnEnterEffectRegistry>) {
+    registry.map.insert(
+        "diamond_storm_leaf".to_string(),
+        vec![DIAMOND_STORM_LEAF_EFFECT_ID.to_string()],
+    );
+}
+
+/// Load Renamon's `diamond_storm.leaf` enoki effect handle into
+/// `EnokiVfxRegistry`. `PlacementAnchor::CasterCenter` mirrors the authored
+/// `origin: CasterCenter` in `anim_graph.ron`. `EnokiLifecycle::Projectile` is
+/// the closest existing lifecycle for the authored `motion: ArcToTarget`:
+/// there is no `ArcToTarget`-specific lifecycle variant; `Projectile` drives
+/// the caster→target travel via `advance_enoki_projectiles` and chains
+/// `on_arrival` on arrival — the arc shape is not expressed in the lifecycle
+/// enum but the travel + chain behavior is correct (S08 design note: a future
+/// slice can add an `Arc` variant without changing this registry entry).
+fn register_renamon_enoki_vfx(
+    asset_server: Res<AssetServer>,
+    mut registry: ResMut<EnokiVfxRegistry>,
+) {
+    registry.handles.insert(
+        DIAMOND_STORM_LEAF_EFFECT_ID.to_string(),
+        EnokiEffect {
+            handle: asset_server.load(ENOKI_DIAMOND_STORM_LEAF_PATH),
+            anchor: PlacementAnchor::CasterCenter,
+            path: ENOKI_DIAMOND_STORM_LEAF_PATH.to_string(),
+            lifecycle: EnokiLifecycle::Projectile {
+                flight_ticks: DIAMOND_STORM_FLIGHT_TICKS,
+                on_arrival: DIAMOND_STORM_IMPACT_EFFECT_ID.to_string(),
+            },
+        },
+    );
+    info!(
+        target: "windowed.renamon_playback",
+        diamond_storm_leaf_path = ENOKI_DIAMOND_STORM_LEAF_PATH,
+        "renamon enoki effects load requested"
+    );
 }
 
 #[cfg(test)]
@@ -126,6 +203,18 @@ mod tests {
         app.init_resource::<SkillStartNodeRegistry>();
         app.init_resource::<SpritePresentationRegistry>();
         app.init_resource::<WindowedDemoRegistry>();
+        app.init_resource::<OnEnterEffectRegistry>();
+        // EnokiVfxRegistry requires AssetServer — only test the non-asset systems
+        // in this broad smoke test. The enoki entry is covered by
+        // `enoki_registry_holds_the_diamond_storm_leaf_entry`.
+        // We add the non-asset Startup systems only, so skip `app.update()` call
+        // that would trigger register_renamon_enoki_vfx (which needs AssetServer).
+        // Instead, call register and then manually invoke only the systems that
+        // do not require AssetServer via a targeted approach: init EnokiVfxRegistry
+        // and add AssetPlugin so all Startup systems can run.
+        app.add_plugins(bevy::asset::AssetPlugin::default());
+        app.init_asset::<bevy_enoki::Particle2dEffect>();
+        app.init_resource::<EnokiVfxRegistry>();
 
         register(&mut app);
         app.update();
@@ -161,5 +250,76 @@ mod tests {
         assert_eq!(entry.spawned_unit_id, RENAMON_UNIT_ID);
         assert_eq!(entry.team, Team::Ally);
         assert_eq!(entry.name_override, None);
+    }
+
+    /// The authored `SpawnParticle(name: "diamond_storm_leaf")` in
+    /// `diamond_storm_cast`'s `on_enter` maps to exactly the owned
+    /// `diamond_storm.leaf` effect id (1:1, no fan-out for this skill).
+    #[test]
+    fn on_enter_diamond_storm_leaf_maps_to_the_owned_effect_id() {
+        let mut app = App::new();
+        app.init_resource::<OnEnterEffectRegistry>();
+        app.add_systems(Startup, register_renamon_on_enter_effects);
+        app.update();
+
+        let reg = app.world().resource::<OnEnterEffectRegistry>();
+        let ids = reg.map.get("diamond_storm_leaf").expect(
+            "diamond_storm_leaf must be in OnEnterEffectRegistry after register",
+        );
+        assert_eq!(ids.as_slice(), [DIAMOND_STORM_LEAF_EFFECT_ID]);
+        assert_eq!(DIAMOND_STORM_LEAF_EFFECT_ID, "diamond_storm.leaf");
+
+        // An unknown particle name must NOT resolve to the diamond storm effect:
+        // the bridge is an exact name map, not a substring match.
+        for name in [
+            "diamond_storm",
+            "leaf",
+            "diamond_storm_impact",
+            "baby_flame_charge",
+            "",
+        ] {
+            assert!(
+                reg.map
+                    .get(name)
+                    .map(Vec::as_slice)
+                    .unwrap_or(&[])
+                    .iter()
+                    .all(|id| id.as_str() != DIAMOND_STORM_LEAF_EFFECT_ID),
+                "`{name}` must not map to the diamond storm leaf effect id"
+            );
+        }
+    }
+
+    /// `register_renamon_enoki_vfx` populates `EnokiVfxRegistry` with the
+    /// `diamond_storm.leaf` entry. Requires `AssetServer` (via `TaskPoolPlugin`
+    /// + `AssetPlugin` + `init_asset::<Particle2dEffect>()`); the handle is a
+    /// load request — not yet resolved — so we assert the registry key, path,
+    /// anchor, and lifecycle shape without touching the loaded asset.
+    #[test]
+    fn enoki_registry_holds_the_diamond_storm_leaf_entry() {
+        let mut app = App::new();
+        app.add_plugins(bevy::prelude::TaskPoolPlugin::default());
+        app.add_plugins(bevy::asset::AssetPlugin::default());
+        app.init_asset::<bevy_enoki::Particle2dEffect>();
+        app.init_resource::<EnokiVfxRegistry>();
+        app.add_systems(Startup, register_renamon_enoki_vfx);
+        app.update();
+
+        let reg = app.world().resource::<EnokiVfxRegistry>();
+        let entry = reg
+            .handles
+            .get(DIAMOND_STORM_LEAF_EFFECT_ID)
+            .expect("diamond_storm.leaf must be in EnokiVfxRegistry after register");
+
+        assert_eq!(entry.path, ENOKI_DIAMOND_STORM_LEAF_PATH);
+        assert!(matches!(entry.anchor, PlacementAnchor::CasterCenter));
+        assert!(matches!(
+            &entry.lifecycle,
+            EnokiLifecycle::Projectile {
+                flight_ticks,
+                on_arrival,
+            } if *flight_ticks == DIAMOND_STORM_FLIGHT_TICKS
+              && on_arrival == DIAMOND_STORM_IMPACT_EFFECT_ID
+        ));
     }
 }

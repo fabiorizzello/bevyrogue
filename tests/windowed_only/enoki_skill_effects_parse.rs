@@ -128,3 +128,33 @@ fn baby_burner_detonate_parses_into_enoki_schema() {
     );
     assert_one_shot_burst("baby_burner.detonate", &effect);
 }
+
+/// M006/S08/T01 — Renamon's `diamond_storm.leaf` traveling projectile asset
+/// must parse into `Particle2dEffect`. It is a continuous emitter (spawn_rate
+/// > 0) driven by `advance_enoki_projectiles` across its caster→target flight.
+/// Pins that the authored `.particle.ron` survives the enoki deserializer before
+/// any windowed run, catching RON syntax or field errors early.
+#[test]
+fn diamond_storm_leaf_parses_into_enoki_schema() {
+    let effect = parse_effect(
+        "assets/digimon/renamon/diamond_storm_leaf.particle.ron",
+        include_str!("../../assets/digimon/renamon/diamond_storm_leaf.particle.ron"),
+    );
+    assert_continuous_emitter("diamond_storm.leaf", &effect);
+    // World-space trail: relative_positioning must be Some(false) so shards
+    // stay in world space as the spawner moves caster→target.
+    assert_eq!(
+        effect.relative_positioning,
+        Some(false),
+        "diamond_storm.leaf must use world-space particles (relative_positioning: false)"
+    );
+    // Anime-cel HDR check: color_curve must include at least one channel > 1.0
+    // at t=0 (the white-hot diamond glint on emission).
+    let curve = effect.color_curve.as_ref().expect("diamond_storm.leaf needs a color_curve for the HDR glint");
+    let first_color = &curve.points[0].0;
+    assert!(
+        first_color.red > 1.0 || first_color.green > 1.0 || first_color.blue > 1.0,
+        "diamond_storm.leaf color_curve t=0 must have at least one HDR channel > 1.0 for bloom (got r={} g={} b={})",
+        first_color.red, first_color.green, first_color.blue
+    );
+}

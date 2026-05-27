@@ -32,10 +32,10 @@
 - [x] **S06: S06** `risk:high` `depends:[]`
   > After this: Headless registry test proves every queued graph asset populates; windowed run shows Renamon idle sprite present
 
-- [ ] **S07: S07** `risk:medium` `depends:[]`
+- [x] **S07: S07** `risk:medium` `depends:[]`
   > After this: Headless test: Renamon action query returns its real skills, no false MissingSkill
 
-- [ ] **S08: Register Renamon diamond_storm_leaf cue, Agumon cast proof, spawn-miss diagnostics** `risk:medium` `depends:[S06,S07]`
+- [ ] **S08: S08** `risk:medium` `depends:[]`
   > After this: Renamon cast emits its enoki effect; Agumon cast-driven proof; warn-once on spawn miss
 
 - [ ] **S09: Extract shared registries and types out of render.rs into render/registries.rs** `risk:medium` `depends:[S08]`

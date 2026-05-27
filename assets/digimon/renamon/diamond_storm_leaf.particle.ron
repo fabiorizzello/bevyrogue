@@ -1,0 +1,61 @@
+// Renamon `diamond_storm.leaf` traveling storm — a dense scatter of cool
+// green-white shards that reads as a leaf/diamond storm arc from caster to
+// target, for the bevy_enoki GPU 2D particle backend (M006/S08/T01).
+//
+// Visual verb: projectile arc (L0, primitive). The caster→target travel is
+// driven by the repo's `advance_enoki_projectiles` system moving the spawner
+// entity; `relative_positioning: false` so each emitted shard stays in world
+// space and forms a trailing storm cloud behind the core.
+//
+// `on_arrival` chains to `diamond_storm.impact` (registered separately).
+// If that id is absent from `EnokiVfxRegistry`, the engine gracefully spawns
+// nothing — no panic, no stall.
+//
+// Color theme: fox/nature — cool mint-green core (channels > 1.0 for HDR
+// bloom) fading to deep emerald. White-hot peak at emission reads as the
+// diamond glint; the body holds the green nature identity.
+//
+// enoki `Particle2dEffect` schema — all 19 fields listed (no loader defaults,
+// MEM098). Rval = (value, randomness).
+(
+    // Dense continuous feed so the arc reads as a storm cloud in motion.
+    // spawn_rate is the interval in seconds between emissions (GOTCHA):
+    // 0.012 ≈ 83 emissions/sec * spawn_amount 2 ≈ 166 shards/sec while traveling.
+    spawn_rate: 0.012,
+    spawn_amount: 2,
+    // Small disc — a tight storm core, not a wide spray.
+    emission_shape: Circle(5.0),
+    // Short life so the cloud is a few shard-lengths long, not a smear.
+    lifetime: (0.22, 0.3),
+    // Fast scatter that decelerates + damps — shards radiate then puff out.
+    linear_speed: Some((50.0, 0.5)),
+    linear_acceleration: Some((-80.0, 0.1)),
+    // Radial scatter (direction: None = enoki scatters from the emission shape).
+    direction: None,
+    angular_speed: None,
+    angular_acceleration: None,
+    // Larger particles than the flame trail so individual shards read.
+    scale: Some((12.0, 0.45)),
+    // Base mint-green tint; color_curve drives the diamond-glint gradient.
+    color: Some((red: 0.4, green: 1.0, blue: 0.6, alpha: 1.0)),
+    gravity_direction: None,
+    gravity_speed: None,
+    linear_damp: Some((3.5, 0.0)),
+    angular_damp: None,
+    // Pop in, hold briefly, then collapse — each shard reads as a diamond glint.
+    scale_curve: Some((points: [
+        (0.3, 0.0, None),
+        (1.0, 0.2, Some(SineOut)),
+        (0.0, 1.0, Some(SineInOut)),
+    ])),
+    // White-hot diamond glint at emission (HDR channels > 1.0 → bloom) ->
+    // cool mint-green body -> deep emerald, fading to transparent.
+    color_curve: Some((points: [
+        ((red: 1.8, green: 2.4, blue: 1.6, alpha: 1.0), 0.0, None),
+        ((red: 0.4, green: 1.2, blue: 0.6, alpha: 0.9), 0.35, Some(SineOut)),
+        ((red: 0.1, green: 0.45, blue: 0.2, alpha: 0.0), 1.0, Some(SineInOut)),
+    ])),
+    attractors: None,
+    // World-space particles: the moving spawner leaves a shard trail behind.
+    relative_positioning: Some(false),
+)

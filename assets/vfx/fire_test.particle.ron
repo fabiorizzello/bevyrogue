@@ -13,9 +13,14 @@
 // enoki `Particle2dEffect` schema — all 19 fields listed because the RON loader
 // has no field defaults (MEM098). Rval = (value, randomness); Vec2 = (x, y),
 // +Y is up. Continuous emitter (spawn_rate > 0): no `OneShot`, loops forever.
+//
+// GOTCHA: `spawn_rate` is the *interval in seconds between emissions*, NOT
+// particles/sec (bevy_enoki-0.6.0/src/update.rs:137 feeds it straight into
+// timer.set_duration). Small value = dense feed. Here 0.018 s ≈ 55 emissions/sec
+// of `spawn_amount` particles each, so the flame body reads as one tongue.
 (
     // Dense continuous feed so the flame body reads as one coherent tongue.
-    spawn_rate: 55.0,
+    spawn_rate: 0.018,
     spawn_amount: 2,
     // Seed from a small disc so the base is a few px wide, not a point.
     emission_shape: Circle(10.0),

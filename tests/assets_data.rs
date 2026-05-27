@@ -14,5 +14,7 @@ mod data_skills_ron_validation;
 mod data_units_ron_canonical;
 #[path = "assets_data/data_units_ron_roundtrip.rs"]
 mod data_units_ron_roundtrip;
+#[path = "assets_data/missing_skill_log_dedup.rs"]
+mod missing_skill_log_dedup;
 #[path = "assets_data/roster_catalog.rs"]
 mod roster_catalog;

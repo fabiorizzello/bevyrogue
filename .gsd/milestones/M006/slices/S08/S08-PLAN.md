@@ -17,12 +17,12 @@
 
 ## Tasks
 
-- [ ] **T01: Register Renamon diamond_storm_leaf cue** `est:M`
+- [x] **T01: Register Renamon diamond_storm_leaf cue** `est:M`
   Add the OnEnterEffect/enoki mapping for the diamond_storm_leaf node authored in renamon/anim_graph.ron into renamon's windowed module register(app), populating only Renamon's own registry entries per the established per-species seam. No edits to render.rs control flow.
   - Files: `src/windowed/digimon/renamon/mod.rs`, `assets/digimon/renamon/anim_graph.ron`
   - Verify: cargo test --features windowed --test windowed_only (Renamon cue mapping present); manual cargo winx shows Renamon cast particle
 
-- [ ] **T02: Add Agumon cast-driven particle proof** `est:M`
+- [x] **T02: Add Agumon cast-driven particle proof** `est:M`
   Add a windowed-scope test proving Agumon's cast cue resolves to its registered enoki effect through the same seam, locking the cast->effect contract for the reference Digimon.
   - Files: `tests/windowed_only/case.rs`, `src/windowed/digimon/agumon/mod.rs`
   - Verify: cargo test --features windowed --test windowed_only (Agumon cast proof green)

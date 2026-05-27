@@ -27,13 +27,19 @@ Derived from `.gsd/workflows/spikes/260526-5-ricerchiamo-il-modo-per-rendere-cod
 cinematic language — the look lives in the layer above it (placement/rotation/turbulence +
 timing + HDR + value contrast).
 
-Three knowledge layers compose here, kept separate on purpose:
-- **Principles** → the generic `vfx-realtime` skill (`~/.agents/skills/vfx-realtime/`). It
-  cites Niagara/VFX Graph tooling — translate, do not copy. Load it for shape/timing/color,
-  anticipation, secondary motion, overdraw, juice.
-- **Backend capabilities** → `references/enoki-cookbook.md` (real `.particle.ron` fields,
+Four knowledge layers compose here, kept separate on purpose:
+- **Art techniques** → `references/soft-particle-and-layering.md`. *Read this first when an
+  effect "doesn't read"* — soft particles vs the default flat-square material, layering, the
+  grayscale value test, density, and the cross-engine (Niagara/Unity) → enoki conversion table.
+- **Anime-cel self-check** → `references/anime-cel-principles.md` (value contrast, impact frame,
+  HDR core, shape language; the done checklist).
+- **Backend capabilities** → `references/enoki-cookbook.md` (real `.particle.ron` fields incl.
+  the `spawn_rate`-is-an-interval gotcha, the material-is-chosen-by-spawn-code reality,
   lifecycle, anchors, the repo's `PlacementParams`/`RotationParams` layer).
-- **Decision rule** → `references/decision-rule.md` (the core: asset vs primitive, L0→L4).
+- **Decision rule** → `references/decision-rule.md` (asset vs primitive, L0→L4).
+
+(Older notes reference a generic `vfx-realtime` skill; it is **not installed** — the references
+above are self-contained and do not depend on it.)
 
 Load this skill when touching particle VFX in any form. It is executable on its own; read the
 references on demand for the dense tables and real examples.
@@ -73,11 +79,16 @@ evolve" → L3; "needs a material look flat color can't give" → L4. Otherwise 
 - **L3/L4** → read `references/wgsl-hero.md` before committing; these are hero-only and carry
   real maintenance cost.
 
-## Step 4: Self-check against the anime-cel reading rules
-Read `references/anime-cel-principles.md` and confirm: value contrast before color; a clear
-impact frame; anticipation (charge) and follow-through (residue) if it's a multi-stage cast;
-HDR white-hot core via bloom; star-burst/shatter shape language where it fits. The look is
-*composition + timing + shape + value*, not a single rendering trick.
+## Step 4: Self-check against the reading rules
+First the foundational check from `references/soft-particle-and-layering.md`: **are the
+particles soft blobs or flat squares?** The default `ColorParticle2dMaterial` paints solid
+squares — the top reason an effect "doesn't read as fire". If the verb needs a glowing body,
+the soft-sprite material + layering is the fix (and it's a windowed *code* change, not an asset
+edit). Then read `references/anime-cel-principles.md` and confirm: value contrast in grayscale
+before color; density enough to read as a mass; intentional silhouette; a clear impact frame;
+anticipation (charge) and follow-through (residue) if multi-stage; HDR white-hot core via bloom;
+star-burst/shatter shape language where it fits. The look is *material + composition + timing +
+shape + value*, not a single rendering trick.
 
 ## Step 5: Respect repo conventions
 Semantic anchors (`Mouth`/`CasterCenter`/`TargetCenter`), `on_expire`/`ImpactSpawnPlan`
@@ -98,8 +109,16 @@ auto-mode (K001) — request manual UAT for visual signoff.
   lives at L0/L1 at this scale.
 - **Authoring trail/ribbon/beam-mesh, sub-emitters, or screen-space compositing as if native** —
   they are not enoki primitives (confirmed spike 3).
-- **Duplicating `vfx-realtime` principles here.** Link to it; this skill only adds the
-  enoki backend-mapping and the decision rule.
+- **Tuning curves to fix a flat-square effect.** If particles render as solid squares
+  (`ColorParticle2dMaterial`), no `color_curve`/`scale_curve`/HDR value fixes it — the fix is
+  the soft-sprite material + layering (`soft-particle-and-layering.md`).
+- **Trusting the web editor / headless capture for the *look*.** It renders with its own
+  material and no bloom, so it shows flat dots regardless of the asset. Authoritative only for
+  particle count / motion / logic; aesthetic signoff is windowed-only (K001, manual UAT).
+- **Reading `spawn_rate` as particles/sec.** It is the interval in seconds between emissions
+  (`1/rate`); a small value is dense. See `enoki-cookbook.md`.
+- **Shipping a single emitter for a body effect.** Fire/water/auras need 2–4 layered systems
+  (core/flames/embers/smoke) — the glow is emergent from overlap, not one layer.
 - **Omitting `.particle.ron` fields.** The RON loader has no defaults — every field must be present.
 </anti_patterns>
 

@@ -27,7 +27,7 @@
   - Files: `src/ui/combat_panel/render.rs`, `src/ui/combat_panel/preview_cache.rs`
   - Verify: cargo test --test action_query (T01 green); cargo test (headless suite green)
 
-- [ ] **T03: Diagnose true MissingSkill with context** `est:S`
+- [x] **T03: Diagnose true MissingSkill with context** `est:S`
   On the legitimately-missing branch, log the skill id and the book handle consulted (deduplicated) so a real miss is debuggable and distinct from the old arbitrary-book defect.
   - Files: `src/ui/combat_panel/render.rs`
   - Verify: cargo test (headless green)

@@ -111,15 +111,18 @@ fn agumon_partial_book() -> SkillBook {
 /// already be green — that is acceptable per the task contract.
 #[test]
 fn render_panel_path_resolves_renamon_skill_without_missing_skill() {
-    // Simulate the render.rs bug: use the first arbitrary partial book
-    // (Agumon's) rather than the canonical merged one.
-    let arbitrary_partial_book = agumon_partial_book();
+    // Post-T02 the combat panel consults the canonical merged book (via
+    // `SkillBookHandle`) rather than the first arbitrary partial book. Route the
+    // test through that same canonical book to assert the fix contract.
+    // (`partial_book_confirms_missing_skill_is_the_root_cause` covers the old
+    // arbitrary-partial-book bug it replaced.)
+    let canonical_book = aggregate_skill_book();
     let snapshot = renamon_snapshot();
     let skill_id = SkillId("diamond_storm".into());
 
     let affordance = query_action_affordance(
         &snapshot,
-        &arbitrary_partial_book,
+        &canonical_book,
         UnitId(7),
         ActionQueryKind::Skill(&skill_id),
     );

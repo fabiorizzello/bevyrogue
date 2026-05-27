@@ -1,9 +1,10 @@
 # Anime cel-shading principles (translated onto enoki)
 
 The "Digimon Survive / Honkai Star Rail" look is **composition + timing + shape language +
-value contrast** — not a single rendering trick. These are the generic `vfx-realtime`
-principles landed on this backend. Load `vfx-realtime` for the full treatment; this is the
-enoki-specific self-check.
+value contrast** — not a single rendering trick. This file is the enoki-specific self-check; the
+*art techniques* (soft particles, layering, the grayscale test, the cross-engine conversion
+table) live in `soft-particle-and-layering.md`. (A generic `vfx-realtime` skill is referenced in
+older notes but is not installed — these two references are self-contained, do not depend on it.)
 
 ## Value before color
 Cel shading = flat color bands + sharp contrast + outline. Readability comes from **value
@@ -39,7 +40,13 @@ impacts with high-contrast, readability-optimized color. Keep the camera/stage i
 though signoff is manual (K001 — never run windowed from auto-mode).
 
 ## Self-check before declaring an effect done
-- [ ] Value contrast reads at 14–34px, 12fps (squint test).
+- [ ] **Soft, not square**: particles render as soft blobs (`SpriteParticle2dMaterial` + soft
+      texture), not the default `ColorParticle2dMaterial` flat squares (see
+      `soft-particle-and-layering.md`). This is the most common reason an effect "doesn't read".
+- [ ] Value contrast reads in **grayscale** at 14–34px, 12fps (squint + desaturate test).
+- [ ] Density is high enough that overlap + bloom reads as one mass, not scattered motes.
+- [ ] Silhouette is intentional (low `direction` randomness + `scale_curve` taper), not scatter.
+- [ ] Layered where the verb needs body: core + flames + embers (+smoke), not one emitter.
 - [ ] There is a clear impact frame on contact.
 - [ ] If multi-stage: anticipation and follow-through are both present.
 - [ ] HDR core present where the verb wants a hot center (channels >1.0).

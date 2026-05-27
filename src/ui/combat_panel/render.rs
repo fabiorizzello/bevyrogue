@@ -14,8 +14,8 @@ use crate::combat::ult_gauge::effective_ult_gauge;
 #[cfg(feature = "windowed")]
 use crate::combat::{
     action_query::{
-        ActionStatus, TargetStatus, build_snapshot_from_ecs_with_sp, first_enabled_target_id,
-        mark_unit_active,
+        ActionQueryKind, ActionStatus, TargetStatus, build_snapshot_from_ecs_with_sp,
+        first_enabled_target_id, mark_unit_active,
     },
     floating::{FLOATING_LIFETIME_SECS, FloatingDamage},
     log::ActionLog,
@@ -28,7 +28,10 @@ use crate::combat::{
     types::UnitId,
     unit::Unit,
 };
-use crate::data::{SkillBookHandle, skills_ron::SkillBook};
+use crate::data::{
+    SkillBookHandle, missing_skill_log_once,
+    skills_ron::{LegalityReasonCode, SkillBook},
+};
 
 #[cfg(feature = "windowed")]
 use super::display::{FdDisplay, SkillDisplay, UnitDisplay};
@@ -57,7 +60,13 @@ pub fn combat_panel(
     mut log: ResMut<ActionLog>,
     panel_state: (Res<PreviewDamageCache>, Res<BabyBurnerFlashState>),
     // Grouped into one tuple param to stay within Bevy's 16-argument system limit.
-    skill_book_params: (Res<Assets<SkillBook>>, Option<Res<SkillBookHandle>>),
+    // The trailing Local is the dedup set for genuine-MissingSkill diagnostics —
+    // the panel runs every frame, so each (skill id, book handle) pair logs once.
+    skill_book_params: (
+        Res<Assets<SkillBook>>,
+        Option<Res<SkillBookHandle>>,
+        Local<std::collections::HashSet<String>>,
+    ),
     barrier: Res<SuspendedTimelineState>,
     // Grouped into one tuple param to stay within Bevy's 16-argument system
     // limit (adding the burst writer would otherwise be the 17th argument).
@@ -68,7 +77,7 @@ pub fn combat_panel(
 ) -> Result {
     let fallback_skill_book = SkillBook(Vec::new());
     let (preview_cache, flash_state) = panel_state;
-    let (skill_books, skill_book_handle) = skill_book_params;
+    let (skill_books, skill_book_handle, mut missing_skill_seen) = skill_book_params;
     let skill_book = skill_book_handle
         .as_ref()
         .and_then(|handle| skill_books.get(&handle.0))
@@ -173,6 +182,33 @@ pub fn combat_panel(
     let selected_target_id = selected_action_affordance
         .as_ref()
         .and_then(first_enabled_target_id);
+
+    // Diagnose a *genuine* MissingSkill on the selected action. Post-S07 the panel
+    // consults the canonical SkillBookHandle, so a MissingSkill here is a real miss
+    // (not the old arbitrary-partial-book defect). Name the skill id and the book
+    // handle consulted so the true miss is debuggable; dedup keeps the per-frame
+    // panel from spamming.
+    if let Some(affordance) = selected_action_affordance.as_ref() {
+        if matches!(
+            affordance.action,
+            ActionStatus::Disabled {
+                reason: LegalityReasonCode::MissingSkill
+            }
+        ) {
+            let skill_id = match &affordance.kind {
+                ActionQueryKind::Basic => "basic",
+                ActionQueryKind::Skill(id) => id.0.as_str(),
+                ActionQueryKind::Ultimate => "ultimate",
+            };
+            if let Some(message) = missing_skill_log_once(
+                &mut missing_skill_seen,
+                skill_id,
+                skill_book_handle.as_ref().map(|handle| &handle.0),
+            ) {
+                warn!("{message}");
+            }
+        }
+    }
 
     let any_broken = enemies
         .iter()

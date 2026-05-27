@@ -85,6 +85,8 @@ fn digimon_aggregator_only_declares_and_registers_renamon() {
 
 #[test]
 fn renamon_module_owns_the_extension_data_and_registration() {
+    // S08 adds the diamond_storm_leaf VFX cue: these tokens prove the module
+    // now populates the on-enter and enoki registries for its real authored cue.
     assert_contains_all(
         RENAMON_SRC,
         "src/windowed/digimon/renamon/mod.rs",
@@ -102,18 +104,28 @@ fn renamon_module_owns_the_extension_data_and_registration() {
             "renamon_skill",
             "diamond_storm",
             "diamond_storm_cast",
+            // S08 additions: on-enter cue + enoki VFX mapping for diamond_storm_leaf
+            "diamond_storm_leaf",
+            "diamond_storm.leaf",
+            "OnEnterEffectRegistry",
+            "EnokiVfxRegistry",
         ],
     );
 }
 
+/// S08 reverses the S05 idle-only contract: Renamon now legitimately populates
+/// `OnEnterEffectRegistry` and `EnokiVfxRegistry` for its real authored
+/// `diamond_storm_leaf` cue (anim_graph.ron line 9). The forbidden list is
+/// narrowed to registries Renamon genuinely does NOT use: `SkillReleaseEffectRegistry`
+/// (no release-boundary projectile in the current skill graph) and
+/// `DetonateEffectRegistry` (no detonate burst). This keeps the contract tight
+/// against unintended scope creep without blocking the legitimate S08 additions.
 #[test]
-fn renamon_module_does_not_invent_fake_particle_or_engine_branches() {
+fn renamon_module_does_not_use_unused_registries() {
     assert_contains_none(
         RENAMON_SRC,
         "src/windowed/digimon/renamon/mod.rs",
         &[
-            "EnokiVfxRegistry",
-            "OnEnterEffectRegistry",
             "SkillReleaseEffectRegistry",
             "DetonateEffectRegistry",
         ],
