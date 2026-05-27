@@ -25,15 +25,20 @@
     direction: None,
     angular_speed: None,
     angular_acceleration: None,
-    scale: Some((10.0, 0.4)),
+    scale: Some((36.0, 0.4)),
     color: Some((red: 1.0, green: 0.55, blue: 0.18, alpha: 1.0)),
     gravity_direction: None,
     gravity_speed: None,
     linear_damp: Some((3.0, 0.0)),
     angular_damp: None,
-    // Shrink to nothing so each trail particle collapses as it dies.
+    // GOTCHA: scale_curve values are ABSOLUTE pixel sizes that OVERRIDE `scale` every
+    // tick (bevy_enoki-0.6.0/src/update.rs:290) — a curve peaking at 1.0 renders a 1px
+    // dot, NOT a 0..1 multiplier. (This file previously peaked at 1.0 = an invisible
+    // spit.) The flame-flipbook material draws a defined tongue; the head pops to a
+    // ~36px flame, then each left-behind trail particle collapses as it dies.
     scale_curve: Some((points: [
-        (1.0, 0.0, None),
+        (24.0, 0.0, None),
+        (36.0, 0.2, Some(SineOut)),
         (0.0, 1.0, Some(SineInOut)),
     ])),
     // White-hot head -> deep orange trail, fading to transparent. Head channels burned

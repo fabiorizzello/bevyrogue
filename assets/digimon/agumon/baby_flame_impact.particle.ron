@@ -13,8 +13,10 @@
     spawn_amount: 40,
     // Seed the burst from a small disc so embers don't all start at one point.
     emission_shape: Circle(5.0),
-    // Quick contact flash: ~0.3s with mild per-particle variance.
-    lifetime: (0.32, 0.25),
+    // Flash + dissolve: ~0.55s so the bright contact frame is followed by a visible
+    // dissolve tail (stage 5) rather than a hard cut. Per-particle variance staggers
+    // the dissolve so the flames don't all wink out on the same frame.
+    lifetime: (0.55, 0.3),
     // Faster outward scatter (raised from 150) so the wider shards radiate, then
     // decelerates (negative acceleration) + damping.
     linear_speed: Some((190.0, 0.45)),
@@ -23,25 +25,32 @@
     direction: None,
     angular_speed: None,
     angular_acceleration: None,
-    scale: Some((10.0, 0.35)),
+    scale: Some((44.0, 0.35)),
     // Base tint; the color_curve drives the actual flame gradient over lifetime.
     color: Some((red: 1.0, green: 0.55, blue: 0.15, alpha: 1.0)),
     gravity_direction: None,
     gravity_speed: None,
     linear_damp: Some((4.0, 0.0)),
     angular_damp: None,
-    // Shrink to nothing so each ember collapses as it dies.
+    // GOTCHA: scale_curve is ABSOLUTE pixel size that OVERRIDES `scale` every tick
+    // (bevy_enoki-0.6.0/src/update.rs:290) — peaking at 1.0 = a 1px dot, NOT a 0..1
+    // multiplier. (This file previously peaked at 1.0 = an invisible impact.) The
+    // flame-flipbook material draws each shard as a defined flame: snap open to a
+    // ~44px burst, hold briefly, then shrink to nothing as it dissolves (stage 5).
     scale_curve: Some((points: [
-        (1.0, 0.0, None),
+        (44.0, 0.0, None),
+        (40.0, 0.35, Some(SineOut)),
         (0.0, 1.0, Some(SineInOut)),
     ])),
-    // Hot white-yellow at impact -> deep orange-red, fading to fully transparent.
-    // Impact-frame channels burned to ~4.5 (were <=1.0 = NO bloom, the dull flash):
-    // the contact flash is the brightest single frame of the cast, so it must blow
-    // out to white via Hdr+Bloom like the reference impact burst.
+    // Stage 4 (flash) + stage 5 (dissolve) in one curve: white-hot contact frame
+    // (channels ~4.8 so Hdr+Bloom blows it to white like the reference impact), then
+    // a deep orange-red ember that lingers (the dissolve), then transparent. The mid
+    // node at t=0.45 holds a dim warm ember so the tail reads as a dissolve rather
+    // than a linear fade straight to nothing.
     color_curve: Some((points: [
         ((red: 4.8, green: 4.0, blue: 2.2, alpha: 1.0), 0.0, None),
-        ((red: 2.2, green: 0.7, blue: 0.1, alpha: 0.0), 1.0, Some(SineInOut)),
+        ((red: 2.4, green: 0.9, blue: 0.2, alpha: 0.7), 0.45, Some(SineInOut)),
+        ((red: 1.2, green: 0.35, blue: 0.08, alpha: 0.0), 1.0, Some(SineInOut)),
     ])),
     attractors: None,
     relative_positioning: None,

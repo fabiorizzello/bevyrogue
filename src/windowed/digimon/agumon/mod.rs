@@ -75,6 +75,15 @@ const ENOKI_SHARP_CLAWS_PATH: &str = "digimon/agumon/sharp_claws_slash.particle.
 /// Path of Agumon's enoki Baby Burner detonate burst.
 const ENOKI_DETONATE_PATH: &str = "digimon/agumon/baby_burner_detonate.particle.ron";
 
+/// Path (relative to `assets/`) of the "defined flame" flipbook sprite-sheet
+/// (`scripts/gen_flame_sheet.py`). A 4x4 grid of flame-tongue frames the
+/// `SpriteParticle2dMaterial` frag advances over each particle's lifetime, giving
+/// the flame layers a real licking silhouette instead of a soft radial blob.
+const FLAME_SHEET_PATH: &str = "vfx/flame_sheet.png";
+/// Flipbook grid dimensions of `FLAME_SHEET_PATH` (must match the generator).
+const FLAME_SHEET_HFRAMES: u32 = 4;
+const FLAME_SHEET_VFRAMES: u32 = 4;
+
 /// Animation ticks the Baby Flame projectile emitter takes to travel caster->target
 /// before chaining the impact burst. Mirrors the deleted quad projectile's
 /// `ttl_ticks: 5` in `vfx.ron` so the flight feels identical.
@@ -103,6 +112,20 @@ fn on_enter_effect_specs() -> &'static [(&'static str, &'static [&'static str])]
         ("baby_flame_impact", &[IMPACT_EFFECT_ID]),
         ("sharp_claws_slash", &[SHARP_CLAWS_EFFECT_ID]),
     ]
+}
+
+/// Effect ids whose visual verb is a flame SHAPE (a defined silhouette that must
+/// read at scale), routed through the flipbook flame material rather than the soft
+/// blob: the rising tongues, the traveling flame head + trail, and the impact flame
+/// burst. The glow-body ids (charge orb, white-hot core, ember swirl) are absent —
+/// they stay soft blobs, and the value contrast between defined flame and soft glow
+/// is what makes the layered cast read (bevy-enoki-vfx skill: L3 flipbook on the
+/// shape, L0/L1 glow on the body).
+fn uses_flame_flipbook(effect_id: &str) -> bool {
+    matches!(
+        effect_id,
+        FLAMES_EFFECT_ID | PROJECTILE_EFFECT_ID | IMPACT_EFFECT_ID
+    )
 }
 
 /// Populate the engine registries with all Agumon-specific presentation data.
@@ -165,8 +188,20 @@ fn register_agumon_cues(mut registry: ResMut<bevyrogue::ui::cues::CueRegistry>) 
 /// chains `baby_flame.impact`, and the contact bursts are fire-and-forget.
 fn register_agumon_enoki_vfx(
     asset_server: Res<AssetServer>,
+    mut materials: ResMut<Assets<SpriteParticle2dMaterial>>,
     mut registry: ResMut<EnokiVfxRegistry>,
 ) {
+    // The "defined flame" flipbook material: a single shared handle routed onto the
+    // layers whose verb is a flame SHAPE (rising tongues, the traveling flame head,
+    // the impact flame burst). The glow layers (charge orb, white-hot core, ember
+    // swirl) keep `None` so they spawn through the shared soft blob — the value
+    // contrast between a defined flame and a soft glow body is the layered look.
+    let flame_material = materials.add(SpriteParticle2dMaterial::new(
+        asset_server.load(FLAME_SHEET_PATH),
+        FLAME_SHEET_HFRAMES,
+        FLAME_SHEET_VFRAMES,
+    ));
+
     let entries: [(&str, &str, PlacementAnchor, EnokiLifecycle); 8] = [
         (
             CHARGE_EFFECT_ID,
@@ -221,6 +256,10 @@ fn register_agumon_enoki_vfx(
         ),
     ];
     for (effect_id, path, anchor, lifecycle) in entries {
+        // Defined-flame layers (rising tongues, the traveling flame head, the impact
+        // flame burst) spawn through the flipbook flame material; glow layers (charge
+        // orb, white-hot core, ember swirl) keep `None` -> shared soft blob.
+        let material_override = uses_flame_flipbook(effect_id).then(|| flame_material.clone());
         registry.handles.insert(
             effect_id.to_string(),
             EnokiEffect {
@@ -228,6 +267,7 @@ fn register_agumon_enoki_vfx(
                 anchor,
                 path: path.to_string(),
                 lifecycle,
+                material_override,
             },
         );
     }
@@ -358,6 +398,28 @@ mod tests {
         );
         // An unknown particle name maps to no effects (spawns nothing, no panic).
         assert!(on_enter_ids("unknown_particle").is_empty());
+    }
+
+    #[test]
+    fn flame_flipbook_routes_shape_layers_not_glow_layers() {
+        // The defined-flame layers (silhouette verbs) take the flipbook material; the
+        // glow-body layers stay soft blobs. This is the per-effect material routing
+        // (M006: stage chain) — a flame shape needs L3 flipbook, a glow does not.
+        for id in [FLAMES_EFFECT_ID, PROJECTILE_EFFECT_ID, IMPACT_EFFECT_ID] {
+            assert!(uses_flame_flipbook(id), "`{id}` is a flame shape → flipbook");
+        }
+        for id in [
+            CHARGE_EFFECT_ID,
+            CORE_EFFECT_ID,
+            EMBER_EFFECT_ID,
+            SHARP_CLAWS_EFFECT_ID,
+            DETONATE_EFFECT_ID,
+        ] {
+            assert!(
+                !uses_flame_flipbook(id),
+                "`{id}` is a glow/other → soft blob, not flipbook"
+            );
+        }
     }
 
     #[test]

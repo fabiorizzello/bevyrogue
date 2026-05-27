@@ -43,15 +43,40 @@ const LAYER_Z_STEP: f32 = 0.5;
 /// `OnEnterEffectRegistry` fan-out (`src/windowed/digimon/agumon/mod.rs`).
 /// Source of truth for the real groups lives there; this list is the dev-viewer
 /// projection. Paths are relative to `assets/`. Order is back-to-front.
-const COMPOSITES: &[(&str, &[&str])] = &[(
-    "Baby Flame — full layered cast (flames+charge+core+ember)",
-    &[
-        "digimon/agumon/baby_flame_flames.particle.ron",
-        "digimon/agumon/baby_flame_charge.particle.ron",
-        "digimon/agumon/baby_flame_core.particle.ron",
-        "digimon/agumon/baby_flame_ember.particle.ron",
-    ],
-)];
+const COMPOSITES: &[(&str, &[&str])] = &[
+    (
+        "Baby Flame — charge body (flames+charge+core+ember)",
+        &[
+            "digimon/agumon/baby_flame_flames.particle.ron",
+            "digimon/agumon/baby_flame_charge.particle.ron",
+            "digimon/agumon/baby_flame_core.particle.ron",
+            "digimon/agumon/baby_flame_ember.particle.ron",
+        ],
+    ),
+    (
+        "Baby Flame — spit + trail (projectile)",
+        &["digimon/agumon/baby_flame_projectile.particle.ron"],
+    ),
+    (
+        "Baby Flame — impact flames + dissolve",
+        &["digimon/agumon/baby_flame_impact.particle.ron"],
+    ),
+];
+
+/// Asset-relative paths of the "defined flame" layers that spawn through the
+/// flipbook flame material (mirrors the `flame()` assignment in the Agumon enoki
+/// registry — `src/windowed/digimon/agumon/mod.rs`). Every other layer spawns
+/// through the soft-blob material. A dev-viewer projection of the game's
+/// per-effect material routing; the source of truth is the registry.
+const FLAME_FLIPBOOK_LAYERS: &[&str] = &[
+    "digimon/agumon/baby_flame_flames.particle.ron",
+    "digimon/agumon/baby_flame_projectile.particle.ron",
+    "digimon/agumon/baby_flame_impact.particle.ron",
+];
+
+fn layer_uses_flame_flipbook(path: &str) -> bool {
+    FLAME_FLIPBOOK_LAYERS.contains(&path)
+}
 
 /// One selectable entry in the dropdown: one or more `.particle.ron` layers.
 #[derive(Clone)]
@@ -79,6 +104,13 @@ struct ViewerState {
 #[derive(Resource)]
 struct SoftMaterial(Handle<SpriteParticle2dMaterial>);
 
+/// The "defined flame" flipbook material — identical to the combat renderer's
+/// (`SpriteParticle2dMaterial::new(flame_sheet.png, 4, 4)`). Routed onto the flame
+/// layers ([`FLAME_FLIPBOOK_LAYERS`]) so the viewer shows the animated flame-tongue
+/// silhouette, not a soft blob.
+#[derive(Resource)]
+struct FlameMaterial(Handle<SpriteParticle2dMaterial>);
+
 /// Tags an entity spawned by the viewer so we can clear it on selection change.
 #[derive(Component)]
 struct PreviewLayer;
@@ -105,7 +137,10 @@ fn main() {
         // Dim neutral background so HDR bloom reads honestly.
         .insert_resource(ClearColor(Color::srgb(0.02, 0.02, 0.04)))
         .init_resource::<ViewerState>()
-        .add_systems(Startup, (setup_camera, init_soft_material, enumerate_effects))
+        .add_systems(
+            Startup,
+            (setup_camera, init_soft_material, init_flame_material, enumerate_effects),
+        )
         .add_systems(
             Update,
             (keyboard_controls, apply_selection, ensure_spawner_when_ready, hot_reload),
@@ -141,6 +176,20 @@ fn init_soft_material(
     let texture = asset_server.load("vfx/soft_particle.png");
     let handle = materials.add(SpriteParticle2dMaterial::from_texture(texture));
     commands.insert_resource(SoftMaterial(handle));
+}
+
+/// Builds the flame flipbook material from `vfx/flame_sheet.png` (4x4) — the same
+/// material the combat renderer routes onto Agumon's defined-flame layers. The frag
+/// advances the 16 frames over each particle's lifetime, so a flame layer renders a
+/// flickering tongue silhouette instead of a blob.
+fn init_flame_material(
+    asset_server: Res<AssetServer>,
+    mut materials: ResMut<Assets<SpriteParticle2dMaterial>>,
+    mut commands: Commands,
+) {
+    let texture = asset_server.load("vfx/flame_sheet.png");
+    let handle = materials.add(SpriteParticle2dMaterial::new(texture, 4, 4));
+    commands.insert_resource(FlameMaterial(handle));
 }
 
 /// Scans `assets/` for every `*.particle.ron`, then prepends the composite
@@ -263,12 +312,13 @@ fn ensure_spawner_when_ready(
     mut state: ResMut<ViewerState>,
     asset_server: Res<AssetServer>,
     soft: Option<Res<SoftMaterial>>,
+    flame: Option<Res<FlameMaterial>>,
     mut commands: Commands,
 ) {
     if state.spawned || state.handles.is_empty() {
         return;
     }
-    let Some(soft) = soft else { return };
+    let (Some(soft), Some(flame)) = (soft, flame) else { return };
 
     let all_ready = state
         .handles
@@ -278,11 +328,22 @@ fn ensure_spawner_when_ready(
         return;
     }
 
+    // Layers and handles are parallel by index (apply_selection builds handles from
+    // the active entry's layers in order), so the layer path selects the material:
+    // the defined-flame layers use the flipbook, everything else the soft blob.
+    let layers = state
+        .active
+        .map(|idx| state.effects[idx].layers.clone())
+        .unwrap_or_default();
     for (i, handle) in state.handles.iter().enumerate() {
         let z = LAYER_Z_BASE + (i as f32) * LAYER_Z_STEP;
+        let material = match layers.get(i) {
+            Some(path) if layer_uses_flame_flipbook(path) => flame.0.clone(),
+            _ => soft.0.clone(),
+        };
         commands.spawn((
             PreviewLayer,
-            ParticleSpawner(soft.0.clone()),
+            ParticleSpawner(material),
             ParticleEffectHandle(handle.clone()),
             Transform::from_xyz(0.0, 0.0, z),
         ));
