@@ -7,8 +7,8 @@ use bevy::{
     prelude::*,
     render::view::Hdr,
 };
-use bevy_enoki::prelude::OneShot;
-use bevy_enoki::{EnokiPlugin, Particle2dEffect, ParticleEffectHandle, ParticleSpawner};
+use bevy_enoki::prelude::{OneShot, SpriteParticle2dMaterial};
+use bevy_enoki::{EnokiPlugin, ParticleEffectHandle, ParticleSpawner};
 
 use bevyrogue::animation::{
     AnimGraph, AnimGraphId, AnimGraphPlayer, AnimationClipHandles, AnimationClipLoadState,
@@ -27,6 +27,8 @@ use bevyrogue::ui::hit_feedback::{
     FLASH_TICKS, HitFlashState, HitShakeState, SHAKE_TICKS, damage_number_kinematics,
     hit_damage_amount, observe_hit_feedback,
 };
+
+pub(in crate::windowed) mod registries;
 
 /// Marker + FSM state for an on-screen Digimon preview actor. Carries the
 /// stance/skill animation-graph ids as DATA (`stance_graph_id` / `skill_graph_id`)
@@ -288,6 +290,14 @@ const MAX_CATCHUP_TICKS: u32 = 4;
 /// roster (8 actors) cannot fit. 0.4 → ~205px per sprite. Provisional layout
 /// value pending multi-slot positioning.
 const SPRITE_DISPLAY_SCALE: f32 = 0.4;
+/// Horizontal rest position of a team's column: allies left, enemies right.
+const TEAM_COLUMN_X: f32 = 200.0;
+/// Vertical gap between adjacent same-team slots. Sized so two ~205px sprites in
+/// the same column read as distinct actors rather than one stacked blob.
+const SLOT_VERTICAL_SPACING: f32 = 150.0;
+/// Per-slot z increment so same-team sprites never share an exact z (stable draw
+/// order, no flicker). Kept well below `VFX_PARTICLE_Z` so sprites stay behind VFX.
+const SLOT_Z_STEP: f32 = 0.01;
 const VFX_PARTICLE_Z: f32 = 1.0;
 /// Z of a floating damage number. Above `VFX_PARTICLE_Z` so the number reads on
 /// top of any impact particles spawned at the same target.
@@ -417,6 +427,7 @@ impl Plugin for RenderPlugin {
             .init_resource::<SpritePresentationRegistry>()
             .init_resource::<PresentationAtlasRegistry>()
             .add_systems(Startup, setup_camera)
+            .add_systems(Startup, init_soft_particle_material)
             .add_systems(Update, diagnose_enoki_vfx_load)
             .add_systems(Update, build_digimon_atlases.before(spawn_unit_sprites))
             .add_systems(Update, spawn_unit_sprites)
@@ -589,109 +600,15 @@ fn apply_camera_shake(
     }
 }
 
-/// Per-effect-id registry of enoki `Particle2dEffect` handles. Engine-generic
-/// (S04): the per-Digimon module populates it via its `register` entry point with
-/// the effect id, asset path, placement anchor, and lifecycle for each effect; the
-/// spawn seam ([`spawn_effect_by_id`]) looks an id up here and routes it through
-/// bevy_enoki's GPU 2D backend, choosing the spawned lifecycle components from the
-/// entry's [`EnokiLifecycle`]. A missing id spawns nothing. Loading these handles
-/// does not move any particle lifetime into the kernel/FSM timeline (D031/D032).
-#[derive(Resource, Debug, Clone, Default)]
-pub(in crate::windowed) struct EnokiVfxRegistry {
-    pub(in crate::windowed) handles: HashMap<String, EnokiEffect>,
-}
-
-/// One entry in [`EnokiVfxRegistry`]: the loaded enoki effect handle, the source
-/// asset `path` (carried for diagnostics so `diagnose_enoki_vfx_load` reports the
-/// failing path without a const match), the placement `anchor`, and the
-/// `lifecycle` that decides which lifecycle components the spawn seam attaches.
-#[derive(Debug, Clone)]
-pub(in crate::windowed) struct EnokiEffect {
-    pub(in crate::windowed) handle: Handle<Particle2dEffect>,
-    pub(in crate::windowed) anchor: PlacementAnchor,
-    pub(in crate::windowed) path: String,
-    pub(in crate::windowed) lifecycle: EnokiLifecycle,
-}
-
-/// How a spawned enoki effect behaves over time. Replaces the closed effect-id
-/// match in [`spawn_effect_by_id`] with data carried per registry entry (S04):
-/// `PersistentEmitter` keeps emitting until cleared by marker at a launch
-/// boundary, `Projectile` travels caster->target then chains `on_arrival`, and
-/// `OneShot` is fire-and-forget and self-despawns once it drains.
-#[derive(Debug, Clone)]
-pub(in crate::windowed) enum EnokiLifecycle {
-    PersistentEmitter,
-    Projectile {
-        flight_ticks: u32,
-        on_arrival: String,
-    },
-    OneShot,
-}
-
-/// Engine-generic map of authored `SpawnParticle` name -> the owned effect id(s)
-/// it spawns on node enter (S04). The per-Digimon module populates it; the
-/// `on_enter` loop in [`advance_digimon_presentation`] reads it instead of a closed
-/// name match, so adding a Digimon's spawn vocabulary needs no engine edit.
-#[derive(Resource, Debug, Clone, Default)]
-pub(in crate::windowed) struct OnEnterEffectRegistry {
-    pub(in crate::windowed) map: HashMap<String, Vec<String>>,
-}
-
-/// Engine-generic map of skill id -> the effect id spawned at the skill's release
-/// boundary (S04). Replaces the `mode_skill_id == Some(BABY_FLAME_SKILL_ID)`
-/// special-case in [`advance_digimon_presentation`]: a skill present here spawns its
-/// mapped effect (the projectile) on release; a skill absent here spawns nothing.
-#[derive(Resource, Debug, Clone, Default)]
-pub(in crate::windowed) struct SkillReleaseEffectRegistry {
-    pub(in crate::windowed) map: HashMap<String, String>,
-}
-
-/// Engine-generic detonate effect id (S04). Replaces the per-Digimon detonate
-/// const read in [`spawn_detonate_particles`]: `None` spawns no detonate burst.
-#[derive(Resource, Debug, Clone, Default)]
-pub(in crate::windowed) struct DetonateEffectRegistry {
-    pub(in crate::windowed) effect_id: Option<String>,
-}
-
-/// Engine-generic map of skill id -> its windowed FSM entry node (S04). The
-/// per-Digimon module populates it; a skill present here is "bridged" (presents
-/// its rendered FSM and releases on its `ReleaseKernel` cue), a skill absent here
-/// is unbridged and takes the auto-release fallback. Replaces the closed
-/// `skill_start_node` match: the presentation systems read this registry directly.
-#[derive(Resource, Debug, Clone, Default)]
-pub(in crate::windowed) struct SkillStartNodeRegistry {
-    pub(in crate::windowed) map: HashMap<String, String>,
-}
-
-/// Engine-generic per-Digimon sprite presentation data (S04): the stance/skill
-/// animation-graph ids and the atlas image path + clip index used by
-/// [`build_digimon_atlas`] / [`spawn_unit_sprites`]. The per-Digimon module
-/// populates it instead of the engine reading species-specific consts and a
-/// hardcoded atlas path. For S04 it holds the single Agumon entry; S05 adds more.
-#[derive(Resource, Debug, Clone, Default)]
-pub(in crate::windowed) struct SpritePresentationRegistry {
-    pub(in crate::windowed) entries: Vec<SpritePresentationEntry>,
-}
-
-/// One entry in [`SpritePresentationRegistry`]: the stable presentation id,
-/// owned `UnitId` selectors, stance/skill graph ids, and atlas source used to
-/// spawn/render a specific Digimon presentation without engine-side species
-/// matches.
-#[derive(Debug, Clone)]
-pub(in crate::windowed) struct SpritePresentationEntry {
-    pub(in crate::windowed) presentation_id: String,
-    pub(in crate::windowed) unit_ids: Vec<UnitId>,
-    pub(in crate::windowed) stance_graph_id: String,
-    pub(in crate::windowed) skill_graph_id: String,
-    pub(in crate::windowed) atlas_image_path: String,
-    pub(in crate::windowed) clip_index: usize,
-}
-
-impl SpritePresentationEntry {
-    fn matches_unit(&self, unit_id: UnitId) -> bool {
-        self.unit_ids.contains(&unit_id)
-    }
-}
+// Engine-generic presentation registries and shared types now live in
+// `render/registries.rs` (M006/S09). The per-Digimon modules import them
+// directly from `crate::windowed::render::registries`; render.rs's own
+// presentation systems pull the ones they use into scope here.
+use registries::{
+    DetonateEffectRegistry, EnokiLifecycle, EnokiVfxRegistry, OnEnterEffectRegistry,
+    SkillReleaseEffectRegistry, SkillStartNodeRegistry, SoftParticleMaterial,
+    SpritePresentationEntry, SpritePresentationRegistry,
+};
 
 fn presentation_entry_for_unit(
     presentation: &SpritePresentationRegistry,
@@ -712,6 +629,28 @@ struct EffectRegistries<'w> {
     on_enter: Res<'w, OnEnterEffectRegistry>,
     skill_release: Res<'w, SkillReleaseEffectRegistry>,
     skill_start_node: Res<'w, SkillStartNodeRegistry>,
+    soft_material: Option<Res<'w, SoftParticleMaterial>>,
+}
+
+/// Build the shared soft-particle [`SpriteParticle2dMaterial`] at Startup: load the
+/// radial-gradient PNG, register the material asset, and store its handle in
+/// [`SoftParticleMaterial`]. Spawning every effect through this material (instead of
+/// enoki's flat-square `ColorParticle2dMaterial` default) is the single
+/// highest-leverage VFX fix — see [`SoftParticleMaterial`] and the `bevy-enoki-vfx`
+/// skill. The texture is generated deterministically by `scripts/gen_soft_particle.py`.
+fn init_soft_particle_material(
+    asset_server: Res<AssetServer>,
+    mut materials: ResMut<Assets<SpriteParticle2dMaterial>>,
+    mut commands: Commands,
+) {
+    let texture = asset_server.load("vfx/soft_particle.png");
+    let handle = materials.add(SpriteParticle2dMaterial::from_texture(texture));
+    commands.insert_resource(SoftParticleMaterial(handle));
+    info!(
+        target: "windowed.digimon_playback",
+        texture = "vfx/soft_particle.png",
+        "soft-particle sprite material built; enoki effects spawn as soft blobs (not flat squares)"
+    );
 }
 
 /// Surface a load failure for each registered enoki `.particle.ron` once. A
@@ -874,6 +813,30 @@ fn spawn_unit_sprites(
 ) {
     let spawned: HashSet<UnitId> = sprites.iter().map(|s| s.unit_id).collect();
 
+    // Deterministic per-team slot assignment computed across ALL units (not just
+    // the ones spawned this frame), so a multi-actor team fans out to distinct
+    // positions instead of every member stacking at one (x, z). Slot is the
+    // unit's index within its team after sorting by UnitId — stable regardless of
+    // spawn order or which units already exist. Replaces the previous team-only
+    // ±200 placement that collapsed two allies onto the same point.
+    let slot_of: HashMap<UnitId, (usize, usize)> = {
+        let mut roster: Vec<(UnitId, Team)> = units.iter().map(|(u, t)| (u.id, *t)).collect();
+        roster.sort_by_key(|(id, _)| id.0);
+        let mut map = HashMap::new();
+        for assigned in [Team::Ally, Team::Enemy] {
+            let members: Vec<UnitId> = roster
+                .iter()
+                .filter(|(_, t)| *t == assigned)
+                .map(|(id, _)| *id)
+                .collect();
+            let count = members.len();
+            for (slot, id) in members.into_iter().enumerate() {
+                map.insert(id, (slot, count));
+            }
+        }
+        map
+    };
+
     for (unit, team) in &units {
         if spawned.contains(&unit.id) {
             continue;
@@ -922,7 +885,10 @@ fn spawn_unit_sprites(
         };
 
         let flip_x = *team == Team::Enemy;
-        let x = if flip_x { 200.0_f32 } else { -200.0_f32 };
+        let x = if flip_x { TEAM_COLUMN_X } else { -TEAM_COLUMN_X };
+        let (slot, count) = slot_of.get(&unit.id).copied().unwrap_or((0, 1));
+        let y = slot_offset_y(slot, count);
+        let z = slot as f32 * SLOT_Z_STEP;
         commands.spawn((
             DigimonSprite::idle_for(
                 unit.id,
@@ -940,9 +906,9 @@ fn spawn_unit_sprites(
                 flip_x,
                 ..default()
             },
-            Transform::from_xyz(x, 0.0, 0.0).with_scale(Vec3::splat(SPRITE_DISPLAY_SCALE)),
+            Transform::from_xyz(x, y, z).with_scale(Vec3::splat(SPRITE_DISPLAY_SCALE)),
             SpriteRest {
-                xy: Vec2::new(x, 0.0),
+                xy: Vec2::new(x, y),
             },
         ));
     }
@@ -963,6 +929,10 @@ fn advance_digimon_presentation(
     mut hit_shake: ResMut<HitShakeState>,
     mut camera_shake: ResMut<CameraShakeState>,
     cue_registry: Res<CueRegistry>,
+    // Dedup set for cast-cue spawn misses: a `SpawnParticle` cue that resolves to
+    // zero spawned particles is warned at most once per cue id (S08, reusing the
+    // S06 `Local<HashSet>` warn-once pattern) instead of silently producing nothing.
+    mut cast_cue_spawn_miss_warned: Local<HashSet<String>>,
     mut sprites: ParamSet<(
         Query<(
             Entity,
@@ -974,6 +944,10 @@ fn advance_digimon_presentation(
             Option<&FadeOut>,
         )>,
         Query<(&DigimonSprite, &Transform)>,
+        // Read-only team lookup (p2 of the ParamSet to stay under Bevy's 16-param
+        // system limit). Unit/Team live on combat entities, disjoint from sprite
+        // entities; used to aim skill VFX at the opposing team (S08 multi-ally fix).
+        Query<(&Unit, &Team)>,
     )>,
 ) {
     {
@@ -1027,16 +1001,29 @@ fn advance_digimon_presentation(
     // Advance the player at the fixed animation rate, not once per render frame.
     // Most 60fps frames yield 0 ticks; the kernel-barrier release still observes
     // the rendered impact frame — it just samples it on the animation tick.
+    // UnitId -> Team for the live roster, resolved once per frame. Sprites carry
+    // no Team component (adding one would make every bare `Query<&Team>` combat
+    // system also match sprite entities), so VFX targeting joins back to the
+    // combat entities through this map.
+    let team_of: HashMap<UnitId, Team> = sprites
+        .p2()
+        .iter()
+        .map(|(unit, team)| (unit.id, *team))
+        .collect();
+
     for _ in 0..pending_ticks.0 {
         let active_barrier = barrier.active_status().cloned();
-        let sprite_positions: Vec<(UnitId, [f32; 2])> = sprites
+        let sprite_positions: Vec<(UnitId, Team, [f32; 2])> = sprites
             .p1()
             .iter()
-            .map(|(sprite, transform)| {
-                (
-                    sprite.unit_id,
-                    [transform.translation.x, transform.translation.y],
-                )
+            .filter_map(|(sprite, transform)| {
+                team_of.get(&sprite.unit_id).map(|team| {
+                    (
+                        sprite.unit_id,
+                        *team,
+                        [transform.translation.x, transform.translation.y],
+                    )
+                })
             })
             .collect();
         for (entity, mut sprite, mut render_sprite, mut transform, rest, death_exiting, fade_out) in
@@ -1174,9 +1161,10 @@ fn advance_digimon_presentation(
                 if let Some(node_id) = entered {
                     if let Some(node) = graph.nodes.get(&NodeId(node_id.to_string())) {
                         let caster_xy = [transform.translation.x, transform.translation.y];
-                        let target_xy = nearest_non_caster_target_xy(
+                        let target_xy = nearest_opposing_target_xy(
                             &sprite_positions,
                             sprite.unit_id,
+                            team_of.get(&sprite.unit_id).copied(),
                             caster_xy,
                         );
 
@@ -1208,6 +1196,7 @@ fn advance_digimon_presentation(
                                 .get(descriptor.particle.0.as_str())
                                 .map(Vec::as_slice)
                                 .unwrap_or(&[]);
+                            let mut cue_spawned: u32 = 0;
                             for effect_id in effect_ids {
                                 let spawned = spawn_effect_by_id(
                                     &mut commands,
@@ -1218,7 +1207,9 @@ fn advance_digimon_presentation(
                                     render_sprite.flip_x,
                                     transform.scale.x,
                                     effects.enoki.as_deref(),
+                                    effects.soft_material.as_ref().map(|m| &m.0),
                                 );
+                                cue_spawned += spawned;
                                 trace!(
                                     target: "windowed.digimon_playback",
                                     effect_id = effect_id.as_str(),
@@ -1226,6 +1217,25 @@ fn advance_digimon_presentation(
                                     caster_xy = ?caster_xy,
                                     source_unit = ?sprite.unit_id,
                                     "spawned windowed vfx effect on node enter"
+                                );
+                            }
+
+                            // Spawn-miss diagnostic: a cast cue that resolved to no
+                            // particle (unmapped in OnEnterEffectRegistry, or its
+                            // effect ids absent from EnokiVfxRegistry) would
+                            // otherwise be a silent no-op. Warn once per cue id so
+                            // an unregistered cue is visible by name rather than
+                            // invisible (slice failure-visibility; S06 warn-once
+                            // pattern). Registered cues that spawn stay silent.
+                            if cue_spawned == 0
+                                && cast_cue_spawn_miss_warned.insert(descriptor.particle.0.clone())
+                            {
+                                warn!(
+                                    target: "windowed.digimon_playback",
+                                    cue = descriptor.particle.0.as_str(),
+                                    node = node_id,
+                                    source_unit = ?sprite.unit_id,
+                                    "cast cue spawned no particle — cue id unregistered in OnEnterEffectRegistry or its effect ids missing from EnokiVfxRegistry; warned once per cue id"
                                 );
                             }
                         }
@@ -1268,9 +1278,10 @@ fn advance_digimon_presentation(
                             }
                         }
 
-                        if let Some(target_xy) = nearest_non_caster_target_xy(
+                        if let Some(target_xy) = nearest_opposing_target_xy(
                             &sprite_positions,
                             sprite.unit_id,
+                            team_of.get(&sprite.unit_id).copied(),
                             [transform.translation.x, transform.translation.y],
                         ) {
                             let spawned = spawn_effect_by_id(
@@ -1282,6 +1293,7 @@ fn advance_digimon_presentation(
                                 render_sprite.flip_x,
                                 transform.scale.x,
                                 effects.enoki.as_deref(),
+                                effects.soft_material.as_ref().map(|m| &m.0),
                             );
                             trace!(
                                 target: "windowed.digimon_playback",
@@ -1590,11 +1602,19 @@ fn spawn_effect_by_id(
     source_flip_x: bool,
     source_scale: f32,
     enoki: Option<&EnokiVfxRegistry>,
+    soft_material: Option<&Handle<SpriteParticle2dMaterial>>,
 ) -> u32 {
     let Some(enoki) = enoki else {
         return 0;
     };
     let Some(entry) = enoki.handles.get(effect_id) else {
+        return 0;
+    };
+    // The soft-particle material is built at Startup; if it is not yet present
+    // (asset/resource ordering) we skip rather than fall back to enoki's
+    // flat-square `ColorParticle2dMaterial` default — a missed spawn is surfaced
+    // by the caller's spawn-miss diagnostic, a square is a silent regression.
+    let Some(soft_material) = soft_material else {
         return 0;
     };
     let base = anchor_base_xy(
@@ -1605,7 +1625,7 @@ fn spawn_effect_by_id(
         source_scale,
     );
     let mut spawned = commands.spawn((
-        ParticleSpawner::default(),
+        ParticleSpawner(soft_material.clone()),
         ParticleEffectHandle(entry.handle.clone()),
         Transform::from_xyz(base[0], base[1], VFX_PARTICLE_Z),
     ));
@@ -1653,22 +1673,44 @@ fn should_spawn_node_vfx(
             .unwrap_or(true)
 }
 
-fn nearest_non_caster_target_xy(
-    sprite_positions: &[(UnitId, [f32; 2])],
+/// Vertical rest offset for `slot` (0-based) of a `count`-member team column,
+/// centered on y=0 so a team fans out symmetrically (e.g. 2 members → ±75).
+fn slot_offset_y(slot: usize, count: usize) -> f32 {
+    let centered = slot as f32 - (count.max(1) as f32 - 1.0) / 2.0;
+    centered * SLOT_VERTICAL_SPACING
+}
+
+/// Resolve the VFX impact point for a skill: the nearest sprite on the *opposing*
+/// team, falling back to the nearest non-caster sprite if the caster's team is
+/// unknown or no opponent has a live sprite.
+///
+/// The team filter is the S08 fix for multi-ally compositions. Targeting purely
+/// by proximity ("nearest non-caster") aimed VFX at whichever sprite was closest
+/// — fine with a single enemy, but with two allies sharing a column the closest
+/// sprite was the *other ally* at ~0 distance, so projectiles spawned at and
+/// "flew" to the caster's own teammate and read as invisible.
+fn nearest_opposing_target_xy(
+    sprite_positions: &[(UnitId, Team, [f32; 2])],
     caster: UnitId,
+    caster_team: Option<Team>,
     caster_xy: [f32; 2],
 ) -> Option<[f32; 2]> {
-    sprite_positions
-        .iter()
-        .filter(|(unit_id, _)| *unit_id != caster)
-        .map(|(_, xy)| {
-            let dx = xy[0] - caster_xy[0];
-            let dy = xy[1] - caster_xy[1];
-            let dist2 = dx * dx + dy * dy;
-            (*xy, dist2)
-        })
-        .min_by(|(_, lhs), (_, rhs)| lhs.total_cmp(rhs))
-        .map(|(xy, _)| xy)
+    let nearest = |accept: &dyn Fn(Team) -> bool| {
+        sprite_positions
+            .iter()
+            .filter(|(unit_id, team, _)| *unit_id != caster && accept(*team))
+            .map(|(_, _, xy)| {
+                let dx = xy[0] - caster_xy[0];
+                let dy = xy[1] - caster_xy[1];
+                (*xy, dx * dx + dy * dy)
+            })
+            .min_by(|(_, lhs), (_, rhs)| lhs.total_cmp(rhs))
+            .map(|(xy, _)| xy)
+    };
+
+    caster_team
+        .and_then(|ct| nearest(&move |team| team != ct))
+        .or_else(|| nearest(&|_| true))
 }
 
 fn find_sprite_xy(
@@ -1771,6 +1813,7 @@ fn spawn_detonate_particles(
     mut events: MessageReader<bevyrogue::combat::events::CombatEvent>,
     agumon_enoki_vfx: Option<Res<EnokiVfxRegistry>>,
     detonate_reg: Res<DetonateEffectRegistry>,
+    soft_material: Option<Res<SoftParticleMaterial>>,
     sprites: Query<(&DigimonSprite, &Transform)>,
 ) {
     let Some(trigger) = latest_baby_burner_flash_trigger(events.read()) else {
@@ -1814,6 +1857,7 @@ fn spawn_detonate_particles(
             false,
             1.0,
             agumon_enoki_vfx.as_deref(),
+            soft_material.as_ref().map(|m| &m.0),
         );
         trace!(
             target: "windowed.digimon_playback",
@@ -1840,6 +1884,7 @@ fn advance_enoki_projectiles(
     mut commands: Commands,
     pending_ticks: Res<PendingAnimationTicks>,
     agumon_enoki_vfx: Option<Res<EnokiVfxRegistry>>,
+    soft_material: Option<Res<SoftParticleMaterial>>,
     mut projectiles: Query<(Entity, &mut Transform, &mut ProjectileFlight)>,
 ) {
     for _ in 0..pending_ticks.0 {
@@ -1872,6 +1917,7 @@ fn advance_enoki_projectiles(
                     false,
                     1.0,
                     agumon_enoki_vfx.as_deref(),
+                    soft_material.as_ref().map(|m| &m.0),
                 );
                 trace!(
                     target: "windowed.digimon_playback",

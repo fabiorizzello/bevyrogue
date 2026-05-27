@@ -10,8 +10,10 @@
 // schema); all 19 fields are listed because the loader's RON deserialize has no
 // field defaults (MEM098).
 (
-    // ~7 alive: spawn_rate 10 * lifetime ~0.7 ~= 7 sparks at a time.
-    spawn_rate: 10.0,
+    // GOTCHA: spawn_rate is the INTERVAL IN SECONDS between emissions, not particles/sec
+    // (bevy_enoki-0.6.0/src/update.rs:137 sets a timer duration). Alive count ~= lifetime / interval.
+    // Want ~7 alive with lifetime ~0.7 -> interval = 0.7/7 = 0.1. (Was 10.0 = 1 per 10s = empty.)
+    spawn_rate: 0.1,
     spawn_amount: 1,
     // Seed from a ring at the ember radius (mirrors quad BABY_FLAME_EMBER_RADIUS_PX).
     emission_shape: Circle(58.0),
@@ -23,16 +25,20 @@
     // Slow per-spark spin so the ring reads as a swirl, not static dots.
     angular_speed: Some((2.5, 0.4)),
     angular_acceleration: None,
-    scale: Some((6.0, 0.4)),
+    scale: Some((11.0, 0.4)),
     color: Some((red: 1.0, green: 0.6, blue: 0.25, alpha: 1.0)),
     gravity_direction: None,
     gravity_speed: None,
     linear_damp: Some((1.5, 0.0)),
     angular_damp: None,
-    // Shrink as each spark merges into the orb at the center.
+    // GOTCHA: scale_curve values are the ABSOLUTE particle size in world units and
+    // OVERRIDE the `scale` field every tick (bevy_enoki-0.6.0/src/update.rs:290), NOT a
+    // 0..1 multiplier. Base quad is 1x1 world unit; at default Camera2d 1 unit = 1px, so
+    // a curve peaking at 1.0 = a 1px dot. Real pixel sizes: ~11px spark shrinking to ~4px
+    // as it merges into the orb at the center.
     scale_curve: Some((points: [
-        (1.0, 0.0, None),
-        (0.4, 1.0, Some(SineInOut)),
+        (11.0, 0.0, None),
+        (4.0, 1.0, Some(SineInOut)),
     ])),
     // Overbright warm spark -> transparent (HDR bloom, S05 policy).
     color_curve: Some((points: [

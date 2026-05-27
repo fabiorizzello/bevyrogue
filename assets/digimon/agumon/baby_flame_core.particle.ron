@@ -1,0 +1,55 @@
+// Agumon `baby_flame.core` white-hot heart — the brightest, tightest layer of the
+// Baby Flame body, co-spawned with the charge orb / flames / ember swirl at the
+// caster's mouth (M006/S08 layering). This is the LAYERING recipe's "core": a small,
+// dense, white-hot disc whose HDR channels sit well above 1.0 so `Hdr + Bloom`
+// blooms it into the glowing heart of the fire. Value contrast (white-hot -> warm)
+// is what makes the stacked layers read as fire rather than a flat orange disc.
+// CONTINUOUS emitter; the soft-particle material (render.rs `SoftParticleMaterial`)
+// turns each quad into a round blob so the overlap reads as a luminous mass.
+// This is enoki's `Particle2dEffect` schema (distinct from the owned `VfxAsset`
+// schema); all 19 fields are listed because the loader's RON deserialize has no
+// field defaults (MEM098).
+(
+    // Dense feed so the core stays a solid bright body.
+    // GOTCHA: spawn_rate is the INTERVAL IN SECONDS between emissions, not particles/sec
+    // (bevy_enoki-0.6.0/src/update.rs:137 sets a timer duration). For a rate R/sec use 1/R.
+    // 0.02 = 50 emissions/sec -> solid white-hot core.
+    spawn_rate: 0.02,
+    spawn_amount: 1,
+    // Very tight disc — the core is the small bright heart, not a spray.
+    emission_shape: Circle(3.0),
+    // Short life with little variance; the body persists via the rate.
+    lifetime: (0.35, 0.15),
+    // Gentle shimmer pulled straight back in so the core stays compact.
+    linear_speed: Some((8.0, 0.4)),
+    linear_acceleration: Some((-20.0, 0.1)),
+    direction: None,
+    angular_speed: None,
+    angular_acceleration: None,
+    scale: Some((28.0, 0.3)),
+    color: Some((red: 1.0, green: 0.85, blue: 0.6, alpha: 1.0)),
+    gravity_direction: None,
+    gravity_speed: None,
+    // Strong damping keeps the heart tight against the shimmer.
+    linear_damp: Some((5.0, 0.0)),
+    angular_damp: None,
+    // GOTCHA: scale_curve values are the ABSOLUTE particle size in world units and
+    // OVERRIDE the `scale` field every tick (bevy_enoki-0.6.0/src/update.rs:290 sets
+    // transform.scale = Vec3::splat(scale_curve.lerp(progress)) — NOT a 0..1 multiplier
+    // of `scale`). The base quad is 1x1 world unit (particle_vertex.wgsl), and at the
+    // default Camera2d 1 unit = 1px, so a curve peaking at 1.0 renders a 1px dot. These
+    // values are therefore real pixel sizes: pop to a ~28px white-hot heart then collapse.
+    scale_curve: Some((points: [
+        (14.0, 0.0, None),
+        (28.0, 0.4, Some(SineOut)),
+        (0.0, 1.0, Some(SineInOut)),
+    ])),
+    // White-hot core (all channels well >1.0 -> heavy bloom) -> warm orange fade.
+    color_curve: Some((points: [
+        ((red: 2.8, green: 2.5, blue: 2.0, alpha: 1.0), 0.0, None),
+        ((red: 2.6, green: 1.8, blue: 0.9, alpha: 0.0), 1.0, Some(SineInOut)),
+    ])),
+    attractors: None,
+    // Tracks the moving mouth anchor as a body, not a world-space trail.
+    relative_positioning: Some(true),
+)

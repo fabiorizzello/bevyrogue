@@ -24,11 +24,11 @@ use bevy::asset::{AssetEvent, AssetPlugin};
 use bevy::prelude::TaskPoolPlugin;
 use bevy::prelude::*;
 use bevy_common_assets::ron::RonAssetPlugin;
+use bevyrogue::animation::registry::populate_graph_registries;
 use bevyrogue::animation::{
     AnimGraph, AnimGraphId, AnimationGraphHandles, SkillGraphPaths, SkillGraphRegistry,
     StanceGraphPaths, StanceGraphRegistry,
 };
-use bevyrogue::animation::registry::populate_graph_registries;
 
 // Inline skill graph — parsed once, inserted via a known handle.
 const SKILL_RON: &str = r#"(
@@ -106,10 +106,8 @@ fn populate_graph_registries_starves_second_event_when_first_matches() {
     let mut app = build_app();
 
     // Parse graphs from inline RON — deterministic, no filesystem dependency.
-    let skill_graph: AnimGraph =
-        ron::from_str(SKILL_RON).expect("inline skill RON must parse");
-    let stance_graph: AnimGraph =
-        ron::from_str(STANCE_RON).expect("inline stance RON must parse");
+    let skill_graph: AnimGraph = ron::from_str(SKILL_RON).expect("inline skill RON must parse");
+    let stance_graph: AnimGraph = ron::from_str(STANCE_RON).expect("inline stance RON must parse");
 
     let skill_id = skill_graph.id.clone();
     let stance_id = stance_graph.id.clone();
@@ -161,9 +159,7 @@ fn populate_graph_registries_starves_second_event_when_first_matches() {
     // Queue BOTH load events in the same frame.  The skill event comes first so
     // the bug's `return` fires on the skill branch, starving the stance event.
     app.world_mut()
-        .write_message(AssetEvent::<AnimGraph>::LoadedWithDependencies {
-            id: skill_asset_id,
-        });
+        .write_message(AssetEvent::<AnimGraph>::LoadedWithDependencies { id: skill_asset_id });
     app.world_mut()
         .write_message(AssetEvent::<AnimGraph>::LoadedWithDependencies {
             id: stance_asset_id,
@@ -178,7 +174,9 @@ fn populate_graph_registries_starves_second_event_when_first_matches() {
     let stance_reg = app.world().resource::<StanceGraphRegistry>();
 
     assert!(
-        skill_reg.0.contains_key(&AnimGraphId("agumon_skill".into())),
+        skill_reg
+            .0
+            .contains_key(&AnimGraphId("agumon_skill".into())),
         "SkillGraphRegistry must contain the skill graph after a LoadedWithDependencies event \
          (id={skill_id:?}); if this fails the test setup is broken, not the starvation bug"
     );
@@ -188,7 +186,9 @@ fn populate_graph_registries_starves_second_event_when_first_matches() {
     // graph, so the stance event is never consumed and StanceGraphRegistry
     // stays empty — reproducing the starvation bug.
     assert!(
-        stance_reg.0.contains_key(&AnimGraphId("agumon_stance".into())),
+        stance_reg
+            .0
+            .contains_key(&AnimGraphId("agumon_stance".into())),
         "StanceGraphRegistry must contain the stance graph after a LoadedWithDependencies event \
          in the same batch as the skill event (id={stance_id:?}); \
          EXPECTED FAILURE: the `return` at registry.rs:275 starves this event — \

@@ -35,10 +35,10 @@
 - [x] **S07: S07** `risk:medium` `depends:[]`
   > After this: Headless test: Renamon action query returns its real skills, no false MissingSkill
 
-- [ ] **S08: S08** `risk:medium` `depends:[]`
+- [x] **S08: S08** `risk:medium` `depends:[]`
   > After this: Renamon cast emits its enoki effect; Agumon cast-driven proof; warn-once on spawn miss
 
-- [ ] **S09: Extract shared registries and types out of render.rs into render/registries.rs** `risk:medium` `depends:[S08]`
+- [ ] **S09: S09** `risk:medium` `depends:[]`
   > After this: render.rs imports from registries module; species imports repointed; tests green
 
 - [ ] **S10: Split render into playback/spawn/effects/feedback/clock submodules** `risk:high` `depends:[S09]`

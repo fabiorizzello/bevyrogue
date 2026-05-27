@@ -12,7 +12,7 @@ use bevyrogue::combat::team::Team;
 use bevyrogue::combat::types::UnitId;
 
 use crate::windowed::demo::{WindowedDemoEntry, WindowedDemoRegistry};
-use crate::windowed::render::{
+use crate::windowed::render::registries::{
     DetonateEffectRegistry, EnokiEffect, EnokiLifecycle, EnokiVfxRegistry, OnEnterEffectRegistry,
     SkillReleaseEffectRegistry, SkillStartNodeRegistry, SpritePresentationEntry,
     SpritePresentationRegistry,
@@ -49,6 +49,8 @@ const AGUMON_CLIP_INDEX: usize = 0;
 /// Namespaced effect ids of Agumon's effects. Owned by this module (S04); the
 /// engine keys its generic registries on these strings and never matches them.
 const CHARGE_EFFECT_ID: &str = "baby_flame.charge";
+const CORE_EFFECT_ID: &str = "baby_flame.core";
+const FLAMES_EFFECT_ID: &str = "baby_flame.flames";
 const EMBER_EFFECT_ID: &str = "baby_flame.ember";
 const PROJECTILE_EFFECT_ID: &str = "baby_flame.projectile";
 const IMPACT_EFFECT_ID: &str = "baby_flame.impact";
@@ -57,6 +59,10 @@ const DETONATE_EFFECT_ID: &str = "baby_burner.detonate";
 
 /// Path (relative to `assets/`) of Agumon's enoki Baby Flame charge orb.
 const ENOKI_CHARGE_PATH: &str = "digimon/agumon/baby_flame_charge.particle.ron";
+/// Path of Agumon's enoki Baby Flame white-hot core layer (M006/S08 layering).
+const ENOKI_CORE_PATH: &str = "digimon/agumon/baby_flame_core.particle.ron";
+/// Path of Agumon's enoki Baby Flame rising-tongues layer (M006/S08 layering).
+const ENOKI_FLAMES_PATH: &str = "digimon/agumon/baby_flame_flames.particle.ron";
 /// Path of Agumon's enoki Baby Flame ember swirl (continuous emitter).
 const ENOKI_EMBER_PATH: &str = "digimon/agumon/baby_flame_ember.particle.ron";
 /// Path of Agumon's enoki Baby Flame traveling projectile.
@@ -77,10 +83,21 @@ const PROJECTILE_FLIGHT_TICKS: u32 = 5;
 /// enter. Pure data so it can be unit-tested without an `App`;
 /// `register_agumon_on_enter_effects` copies it into the engine's
 /// [`OnEnterEffectRegistry`]. The `baby_flame_charge` command fans out to the
-/// charge orb plus the inward ember swirl.
+/// layered fire body (M006/S08): flames tongues + charge orb + white-hot core +
+/// inward ember swirl, all co-spawned on the `Mouth` anchor. Order is back-to-front
+/// for alpha blending — wide leaning tongues first, then the orb body, the white-hot
+/// core on top, and the ember sparks last.
 fn on_enter_effect_specs() -> &'static [(&'static str, &'static [&'static str])] {
     &[
-        ("baby_flame_charge", &[CHARGE_EFFECT_ID, EMBER_EFFECT_ID]),
+        (
+            "baby_flame_charge",
+            &[
+                FLAMES_EFFECT_ID,
+                CHARGE_EFFECT_ID,
+                CORE_EFFECT_ID,
+                EMBER_EFFECT_ID,
+            ],
+        ),
         ("baby_flame_projectile", &[PROJECTILE_EFFECT_ID]),
         ("baby_flame_impact", &[IMPACT_EFFECT_ID]),
         ("sharp_claws_slash", &[SHARP_CLAWS_EFFECT_ID]),
@@ -149,10 +166,22 @@ fn register_agumon_enoki_vfx(
     asset_server: Res<AssetServer>,
     mut registry: ResMut<EnokiVfxRegistry>,
 ) {
-    let entries: [(&str, &str, PlacementAnchor, EnokiLifecycle); 6] = [
+    let entries: [(&str, &str, PlacementAnchor, EnokiLifecycle); 8] = [
         (
             CHARGE_EFFECT_ID,
             ENOKI_CHARGE_PATH,
+            PlacementAnchor::Mouth,
+            EnokiLifecycle::PersistentEmitter,
+        ),
+        (
+            CORE_EFFECT_ID,
+            ENOKI_CORE_PATH,
+            PlacementAnchor::Mouth,
+            EnokiLifecycle::PersistentEmitter,
+        ),
+        (
+            FLAMES_EFFECT_ID,
+            ENOKI_FLAMES_PATH,
             PlacementAnchor::Mouth,
             EnokiLifecycle::PersistentEmitter,
         ),
@@ -204,6 +233,8 @@ fn register_agumon_enoki_vfx(
     info!(
         target: "windowed.agumon_playback",
         charge_path = ENOKI_CHARGE_PATH,
+        core_path = ENOKI_CORE_PATH,
+        flames_path = ENOKI_FLAMES_PATH,
         ember_path = ENOKI_EMBER_PATH,
         projectile_path = ENOKI_PROJECTILE_PATH,
         sharp_claws_path = ENOKI_SHARP_CLAWS_PATH,
@@ -307,12 +338,18 @@ mod tests {
     }
 
     #[test]
-    fn on_enter_charge_seeds_both_the_orb_and_the_ember_swirl() {
-        // The single authored `baby_flame_charge` SpawnParticle fans out to the
-        // owned charge + ember effect ids; the projectile maps to its own id.
+    fn on_enter_charge_seeds_the_layered_fire_body() {
+        // The single authored `baby_flame_charge` SpawnParticle fans out to the four
+        // co-spawned fire layers (flames/orb/core/ember); the projectile maps to its
+        // own id. Order is back-to-front for alpha blending.
         assert_eq!(
             on_enter_ids("baby_flame_charge"),
-            &[CHARGE_EFFECT_ID, EMBER_EFFECT_ID]
+            &[
+                FLAMES_EFFECT_ID,
+                CHARGE_EFFECT_ID,
+                CORE_EFFECT_ID,
+                EMBER_EFFECT_ID
+            ]
         );
         assert_eq!(
             on_enter_ids("baby_flame_projectile"),

@@ -16,7 +16,7 @@ use bevyrogue::combat::team::Team;
 use bevyrogue::combat::types::UnitId;
 
 use crate::windowed::demo::{WindowedDemoEntry, WindowedDemoRegistry};
-use crate::windowed::render::{
+use crate::windowed::render::registries::{
     EnokiEffect, EnokiLifecycle, EnokiVfxRegistry, OnEnterEffectRegistry, SkillStartNodeRegistry,
     SpritePresentationEntry, SpritePresentationRegistry,
 };
@@ -40,8 +40,7 @@ const DIAMOND_STORM_CAST_NODE: &str = "diamond_storm_cast";
 const DIAMOND_STORM_LEAF_EFFECT_ID: &str = "diamond_storm.leaf";
 
 /// Path (relative to `assets/`) of Renamon's enoki diamond storm leaf projectile.
-const ENOKI_DIAMOND_STORM_LEAF_PATH: &str =
-    "digimon/renamon/diamond_storm_leaf.particle.ron";
+const ENOKI_DIAMOND_STORM_LEAF_PATH: &str = "digimon/renamon/diamond_storm_leaf.particle.ron";
 
 /// Animation ticks the diamond storm leaf projectile takes to travel
 /// caster→target before chaining the impact. Mirrors Baby Flame's `ttl_ticks`
@@ -263,9 +262,10 @@ mod tests {
         app.update();
 
         let reg = app.world().resource::<OnEnterEffectRegistry>();
-        let ids = reg.map.get("diamond_storm_leaf").expect(
-            "diamond_storm_leaf must be in OnEnterEffectRegistry after register",
-        );
+        let ids = reg
+            .map
+            .get("diamond_storm_leaf")
+            .expect("diamond_storm_leaf must be in OnEnterEffectRegistry after register");
         assert_eq!(ids.as_slice(), [DIAMOND_STORM_LEAF_EFFECT_ID]);
         assert_eq!(DIAMOND_STORM_LEAF_EFFECT_ID, "diamond_storm.leaf");
 

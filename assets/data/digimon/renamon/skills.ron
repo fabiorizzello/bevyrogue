@@ -1,9 +1,24 @@
 [
     (
+        id: SkillId("kokaishu"),
+        name: "Kokaishu",
+        damage_tag: Light,
+        sp_cost: 0,
+        targeting: SkillTargeting(
+            shape: Single,
+            side: Enemy,
+            life: Alive,
+            self_rule: Forbid,
+            target_hp_rule: Any,
+        ),
+        implementation: Implemented,
+        legacy_ops: [Damage(amount: 8, target: Single), ToughnessHit(4)],
+    ),
+    (
         id: SkillId("diamond_storm"),
         name: "Diamond Storm",
         damage_tag: Light,
-        sp_cost: 3,
+        sp_cost: 1,
         targeting: SkillTargeting(
             shape: Single,
             side: Enemy,
@@ -23,7 +38,7 @@
             entry: "cast",
             beats: [
                 (id: "cast", kind: Cast, hook: None, selector: None, presentation: None, payload: None),
-                (id: "impact_damage", kind: Impact, hook: Some("core/deal_damage"), selector: Some("core/primary"), presentation: None, payload: Some(DealDamage(amount: 16, tag: Light, target: Single))),
+                (id: "impact_damage", kind: Impact, hook: Some("core/deal_damage"), selector: Some("core/primary"), presentation: Some((cue_id: "renamon/diamond_storm/impact", anim: Some("diamond_storm_impact"), vfx: None, sfx: None)), payload: Some(DealDamage(amount: 16, tag: Light, target: Single))),
                 (id: "impact_break", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/primary"), presentation: None, payload: Some(BreakToughness(amount: 8, tag: Light, target: Single))),
                 (id: "impact_signal", kind: Impact, hook: Some("core/apply_effect"), selector: Some("core/caster"), presentation: None, payload: Some(BlueprintSignal(owner: "renamon", name: "open_momentum_window", payload: Empty))),
             ],

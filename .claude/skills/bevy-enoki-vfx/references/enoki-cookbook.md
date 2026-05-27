@@ -28,6 +28,17 @@ defaults** — every field below must be present in every `.particle.ron` (MEM09
 - Curves are `MultiCurve`: `(points: [(value, t, easing), ...])`. `scale_curve` is f32;
   `color_curve` is `LinearRgba` written `(red: .., green: .., blue: .., alpha: ..)`. `t` is the
   normalized lifetime 0→1. Easing e.g. `SineOut`, `SineInOut`, or `None`.
+- **GOTCHA — `scale_curve` is the ABSOLUTE size and OVERRIDES `scale`, in world units.** When a
+  `scale_curve` is present, enoki sets `transform.scale = splat(scale_curve.lerp(progress))` every
+  tick (`bevy_enoki-0.6.0/src/update.rs:290`) — it does NOT multiply the `scale` field, it replaces
+  it, so `scale` becomes dead the moment a curve exists. The curve's *values* are the literal
+  particle size: the base quad is 1×1 world unit (`particle_vertex.wgsl`), and the default
+  `Camera2d` maps 1 unit → 1 px, so **a curve peaking at `1.0` renders a 1-pixel dot**. This is the
+  trap that made the whole VFX system render as sparse 1px specks despite "correct" `scale: 7..16`
+  fields — the curves were authored as if normalized 0→1 multipliers. Author curve values as real
+  pixel sizes (e.g. a ~28px white-hot core peaks at `28.0`, a ~55px flame tongue at `55.0`). For an
+  effect with no `scale_curve`, the `scale` Rval is used directly instead. Verified 2026-05-27 by
+  reading frames of the windowed `vfx_viewer`: peaks at 1.0 → 1px dots; rescaled → visible blobs.
 - `relative_positioning: Some(true)` makes particles track the moving anchor as a body
   (no world-space trail) — use for a charge orb that follows the mouth.
 

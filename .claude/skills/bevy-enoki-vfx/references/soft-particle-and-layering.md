@@ -37,6 +37,44 @@ wraps the soft texture. This is the highest-leverage change available for the wh
 > of the asset. It is authoritative for the **particle count / motion / logic**, never for the
 > aesthetic. Visual signoff is windowed-only (K001 — request manual UAT).
 
+### Wiring the soft material (verified snippet)
+
+`ParticleSpawner` is generic: `ParticleSpawner<T: Particle2dMaterial>(pub Handle<T>)`
+(`bevy_enoki-0.6.0/src/lib.rs:170`). `ParticleSpawner::default()` is only implemented for
+`ColorParticle2dMaterial` (`lib.rs:178`) → flat squares. Both material plugins are **already
+registered** by `EnokiPlugin` (`lib.rs:93-94`), so switching is purely a spawn-site change — no
+new plugin, no `RonAssetPlugin`. The soft texture handle must live in a resource (the material is
+an asset; you insert it once and clone the handle per spawn):
+
+```rust
+// 1. A resource holding the shared soft-particle material handle.
+#[derive(Resource)]
+pub(in crate::windowed) struct SoftParticleMaterial(pub Handle<SpriteParticle2dMaterial>);
+
+// 2. Startup system: load the radial PNG, build the material, store the handle.
+fn init_soft_particle_material(
+    asset_server: Res<AssetServer>,
+    mut materials: ResMut<Assets<SpriteParticle2dMaterial>>,
+    mut commands: Commands,
+) {
+    let tex = asset_server.load("vfx/soft_particle.png");
+    let handle = materials.add(SpriteParticle2dMaterial::from_texture(tex));
+    commands.insert_resource(SoftParticleMaterial(handle));
+}
+
+// 3. In spawn_effect_by_id (render.rs:1632) — spawn with the soft material, not the default:
+let mut spawned = commands.spawn((
+    ParticleSpawner(soft_material.0.clone()),       // was ParticleSpawner::default()
+    ParticleEffectHandle(entry.handle.clone()),
+    Transform::from_xyz(base[0], base[1], VFX_PARTICLE_Z),
+));
+```
+
+Thread `Option<Res<SoftParticleMaterial>>` (or `&SpriteParticle2dMaterial` handle) into
+`spawn_effect_by_id` the same way `EnokiVfxRegistry` is threaded today. Importing
+`SpriteParticle2dMaterial` comes from `bevy_enoki::`. The PNG is a deterministic, headless-safe
+generated asset (white RGB, radial alpha falloff) committed under `assets/vfx/`.
+
 ## Value before color (the grayscale test)
 
 Cel/anime readability comes from **value contrast**, not hue. Pro rule: imagine the effect in
@@ -70,16 +108,37 @@ same anchor, each a separate `.particle.ron` chained/co-spawned:
 | **Smoke** (opt.) | dark mass rising above | large scale, low/no HDR (dark), slow rise, long life, high `linear_damp` |
 
 The glow is an *emergent* property of many soft, semi-transparent particles overlapping under
-bloom — density + soft alpha + additive-ish accumulation. A single layer can't produce it.
-Water layers analogously: jet core + droplet spray + falling mist + (opt.) splash ring on
-impact. This project co-spawns layers either as separate registry entries fired together or via
-`on_expire`/`ImpactSpawnPlan` chaining.
+bloom — density + soft alpha. A single layer can't produce it. Water layers analogously: jet
+core + droplet spray + falling mist + (opt.) splash ring on impact.
+
+### How co-spawn actually works (verified, not asserted)
+
+The layering mechanism is already in the engine and needs **no engine edit** — it's per-Digimon
+data. `OnEnterEffectRegistry.map` is `HashMap<String, Vec<String>>` (`src/windowed/render.rs:636`):
+one authored `SpawnParticle` cue name → a **vector** of owned effect ids. The on-enter loop
+(`src/windowed/render.rs:1216`) iterates that vector and calls `spawn_effect_by_id` for each, so
+every id in the vec spawns at the same anchor on the same frame. It is already used to fan one cue
+into two layers — `agumon/mod.rs:83`:
+
+```rust
+// on_enter_effect_specs(): one cue name → N co-spawned effect ids
+("baby_flame_charge", &[CHARGE_EFFECT_ID, EMBER_EFFECT_ID]),
+```
+
+To build a layered fire you (1) register each layer's `.particle.ron` as its own `EnokiEffect`
+in `register_agumon_enoki_vfx` (anchor + `EnokiLifecycle::PersistentEmitter`), and (2) push all
+the layer ids into that one cue's vec. They co-spawn on the same `Mouth` anchor; lifecycle is
+per-entry. The other co-spawn paths are real too but for different shapes: `EnokiLifecycle::
+Projectile { on_arrival }` chains the impact id on arrival, and per-effect `OneShot` bursts
+self-despawn — use the `Vec` fan-out for *simultaneous* layers, the chains for *sequential* stages.
 
 ## Density & the additive-blend proxy
 
 Stylized glow relies on **additive blending** — overlapping bright particles sum toward white.
-Bevy 0.18's 2D path has **no true additive blend** (D037); the repo ships HDR overbright + bloom
-as the *proxy* (`wgsl-hero.md`). Practically: keep particles soft and dense enough that the
+enoki's render pipeline hardcodes `BlendState::ALPHA_BLENDING` (`bevy_enoki-0.6.0/src/material.rs:534`)
+— there is **no per-material additive blend** and no asset/material knob to change it (true
+additive = L4 custom pipeline). The repo ships HDR overbright + bloom as the *proxy*
+(`wgsl-hero.md`). Practically: keep particles soft and dense enough that the
 overlap-plus-bloom reads as a luminous mass. Too few/too sparse and the proxy has nothing to
 accumulate. (`spawn_rate` controls density — see the gotcha in `enoki-cookbook.md`: it is the
 *interval between emissions*, so a *small* value = dense.)

@@ -104,30 +104,54 @@ fn agumon_cast_cue_resolves_to_registered_enoki_effects() {
          — this is the authored cue name that the OnEnterEffectRegistry key-matches"
     );
 
-    // Link 2: the Agumon module maps the cue name to the two owned effect ids.
+    // Link 2: the Agumon module fans the cue name out to the four owned fire-layer
+    // effect ids (M006/S08 layering: flames + orb + core + ember). The vec is
+    // multi-line in source, so each id const is pinned individually rather than as
+    // one literal substring.
     assert!(
-        AGUMON_SRC.contains(r#"("baby_flame_charge", &[CHARGE_EFFECT_ID, EMBER_EFFECT_ID])"#),
-        "on_enter_effect_specs must map \"baby_flame_charge\" → [CHARGE_EFFECT_ID, EMBER_EFFECT_ID], \
-         fanning the single cast cue out to the orb and the ember emitter"
+        AGUMON_SRC.contains(r#""baby_flame_charge","#),
+        "on_enter_effect_specs must key the fan-out on the \"baby_flame_charge\" cue name"
     );
+    for id_const in [
+        "FLAMES_EFFECT_ID",
+        "CHARGE_EFFECT_ID",
+        "CORE_EFFECT_ID",
+        "EMBER_EFFECT_ID",
+    ] {
+        assert!(
+            AGUMON_SRC.contains(id_const),
+            "the baby_flame_charge fan-out must co-spawn the {id_const} layer"
+        );
+    }
     assert!(
         AGUMON_SRC.contains(r#"const CHARGE_EFFECT_ID: &str = "baby_flame.charge""#),
         "CHARGE_EFFECT_ID must resolve to \"baby_flame.charge\""
+    );
+    assert!(
+        AGUMON_SRC.contains(r#"const CORE_EFFECT_ID: &str = "baby_flame.core""#),
+        "CORE_EFFECT_ID must resolve to \"baby_flame.core\""
+    );
+    assert!(
+        AGUMON_SRC.contains(r#"const FLAMES_EFFECT_ID: &str = "baby_flame.flames""#),
+        "FLAMES_EFFECT_ID must resolve to \"baby_flame.flames\""
     );
     assert!(
         AGUMON_SRC.contains(r#"const EMBER_EFFECT_ID: &str = "baby_flame.ember""#),
         "EMBER_EFFECT_ID must resolve to \"baby_flame.ember\""
     );
 
-    // Link 3: both effect ids are backed by a registered enoki asset path.
-    assert!(
-        AGUMON_SRC.contains("baby_flame_charge.particle.ron"),
-        "baby_flame.charge effect must reference baby_flame_charge.particle.ron in EnokiVfxRegistry"
-    );
-    assert!(
-        AGUMON_SRC.contains("baby_flame_ember.particle.ron"),
-        "baby_flame.ember effect must reference baby_flame_ember.particle.ron in EnokiVfxRegistry"
-    );
+    // Link 3: each layer effect id is backed by a registered enoki asset path.
+    for asset in [
+        "baby_flame_charge.particle.ron",
+        "baby_flame_core.particle.ron",
+        "baby_flame_flames.particle.ron",
+        "baby_flame_ember.particle.ron",
+    ] {
+        assert!(
+            AGUMON_SRC.contains(asset),
+            "the layered fire body must reference {asset} in EnokiVfxRegistry"
+        );
+    }
 
     // Structural guard: the skill start-node spec must wire baby_flame → baby_flame_cast,
     // ensuring the cast node is reachable when the player selects Baby Flame.

@@ -85,6 +85,56 @@ fn baby_flame_charge_parses_into_enoki_schema() {
 }
 
 #[test]
+fn baby_flame_core_parses_into_enoki_schema() {
+    // M006/S08 layering: the white-hot core layer co-spawned with the charge orb.
+    let effect = parse_effect(
+        "assets/digimon/agumon/baby_flame_core.particle.ron",
+        include_str!("../../assets/digimon/agumon/baby_flame_core.particle.ron"),
+    );
+    assert_continuous_emitter("baby_flame.core", &effect);
+    // Anime-cel HDR check: the core's t=0 color must be white-hot — all three
+    // channels well above 1.0 so `Hdr + Bloom` blooms it into the glowing heart.
+    let curve = effect
+        .color_curve
+        .as_ref()
+        .expect("baby_flame.core needs a color_curve for the white-hot heart");
+    let first = &curve.points[0].0;
+    assert!(
+        first.red > 1.0 && first.green > 1.0 && first.blue > 1.0,
+        "baby_flame.core t=0 must be white-hot (all channels > 1.0) for bloom (got r={} g={} b={})",
+        first.red,
+        first.green,
+        first.blue
+    );
+}
+
+#[test]
+fn baby_flame_flames_parses_into_enoki_schema() {
+    // M006/S08 layering: the rising-tongues layer that gives the body its fire
+    // silhouette. Upward `direction` with low randomness = leaning tongues.
+    let effect = parse_effect(
+        "assets/digimon/agumon/baby_flame_flames.particle.ron",
+        include_str!("../../assets/digimon/agumon/baby_flame_flames.particle.ron"),
+    );
+    assert_continuous_emitter("baby_flame.flames", &effect);
+    // The tongues launch upward; pin the direction survived the parse (the
+    // silhouette depends on it, not on wide scatter).
+    let dir = effect
+        .direction
+        .expect("baby_flame.flames needs an upward direction for the rising silhouette");
+    assert!(
+        dir.0.y > 0.0,
+        "baby_flame.flames must launch upward (direction.y > 0, got {})",
+        dir.0.y
+    );
+    assert!(
+        dir.1 <= 0.25,
+        "baby_flame.flames needs LOW directional randomness for a coherent column, not a spray (got {})",
+        dir.1
+    );
+}
+
+#[test]
 fn baby_flame_ember_parses_into_enoki_schema() {
     // Path mirrors `AGUMON_ENOKI_EMBER_PATH` wired into render.rs in this slice.
     let effect = parse_effect(
@@ -150,11 +200,16 @@ fn diamond_storm_leaf_parses_into_enoki_schema() {
     );
     // Anime-cel HDR check: color_curve must include at least one channel > 1.0
     // at t=0 (the white-hot diamond glint on emission).
-    let curve = effect.color_curve.as_ref().expect("diamond_storm.leaf needs a color_curve for the HDR glint");
+    let curve = effect
+        .color_curve
+        .as_ref()
+        .expect("diamond_storm.leaf needs a color_curve for the HDR glint");
     let first_color = &curve.points[0].0;
     assert!(
         first_color.red > 1.0 || first_color.green > 1.0 || first_color.blue > 1.0,
         "diamond_storm.leaf color_curve t=0 must have at least one HDR channel > 1.0 for bloom (got r={} g={} b={})",
-        first_color.red, first_color.green, first_color.blue
+        first_color.red,
+        first_color.green,
+        first_color.blue
     );
 }

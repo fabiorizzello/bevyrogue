@@ -8,7 +8,7 @@
         attribute: Data,
         team: Ally,
         basic_damage_tag: Light,
-        basic_skill: SkillId("diamond_storm"),
+        basic_skill: SkillId("kokaishu"),
         skill_ids: [SkillId("diamond_storm")],
         ultimate_skill: SkillId("renamon_ult"),
         follow_up: Some((

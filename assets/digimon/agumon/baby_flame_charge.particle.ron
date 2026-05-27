@@ -11,7 +11,10 @@
 // field defaults (MEM098).
 (
     // Continuous feed: a dense stream so the orb stays a solid glowing body.
-    spawn_rate: 60.0,
+    // GOTCHA: spawn_rate is the INTERVAL IN SECONDS between emissions, not particles/sec
+    // (bevy_enoki-0.6.0/src/update.rs:137 sets a timer duration). For a rate R/sec use 1/R.
+    // 0.0167 ~= 60 emissions/sec -> dense orb. (Was 60.0 = 1 emission per 60s = empty.)
+    spawn_rate: 0.0167,
     spawn_amount: 1,
     // Tight disc at the mouth — the orb is small and coherent, not a spray.
     emission_shape: Circle(6.0),
@@ -23,7 +26,7 @@
     direction: None,
     angular_speed: None,
     angular_acceleration: None,
-    scale: Some((9.0, 0.4)),
+    scale: Some((45.0, 0.4)),
     // Base tint; the color_curve drives the warm HDR build over each particle's life.
     color: Some((red: 1.0, green: 0.6, blue: 0.2, alpha: 1.0)),
     gravity_direction: None,
@@ -31,10 +34,14 @@
     // Strong damping pulls the shimmer back so the orb stays tight.
     linear_damp: Some((6.0, 0.0)),
     angular_damp: None,
-    // Pop in to full size, then shrink as each particle is reabsorbed into the orb.
+    // GOTCHA: scale_curve values are the ABSOLUTE particle size in world units and
+    // OVERRIDE the `scale` field every tick (bevy_enoki-0.6.0/src/update.rs:290), NOT a
+    // 0..1 multiplier. Base quad is 1x1 world unit; at default Camera2d 1 unit = 1px, so
+    // a curve peaking at 1.0 = a 1px dot. Real pixel sizes: pop in to a ~45px orb body,
+    // then shrink as each particle is reabsorbed.
     scale_curve: Some((points: [
-        (0.3, 0.0, None),
-        (1.0, 0.3, Some(SineOut)),
+        (13.5, 0.0, None),
+        (45.0, 0.3, Some(SineOut)),
         (0.0, 1.0, Some(SineInOut)),
     ])),
     // Overbright warm orange core -> dimmer orange, fading to transparent (HDR bloom).

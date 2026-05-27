@@ -132,7 +132,7 @@ fn validate_allows_canonical_mixed_effect_deferral() {
 #[test]
 fn parse_canonical_skills_ron() {
     let book = canonical_skill_book();
-    assert_eq!(book.0.len(), 66, "unexpected skill catalog size");
+    assert_eq!(book.0.len(), 67, "unexpected skill catalog size");
 
     let ids: HashSet<_> = book.0.iter().map(|skill| skill.id.clone()).collect();
     assert_eq!(ids.len(), book.0.len(), "duplicate skill ids in skills.ron");
@@ -144,6 +144,7 @@ fn parse_canonical_skills_ron() {
         "baby_flame",
         "bubble_blast",
         "draconic_edge",
+        "kokaishu",
         "diamond_storm",
         "holy_breeze",
         "agumon_ult",

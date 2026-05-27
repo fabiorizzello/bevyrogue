@@ -27,7 +27,7 @@ use bevyrogue::combat::sp::SpPool;
 use bevyrogue::combat::state::{CombatPhase, CombatState};
 use bevyrogue::combat::turn_order::{TurnAdvanced, TurnOrder};
 use bevyrogue::combat::turn_system::{
-    advance_turn_system, burst_action_system, check_victory_system,
+    ActionIntent, advance_turn_system, burst_action_system, check_victory_system,
     continue_suspended_timeline_system, resolve_action_system, resolve_enemy_turn_action_system,
 };
 use bevyrogue::combat::types::{Attribute, UnitId};
@@ -248,8 +248,81 @@ fn windowed_bootstrap_system(
     }
 }
 
+/// Windowed turn-cycle re-arm gate.
+///
+/// The shared combat systems never reset `CombatPhase::WaitingForTurn` after an
+/// action resolves — every other consumer (CLI proof harness, integration
+/// tests) re-arms it externally. In the windowed binary this system closes the
+/// loop so the AV scheduler (`advance_turn_system`, which only ticks in
+/// `WaitingForTurn`) can select the next actor after each completed turn.
+///
+/// `consumed` latches once an `ActionIntent` is dispatched for the active unit —
+/// both the player (combat panel) and the enemy AI (`resolve_enemy_turn_action_system`)
+/// write `ActionIntent`, so a single signal covers both teams. `progressed`
+/// latches only after `consumed`, once resolution is actually observed: the
+/// persisted `Resolving` phase (timeline-backed skills) or an `OnActionResolved`
+/// event at `follow_up_depth == 0` (which also covers instant single-frame
+/// actions whose `Resolving` phase never survives a frame boundary). It is reset
+/// when a fresh action is dispatched so a stale resolution signal — e.g. from an
+/// out-of-turn burst fired earlier in the same `WaitingAction` window — can never
+/// re-arm before the dispatched action has run. Re-arm fires only once both have
+/// latched and the phase has settled back to `WaitingAction` with an actor still
+/// selected.
+#[derive(Resource, Debug, Default, Clone, Copy, PartialEq, Eq)]
+struct WindowedTurnGate {
+    consumed: bool,
+    progressed: bool,
+}
+
+/// Closes the windowed turn cycle: after the active unit's action fully
+/// resolves, clear the active unit and return to `WaitingForTurn` so the AV
+/// scheduler selects the next actor. Runs last in the combat chain so resolution
+/// has already advanced the phase this frame.
+fn windowed_turn_gate_system(
+    mut intents: MessageReader<ActionIntent>,
+    mut events: MessageReader<CombatEvent>,
+    mut gate: ResMut<WindowedTurnGate>,
+    mut order: ResMut<TurnOrder>,
+    mut state: ResMut<CombatState>,
+) {
+    if matches!(state.phase, CombatPhase::Victory | CombatPhase::Defeat) {
+        // Combat is over; drop any latched state so a restart begins clean.
+        *gate = WindowedTurnGate::default();
+        return;
+    }
+
+    // A dispatched intent (player or enemy AI) consumes the active unit's turn.
+    // Drain the reader fully; a fresh dispatch clears any stale progress signal.
+    if intents.read().count() > 0 && !gate.consumed {
+        gate.consumed = true;
+        gate.progressed = false;
+    }
+
+    // Observe resolution only after the turn has been consumed.
+    let mut resolved_now = false;
+    for event in events.read() {
+        if matches!(event.kind, CombatEventKind::OnActionResolved) && event.follow_up_depth == 0 {
+            resolved_now = true;
+        }
+    }
+    if gate.consumed && !gate.progressed && (state.phase == CombatPhase::Resolving || resolved_now) {
+        gate.progressed = true;
+    }
+
+    if gate.consumed
+        && gate.progressed
+        && state.phase == CombatPhase::WaitingAction
+        && order.active_unit.is_some()
+    {
+        order.active_unit = None;
+        state.phase = CombatPhase::WaitingForTurn;
+        *gate = WindowedTurnGate::default();
+    }
+}
+
 pub fn register_combat_systems(app: &mut App) {
     app.init_resource::<bevyrogue::combat::turn_system::EnemyTurnRequestQueue>()
+        .init_resource::<WindowedTurnGate>()
         .add_systems(
             Update,
             (
@@ -264,6 +337,7 @@ pub fn register_combat_systems(app: &mut App) {
                 advance_turn_system,
                 resolve_enemy_turn_action_system,
                 check_victory_system,
+                windowed_turn_gate_system,
             )
                 .chain(),
         );

@@ -65,6 +65,15 @@ bevy_mod_debugdump = "0.15"
 name = "dump_schedule"
 path = "examples/dump_schedule.rs"
 
+# Standalone particle VFX viewer. Faithful render setup (HDR + bloom + soft
+# material) so the look matches the game; dropdown enumerates every
+# .particle.ron plus composite layer presets. Windowed-only (K001: human-run).
+#   cargo run --features windowed --bin vfx_viewer
+[[bin]]
+name = "vfx_viewer"
+path = "src/bin/vfx_viewer.rs"
+required-features = ["windowed"]
+
 
 [profile.dev]
 opt-level = 1

@@ -10,7 +10,10 @@
 // field defaults (MEM098).
 (
     // Dense feed so the core stays solid and the trail is continuous.
-    spawn_rate: 80.0,
+    // GOTCHA: spawn_rate is the INTERVAL IN SECONDS between emissions, not particles/sec
+    // (bevy_enoki-0.6.0/src/update.rs:137 sets a timer duration). For a rate R/sec use 1/R.
+    // 0.0125 ~= 80 emissions/sec -> solid core + continuous trail. (Was 80.0 = 1 per 80s = empty.)
+    spawn_rate: 0.0125,
     spawn_amount: 2,
     // Tight disc — the core is a small bright body, not a wide spray.
     emission_shape: Circle(4.0),

@@ -457,8 +457,31 @@ fn finalize_timeline_action(
         follow_up_depth: inflight.follow_up_depth,
         cast_id,
     });
+    // Mirror the legacy (non-timeline) path's combat-beat emission so UI
+    // projections of `OnCombatBeat` (e.g. the windowed phase strip) advance past
+    // PreApp on timeline-backed actions. Only the beat events are emitted here,
+    // not kernel-transition dispatch, to keep passive/kernel behavior on the
+    // timeline path unchanged.
+    event_writer.write(CombatEvent {
+        kind: CombatEventKind::OnCombatBeat {
+            beat: crate::combat::kernel::CombatBeatId::Applied,
+        },
+        source: inflight.action.source,
+        target: inflight.action.target,
+        follow_up_depth: inflight.follow_up_depth,
+        cast_id,
+    });
     event_writer.write(CombatEvent {
         kind: CombatEventKind::OnActionResolved,
+        source: inflight.action.source,
+        target: inflight.action.target,
+        follow_up_depth: inflight.follow_up_depth,
+        cast_id,
+    });
+    event_writer.write(CombatEvent {
+        kind: CombatEventKind::OnCombatBeat {
+            beat: crate::combat::kernel::CombatBeatId::Resolved,
+        },
         source: inflight.action.source,
         target: inflight.action.target,
         follow_up_depth: inflight.follow_up_depth,

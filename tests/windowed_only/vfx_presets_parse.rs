@@ -17,10 +17,11 @@ use bevy_enoki::Particle2dEffect;
 
 #[test]
 fn fire_preset_parses_into_enoki_schema() {
-    let effect = ron::from_str::<Particle2dEffect>(include_str!(
-        "../../assets/vfx/fire_test.particle.ron"
-    ))
-    .expect("assets/vfx/fire_test.particle.ron must parse into bevy_enoki::Particle2dEffect");
+    let effect =
+        ron::from_str::<Particle2dEffect>(include_str!("../../assets/vfx/fire_test.particle.ron"))
+            .expect(
+                "assets/vfx/fire_test.particle.ron must parse into bevy_enoki::Particle2dEffect",
+            );
 
     // Continuous emitter (no OneShot attached), so it must keep feeding.
     assert!(
@@ -40,10 +41,11 @@ fn fire_preset_parses_into_enoki_schema() {
 
 #[test]
 fn water_preset_parses_into_enoki_schema() {
-    let effect = ron::from_str::<Particle2dEffect>(include_str!(
-        "../../assets/vfx/water_test.particle.ron"
-    ))
-    .expect("assets/vfx/water_test.particle.ron must parse into bevy_enoki::Particle2dEffect");
+    let effect =
+        ron::from_str::<Particle2dEffect>(include_str!("../../assets/vfx/water_test.particle.ron"))
+            .expect(
+                "assets/vfx/water_test.particle.ron must parse into bevy_enoki::Particle2dEffect",
+            );
 
     assert!(
         effect.spawn_rate > 0.0,

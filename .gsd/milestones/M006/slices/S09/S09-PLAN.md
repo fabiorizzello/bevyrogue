@@ -17,20 +17,15 @@
 
 ## Tasks
 
-- [ ] **T01: Carve registries and types into render/registries.rs** `est:M`
+- [x] **T01: Carve registries and types into render/registries.rs** `est:M`
   Move the engine-generic registry structs/resources and shared presentation types out of render.rs into a new src/windowed/render/registries.rs, re-exporting as needed so external call sites keep compiling. No logic edits.
   - Files: `src/windowed/render.rs`, `src/windowed/render/registries.rs`
   - Verify: cargo build --features windowed (clean); cargo test --features windowed --test windowed_only (green)
 
-- [ ] **T02: Repoint species imports and thin windowed/mod.rs** `est:M`
+- [x] **T02: Repoint species imports and thin windowed/mod.rs** `est:M`
   Update agumon/renamon windowed modules to import from the new registries path, and reduce src/windowed/mod.rs to panel + validation wiring plus the digimon::register_all call. Confirm species modules still only populate their own entries.
   - Files: `src/windowed/digimon/agumon/mod.rs`, `src/windowed/digimon/renamon/mod.rs`, `src/windowed/mod.rs`
   - Verify: RUSTFLAGS='-D warnings' cargo build --features windowed (clean); cargo test --features windowed --test windowed_only (green)
-
-- [ ] **T03: Extract a generic reusable warn-once dedup util** `est:S`
-  Promote S06's inline warn-once dedup (currently a Local<HashSet<AssetId<AnimGraph>>> in src/animation/registry.rs, specific to AssetId<AnimGraph>) into a generic dedup util keyed by an arbitrary id type, exported from the lib so both the animation and windowed consumers reuse it instead of re-implementing. Identical dedup behavior; repoint the existing registry.rs call site to the new util. This is the shared helper S08/S11/S12/S13/S14 refer to.
-  - Files: `src/animation/warn_once.rs`, `src/animation/mod.rs`, `src/animation/registry.rs`
-  - Verify: cargo test (headless green); cargo test --features windowed --test windowed_only (green)
 
 ## Files Likely Touched
 
@@ -39,6 +34,3 @@
 - src/windowed/digimon/agumon/mod.rs
 - src/windowed/digimon/renamon/mod.rs
 - src/windowed/mod.rs
-- src/animation/warn_once.rs
-- src/animation/mod.rs
-- src/animation/registry.rs
