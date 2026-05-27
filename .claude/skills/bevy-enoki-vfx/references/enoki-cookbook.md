@@ -51,7 +51,20 @@ material**. The material is chosen by the *spawn code*. `ParticleSpawner::defaul
 than a glowing mass — see `soft-particle-and-layering.md` for the root cause and the soft-sprite
 fix (it is a code change to spawn `ParticleSpawner::<SpriteParticle2dMaterial>(soft_texture)`, not
 an asset edit). Sprite-sheet flipbook animation over lifetime also rides `SpriteParticle2dMaterial`
-(`new(tex, hframes, vframes)`, H×V frames; hot-reload works).
+(`new(tex, hframes, vframes)`, H×V frames; hot-reload works) — see the flipbook frame-order gotcha
+below and the per-effect material seam in `soft-particle-and-layering.md`.
+
+- **GOTCHA — flipbook frame order is bottom-up, and frames map to lifetime.** The sprite frag
+  (`bevy_enoki-0.6.0/src/shaders/particle_sprite_frag.wgsl`) picks the frame as
+  `current_frame = floor(lifetime_frac * total_frames)` (line 16) — the sheet plays once across
+  the particle's `lifetime`, so `lifetime` *is* the playback speed (shorter life = faster anim).
+  The frame's V offset is `(max_vframe - vframe - 1) * frame_height` (line 25): with WGSL's
+  top-left UV origin this means **frame 0 is the BOTTOM-LEFT cell**, advancing left→right then
+  **rows upward** (bottom row first, top row last). Author/generate the sheet in that order or the
+  animation plays backwards/scrambled. The texture is **multiplied** by the particle color
+  (`out * textureSample(...)`, line 28), so author the sheet **warm-white / desaturated** and let
+  `color_curve` (HDR) supply the tint and bloom — a pre-colored sheet fights the curve. Keep it
+  **≤4×4** for a stylized read (L3).
 
 ## The wrapper layer above enoki (where the look actually lives)
 
