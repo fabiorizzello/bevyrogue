@@ -1,6 +1,8 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use bevy::prelude::*;
+
+use crate::warn_once::WarnOnce;
 
 use super::AnimGraphId;
 use super::anim_graph::{
@@ -245,7 +247,7 @@ pub fn populate_graph_registries(
     mut stance_reg: ResMut<StanceGraphRegistry>,
     // Asset ids we have already warned about, so an unbuildable graph logs once
     // rather than every frame it re-emits a Modified event.
-    mut warned: Local<HashSet<AssetId<AnimGraph>>>,
+    mut warned: Local<WarnOnce<AssetId<AnimGraph>>>,
 ) {
     let Some(handles) = handles else {
         return;
@@ -288,7 +290,7 @@ pub fn populate_graph_registries(
         // A configured graph loaded but matched neither path list, so no
         // registry entry can be built and its sprite will never resolve a
         // graph. Warn once per asset id to make this regression visible.
-        if !built && warned.insert(asset_id) {
+        if !built && warned.should_warn(asset_id) {
             warn!(
                 "animation graph loaded but no registry entry could be built: \
                  graph_id={:?} path={:?} — matched neither SkillGraphPaths nor \

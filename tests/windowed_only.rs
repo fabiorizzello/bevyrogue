@@ -16,10 +16,6 @@ mod enoki_skill_effects_parse;
 mod frame_time_soak;
 #[path = "windowed_only/renamon_extension_contract.rs"]
 mod renamon_extension_contract;
-#[path = "windowed_only/vfx_asset_impact_render.rs"]
-mod vfx_asset_impact_render;
-#[path = "windowed_only/vfx_presets_parse.rs"]
-mod vfx_presets_parse;
 #[path = "windowed_only/vfx_windowed_contracts.rs"]
 mod vfx_windowed_contracts;
 #[path = "windowed_only/windowed_hit_feedback.rs"]

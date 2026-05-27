@@ -17,12 +17,12 @@
 
 ## Tasks
 
-- [ ] **T01: Split render into per-concern submodules** `est:L`
+- [x] **T01: Split render into per-concern submodules** `est:L`
   Carve render.rs into src/windowed/render/{playback,spawn,effects,feedback,clock}.rs, each owning one concern, with render/mod.rs as the orchestrator. Move systems verbatim where possible; no behavior change to clock catch-up or barrier release.
   - Files: `src/windowed/render.rs`, `src/windowed/render/mod.rs`, `src/windowed/render/playback.rs`, `src/windowed/render/spawn.rs`, `src/windowed/render/effects.rs`, `src/windowed/render/feedback.rs`, `src/windowed/render/clock.rs`
   - Verify: RUSTFLAGS='-D warnings' cargo build --features windowed (clean); cargo test --features windowed --test windowed_only (green)
 
-- [ ] **T02: Break up advance_digimon_presentation** `est:M`
+- [x] **T02: Break up advance_digimon_presentation** `est:M`
   Decompose the advance_digimon_presentation function into named per-concern steps (e.g. tick clock, advance playback, release barriers, drive feedback) so each is independently readable and testable. Behavior identical.
   - Files: `src/windowed/render/playback.rs`, `src/windowed/render/clock.rs`
   - Verify: cargo test --features windowed --test windowed_only (green); cargo test (headless green)

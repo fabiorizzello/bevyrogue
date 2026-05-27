@@ -21,7 +21,8 @@ radial spin, toward-target). **Still no asset.**
 
 ### L2 — Minimal cel sprite (1 reusable atom)
 One small single-element cel texture, **canonically oriented** (e.g. `flame_tongue` points-up),
-luminance→alpha, reused across many effects via rotation/scale. Reusable atoms live in `assets/vfx/`.
+luminance→alpha, reused across many effects via rotation/scale. Keep reusable atoms in the
+project's shared VFX asset directory (search for where existing atoms live).
 → Use **only** when a **recognizable silhouette** is needed that the primitive can't give:
 flame-tongue, leaf, blade, petal, claw, stylized lightning bolt, graphic symbol.
 → Rule: *1 atom, N effects.* The same sprite, rotated/scaled, serves many kits.

@@ -21,15 +21,20 @@ const RENDER_SRC: &str = include_str!("../../src/windowed/render.rs");
 /// M006/S04 moved Agumon's enoki handle map out of render.rs into the per-Digimon
 /// module; the handle-map contract now asserts against that source.
 const AGUMON_SRC: &str = include_str!("../../src/windowed/digimon/agumon/mod.rs");
+// M006/S10 decomposed render.rs into per-concern submodules. The enoki spawn seam
+// lives in effects.rs; the FSM control flow lives in playback.rs.
+const RENDER_EFFECTS_SRC: &str = include_str!("../../src/windowed/render/effects.rs");
+const RENDER_PLAYBACK_SRC: &str = include_str!("../../src/windowed/render/playback.rs");
 
 /// Slice `spawn_effect_by_id` from its `fn` keyword to the next top-level `fn`,
 /// so assertions about the enoki branch can't accidentally match unrelated code.
 fn spawn_effect_by_id_block() -> &'static str {
-    let start = RENDER_SRC
+    let src = RENDER_EFFECTS_SRC;
+    let start = src
         .find("fn spawn_effect_by_id")
-        .expect("render.rs must define spawn_effect_by_id");
-    let rest = &RENDER_SRC[start..];
-    let end = rest.find("\nfn should_spawn_node_vfx").expect(
+        .expect("render.rs (effects submodule) must define spawn_effect_by_id");
+    let rest = &src[start..];
+    let end = rest.find("\npub(super) fn should_spawn_node_vfx").expect(
         "spawn_effect_by_id should remain adjacent to should_spawn_node_vfx for this contract test",
     );
     &rest[..end]
@@ -110,8 +115,9 @@ fn enoki_lifecycle_layer_is_present() {
         RENDER_SRC.contains("ProjectileFlight"),
         "the traveling-projectile flight component must remain so the projectile can travel caster->target"
     );
+    // M006/S10: advance_enoki_projectiles moved to the effects submodule.
     assert!(
-        RENDER_SRC.contains("fn advance_enoki_projectiles"),
+        RENDER_SRC.contains("fn advance_enoki_projectiles") || RENDER_EFFECTS_SRC.contains("fn advance_enoki_projectiles"),
         "the enoki projectile advance system must remain — it lerps flight and chains the impact burst"
     );
 }
@@ -144,12 +150,13 @@ fn enoki_handle_map_is_keyed_by_all_six_agumon_ids() {
 
 #[test]
 fn kernel_and_fsm_control_flow_remains_untouched() {
+    // M006/S10: fire_kernel_cue and request_release moved to the playback submodule.
     assert!(
-        RENDER_SRC.contains("fire_kernel_cue()"),
+        RENDER_SRC.contains("fire_kernel_cue()") || RENDER_PLAYBACK_SRC.contains("fire_kernel_cue()"),
         "the FSM kernel cue (fire_kernel_cue) must remain — the enoki seam changes only what spawns, not control flow (D031/D032)"
     );
     assert!(
-        RENDER_SRC.contains("request_release("),
+        RENDER_SRC.contains("request_release(") || RENDER_PLAYBACK_SRC.contains("request_release("),
         "the cue barrier release (request_release) must remain — the enoki seam changes only what spawns, not control flow (D031/D032)"
     );
 }

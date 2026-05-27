@@ -53,6 +53,15 @@ pub(in crate::windowed) struct EnokiEffect {
     pub(in crate::windowed) anchor: PlacementAnchor,
     pub(in crate::windowed) path: String,
     pub(in crate::windowed) lifecycle: EnokiLifecycle,
+    /// Per-effect material override. `None` spawns the effect through the shared
+    /// [`SoftParticleMaterial`] (a radial blob — the right body for a glow/orb/
+    /// ember). `Some` routes this effect through its own material instead — e.g. a
+    /// flipbook [`SpriteParticle2dMaterial::new`] so a "defined flame" layer renders
+    /// an animated flame-tongue silhouette while the glow layers stay soft blobs.
+    /// The per-Digimon module builds the override handle at registration and carries
+    /// it here, so the spawn seam ([`crate::windowed::render::spawn_effect_by_id`])
+    /// stays engine-generic (no per-effect material match).
+    pub(in crate::windowed) material_override: Option<Handle<SpriteParticle2dMaterial>>,
 }
 
 /// How a spawned enoki effect behaves over time. Replaces the closed effect-id

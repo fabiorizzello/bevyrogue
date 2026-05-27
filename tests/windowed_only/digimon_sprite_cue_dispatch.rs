@@ -28,6 +28,10 @@
 const RENDER_SRC: &str = include_str!("../../src/windowed/render.rs");
 const MOD_SRC: &str = include_str!("../../src/windowed/mod.rs");
 const AGUMON_SRC: &str = include_str!("../../src/windowed/digimon/agumon/mod.rs");
+// M006/S10 decomposed render.rs into per-concern submodules. The CueRegistry flash/
+// shake dispatch lives in playback.rs; camera-shake components in feedback.rs.
+const RENDER_PLAYBACK_SRC: &str = include_str!("../../src/windowed/render/playback.rs");
+const RENDER_FEEDBACK_SRC: &str = include_str!("../../src/windowed/render/feedback.rs");
 
 #[test]
 fn sprite_is_generalized_digimon_not_agumon() {
@@ -65,47 +69,52 @@ fn digimon_sprite_carries_graph_ids_as_data() {
 
 #[test]
 fn flash_and_shake_read_the_cue_registry_parametric_math() {
+    // M006/S10: flash/shake dispatch moved to playback.rs; check both.
+    let render_all = format!("{RENDER_SRC}{RENDER_PLAYBACK_SRC}");
     assert!(
-        RENDER_SRC.contains("CueRegistry"),
+        render_all.contains("CueRegistry"),
         "the windowed presentation path must consult the CueRegistry for flash/shake cues"
     );
     assert!(
-        RENDER_SRC.contains("flash_tint_parametric"),
+        render_all.contains("flash_tint_parametric"),
         "the flash path must compute its tint via flash_tint_parametric from the registered cue params"
     );
     assert!(
-        RENDER_SRC.contains("shake_offset_parametric"),
+        render_all.contains("shake_offset_parametric"),
         "the shake path must compute its offset via shake_offset_parametric from the registered cue params"
     );
     // Code-shaped absence: the legacy hit_feedback lib calls (`flash_tint(` /
     // `shake_offset(`) must be gone. `flash_tint(` does NOT match
     // `flash_tint_parametric(` — the next char after the prefix is `_`, not `(`.
     assert!(
-        !RENDER_SRC.contains("flash_tint("),
+        !render_all.contains("flash_tint("),
         "the legacy flash_tint() lib call must be replaced by flash_tint_parametric() (D048)"
     );
     assert!(
-        !RENDER_SRC.contains("shake_offset("),
+        !render_all.contains("shake_offset("),
         "the legacy shake_offset() lib call must be replaced by shake_offset_parametric() (D048)"
     );
 }
 
 #[test]
 fn camera_shake_exists_and_writes_the_camera_transform() {
+    // M006/S10: CameraRest/CameraShakeState types stay in render.rs; the apply system
+    // (Camera2d + &mut Transform) is in feedback.rs.
+    let render_all = format!("{RENDER_SRC}{RENDER_FEEDBACK_SRC}");
     assert!(
-        RENDER_SRC.contains("CameraRest"),
+        render_all.contains("CameraRest"),
         "camera-shake must capture the camera's rest translation in a CameraRest so the offset is absolute, not additive (MEM094)"
     );
     assert!(
-        RENDER_SRC.contains("CameraShakeState"),
+        render_all.contains("CameraShakeState"),
         "camera-shake must track its decay in a CameraShakeState resource"
     );
     assert!(
-        RENDER_SRC.contains("Camera2d"),
+        render_all.contains("Camera2d"),
         "the camera-shake path must target the Camera2d entity"
     );
     assert!(
-        RENDER_SRC.contains("&mut Transform"),
+        render_all.contains("&mut Transform"),
         "the camera-shake apply system must write the camera Transform (offset from CameraRest)"
     );
 }

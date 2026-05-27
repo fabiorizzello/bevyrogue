@@ -24,8 +24,6 @@ mod anim_validation;
 mod atlas_binding;
 #[path = "animation/clip_atlas_parity.rs"]
 mod clip_atlas_parity;
-#[path = "animation/placement_verbs.rs"]
-mod placement_verbs;
 #[path = "animation/registry_starvation.rs"]
 mod registry_starvation;
 #[path = "animation/render_no_vfx_kind_guard.rs"]
@@ -34,15 +32,7 @@ mod render_no_vfx_kind_guard;
 mod skill_graph_mapping_extensibility;
 #[path = "animation/stance_reaction_mapping.rs"]
 mod stance_reaction_mapping;
-#[path = "animation/vfx_asset_eval.rs"]
-mod vfx_asset_eval;
-#[path = "animation/vfx_asset_load.rs"]
-mod vfx_asset_load;
-#[path = "animation/vfx_asset_schema.rs"]
-mod vfx_asset_schema;
 #[path = "animation/vfx_handle_seam.rs"]
 mod vfx_handle_seam;
 #[path = "animation/vfx_spawn_descriptor.rs"]
 mod vfx_spawn_descriptor;
-#[path = "animation/vfx_variant_selection.rs"]
-mod vfx_variant_selection;

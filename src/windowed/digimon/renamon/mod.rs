@@ -147,6 +147,8 @@ fn register_renamon_enoki_vfx(
                 flight_ticks: DIAMOND_STORM_FLIGHT_TICKS,
                 on_arrival: DIAMOND_STORM_IMPACT_EFFECT_ID.to_string(),
             },
+            // Diamond Storm leaves stay soft blobs (the shared material); no flipbook.
+            material_override: None,
         },
     );
     info!(

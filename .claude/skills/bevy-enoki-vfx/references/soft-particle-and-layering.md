@@ -8,9 +8,9 @@ translated onto enoki's real knobs.
 ## The #1 root cause: enoki's default material draws hard flat squares
 
 The single biggest reason a procedural effect "doesn't read as fire" is **not** the curve
-values — it's the material. The repo spawns every effect with `ParticleSpawner::default()`
-(`src/windowed/render.rs:1608`), which is `ParticleSpawner<ColorParticle2dMaterial>` with the
-default handle (`bevy_enoki-0.6.0/src/lib.rs:178`). That material's entire fragment shader is:
+values — it's the material. `ParticleSpawner::default()` is `ParticleSpawner<ColorParticle2dMaterial>`
+with the default handle (`bevy_enoki-0.6.0/src/lib.rs:178`). That material's entire fragment
+shader is:
 
 ```wgsl
 // bevy_enoki-0.6.0/src/shaders/particle_color_frag.wgsl
@@ -35,9 +35,9 @@ wraps the soft texture. This is the highest-leverage change available for the wh
 > Editor caveat: the bevy_enoki **web editor** (and SwiftShader software-WebGL in headless
 > capture) renders with its own material and no HDR/bloom, so it shows flat 1px dots regardless
 > of the asset. It is authoritative for the **particle count / motion / logic**, never for the
-> aesthetic. Visual signoff is windowed-only (K001 — request manual UAT).
+> aesthetic. Visual signoff is windowed-only — request manual UAT.
 
-### Wiring the soft material (verified snippet)
+### Wiring the soft material (generic shape — adapt to the host project)
 
 `ParticleSpawner` is generic: `ParticleSpawner<T: Particle2dMaterial>(pub Handle<T>)`
 (`bevy_enoki-0.6.0/src/lib.rs:170`). `ParticleSpawner::default()` is only implemented for
@@ -49,7 +49,7 @@ an asset; you insert it once and clone the handle per spawn):
 ```rust
 // 1. A resource holding the shared soft-particle material handle.
 #[derive(Resource)]
-pub(in crate::windowed) struct SoftParticleMaterial(pub Handle<SpriteParticle2dMaterial>);
+struct SoftParticleMaterial(Handle<SpriteParticle2dMaterial>);
 
 // 2. Startup system: load the radial PNG, build the material, store the handle.
 fn init_soft_particle_material(
@@ -57,23 +57,24 @@ fn init_soft_particle_material(
     mut materials: ResMut<Assets<SpriteParticle2dMaterial>>,
     mut commands: Commands,
 ) {
-    let tex = asset_server.load("vfx/soft_particle.png");
+    let tex = asset_server.load("<your soft-particle texture path>");
     let handle = materials.add(SpriteParticle2dMaterial::from_texture(tex));
     commands.insert_resource(SoftParticleMaterial(handle));
 }
 
-// 3. In spawn_effect_by_id (render.rs:1632) — spawn with the soft material, not the default:
-let mut spawned = commands.spawn((
-    ParticleSpawner(soft_material.0.clone()),       // was ParticleSpawner::default()
-    ParticleEffectHandle(entry.handle.clone()),
-    Transform::from_xyz(base[0], base[1], VFX_PARTICLE_Z),
+// 3. At the spawn site — spawn with the soft material, not the default:
+commands.spawn((
+    ParticleSpawner(soft_material.0.clone()),   // was ParticleSpawner::default()
+    ParticleEffectHandle(effect_handle.clone()),
+    Transform::from_xyz(x, y, z),
 ));
 ```
 
-Thread `Option<Res<SoftParticleMaterial>>` (or `&SpriteParticle2dMaterial` handle) into
-`spawn_effect_by_id` the same way `EnokiVfxRegistry` is threaded today. Importing
-`SpriteParticle2dMaterial` comes from `bevy_enoki::`. The PNG is a deterministic, headless-safe
-generated asset (white RGB, radial alpha falloff) committed under `assets/vfx/`.
+Find the project's spawn site by searching for `ParticleSpawner`, and thread the material handle
+in the same way the project already threads its effect registry. `SpriteParticle2dMaterial` is
+imported from `bevy_enoki::`. The texture is a deterministic, headless-safe radial PNG (white
+RGB, radial alpha falloff) committed to the project's asset directory — search for an existing
+one before generating a new one.
 
 ## Value before color (the grayscale test)
 
@@ -81,9 +82,9 @@ Cel/anime readability comes from **value contrast**, not hue. Pro rule: imagine 
 **grayscale** — if the light-to-dark contrast doesn't read in black & white, it won't read in
 color. Fire is white-hot core → bright yellow → orange → dark red → fade: a steep *value* ramp.
 In enoki, drive `color_curve` with that ramp and push the hot end's channels **>1.0** (HDR) so
-`Hdr + Bloom::NATURAL + Tonemapping::TonyMcMapface` (`src/windowed/render.rs:521-523`) blooms
-the core. Pick the hue only after the value ramp reads. A flat mid-value gradient is the second
-most common "looks wrong" cause after the square-particle problem.
+an `Hdr + Bloom + Tonemapping` camera blooms the core. Pick the hue only after the value ramp
+reads. A flat mid-value gradient is the second most common "looks wrong" cause after the
+square-particle problem.
 
 ## Silhouette: intentional shape, not scatter
 
@@ -104,44 +105,37 @@ same anchor, each a separate `.particle.ron` chained/co-spawned:
 |---|---|---|
 | **Core** | bright narrow white-hot body | tight `Circle`, small scale, `color_curve` channels well >1.0, low scatter, short life |
 | **Flames** | wider, darker, leaning tongues | larger scale, more lifetime, lower HDR, slightly more scatter, upward `direction`+accel |
-| **Embers** | sparse rising sparks | small `spawn_amount`, small scale, high speed randomness, long-ish life, `Turbulence` drift |
+| **Embers** | sparse rising sparks | small `spawn_amount`, small scale, high speed randomness, long-ish life, turbulent drift |
 | **Smoke** (opt.) | dark mass rising above | large scale, low/no HDR (dark), slow rise, long life, high `linear_damp` |
 
 The glow is an *emergent* property of many soft, semi-transparent particles overlapping under
 bloom — density + soft alpha. A single layer can't produce it. Water layers analogously: jet
 core + droplet spray + falling mist + (opt.) splash ring on impact.
 
-### How co-spawn actually works (verified, not asserted)
+### How co-spawn works (no engine edit if the project supports a cue → many-ids map)
 
-The layering mechanism is already in the engine and needs **no engine edit** — it's per-Digimon
-data. `OnEnterEffectRegistry.map` is `HashMap<String, Vec<String>>` (`src/windowed/render.rs:636`):
-one authored `SpawnParticle` cue name → a **vector** of owned effect ids. The on-enter loop
-(`src/windowed/render.rs:1216`) iterates that vector and calls `spawn_effect_by_id` for each, so
-every id in the vec spawns at the same anchor on the same frame. It is already used to fan one cue
-into two layers — `agumon/mod.rs:83`:
+The layering mechanism needs **no engine edit** if the project's spawn layer maps one authored
+cue name → a **list** of effect ids (a `HashMap<String, Vec<String>>`-style registry): the
+on-enter handler iterates that list and spawns each id at the same anchor on the same frame, so
+every id co-spawns. Search the spawn code for where a cue resolves to effect ids; if it resolves
+to a single id, extend it to a vector (a small, kit-data change, not an engine change).
 
-```rust
-// on_enter_effect_specs(): one cue name → N co-spawned effect ids
-("baby_flame_charge", &[CHARGE_EFFECT_ID, EMBER_EFFECT_ID]),
-```
-
-To build a layered fire you (1) register each layer's `.particle.ron` as its own `EnokiEffect`
-in `register_agumon_enoki_vfx` (anchor + `EnokiLifecycle::PersistentEmitter`), and (2) push all
-the layer ids into that one cue's vec. They co-spawn on the same `Mouth` anchor; lifecycle is
-per-entry. The other co-spawn paths are real too but for different shapes: `EnokiLifecycle::
-Projectile { on_arrival }` chains the impact id on arrival, and per-effect `OneShot` bursts
-self-despawn — use the `Vec` fan-out for *simultaneous* layers, the chains for *sequential* stages.
+To build a layered fire you (1) register each layer's `.particle.ron` as its own effect entry
+(anchor + a `PersistentEmitter` lifecycle), and (2) push all the layer ids into that one cue's
+list. They co-spawn on the same anchor; lifecycle is per-entry. Use the **list fan-out** for
+*simultaneous* layers; use **projectile-on-arrival** or per-effect **`OneShot`** chains for
+*sequential* stages.
 
 ## Density & the additive-blend proxy
 
 Stylized glow relies on **additive blending** — overlapping bright particles sum toward white.
 enoki's render pipeline hardcodes `BlendState::ALPHA_BLENDING` (`bevy_enoki-0.6.0/src/material.rs:534`)
 — there is **no per-material additive blend** and no asset/material knob to change it (true
-additive = L4 custom pipeline). The repo ships HDR overbright + bloom as the *proxy*
-(`wgsl-hero.md`). Practically: keep particles soft and dense enough that the
-overlap-plus-bloom reads as a luminous mass. Too few/too sparse and the proxy has nothing to
-accumulate. (`spawn_rate` controls density — see the gotcha in `enoki-cookbook.md`: it is the
-*interval between emissions*, so a *small* value = dense.)
+additive = L4 custom pipeline). HDR overbright + bloom is the *proxy*. Practically: keep
+particles soft and dense enough that the overlap-plus-bloom reads as a luminous mass. Too
+few/too sparse and the proxy has nothing to accumulate. (`spawn_rate` controls density — see the
+gotcha in `enoki-cookbook.md`: it is the *interval between emissions*, so a *small* value =
+dense.)
 
 ## Motion = the physical story
 
@@ -157,7 +151,7 @@ accumulate. (`spawn_rate` controls density — see the gotcha in `enoki-cookbook
 
 Multi-stage casts read as anime via **anticipation → peak → dissipation**: charge orb →
 release/projectile → impact burst → residue embers. At 12fps a single bright hold frame on
-contact *is* the impact frame. Continuous test loops (`fire_test`, the charge/ember emitters)
+contact *is* the impact frame. Continuous test loops (a standalone fire/charge/ember emitter)
 don't have stages — judge them on density/value/silhouette/soft-particle, not on timing.
 
 ## Cross-engine technique → enoki knob (conversion table)
@@ -169,17 +163,17 @@ enoki's real capabilities:
 |---|---|
 | Soft particle (radial-gradient sprite) | `SpriteParticle2dMaterial::from_texture(soft.png)` — **the key fix**; needs the spawn-code change |
 | Hand-drawn flame flipbook | `SpriteParticle2dMaterial::new(tex, hframes, vframes)` → animates frames over lifetime (`particle_sprite_frag.wgsl`); ≤4×4 for stylized (L3) |
-| Value/temperature gradient | `color_curve` HDR hot→cool ramp + bloom (already used) |
+| Value/temperature gradient | `color_curve` HDR hot→cool ramp + bloom |
 | Intentional silhouette | low `direction` randomness + `scale_curve` taper (L0/L1); cutout sprite only at L2 |
 | Layered systems (core/flames/embers/smoke) | **multiple `.particle.ron` co-spawned on one anchor** (the table above) |
-| Additive blend glow | HDR overbright + `Bloom::NATURAL` proxy (D037; true additive = L4 custom material) |
-| Turbulence / organic drift | repo `PlacementParams::Turbulence{amp,freq,rise}` (sum-of-sines, deterministic, R004) |
-| Rotating star-burst shards (HSR) | `RotationParams::Radial{offset,omega}` + `OneShot` fan-out (no sprite) |
+| Additive blend glow | HDR overbright + bloom proxy (true additive = L4 custom material) |
+| Turbulence / organic drift | a turbulence placement wrapper if the project provides one (sum-of-sines, deterministic) |
+| Rotating star-burst shards (HSR) | a radial-rotation wrapper + `OneShot` fan-out (no sprite) |
 | Dissolve / distortion / rim | custom `Particle2dMaterial` WGSL (L4, hero only — `wgsl-hero.md`) |
 
-What enoki simply lacks (confirmed spike 3): cone emission shape (only `Point`/`Circle` — fake
-the cone with `direction`+`scale`), trail/ribbon/beam mesh, native sub-emitters, screen-space
-compositing. Don't author as if these exist.
+What enoki simply lacks: cone emission shape (only `Point`/`Circle` — fake the cone with
+`direction`+`scale`), trail/ribbon/beam mesh, native sub-emitters, screen-space compositing.
+Don't author as if these exist.
 
 ## Sources
 - VFX Apprentice — fire properties, flipbooks (the structured "VFX art" curriculum).

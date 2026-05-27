@@ -38,10 +38,10 @@
 - [x] **S08: S08** `risk:medium` `depends:[]`
   > After this: Renamon cast emits its enoki effect; Agumon cast-driven proof; warn-once on spawn miss
 
-- [ ] **S09: S09** `risk:medium` `depends:[]`
+- [x] **S09: S09** `risk:medium` `depends:[]`
   > After this: render.rs imports from registries module; species imports repointed; tests green
 
-- [ ] **S10: Split render into playback/spawn/effects/feedback/clock submodules** `risk:high` `depends:[S09]`
+- [ ] **S10: S10** `risk:high` `depends:[]`
   > After this: render decomposed; advance_digimon_presentation broken up; source-contract tests adjusted; windowed tests green
 
 - [ ] **S11: Data-driven catalog discovery replacing DEFAULT_ANIM_GRAPH/CLIP/STANCE_PATHS** `risk:medium` `depends:[]`

@@ -17,6 +17,10 @@ const RENAMON_SRC: &str = include_str!("../../src/windowed/digimon/renamon/mod.r
 const RENAMON_STANCE: &str = include_str!("../../assets/digimon/renamon/stance.ron");
 const RENAMON_CLIP: &str = include_str!("../../assets/digimon/renamon/clip.ron");
 const RENAMON_ANIM: &str = include_str!("../../assets/digimon/renamon/anim_graph.ron");
+// M006/S10 decomposed render.rs into per-concern submodules. The presentation
+// lookup call site is in spawn.rs; the cast-cue spawn-miss is in playback.rs.
+const RENDER_SPAWN_SRC: &str = include_str!("../../src/windowed/render/spawn.rs");
+const RENDER_PLAYBACK_SRC: &str = include_str!("../../src/windowed/render/playback.rs");
 
 fn assert_contains_all(haystack: &str, label: &str, required: &[&str]) {
     for token in required {
@@ -66,9 +70,11 @@ fn render_keeps_the_multi_presentation_lookup_seam() {
             "entries: Vec<SpritePresentationEntry>",
         ],
     );
+    // M006/S10: fn definition stays in render.rs; call site + log tokens in spawn.rs.
+    let render_spawn = format!("{RENDER_SRC}{RENDER_SPAWN_SRC}");
     assert_contains_all(
-        RENDER_SRC,
-        "src/windowed/render.rs",
+        &render_spawn,
+        "src/windowed/render.rs + spawn.rs",
         &[
             "fn presentation_entry_for_unit(",
             ".find(|entry| entry.matches_unit(unit_id))",
@@ -78,8 +84,8 @@ fn render_keeps_the_multi_presentation_lookup_seam() {
         ],
     );
     assert_contains_none(
-        RENDER_SRC,
-        "src/windowed/render.rs",
+        &render_spawn,
+        "src/windowed/render.rs + spawn.rs",
         &["presentation.entries.first()", "presentation.entries[0]"],
     );
 }
@@ -155,9 +161,11 @@ fn renamon_module_does_not_use_unused_registries() {
 /// by co-occurring canonical tokens rather than live behaviour.
 #[test]
 fn cast_cue_spawn_miss_warns_once_with_cue_id() {
+    // M006/S10: cast-cue spawn-miss logic moved to playback.rs.
+    let render_playback = format!("{RENDER_SRC}{RENDER_PLAYBACK_SRC}");
     assert_contains_all(
-        RENDER_SRC,
-        "src/windowed/render.rs",
+        &render_playback,
+        "src/windowed/render.rs + playback.rs",
         &[
             // S06 warn-once dedup state, keyed by cue id (String).
             "cast_cue_spawn_miss_warned: Local<HashSet<String>>",

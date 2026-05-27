@@ -35,10 +35,13 @@
         (1.0, 0.0, None),
         (0.0, 1.0, Some(SineInOut)),
     ])),
-    // Hot yellow-white at impact -> deep orange-red, fading to fully transparent.
+    // Hot white-yellow at impact -> deep orange-red, fading to fully transparent.
+    // Impact-frame channels burned to ~4.5 (were <=1.0 = NO bloom, the dull flash):
+    // the contact flash is the brightest single frame of the cast, so it must blow
+    // out to white via Hdr+Bloom like the reference impact burst.
     color_curve: Some((points: [
-        ((red: 1.0, green: 0.9, blue: 0.5, alpha: 1.0), 0.0, None),
-        ((red: 1.0, green: 0.35, blue: 0.05, alpha: 0.0), 1.0, Some(SineInOut)),
+        ((red: 4.8, green: 4.0, blue: 2.2, alpha: 1.0), 0.0, None),
+        ((red: 2.2, green: 0.7, blue: 0.1, alpha: 0.0), 1.0, Some(SineInOut)),
     ])),
     attractors: None,
     relative_positioning: None,

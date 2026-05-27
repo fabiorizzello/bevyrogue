@@ -14,7 +14,24 @@
 //! (`Static`, `FollowTarget`, `ArcToTarget`) exist — this descriptor honors
 //! exactly those and references no design-draft enums.
 
+use bevy::prelude::Reflect;
+use serde::{Deserialize, Serialize};
+
 use crate::animation::anim_graph::{Command, ParticleId, VfxLocus, VfxMotion};
+
+/// Anchor an effect's placement resolves relative to. Editor-ready (Reflect),
+/// closed vocabulary. Consumed by the windowed enoki spawn path
+/// (`EnokiVfxRegistry` entries carry an anchor) to position a particle system
+/// at the caster's muzzle, the caster's center, or the target's center.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Reflect)]
+pub enum PlacementAnchor {
+    /// The caster's mouth muzzle anchor (charge/launch origin).
+    Mouth,
+    /// The caster's body center.
+    CasterCenter,
+    /// The target's body center (impact origin).
+    TargetCenter,
+}
 
 /// Pure, Bevy-free description of a particle to spawn at the renderer.
 ///

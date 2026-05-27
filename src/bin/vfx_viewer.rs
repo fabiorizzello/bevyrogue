@@ -121,7 +121,10 @@ fn setup_camera(mut commands: Commands) {
     commands.spawn((
         Camera2d,
         Hdr,
-        Bloom::NATURAL,
+        // Bloom intensity pushed above NATURAL (0.15) so the white-hot HDR cores
+        // spill warm light onto the scene like the Baby Flame reference. Kept in
+        // sync with the combat renderer's camera (render/spawn.rs setup_camera).
+        Bloom { intensity: 0.30, ..Bloom::NATURAL },
         Tonemapping::TonyMcMapface,
         DebandDither::Enabled,
     ));

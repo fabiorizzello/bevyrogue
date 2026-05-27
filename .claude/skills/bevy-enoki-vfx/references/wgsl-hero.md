@@ -15,12 +15,11 @@ If the effect is "a bright burst", "a swirl", "a star-shatter", or "a glow" — 
 not L4. Do not write a shader for those.
 
 ## Hard limits to remember
-- Bevy 0.18's built-in 2D `ColorMaterial` has **no true additive blending** (D037). S05 ships
-  HDR bloom + overbright colors as the additive *proxy*. A custom material is also the only path
-  to genuine additive blend if that ever becomes a hard requirement.
+- Bevy's built-in 2D `ColorMaterial` has **no true additive blending**. Use HDR bloom +
+  overbright colors as the additive *proxy*. A custom material is the only path to genuine
+  additive blend if that ever becomes a hard requirement.
 - A `Particle2dMaterial` is GPU fragment logic; it cannot do trail/ribbon/beam *mesh*,
-  sub-emitter spawning, or screen-space compositing — those are not enoki primitives at all
-  (confirmed spike 3).
+  sub-emitter spawning, or screen-space compositing — those are not enoki primitives at all.
 
 ## Process if you do reach L4
 1. Confirm the trigger in writing: which material property is impossible at L0–L3.
@@ -29,8 +28,8 @@ not L4. Do not write a shader for those.
 3. Keep the shader a *signature layer* on top of the procedural base, not a replacement — the
    silhouette/timing should still read with the shader disabled.
 4. Headless testability: the shader's visual intent isn't headless-verifiable; gate visual
-   signoff to manual UAT (K001 — never run windowed from auto-mode). Keep an overbright-channel
-   or parameter assertion as the headless proxy where possible.
+   signoff to windowed manual UAT. Keep an overbright-channel or parameter assertion as the
+   headless proxy where possible.
 
 ## Alternative before committing
 If too many effects are drifting to L3/L4, that's a smell — re-examine whether the look really

@@ -48,20 +48,6 @@ pub fn register_agumon_ext(regs: &mut crate::combat::runtime::ExtRegistries) {
         "agumon/baby_burner/reactive_detonate",
         baby_burner::enqueue_reactive_detonate,
     );
-
-    use crate::animation::placement;
-    regs.placements.register(
-        "agumon/baby_flame/converge_inward",
-        placement::converge_inward,
-    );
-    regs.placements
-        .register("agumon/baby_flame/fan_out", placement::fan_out);
-    regs.placements
-        .register("agumon/baby_flame/arc_launch", placement::arc_launch);
-    regs.placements
-        .register("agumon/baby_flame/static", placement::static_placement);
-    regs.placements
-        .register("agumon/baby_flame/turbulence", placement::turbulence);
 }
 
 pub fn register_validation_ext(regs: &mut crate::combat::runtime::ExtRegistries) {

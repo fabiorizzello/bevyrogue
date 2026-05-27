@@ -30,14 +30,14 @@ decals, build the burst from particles. In enoki this is `RotationParams::Radial
 more than any texture.
 
 ## HDR white-hot core
-The overbright core is "free" via `Hdr` + `Bloom::NATURAL`: push `color_curve` channels past
-1.0 at the hot end and bloom blooms it. This is the headless-testable proxy for HDR-bloom
-intent (D037: all RGB channels >1.0).
+The overbright core is "free" via an `Hdr` + `Bloom` camera: push `color_curve` channels past
+1.0 at the hot end and bloom blooms it. A headless-testable proxy for HDR-bloom intent is
+asserting all RGB channels exceed 1.0 at the hot end.
 
 ## Direction & follow-through
 Initial damage reads fast and strong; the follow-through persists a beat longer. Directional
 impacts with high-contrast, readability-optimized color. Keep the camera/stage in mind even
-though signoff is manual (K001 — never run windowed from auto-mode).
+though aesthetic signoff is windowed-only and manual.
 
 ## Self-check before declaring an effect done
 - [ ] **Soft, not square**: particles render as soft blobs (`SpriteParticle2dMaterial` + soft

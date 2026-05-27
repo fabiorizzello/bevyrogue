@@ -6,6 +6,7 @@
 //! registries this module populates.
 
 use bevy::prelude::*;
+use bevy_enoki::prelude::SpriteParticle2dMaterial;
 use bevyrogue::animation::PlacementAnchor;
 use bevyrogue::combat::bootstrap::AGUMON_DUMMY_ID;
 use bevyrogue::combat::team::Team;
