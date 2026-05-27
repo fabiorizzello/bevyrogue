@@ -76,6 +76,56 @@ imported from `bevy_enoki::`. The texture is a deterministic, headless-safe radi
 RGB, radial alpha falloff) committed to the project's asset directory — search for an existing
 one before generating a new one.
 
+### Per-effect material seam (the L2/L3 prerequisite)
+
+The single shared-handle wiring above gives **every** effect the *same* texture. The moment one
+effect needs a different look — a shaped cel atom (L2) or a flipbook (L3) while the glow layers
+keep the soft blob — that one shared handle is the blocker. The generic fix is a **per-effect
+material override**: let each effect's presentation data optionally name its own material, and
+default to the shared soft handle when it doesn't. Shape of the seam (adapt names to the project):
+
+```rust
+// In whatever per-effect presentation/registry record the project already has:
+struct EffectPresentation {
+    // ...existing fields (effect id, anchor, lifecycle)...
+    material_override: Option<Handle<SpriteParticle2dMaterial>>, // None → shared soft blob
+}
+
+// At the spawn site, pick the override or fall back to the shared soft material:
+let material = presentation.material_override.clone()
+    .unwrap_or_else(|| soft_material.0.clone());
+commands.spawn((ParticleSpawner(material), /* ...effect handle, transform... */));
+```
+
+Keep the routing decision a **pure predicate** keyed on the visual verb of each layer, not on the
+creature: *glow* layers (core / charge orb / embers) stay on the soft blob; *shape* layers
+(flame-tongue / spit head / impact body) get the flipbook. A small `uses_flipbook(layer) -> bool`
+that a contract test pins keeps the policy in one place. Surface this seam as a code prerequisite
+**before** authoring any L2/L3 asset — without it the asset is inert (it never reaches a spawn).
+
+### Flipbook recipe (L3) — for a shape that must evolve over time
+
+A flipbook is the L3 lever for a *body whose silhouette changes* (a licking flame, a keyframed
+explosion flash) — not for a plain glow (that stays L0/L1; see the glow-first rule). Build it on
+`SpriteParticle2dMaterial::new(sheet, hframes, vframes)`:
+
+- **Frame count ≤ 4×4 (16)** for a stylized read — more frames blur into mush at 14–34px.
+- **Frame order is bottom-up** (verified in `enoki-cookbook.md`'s flipbook gotcha): frame 0 is the
+  bottom-left cell, advancing left→right then rows upward. A generator/hand-art must lay frames
+  out in that order or the animation plays scrambled.
+- **Authoring the sheet warm-white / desaturated** lets the particle's `color_curve` (HDR) drive
+  tint and bloom, since the shader multiplies texture × `in.color`. A pre-colored sheet fights the
+  ramp.
+- **`lifetime` is the playback speed** — the sheet plays once across each particle's life, so tune
+  `lifetime` for the anim cadence, not just particle longevity.
+- A **deterministic generator script** (same pattern as the radial soft PNG: stdlib-only, headless,
+  committed alongside the asset) is an honest placeholder when hand-art / a tool like EmberGen
+  isn't available — inferior to authored frames but far past a blob. Search the project for an
+  existing sheet/generator before adding one.
+
+The flipbook rides the per-effect seam above: route it onto the shape layers only, leaving the
+glow layers on the soft blob, then co-spawn both per the layering table below.
+
 ## Value before color (the grayscale test)
 
 Cel/anime readability comes from **value contrast**, not hue. Pro rule: imagine the effect in
@@ -162,7 +212,7 @@ enoki's real capabilities:
 | Technique (other engine) | enoki equivalent |
 |---|---|
 | Soft particle (radial-gradient sprite) | `SpriteParticle2dMaterial::from_texture(soft.png)` — **the key fix**; needs the spawn-code change |
-| Hand-drawn flame flipbook | `SpriteParticle2dMaterial::new(tex, hframes, vframes)` → animates frames over lifetime (`particle_sprite_frag.wgsl`); ≤4×4 for stylized (L3) |
+| Hand-drawn flame flipbook | `SpriteParticle2dMaterial::new(tex, hframes, vframes)`; animates over lifetime, **bottom-up frame order**, warm-white sheet, ≤4×4 (L3) — see the flipbook recipe + per-effect material seam above |
 | Value/temperature gradient | `color_curve` HDR hot→cool ramp + bloom |
 | Intentional silhouette | low `direction` randomness + `scale_curve` taper (L0/L1); cutout sprite only at L2 |
 | Layered systems (core/flames/embers/smoke) | **multiple `.particle.ron` co-spawned on one anchor** (the table above) |

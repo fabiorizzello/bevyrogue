@@ -121,8 +121,10 @@ evolve" → L3; "needs a material look flat color can't give" → L4. Otherwise 
 - **L2** → add one reusable cel atom (luminance→alpha, single element, canonically oriented);
   rotate/scale it across effects. Place reusable atoms in the project's shared VFX asset directory
   (search for where existing atoms live).
-- **L3/L4** → read `references/wgsl-hero.md` before committing; these are hero-only and carry
-  real maintenance cost.
+- **L3** (flipbook) → read the flipbook recipe + per-effect material seam in
+  `references/soft-particle-and-layering.md` (bottom-up frame order, warm-white sheet, ≤4×4, route
+  onto shape layers only). **L4** (WGSL) → read `references/wgsl-hero.md` before committing. Both
+  are hero-only and carry real maintenance cost.
 
 ## Step 3b: Decide whether to request an asset (and check the code prerequisite)
 Default is **no asset** — a radial soft-particle blob carries every Family-A *body* (glow, orb,
